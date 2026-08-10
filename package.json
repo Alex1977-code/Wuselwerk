@@ -9,7 +9,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:single": "vite build && node scripts/build-single.mjs",
+    "verify:single": "node scripts/verify-single.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0",
