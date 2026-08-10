@@ -2,3 +2,4 @@ node_modules/
 dist/
 *.log
 debug-scratch.ts
+shots/
