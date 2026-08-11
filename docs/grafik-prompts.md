@@ -4,7 +4,7 @@
 >
 > Die **Stilrichtung** dieser Datei ist durch [`grafik-katalog.md`](./grafik-katalog.md)
 > abgelöst. Das betrifft insbesondere den Wusel-Kanon (die Figur ist nicht mehr kahl,
-> sondern ist ein Troll mit roter Mähne `#e5372c` als Signaturmerkmal), die Körperproportionen,
+> sondern ist ein Troll mit violetter Mähne `#9d4edd` als Signaturmerkmal), die Körperproportionen,
 > die Stilblöcke A und B, den Palettenblock und die Konturstärke. Wo diese Datei und der
 > Katalog sich widersprechen, gilt der Katalog — und wo der Katalog und
 > [`grafik-ankerbild-a0.md`](./grafik-ankerbild-a0.md) sich widersprechen, gilt die

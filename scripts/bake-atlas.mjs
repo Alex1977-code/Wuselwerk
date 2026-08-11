@@ -97,7 +97,7 @@ const SPALTEN = Math.max(...CLIPS.map((c) => c.frames));
 // --- Palette ----------------------------------------------------------------
 // Dieselben Werte wie im prozeduralen Zeichner und im Katalog §3.2.
 const PALETTE = {
-  haar: ['#ff8f5e', '#e5372c', '#8f1d1c'],
+  haar: ['#c98bff', '#9d4edd', '#67219c'],
   haut: ['#fff0d2', '#f4d7ac', '#bd9e74'],
   anzug: ['#57e2d0', '#2fc9b8', '#1d8f85'],
 };
@@ -137,8 +137,8 @@ const TEILFARBEN = {
   werkzeug: { marker: [255, 0, 255], farbe: '#ffd23f' },
   dunkel: { marker: [0, 255, 0], farbe: '#0c1119' },
   signal: { marker: [0, 128, 255], farbe: '#ff7a45' },
-  haar: { marker: [255, 255, 0], farbe: '#e5372c' },
-  haarglanz: { marker: [0, 255, 255], farbe: '#ff8f5e' },
+  haar: { marker: [255, 255, 0], farbe: '#9d4edd' },
+  haarglanz: { marker: [0, 255, 255], farbe: '#c98bff' },
   // Für nachgebaute Körperteile: Ein Arm, der im Modell unter der Mähne
   // begraben liegt, wird als Anbauteil neu gestellt — dann aber in der Farbe
   // des Anzugs und der Haut, nicht in Werkzeuggelb. Gelb sagt "Gerät".

@@ -9,10 +9,20 @@ const SKIN = '#f4d7ac';
 const TOOL = '#ffd23f';
 const BLOCK = '#ff7a45';
 const BOMB = '#ff4d4d';
-/** Haarrampe aus dem Ankerbild A0: Glanz oben, Grundton, Schatten unten. */
-const HAIR = '#e5372c';
-const HAIR_LIGHT = '#ff8f5e';
-const HAIR_DARK = '#8f1d1c';
+/**
+ * Haarrampe: Glanz oben, Grundton, Schatten unten.
+ *
+ * Violett und nicht mehr Rot. Der Grund steht in `grafik-katalog.md` §3.1 und
+ * ist im Kern einer: Die Figur läuft die meiste Zeit auf brauner Erde, und
+ * Braun liegt auf dem Farbkreis bei rund 30 Grad. Rotes Haar stand dort 24
+ * Grad daneben — fast derselbe Farbton, getragen nur vom Helligkeitssprung.
+ * Violett steht 113 Grad entfernt, also nahezu gegenüber. Dazu löst es die
+ * engste Paarung der ganzen Palette: Haar und Gefahrenrot lagen 4 Grad
+ * auseinander, jetzt sind es 275.
+ */
+const HAIR = '#9d4edd';
+const HAIR_LIGHT = '#c98bff';
+const HAIR_DARK = '#67219c';
 
 /**
  * Die Mähne — das Erkennungsmerkmal der Figur (GDD §6, Ankerbild A0).
@@ -70,8 +80,9 @@ const MANE_HANG: readonly ManeRow[] = [
   [-11, -9, 6],
   [-10, -9, 6],
   [-9, -9, 6],
-  // Ende auf Schulterhöhe: Rot auf Türkis ist fast ein Helligkeitsgleichstand
-  // (ΔL* 8,9) und verschmilzt bei 12 Pixeln zu einem Fleck.
+  // Ende auf Schulterhöhe: Haar und Oberteil stehen nur 22 Helligkeitsstufen
+  // auseinander, und bei 12 Pixeln verschmelzen zwei grosse Flächen mit so
+  // wenig Abstand zu einer.
   [-8, -8, 5],
   [-7, -7, 4],
 ];
@@ -80,8 +91,9 @@ const MANE_HANG: readonly ManeRow[] = [
  * Blocker: dieselbe Lage, aber nur bis Schulterhöhe.
  *
  * Die Blockerarme liegen auf `y−9` bis `y−7` und sind orange; die hängende
- * Mähne läge genau darauf. Rot auf Orange verschmilzt zu einem Fleck und
- * kostet dem Blocker sein Signal — deshalb endet das Haar hier über den Armen.
+ * Mähne läge genau darauf. Zwei grosse Flächen ähnlicher Helligkeit werden bei
+ * 12 Pixeln eine — und das kostet dem Blocker sein Signal. Deshalb endet das
+ * Haar hier über den Armen.
  */
 const MANE_BLOCK: readonly ManeRow[] = MANE_HANG.slice(0, 4);
 

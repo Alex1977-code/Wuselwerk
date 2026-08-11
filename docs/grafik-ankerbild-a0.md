@@ -146,23 +146,23 @@ Aus dem Prompt und der Modelltextur, beides deckungsgleich.
 
 | Fläche | Farbe |
 |---|---|
-| Haar Grundton | `#e5372c` |
-| Haar Tiefe (zwischen den Strähnen) | `#8f1d1c` |
-| Haar Glanzband (obere Kante) | `#ff8a75` |
+| Haar Grundton | `#9d4edd` |
+| Haar Tiefe (zwischen den Strähnen) | `#67219c` |
+| Haar Glanzband (obere Kante) | `#c98bff` |
 | Haut (Gesicht, Hände) | `#f4d7ac` |
 | Overall | `#2fc9b8` |
 | Stiefel, Bund, Kragen | `#1d8f85` |
 | Umriss | `#0c1119` |
 
-Im Spiel steht statt `#ff8a75` das etwas dunklere `#ff8f5e` als Glanz (`src/render/sprites.ts`).
-Grund: Bei einer Zeile Höhe entscheidet der Helligkeitssprung zum Untergrund. `#ff8a75`
-liegt über brauner Erde `#6b4a2e` bei nur wenig Abstand; `#ff8f5e` gewinnt dort einen
-vollen Schritt, ohne die Rampe aus dem Rot herauszudrehen.
+**Das Haar ist violett, das Ankerbild zeigt es rot.** Die Begründung steht in
+`grafik-katalog.md` §3.1 und in §7.5 hier; die Werte oben sind die geltenden. Wer die Figur
+mit dem Prompt aus §2 neu erzeugt, bekommt rotes Haar und muss die drei Farbwerte im
+HAIR-Block ersetzen.
 
-**Ehrlich dazu:** Das Glanzband ist die einzige Stelle, an der Haar und Werkzeuggelb
-`#ffd23f` einander nahekommen. Unschädlich, weil es eine einzelne Zeile innerhalb einer
-grossen roten Masse ist und nie an ein Werkzeug grenzt — aber es ist der Grund, warum der
-Glanz **nicht** weiter Richtung Orange aufgehellt werden darf.
+**Ehrlich zum Glanzband:** Es ist mit L\* 68 der hellste Ton der Figur nach der Haut und
+damit die Zeile, die die Mähne über brauner Erde trägt. Weiter aufhellen darf man es nicht —
+dann nähert es sich der Haut `#f4d7ac` und die Trennung zwischen Haar und Gesicht geht
+verloren.
 
 ---
 
@@ -234,7 +234,7 @@ im Kommentar, sie werden nachgehalten.
 | `grafik-integration.md` §2.1, `grafik-katalog.md` §0/§1.2 | Zelle 24 × 24, Fusspunkt (12, 20) | **28 × 28, (14, 22)** |
 | `grafik-katalog.md` §2.1 | „Haar über dem Scheitel +2 bis +3" | **bis 8**, und die Masse liegt ebenso weit *hinter* dem Kopf |
 | `grafik-katalog.md` §2.1 | „Der Kopf wird nicht breiter als der Rumpf" | Der Kopf **ist** breiter. Die Bedingung ist eine **gerade** Breite, nicht eine kleine |
-| `grafik-katalog.md` §3.1 | Haar Beerenrosa `#ff70b8` | **Rot `#e5372c`** |
+| `grafik-katalog.md` §3.1 | Haar Beerenrosa `#ff70b8` | **Violett `#9d4edd`** (über Rot `#e5372c`, siehe §7.5) |
 | `grafik-katalog.md` §6.1 | A0-Prompt mit rosa Haarschopf | der Prompt aus §2 hier |
 | überall | Figur „Wusel", kahl bzw. mit Schopf | **Troll mit Mähne** |
 | überall | Hochformat | **Querformat** (das Spiel läuft in beiden, gestaltet wird für quer) |
@@ -375,6 +375,13 @@ nicht aus geratenen Zahlen.
 | Oberteil | `#2fc9b8` | hält gegen Nachthimmel *und* gegen braune Erde |
 | Hose | `#3d5b78` | liegt zwischen beiden Untergründen |
 | Schuhe | `#2a2018` | der dunkelste Wert der Figur — er setzt sie auf den Boden |
+
+**Das Haar ist violett statt rot.** Das Ankerbild zeigt eine rote Mähne; die Rechnung dazu
+steht in `grafik-katalog.md` §3.1. Der Kern in zwei Sätzen: Braune Erde liegt auf dem
+Farbkreis bei rund 30 Grad, rotes Haar stand 24 Grad daneben — fast derselbe Farbton,
+getragen allein vom Helligkeitssprung, und das genau dort, wo die Figur die meiste Zeit
+läuft. Violett steht 113 Grad entfernt. Nebenbei löst es die engste Paarung der ganzen
+Palette: Haar und Gefahrenrot lagen 4 Farbtongrade auseinander, jetzt sind es 275.
 
 **Die Mähne ist ausgedünnt.** Das Modell trägt eine dichte, geschlossene
 Haarkugel; bei Spielgrösse liest sie als Fläche, und einzelne Strähnen gehen

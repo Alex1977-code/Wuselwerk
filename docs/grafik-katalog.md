@@ -341,13 +341,13 @@ Die geprüften Werte des Kanons:
 
 | Fläche | Farbe | L\* |
 |---|---|---|
-| Haarglanz | `#ff8f5e` | 81,0 |
+| Haarglanz | `#c98bff` | 81,0 |
 | Haut | `#f4d7ac` | 87,4 |
 | Werkzeuggelb | `#ffd23f` | 85,9 |
 | Anzug | `#2fc9b8` | 73,4 |
-| **Haar Grundton** | **`#e5372c`** | **66,8** |
+| **Haar Grundton** | **`#9d4edd`** | **66,8** |
 | Stiefel | `#1d8f85` | 53,6 |
-| Haarschatten | `#8f1d1c` | 50,9 |
+| Haarschatten | `#67219c` | 50,9 |
 | Umriss | `#0c1119` | 5,0 |
 
 Geprüfte Nachbarschaften:
@@ -454,51 +454,57 @@ entscheidet, nicht über die Sichtbarkeit.
 | Zyanweiß `#bfe9ff` | +79,7 | +51,1 | +55,7 | +2,7 | +4,3 | 154,7° | **fällt** — in Kristallhöhle, Eis und Wolkenwerft hellblau auf hellblau |
 | Lavendel `#b98cff` | +56,3 | +27,7 | +32,3 | −20,7 | −19,1 | 142,5° | **fällt** — ΔL\* nur 11,3 und ΔH nur 3,7° zum Kristallviolett `#a06be0` |
 | Magenta `#e8479a` | +45,7 | +17,1 | **+21,6** | −31,3 | −29,8 | 76,9° | **fällt** — zu dunkel für Erde und Fels, ΔL\* 0,6 zum Kristallviolett |
-| **Beerenrosa `#e5372c`** | **+56,3** | **+27,8** | **+32,3** | **−20,6** | **−19,1** | **76,1°** | **bestanden** |
+| **Beerenrosa `#9d4edd`** | **+56,3** | **+27,8** | **+32,3** | **−20,6** | **−19,1** | **76,1°** | **bestanden** |
 
 > **Diese Prüfung ist von der Ankerfigur überholt.** Sie wurde geführt, als die Haarfarbe
 > noch offen war. Sie ist nicht gelöscht, weil sie die Sperrzonen des Farbkreises richtig
 > beschreibt und weil man wissen muss, was die getroffene Wahl kostet — aber entschieden
 > ist sie nicht mehr hier, sondern in `grafik-ankerbild-a0.md`.
 >
-> **Es gilt: Rot `#e5372c`.**
+> **Es gilt: Violett `#9d4edd`.**
 
-Rot war in der Prüfung unten als *gesperrt* geführt, mit dem Argument „Rot ist Gefahrenrot
-und Lava". Dieses Argument war richtig und ist es weiterhin — es wiegt nur die Wahl nicht
-auf. Was es kostet, in Zahlen, nach denselben Maßstäben wie die Tabelle:
+Violett stand in der Prüfung unten gar nicht zur Wahl — die Liste war auf Töne verengt, die
+sich von Beerenrosa unterscheiden. Nachgemessen nach denselben Maßstäben:
 
-| Haar `#e5372c` (L\* 51,3) gegen | ΔL\* | ΔH | Urteil |
+| Haar `#9d4edd` (L\* 49,3) gegen | ΔL\* | ΔH | Urteil |
 |---|---|---|---|
-| Nachthimmel oben `#101c33` | **+40,9** | groß | trägt |
-| Horizont `#3d5f7d` | +12,3 | groß | trägt knapp, der Umriss trägt mit |
-| Braune Erde `#6b4a2e` | +16,9 | 24° | **die kritische Paarung** — siehe unten |
-| Haut `#f4d7ac` | −36,1 | — | trägt |
-| Werkzeuggelb `#ffd23f` | −34,6 | 42° | trägt |
-| Blockerorange `#ff7a45` | −14,9 | 20° | trägt |
-| **Gefahrenrot `#ff4d4d`** | **−7,7** | **4°** | **kollidiert** |
+| Nachthimmel oben `#0d1730` | **+40** | groß | trägt |
+| Horizont `#4a6f8c` | +4 | 70° | **schwach in der Helligkeit** — siehe unten |
+| **Braune Erde `#6b4a2e`** | +15 | **113°** | **trägt deutlich** — nahezu gegenüber |
+| Haut `#f4d7ac` | −38 | groß | trägt |
+| Werkzeuggelb `#ffd23f` | −37 | 230° | trägt |
+| Blockerorange `#ff7a45` | −17 | 260° | trägt |
+| Gefahrenrot `#ff4d4d` | −10 | **275°** | trägt |
+| Oberteil `#2fc9b8` | −22 | 100° | trägt |
+| Hose `#3d5b78` | +12 | 65° | trägt; berührt es ohnehin nie |
 
-**Die beiden echten Kollisionen und was sie hält:**
+**Was der Wechsel von Rot auf Violett gewinnt — und was er kostet:**
 
-1. **Gefahrenrot.** Haar und Bombensignal liegen 4 Farbtongrade und 8 Helligkeitsstufen
-   auseinander — die engste Paarung der ganzen Palette. Was sie trotzdem trennt, ist, dass
-   das Bombensignal **keine Farbe** ist: Es ist ein *Blinken* im Sekundentakt plus eine
-   Ziffer über dem Kopf (§8.4). Haar blinkt nicht und trägt keine Ziffer. **Daraus folgt
-   bindend:** Der Sprengmeister wird nie über den Farbton allein ausgezeichnet, und die
-   Zündschnur-Blinkfläche bleibt der Rumpf, nie der Kopf.
-2. **Braune Erde.** +17 L\* bei nur 24° Farbtonabstand ist der schwächste Kontrast, den die
-   Figur im Spiel hat — und er tritt genau dort auf, wo sie sich am längsten aufhält.
-   Getragen wird er von zwei Dingen: dem geschlossenen fast schwarzen Umriss und dem
-   **Glanzband** `#ff8f5e` (L\* 70,7), das über Erde +36 gewinnt. Das Glanzband ist damit
-   kein Zierrat, sondern die tragende Zeile. **Daraus folgt bindend:** Die oberste Haarzeile
-   ist immer der Glanzton, in jedem Bild, in jedem Zustand.
-3. **Lavawelt.** Rote Figur vor roter Wand — der einzige Fall, den weder Umriss noch Glanz
-   allein retten. **Daraus folgt bindend:** In der Lavawelt liegt das Terrain hinter den
-   Figuren unter L\* 30; das Leuchten sitzt in der Lava selbst und im Vordergrund, nicht in
-   der Wand, auf der gelaufen wird.
+1. **Er löst die engste Paarung der ganzen Palette.** Haar und Gefahrenrot lagen 4
+   Farbtongrade auseinander; jetzt sind es 275. Die Sonderregel, die deshalb nötig war —
+   den Sprengmeister nie über den Farbton auszuzeichnen —, bleibt trotzdem stehen, aber sie
+   trägt nicht mehr allein.
+2. **Er löst die Paarung, die im Spiel am häufigsten vorkommt.** Braune Erde liegt auf dem
+   Farbkreis bei rund 30 Grad. Rot stand 24 Grad daneben, also fast im selben Farbton, und
+   wurde allein vom Helligkeitssprung getragen. Violett steht 113 Grad entfernt — nahezu
+   gegenüber. Genau dort läuft die Figur die meiste Zeit.
+3. **Der Preis steht am Horizont.** Gegen das helle Blau am Horizontband `#4a6f8c` bleiben
+   nur 4 Helligkeitsstufen. Getragen wird das vom Farbtonabstand von 70 Grad, vom
+   geschlossenen Umriss und vor allem vom **Glanzband** `#c98bff` (L\* 68), das dort +23
+   gewinnt. **Daraus folgt bindend:** Die oberste Haarzeile ist immer der Glanzton, in jedem
+   Bild, in jedem Zustand. Ohne sie verliert die Figur genau in Kopfhöhe ihre Kante.
+4. **Eine Folgeänderung war nötig.** Die gebauten Stufen der Kristallwelt standen auf
+   `#a06be0` — derselbe Farbton wie das Haar. Eine Brücke hätte dort ausgesehen wie eine
+   Reihe Köpfe. Sie sind jetzt bernsteinfarben `#d59a4a`; warm gegen die kalte Höhle ist
+   ohnehin das bessere Signal für „von Hand gebaut".
+
+Die Lavawelt bleibt der Fall, den keine Haarfarbe allein löst: **Dort liegt das Terrain
+hinter den Figuren unter L\* 30**, das Leuchten sitzt in der Lava und im Vordergrund, nicht
+in der Wand, auf der gelaufen wird.
 
 Die frühere Entscheidung, zum Nachlesen:
 
-**Entscheidung (überholt): Beerenrosa `#e5372c`.**
+**Entscheidung (überholt): Beerenrosa `#9d4edd`.**
 
 Die Begründung in einem Satz: Beerenrosa ist der einzige geprüfte Ton, der auf beiden echten
 Hintergründen einen vollen Helligkeitsschritt gewinnt (+32 über Erde, +56 über Nachthimmel)
@@ -535,9 +541,9 @@ eigentliche Grund, warum die Entscheidung nicht beliebig ist:
 
 | Rolle | Farbe | L\* | bei 12 px sichtbar? |
 |---|---|---|---|
-| Glanz / Rim oben | `#ff8f5e` | 70,7 | ja, **die tragende Zeile** — nie weglassen |
-| Grundton | `#e5372c` | 51,3 | ja, die Hauptfläche |
-| Schatten unten und hinten | `#8f1d1c` | 31,4 | ja, **1 Pixel** |
+| Glanz / Rim oben | `#c98bff` | 70,7 | ja, **die tragende Zeile** — nie weglassen |
+| Grundton | `#9d4edd` | 51,3 | ja, die Hauptfläche |
+| Schatten unten und hinten | `#67219c` | 31,4 | ja, **1 Pixel** |
 
 Drei Stufen, mehr nicht. Sie sind im Spiel als `HAIR_LIGHT`, `HAIR`, `HAIR_DARK` in
 `src/render/sprites.ts` gesetzt und weltunabhängig: Das Haar wird **nie** je Welt umgefärbt,
@@ -545,7 +551,7 @@ sonst verliert es seine Funktion als Wiedererkennungsmerkmal.
 
 **Abweichung vom Ankerbild, mit Grund:** Dort ist das Glanzband `#ff8a75`. Bei einer Zeile
 Höhe entscheidet aber der Helligkeitssprung zum Untergrund, und `#ff8a75` gewinnt über
-brauner Erde zu wenig. `#ff8f5e` gewinnt dort einen vollen Schritt und bleibt innerhalb der
+brauner Erde zu wenig. `#c98bff` gewinnt dort einen vollen Schritt und bleibt innerhalb der
 roten Rampe. Weiter Richtung Orange darf es nicht — dann nähert es sich dem Werkzeuggelb.
 
 ### 3.3 Die Frisur
@@ -859,8 +865,8 @@ pixels tall, boots 16 pixels tall, all 32 pixels wide, measured at this
 master scale. The head is the largest single mass of the figure.
 
 Hair, present in every frame: a single upswept mane of many overlapping
-pointed strands of different lengths rising from the crown, in vivid red, base tone #e5372c,
-highlight #ff8f5e along the topmost edge, shadow #8f1d1c underneath. At
+pointed strands of different lengths rising from the crown, in vivid violet, base tone #9d4edd,
+highlight #c98bff along the topmost edge, shadow #67219c underneath. At
 rest it reaches 48 pixels above the crown and 64 pixels behind the back of
 the head at this master scale; in motion up to 56, and never more than 64.
 The hair is one closed mass carrying its own outline, never individual
@@ -898,8 +904,8 @@ Erweitert den Block aus `grafik-prompts.md` §1.4 um die vier Haarwerte.
 ```
 PALETTE LOCK — WUSELWERK
 
-Character: hair vivid red #e5372c, hair highlight #ff8f5e, hair shadow
-#8f1d1c, hair deep shadow #5c1210, skin warm sand #f4d7ac, suit teal
+Character: hair vivid violet #9d4edd, hair highlight #c98bff, hair shadow
+#67219c, hair deep shadow #5c1210, skin warm sand #f4d7ac, suit teal
 #2fc9b8, deep suit teal #1d8f85, equipment amber #ffd23f, outline
 near-black #0c1119, blocker warning orange #ff7a45, danger red #ff4d4d.
 
@@ -999,8 +1005,8 @@ Four-view turnaround sheet of the Wusel creature: a small stocky worker,
 two and a half heads tall, oversized softly rounded head with warm sand
 skin #f4d7ac taking up over forty percent of the body height, large round
 solid black dot eyes set low and wide apart, tiny mouth line, a single
-upswept mane of thick vivid red hair #e5372c with highlight #ff8f5e
-and shadow #8f1d1c rising from the crown, one-piece teal work suit #2fc9b8
+upswept mane of thick vivid violet hair #9d4edd with highlight #c98bff
+and shadow #67219c rising from the crown, one-piece teal work suit #2fc9b8
 with rounded shoulders and a thin darker collar line, stubby mitten arms,
 blunt dark teal boots #1d8f85, hard near-black outline #0c1119.
 
@@ -1122,8 +1128,8 @@ pixels thick at this master scale.
 
 The hair: a single upswept mane of many overlapping pointed strands of different lengths
 rising from the crown, one solid closed mass with its own outline, never
-individual hairs. Vivid red base tone #e5372c, bright highlight #ff8f5e
-along whichever edge currently faces upward, shadow #8f1d1c on the
+individual hairs. Vivid violet base tone #9d4edd, bright highlight #c98bff
+along whichever edge currently faces upward, shadow #67219c on the
 underside. The front upper quarter of the head dome stays clear of hair in
 every cell.
 
@@ -1183,8 +1189,8 @@ turned slightly to the right, identical framing in every cell.
 
 The creature: an oversized softly rounded head with warm sand skin #f4d7ac,
 two large round solid black dot eyes set low and wide apart, a tiny simple
-mouth, no nose, no ears, a single upswept mane of thick vivid red
-hair #e5372c with highlight #ff8f5e and shadow #8f1d1c rising from the
+mouth, no nose, no ears, a single upswept mane of thick vivid violet
+hair #9d4edd with highlight #c98bff and shadow #67219c rising from the
 crown, and the top of a one-piece teal work suit #2fc9b8 with a thin darker
 collar line at the bottom of each cell. Hard near-black outline #0c1119, 8
 pixels thick at this master scale.
@@ -1258,7 +1264,7 @@ Pixel ist der Unterschied zwischen „läuft" und „hüpft steif".
 Walk cycle of the Wusel creature: a small stocky worker, two and a half
 heads tall, oversized rounded head with warm sand skin #f4d7ac, one round
 black dot eye set low, tiny mouth line, a upswept mane of thick
-vivid red hair #e5372c with highlight #ff8f5e and shadow #8f1d1c,
+vivid violet hair #9d4edd with highlight #c98bff and shadow #67219c,
 one-piece teal work suit #2fc9b8 with rounded shoulders, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119.
 
@@ -1313,8 +1319,8 @@ sie ist.
 [APPEND NEGATIVE PROMPT]
 
 Free-fall loop of the Wusel creature (oversized rounded head with warm sand
-skin #f4d7ac, backward-swept vivid red hair mane #e5372c with highlight
-#ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark teal boots
+skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd with highlight
+#c98bff and shadow #67219c, teal one-piece suit #2fc9b8, dark teal boots
 #1d8f85, near-black outline #0c1119), falling without any equipment.
 
 Exactly 4 frames in one row. Canvas 768 by 192 pixels, aspect ratio 4:1.
@@ -1365,7 +1371,7 @@ später**. Wer nur diesen einen Clip richtig macht, hat das Prinzip verstanden.
 
 Slow descent loop of the Wusel creature hanging beneath an open umbrella
 (oversized rounded head with warm sand skin #f4d7ac, backward-swept berry
-red hair mane #e5372c with highlight #ff8f5e and shadow #8f1d1c, teal
+red hair mane #9d4edd with highlight #c98bff and shadow #67219c, teal
 one-piece suit #2fc9b8, dark teal boots #1d8f85, near-black outline
 #0c1119).
 
@@ -1421,8 +1427,8 @@ auf der Rückseite ist bei 12 Pixeln eindeutig als Kletterer lesbar.
 [APPEND NEGATIVE PROMPT]
 
 Wall-climbing loop of the Wusel creature (oversized rounded head with warm
-sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c with
-highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark
+sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd with
+highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8, dark
 teal boots #1d8f85, near-black outline #0c1119), climbing a vertical
 surface that is NOT drawn.
 
@@ -1475,8 +1481,8 @@ still sein — auch das Haar.
 [APPEND NEGATIVE PROMPT]
 
 One-shot pull-up sequence of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd
+with highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), hauling itself over
 the top edge of a wall that is NOT drawn.
 
@@ -1530,8 +1536,8 @@ hilft dabei: Es überschwingt in Bild 1 nach vorn und verdeckt damit den Sprung.
 [APPEND NEGATIVE PROMPT]
 
 Bridge-building work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd
+with highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), laying one plank step
 per cycle.
 
@@ -1591,8 +1597,8 @@ Bildgenerator irgendwo scheitert, dann hier — dieses Blatt gehört von Hand fe
 [APPEND NEGATIVE PROMPT]
 
 Horizontal digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd
+with highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), swinging a
 sledgehammer straight forward into a wall that is NOT drawn.
 
@@ -1644,8 +1650,8 @@ verstärkt.
 [APPEND NEGATIVE PROMPT]
 
 Diagonal digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd
+with highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), driving a pickaxe
 forward and downward into ground that is NOT drawn.
 
@@ -1698,8 +1704,8 @@ Bild 1 und 2, dort wo auch die Haltedauer wechselt.
 [APPEND NEGATIVE PROMPT]
 
 Vertical digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd
+with highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), shovelling straight
 down into ground that is NOT drawn.
 
@@ -1754,8 +1760,8 @@ darf. Alles andere ist byte-identisch, damit der Blocker unverrückbar wirkt.
 [APPEND NEGATIVE PROMPT]
 
 Two-frame idle of the Wusel creature in its blocking stance (oversized
-rounded head with warm sand skin #f4d7ac, backward-swept vivid red hair
-mane #e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+rounded head with warm sand skin #f4d7ac, backward-swept vivid violet hair
+mane #9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119).
 
 Exactly 2 frames in one row. Canvas 384 by 192 pixels, aspect ratio 2:1.
@@ -1806,8 +1812,8 @@ die Haltungsänderung auf fester Grundlinie.
 [APPEND NEGATIVE PROMPT]
 
 One-shot rescue sequence of the Wusel creature (oversized rounded head with
-warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c with
-highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark
+warm sand skin #f4d7ac, backward-swept vivid violet hair mane #9d4edd with
+highlight #c98bff and shadow #67219c, teal one-piece suit #2fc9b8, dark
 teal boots #1d8f85, near-black outline #0c1119) being drawn into the exit
 and saved.
 
@@ -1867,8 +1873,8 @@ Empathie aus GDD §2 geschenkt.
 [APPEND NEGATIVE PROMPT]
 
 One-shot generic collapse sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): the default
 death used when no cause-specific animation applies.
 
@@ -1894,7 +1900,7 @@ rest. From here on it does not move again.
 Frame 6 — motionless, the outline softening, the teal desaturating one step
 toward the outline tone. The hair is in exactly the same position as in
 frame 5, pixel for pixel, and its red desaturates one step toward the
-shadow tone #8f1d1c.
+shadow tone #67219c.
 Frame 7 — the shape reduced further, colours flattening toward a single
 dull tone, the dust ring drifting outward and thinning. The hair is
 unchanged in position and has desaturated another step.
@@ -2161,8 +2167,8 @@ Diese Unterscheidung ist in jedem der drei Prompts ausdrücklich benannt.
 Key-pose sheet for the Climber, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, tiny mouth,
-a upswept mane of thick vivid red hair #e5372c with highlight
-#ff8f5e and shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten
+a upswept mane of thick vivid violet hair #9d4edd with highlight
+#c98bff and shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119, 8
 pixels thick at this master scale.
 
@@ -2209,8 +2215,8 @@ wall, no props.
 Key-pose sheet for the Floater, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, tiny mouth,
-a upswept mane of thick vivid red hair #e5372c with highlight
-#ff8f5e and shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten
+a upswept mane of thick vivid violet hair #9d4edd with highlight
+#c98bff and shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119, 8
 pixels thick at this master scale.
 
@@ -2259,8 +2265,8 @@ no props.
 Key-pose sheet for the Bomber, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
-shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid violet hair #9d4edd with highlight #c98bff and
+shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2308,8 +2314,8 @@ cast shadow, no ground, no props, no explosion.
 Key-pose sheet for the Blocker, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, round black dot eyes set low, a backward-swept
-mane of thick vivid red hair #e5372c with highlight #ff8f5e and shadow
-#8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
+mane of thick vivid violet hair #9d4edd with highlight #c98bff and shadow
+#67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
 teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at this
 master scale.
 
@@ -2358,8 +2364,8 @@ cast shadow, no ground, no props.
 Key-pose sheet for the Builder, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
-shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid violet hair #9d4edd with highlight #c98bff and
+shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2407,8 +2413,8 @@ cast shadow, no ground, no terrain.
 Key-pose sheet for the Basher, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
-shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid violet hair #9d4edd with highlight #c98bff and
+shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2456,8 +2462,8 @@ cast shadow, no ground, no wall, no rubble, no sparks.
 Key-pose sheet for the Miner, one of ten job roles of the Wusel creature: a
 small stocky worker, two and a half heads tall, oversized rounded head with
 warm sand skin #f4d7ac, one round black dot eye set low, a backward-swept
-mane of thick vivid red hair #e5372c with highlight #ff8f5e and shadow
-#8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
+mane of thick vivid violet hair #9d4edd with highlight #c98bff and shadow
+#67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
 teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at this
 master scale.
 
@@ -2505,8 +2511,8 @@ cast shadow, no ground, no terrain, no debris.
 Key-pose sheet for the Digger, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
-shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid violet hair #9d4edd with highlight #c98bff and
+shadow #67219c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2553,8 +2559,8 @@ cast shadow, no ground, no soil, no dust.
 Key-pose sheet for the Magnetiser, one of ten job roles of the Wusel
 creature, unlocked in the fourth world: a small stocky worker, two and a
 half heads tall, oversized rounded head with warm sand skin #f4d7ac, one
-round black dot eye set low, a upswept mane of thick vivid red hair
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, one-piece teal work suit
+round black dot eye set low, a upswept mane of thick vivid violet hair
+#9d4edd with highlight #c98bff and shadow #67219c, one-piece teal work suit
 #2fc9b8, stubby mitten arms, blunt dark teal boots #1d8f85, hard near-black
 outline #0c1119, 8 pixels thick at this master scale.
 
@@ -2603,8 +2609,8 @@ cast shadow, no ground, no props.
 Key-pose sheet for the Jumper, one of ten job roles of the Wusel creature,
 unlocked in the fourth world: a small stocky worker, two and a half heads
 tall, oversized rounded head with warm sand skin #f4d7ac, one round black
-dot eye set low, a upswept mane of thick vivid red hair #e5372c
-with highlight #ff8f5e and shadow #8f1d1c, one-piece teal work suit
+dot eye set low, a upswept mane of thick vivid violet hair #9d4edd
+with highlight #c98bff and shadow #67219c, one-piece teal work suit
 #2fc9b8, stubby mitten arms, blunt dark teal boots #1d8f85, hard near-black
 outline #0c1119, 8 pixels thick at this master scale.
 
@@ -2672,8 +2678,8 @@ Horrorpublikum, und das Spiel muss in jedem Store durchgehen.
 [APPEND NEGATIVE PROMPT]
 
 One-shot impact death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): hitting the
 ground after falling too far.
 
@@ -2697,7 +2703,7 @@ Frame 5 — settling down again, flatter than frame 4 but not as flat as
 frame 3, arms dropping, a thin ring of pale dust spreading outward around
 the base.
 Frame 6 — motionless. The teal desaturates one step toward the outline
-tone, the red hair desaturates toward #8f1d1c. The hair is in exactly the
+tone, the red hair desaturates toward #67219c. The hair is in exactly the
 same position as in frame 5, pixel for pixel.
 Frame 7 — the shape reduced further, colours flattening toward a single
 dull tone, the dust ring drifting wider and thinning. Hair unchanged.
@@ -2726,8 +2732,8 @@ Absacken trotzdem nicht als Bewegung, sondern als Haltung, weil die Grundlinie f
 [APPEND NEGATIVE PROMPT]
 
 One-shot drowning death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): sinking in
 deep water. The water itself is NOT drawn — it is a separate asset
 composited by the engine.
@@ -2752,7 +2758,7 @@ body drifting a few degrees off vertical. The hair fans slowly out above
 the head, weightless. This is the last frame in which anything moves.
 Frame 6 — motionless. The whole figure cools and darkens by one step, the
 teal shifting toward a colder tone and the skin losing warmth. The hair is
-in exactly the same position as in frame 5 and desaturates toward #8f1d1c.
+in exactly the same position as in frame 5 and desaturates toward #67219c.
 Frame 7 — darker again, the outline softening, the figure reading as
 further away below the surface, colours converging toward a single dull
 blue-grey. Hair unchanged in position.
@@ -2778,8 +2784,8 @@ No blood, no gore, no red fluid, no water surface, no splash, no ripples.
 [APPEND NEGATIVE PROMPT]
 
 One-shot burning death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): caught in a
 flame jet. The flame jet itself is NOT drawn — it is a separate asset.
 
@@ -2832,8 +2838,8 @@ beyond the shout in frame 1.
 [APPEND NEGATIVE PROMPT]
 
 One-shot crushing death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): flattened
 from above by a descending press. The press itself is NOT drawn — it is a
 separate asset composited by the engine.
@@ -2862,7 +2868,7 @@ centre, boots and mitten hands still recognisable at the outer ends. This
 is the last frame in which anything moves. A thin ring of dust puffs out
 sideways along the ground.
 Frame 6 — motionless. The slab desaturates one step, teal toward the
-outline tone, red toward #8f1d1c. Position identical to frame 5, pixel for
+outline tone, red toward #67219c. Position identical to frame 5, pixel for
 pixel.
 Frame 7 — the slab relaxes very slightly and flattens further, colours
 converging toward one dull tone, the dust drifting outward and thinning.
@@ -2892,8 +2898,8 @@ komisch statt tragisch sein.
 [APPEND NEGATIVE PROMPT]
 
 One-shot explosion death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
-#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid violet hair mane
+#9d4edd with highlight #c98bff and shadow #67219c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): blown up by
 the bomb it was carrying.
 
@@ -4710,8 +4716,8 @@ the central two thirds of the icon, seen from slightly above. Design as
 established: oversized softly rounded head with warm sand skin #f4d7ac
 taking up over forty percent of the body height, two large round solid
 black dot eyes set low and wide apart, tiny open smile, a thick backward-
-swept mane of vivid red hair #e5372c with a bright highlight #ff8f5e and
-shadow #8f1d1c rising from the crown and streaming back as if caught in a
+swept mane of vivid violet hair #9d4edd with a bright highlight #c98bff and
+shadow #67219c rising from the crown and streaming back as if caught in a
 breeze, one-piece teal work suit #2fc9b8, dark teal boots #1d8f85, hard
 near-black outline #0c1119. It holds a broad amber #ffd23f shovel across
 its body and looks up at the viewer with cheerful, slightly clueless
@@ -4766,7 +4772,7 @@ The centre of the image, and the only subject: a riveted steel hatch
 #8b96a6 hanging on two chains from the top of the frame, its underside
 doors open, with exactly three small creatures dropping out of it. Each has
 an oversized rounded head with warm sand skin #f4d7ac, two round black dot
-eyes, a thick upswept mane of vivid red hair #e5372c streaming
+eyes, a thick upswept mane of vivid violet hair #9d4edd streaming
 straight upward in the rush of air, a one-piece teal work suit #2fc9b8,
 dark teal boots #1d8f85 and a hard near-black outline #0c1119. Arms above
 their heads, mouths open in small round shouts, cheerfully doomed. The
@@ -4808,7 +4814,7 @@ a vertical pit, and one horizontal gallery blocked by a riveted steel plate
 Cast: about twenty small creatures at work throughout the cut-away. Every
 one of them has an oversized softly rounded head with warm sand skin
 #f4d7ac, two round black dot eyes set low, a thick upswept mane of
-vivid red hair #e5372c with highlight #ff8f5e, a one-piece teal work suit
+vivid violet hair #9d4edd with highlight #c98bff, a one-piece teal work suit
 #2fc9b8, dark teal boots #1d8f85 and a hard near-black outline #0c1119.
 One swings a shovel at the bottom of the pit, one hammers sideways against
 the steel with sparks flying, one places brick steps #b5713f up a ledge,
@@ -4852,7 +4858,7 @@ Scene: a tall vertical cross-section of terrain, seen in strict
 orthographic side view, reading as a deep shaft from sky to depths. The top
 eighth is sky gradient #101c33 to #3d5f7d with a riveted steel hatch
 #8b96a6 on chains, doors open, three small creatures falling out of it with
-arms up and vivid red hair #e5372c streaming vertically, one already under
+arms up and vivid violet hair #9d4edd streaming vertically, one already under
 an amber #ffd23f umbrella with its hair floating calmly instead.
 
 Middle: layered terrain descending through green-crusted soil #6b4a2e, grey
@@ -4864,7 +4870,7 @@ orange #ff7a45 paddles.
 
 Every creature is identical in design: oversized softly rounded head with
 warm sand skin #f4d7ac, two round black dot eyes set low, a thick
-backward-swept vivid red hair mane, a one-piece teal work suit #2fc9b8,
+backward-swept vivid violet hair mane, a one-piece teal work suit #2fc9b8,
 dark teal boots #1d8f85, hard near-black outline #0c1119. The red hair is
 the only warm colour on the creatures and must read as a chain of bright
 accents leading the eye down the shaft.
@@ -4911,7 +4917,7 @@ with rounded hill layers #1b2f42, #24415a, #2f5570. The lower half is soil
 tunnel that runs the entire width of the image just below the surface.
 
 Left third: a riveted steel hatch #8b96a6 on chains with three small
-creatures dropping out of it, arms up, vivid red hair #e5372c streaming
+creatures dropping out of it, arms up, vivid violet hair #9d4edd streaming
 vertically, and two more already landed and marching right along the
 tunnel.
 
@@ -4925,7 +4931,7 @@ back toward the door.
 
 Every creature is identical in design: oversized softly rounded head with
 warm sand skin #f4d7ac, two round black dot eyes set low, a thick
-backward-swept vivid red hair mane with highlight #ff8f5e, a one-piece
+backward-swept vivid violet hair mane with highlight #c98bff, a one-piece
 teal work suit #2fc9b8, dark teal boots #1d8f85, hard near-black outline
 #0c1119.
 

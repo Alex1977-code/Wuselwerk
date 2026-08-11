@@ -44,7 +44,11 @@ const CRYSTAL: Palette = {
   crust: 0x6f8ad6,
   rock: 0x35405f,
   steel: 0x8b96a6,
-  brick: 0xa06be0,
+  // Bernstein statt Violett. Die gebauten Stufen lagen früher bei 0xa06be0 und
+  // damit im selben Farbton wie das Haar der Figuren — in der Kristallwelt hätte
+  // eine Brücke ausgesehen wie eine Reihe Köpfe. Warm gegen die kalte Höhle ist
+  // ausserdem das bessere Signal für "von Hand gebaut".
+  brick: 0xd59a4a,
   freshBoost: 34,
   glow: '#9fd8ff',
 };
