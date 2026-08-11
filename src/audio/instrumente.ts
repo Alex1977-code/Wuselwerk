@@ -9,8 +9,20 @@ import type { AudioEngine } from './engine';
  * ohne Server aufs Handy bekommt. Gesampelte Marimba, Kalimba oder Akkordeon
  * scheiden damit aus. Was bleibt, ist mehr, als es klingt: Marimba, Kalimba,
  * Glockenspiel, Steeldrum und Pizzicato sind allesamt **kurz anklingende
- * Toene**, und genau die baut ein Synthesizer gut. Ein Akkordeon oder eine
- * Klarinette waeren schwieriger; die stehen deshalb nicht in dieser Liste.
+ * Toene**, und genau die baut ein Synthesizer gut.
+ *
+ * ## Warum es hier auch Blasinstrumente gibt
+ *
+ * Weil eine Liste aus lauter kurz anklingenden Toenen keine Melodie tragen
+ * kann. Jeder dieser Klaenge ist ein Punkt; eine Melodie braucht eine Linie.
+ * Solange die Klangwerkstatt nur abfallende Huellkurven konnte, war das nicht
+ * zu haben, und die Musik hat vor sich hin gepiekst. Seit `tone()` einen Ton
+ * **halten** kann (`hold`), sind Klarinette und Akkordeon moeglich — und die
+ * sind der Grund, warum man die Melodie jetzt mitsummen kann.
+ *
+ * Die Arbeitsteilung dabei ist die aus jedem Orchester: Ein Stabspiel gibt den
+ * Anschlag, die Blasstimme haelt den Ton. Zusammen klingen sie nach einem
+ * Instrument mit Anschlag *und* Koerper, was keines von beiden allein kann.
  *
  * ## Woran man ein Instrument erkennt
  *
@@ -157,8 +169,73 @@ export function ukulele(e: E, t: TonOpts): void {
 export function panfloete(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.11;
   const d = t.dur ?? 0.4;
-  e.tone({ freq: t.freq, dur: d, type: 'triangle', gain: g, attack: 0.045, ...o(t) });
+  e.tone({
+    freq: t.freq, dur: d, type: 'triangle', gain: g, attack: 0.045,
+    hold: 0.6, vibratoHz: 5.4, vibratoCents: 9, ...o(t),
+  });
   e.noise({ dur: Math.min(0.09, d), gain: g * 0.34, filter: 'bandpass', freq: t.freq * 2.2, q: 0.9, ...o(t) });
+}
+
+/**
+ * Klarinette — die Stimme, die eine Melodie tragen kann.
+ *
+ * 1. **Huellkurve.** Sie **haelt** (`hold: 0.72`). Das ist der ganze
+ *    Unterschied zu allem darueber: Eine gehaltene Note verbindet sich mit der
+ *    naechsten zu einer Linie, eine abfallende bleibt ein Punkt.
+ * 2. **Teiltoene.** Eine gedackte Roehre — an einem Ende geschlossen — hat nur
+ *    die *ungeraden* Teiltoene. Genau die hat eine Rechteckwelle, und genau
+ *    daher kommt der hohle, etwas naeselnde Klang, an dem man eine Klarinette
+ *    ohne Nachdenken erkennt. Der Tiefpass nimmt die obersten Teiltoene weg,
+ *    die eine Rechteckwelle zu viel hat.
+ * 3. **Anblasen und Vibrato.** Ein Rauschstoss beim Ansatz, danach ein
+ *    langsames Vibrato von knapp fuenf Hertz. Ohne beides klingt die
+ *    Rechteckwelle nach Spielzeug — das ist der Grund, warum eine Achtbit-Ebene
+ *    nie Hauptstimme sein darf und diese Stimme es kann.
+ */
+export function klarinette(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.11;
+  const d = t.dur ?? 0.4;
+  e.tone({
+    freq: t.freq, dur: d, type: 'square', gain: g * 0.62, attack: 0.035,
+    hold: 0.72, filterHz: t.freq * 3.2, filterSweep: 1.1,
+    vibratoHz: 4.7, vibratoCents: 11, ...o(t),
+  });
+  // Eine Dreieckswelle darunter fuellt den Grundton auf. Eine Rechteckwelle
+  // allein klingt duenn, weil ihr genau die geraden Teiltoene fehlen, die das
+  // Ohr als "Koerper" liest.
+  e.tone({
+    freq: t.freq, dur: d, type: 'triangle', gain: g * 0.4, attack: 0.045,
+    hold: 0.7, vibratoHz: 4.7, vibratoCents: 11, ...o(t),
+  });
+  e.noise({ dur: 0.05, gain: g * 0.16, filter: 'bandpass', freq: t.freq * 2.4, q: 0.8, ...o(t) });
+}
+
+/**
+ * Akkordeon — die Hookline-Stimme der Wiese.
+ *
+ * 1. **Huellkurve.** Haelt wie die Klarinette, aber mit schnellerem Anstieg:
+ *    Ein Balg steht sofort unter Druck, eine Luftsaeule muss erst in Gang
+ *    kommen.
+ * 2. **Teiltoene.** Saegezahn, also alle Teiltoene — Durchschlagzungen sind
+ *    obertonreich. Entscheidend ist aber etwas anderes: **drei Zungen je Ton,
+ *    gegeneinander verstimmt.** Das ist die Musette-Stimmung, und sie ist der
+ *    eigentliche Klang eines Akkordeons. Ein einzelner Saegezahn mit demselben
+ *    Filter klaenge nach Heimorgel; erst das Schweben der drei macht daraus
+ *    das Instrument, das man vom Jahrmarkt kennt.
+ * 3. **Anlaufgeraeusch.** Kurzes Zungenschnarren beim Ansatz, tief liegend —
+ *    das Geraeusch des Balgs, nicht des Tons.
+ */
+export function akkordeon(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.1;
+  const d = t.dur ?? 0.4;
+  // Rund elf Cent auseinander. Weiter waere verstimmt, enger waere tot.
+  for (const stimmung of [0.9935, 1, 1.0065]) {
+    e.tone({
+      freq: t.freq * stimmung, dur: d, type: 'sawtooth', gain: g * 0.3, attack: 0.02,
+      hold: 0.76, filterHz: t.freq * 4.2, filterSweep: 0.9, ...o(t),
+    });
+  }
+  e.noise({ dur: 0.035, gain: g * 0.13, filter: 'bandpass', freq: 620, q: 1.4, ...o(t) });
 }
 
 /**

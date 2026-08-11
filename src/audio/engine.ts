@@ -257,6 +257,21 @@ export class AudioEngine {
     filterHz?: number;
     /** Faktor, um den der Tiefpass bis zum Ende wandert. */
     filterSweep?: number;
+    /**
+     * Anteil der Tondauer, den der Ton auf voller Staerke **haelt**, bevor er
+     * ausklingt. 0 heisst: sofort nach dem Anstieg abfallen.
+     *
+     * Das ist der Unterschied zwischen einem Anschlag und einem Ton. Ohne
+     * Halten kann diese Werkstatt nur Stabspiele, Zupfer und Schlaege — und
+     * eine Melodie aus lauter wegsterbenden Anschlaegen hat keine Linie,
+     * sondern nur Punkte. Erst mit Halten sind Klarinette, Akkordeon und
+     * Panfloete moeglich, und erst damit kann eine Melodie singen.
+     */
+    hold?: number;
+    /** Vibrato in Hertz. Etwa 5 Hz ist eine geblasene oder gestrichene Stimme. */
+    vibratoHz?: number;
+    /** Wie weit das Vibrato ausschlaegt, in Cent. */
+    vibratoCents?: number;
   }): void {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -276,10 +291,34 @@ export class AudioEngine {
         t + opts.dur,
       );
     }
+    // Vibrato. Es steigt erst ein, statt sofort dazustehen: Ein Blaeser setzt
+    // den Ton an und faengt dann an zu vibrieren. Vibrato ab der ersten
+    // Millisekunde klingt nach Leierkasten.
+    if (opts.vibratoHz) {
+      const lfo = ctx.createOscillator();
+      const tiefe = ctx.createGain();
+      lfo.frequency.value = opts.vibratoHz;
+      const cent = opts.vibratoCents ?? 12;
+      const ausschlag = opts.freq * (Math.pow(2, cent / 1200) - 1);
+      tiefe.gain.setValueAtTime(0, t);
+      tiefe.gain.linearRampToValueAtTime(ausschlag, t + Math.min(0.28, opts.dur * 0.6));
+      lfo.connect(tiefe);
+      tiefe.connect(osc.frequency);
+      lfo.start(t);
+      lfo.stop(t + opts.dur + 0.02);
+    }
+
     const peak = opts.gain ?? 0.2;
-    const atk = opts.attack ?? 0.004;
+    const atk = Math.min(opts.attack ?? 0.004, opts.dur * 0.5);
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(peak, t + atk);
+    // Halten. Ohne den Stuetzpunkt in der Mitte laeuft die Abklingrampe schon
+    // ab dem Ende des Anstiegs — eine Rampe interpoliert immer vom letzten
+    // gesetzten Punkt aus, und der laege sonst am Anfang.
+    const halten = Math.max(0, Math.min(1, opts.hold ?? 0));
+    if (halten > 0) {
+      g.gain.setValueAtTime(peak, t + atk + (opts.dur - atk) * halten);
+    }
     g.gain.exponentialRampToValueAtTime(0.0001, t + opts.dur);
 
     if (opts.filterHz) {

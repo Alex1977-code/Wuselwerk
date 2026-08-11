@@ -1,6 +1,19 @@
 import type { ThemeId } from '../levels/types';
 import type { AudioEngine } from './engine';
-import { bass, chip, glocke, kalimba, marimba, panfloete, shaker, tick, ukulele, woodblock } from './instrumente';
+import {
+  akkordeon,
+  bass,
+  chip,
+  glocke,
+  kalimba,
+  klarinette,
+  marimba,
+  panfloete,
+  shaker,
+  tick,
+  ukulele,
+  woodblock,
+} from './instrumente';
 
 /**
  * Begleitmusik, zur Laufzeit erzeugt.
@@ -47,52 +60,89 @@ interface Stueck {
   bpm: number;
   /** Frequenz des Grundtons. */
   grund: number;
-  /** Wer spielt die Melodie, wer die Offbeats. */
-  melodieStimme: 'marimba' | 'kalimba' | 'panfloete';
+  /**
+   * Wer die Melodie **haelt**. Immer eine Blasstimme, nie ein Stabspiel: Ein
+   * Stabspiel kann keinen Ton halten, und eine Melodie aus lauter abfallenden
+   * Anschlaegen piekst nur vor sich hin. Den Anschlag gibt ohnehin das Stabspiel
+   * darunter dazu — siehe `update`.
+   */
+  melodieStimme: 'akkordeon' | 'klarinette' | 'panfloete';
   harmonieStimme: 'ukulele' | 'kalimba';
 }
 
 const TAKT = 8;
 
-const STUECKE: Record<ThemeId, Stueck> = {
-  // Welt 1 — Wiese. Sonnig, Dur mit lydischer Farbe (die 6 im fünften Takt ist
-  // die übermässige Quarte), Ukulele auf den Nachschlägen.
+export const STUECKE: Record<ThemeId, Stueck> = {
+  /**
+   * Welt 1 — Wiese.
+   *
+   * Achttakter mit Volksliedbau: **ein Kopfmotiv, das dreimal wiederkehrt**
+   * (G–G–A–G, Takt 1, 3 und 7), jedes Mal mit einer anderen Antwort, und
+   * dazwischen ein Mittelteil, der einmal woanders hingeht. Genau daran haengt
+   * die Mitsummbarkeit: Nicht die Menge der Toene macht eine Melodie, sondern
+   * die Wiederkehr. Die vorherige Fassung hatte keine — sie lief acht Takte
+   * lang geradeaus und war deshalb nach dem Hoeren wieder weg.
+   *
+   * Zwei weitere Dinge, die eine Melodie zur Melodie machen und hier drinstehen:
+   * Die Phrasen enden auf **langen** Toenen (Atempausen; ohne sie hoert man kein
+   * Ende und damit auch keinen Anfang), und der Mittelteil bringt das Fis — die
+   * uebermaessige Quarte, die lydische Farbe. Ein einziger Ton ausserhalb der
+   * Tonleiter gibt einem Achttakter mehr Gesicht als jede Verzierung.
+   */
   grass: {
     melodie: [
-      [7, 2], [9, 2], [7, 2], [4, 2],
-      [5, 4], [4, 2], [2, 2],
-      [0, 2], [4, 2], [7, 2], [9, 2],
-      [11, 4], [7, 4],
-      [12, 2], [9, 2], [7, 2], [5, 2],
-      [6, 4], [4, 4],
-      [2, 2], [4, 2], [5, 2], [7, 2],
-      [4, 6], [null, 2],
+      // Kopf, Antwort abwaerts: G G A G E | F E D —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [5, 2], [4, 2], [2, 3], [null, 1],
+      // Kopf, Antwort aufwaerts: G G A G C' | H A G —
+      [7, 2], [7, 1], [9, 1], [7, 2], [12, 2],
+      [11, 2], [9, 2], [7, 4],
+      // Mittelteil, mit dem Fis: C' H A G Fis | G — E D
+      [12, 2], [11, 1], [9, 1], [7, 2], [6, 2],
+      [7, 4], [4, 2], [2, 2],
+      // Kopf zum dritten Mal, Schluss nach Hause: G G A G E | D E C —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [2, 2], [4, 2], [0, 4],
     ],
-    akkorde: [0, 5, 0, 7, 0, 5, 7, 0],
+    // Der letzte Takt steht auf der Dominante, waehrend die Melodie schon auf
+    // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
+    // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
+    akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
     farbe: [4, 7],
     bpm: 126,
     grund: 261.63,
-    melodieStimme: 'marimba',
+    melodieStimme: 'akkordeon',
     harmonieStimme: 'ukulele',
   },
-  // Welt 2 — Höhle. Dorisch (die grosse Sexte im fünften Takt), Kalimba statt
-  // Marimba, langsamer, weniger Perkussion.
+  /**
+   * Welt 2 — Hoehle. Derselbe Bau, andere Tonleiter: dorisch auf A.
+   *
+   * Der Unterschied zu Moll ist ein einziger Ton, die **grosse Sexte** (Fis).
+   * Sie steht hier an der auffaelligsten Stelle — Takt 4, allein, lang gehalten,
+   * ueber einem D-Dur-Akkord. Dorisch ist die Tonart, die traurig anfaengt und
+   * dann doch nicht traurig ist; das passt zu einer Hoehle, die neugierig sein
+   * soll und nicht bedrohlich.
+   */
   crystal: {
     melodie: [
-      [0, 4], [3, 4],
-      [5, 2], [7, 2], [5, 4],
-      [3, 4], [0, 4],
-      [2, 6], [null, 2],
-      [7, 4], [9, 2], [7, 2],
+      // Kopf: A C D E | D C H —
+      [0, 2], [3, 2], [5, 2], [7, 2],
+      [5, 2], [3, 2], [2, 4],
+      // Kopf, Antwort auf die dorische Sexte: A C D G | Fis — E —
+      [0, 2], [3, 2], [5, 2], [10, 2],
+      [9, 4], [7, 4],
+      // Mittelteil, von oben herab: A' G Fis E | D — C —
+      [12, 2], [10, 2], [9, 2], [7, 2],
       [5, 4], [3, 4],
+      // Kopf zum dritten Mal, Schluss: A C D C | H A — —
       [0, 2], [3, 2], [5, 2], [3, 2],
-      [0, 6], [null, 2],
+      [2, 2], [0, 6],
     ],
-    akkorde: [0, 10, 0, 5, 7, 10, 5, 0],
+    akkorde: [0, 10, 0, 5, 10, 3, 5, 0],
     farbe: [3, 7],
     bpm: 112,
     grund: 220,
-    melodieStimme: 'kalimba',
+    melodieStimme: 'klarinette',
     harmonieStimme: 'kalimba',
   },
 };
@@ -229,14 +279,35 @@ export class Music {
       }
 
       // --- Melodie ----------------------------------------------------------
+      //
+      // Zwei Stimmen auf denselben Ton, und die Arbeitsteilung ist die aus
+      // jedem Orchester: Die Blasstimme **haelt** den Ton und macht daraus eine
+      // Linie, das Stabspiel gibt den **Anschlag** und macht sie hoerbar. Jede
+      // allein waere schlechter — die Blasstimme ohne Anschlag verwaescht
+      // zwischen den Toenen, das Stabspiel ohne Blasstimme piekst.
       const note = raster[i];
       if (!knapp && note && note[0] !== null) {
         const halbton = note[0] + schiebung;
+        const laenge = stepDur * note[1];
         const stimme =
-          p.melodieStimme === 'marimba' ? marimba : p.melodieStimme === 'kalimba' ? kalimba : panfloete;
-        stimme(engine, { freq: f(halbton, 1), dur: stepDur * note[1] * 0.95, gain: 0.145, ...g });
-        // Die Achtbit-Ebene verdoppelt nur — nie Hauptstimme.
-        chip(engine, { freq: f(halbton, 1), dur: stepDur * note[1] * 0.5, gain: 0.03, ...g });
+          p.melodieStimme === 'akkordeon'
+            ? akkordeon
+            : p.melodieStimme === 'klarinette'
+              ? klarinette
+              : panfloete;
+        // Etwas kuerzer als der Notenwert: Zwischen zwei Toenen muss eine
+        // Kante bleiben, sonst verschmelzen sie zu einem Gleiten.
+        stimme(engine, { freq: f(halbton, 1), dur: laenge * 0.86, gain: 0.16, ...g });
+        // Der Anschlag. Deutlich leiser als die Blasstimme — er soll die Kante
+        // setzen, nicht selbst als Stimme auftreten.
+        const anschlag = p.melodieStimme === 'klarinette' ? kalimba : marimba;
+        anschlag(engine, { freq: f(halbton, 1), dur: Math.min(0.3, laenge), gain: 0.07, ...g });
+        // Die Achtbit-Ebene verdoppelt nur — nie Hauptstimme. Sie liegt jetzt
+        // auf der Melodie statt eine Oktave darueber: `chip` verdoppelt selbst
+        // schon (siehe `instrumente.ts`), und mit dem zusaetzlichen Oktavsprung
+        // sass eine Rechteckwelle bei zwei Kilohertz ueber allem. Das war das
+        // Piepen.
+        chip(engine, { freq: f(halbton), dur: Math.min(0.14, laenge * 0.5), gain: 0.022, ...g });
         this.notes++;
       }
 

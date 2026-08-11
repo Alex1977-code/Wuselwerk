@@ -111,6 +111,18 @@ async function main() {
       for (const v of d) p = Math.max(p, Math.abs(v));
       return p;
     };
+    // Effektivwert. Er sagt etwas, was der Spitzenpegel nicht sagen kann:
+    // Eine Folge kurzer Anschlaege hat eine hohe Spitze und trotzdem fast keine
+    // Energie — sie piekst. Ein gehaltener Ton hebt den Effektivwert. Das ist
+    // der Unterschied zwischen Punkten und einer Linie, in einer Zahl.
+    window.__rms = () => {
+      if (!window.__tap) return 0;
+      const d = new Float32Array(window.__tap.fftSize);
+      window.__tap.getFloatTimeDomainData(d);
+      let s = 0;
+      for (const v of d) s += v * v;
+      return Math.sqrt(s / d.length);
+    };
   });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -159,12 +171,24 @@ async function main() {
   // 0,03 Spitze ist rund −30 dBFS — darunter geht Musik auf einem Handy
   // gegen die Effekte unter.
   let pegel = 0;
-  for (let i = 0; i < 16; i++) {
-    pegel = Math.max(pegel, await page.evaluate(() => window.__peak()));
-    if (pegel >= 0.06) break;
-    await sleep(150);
+  let effektiv = 0;
+  for (let i = 0; i < 14; i++) {
+    const [p, r] = await page.evaluate(() => [window.__peak(), window.__rms()]);
+    pegel = Math.max(pegel, p);
+    effektiv = Math.max(effektiv, r);
+    await sleep(140);
   }
   check('§7 Musik kommt hörbar am Ausgang an', pegel > 0.03, `Spitze ${pegel.toFixed(3)}`);
+  // Der Effektivwert trennt eine Melodie von einer Folge von Anschlaegen.
+  // Gemessen wurde er, als die Melodie noch aus Marimba-Anschlaegen bestand:
+  // 0,006 bei einer Spitze von 0,17 — viel Kante, fast keine Energie. Genau so
+  // klingt "piept vor sich hin". Eine gehaltene Stimme muss deutlich darueber
+  // liegen, sonst ist die Linie wieder weg.
+  check(
+    '§7 Die Melodie trägt, statt zu piepen',
+    effektiv > 0.02,
+    `Effektivwert ${effektiv.toFixed(4)} bei Spitze ${pegel.toFixed(3)}`,
+  );
   // Das Umgebungsbett plant seine Boeen und Rufe einzeln in die Zukunft. Es
   // laeuft also genau dann, wenn der Zaehler waechst — ein "playing: true"
   // allein wuerde auch eine haengende Planungsschleife gruen melden.
