@@ -137,6 +137,21 @@ ${body}
 `,
 );
 
+// Dieselbe Seite noch einmal im Projektstamm und unter dist/spielen.html.
+//
+// Grund: GitHub Pages kennt zwei Betriebsarten. Steht die Quelle auf
+// "GitHub Actions", wird dist ausgeliefert; steht sie auf "Deploy from a
+// branch", der Projektstamm. Weil diese Datei an beiden Orten liegt und
+// nichts nachlädt, ist sie in beiden Fällen erreichbar.
+//
+// Die Fassung im Stamm ist bewusst eingecheckt, obwohl sie erzeugt wird —
+// nur so gibt es einen Link, der ohne Einstellungsänderung funktioniert.
+// Bei jeder Änderung am Spiel muss `npm run build:single` neu laufen.
+const standalone = readFileSync(join(DIST, 'wuselwerk-single.html'), 'utf8');
+writeFileSync(join(DIST, 'spielen.html'), standalone);
+writeFileSync('spielen.html', standalone);
+
 const kb = (s) => `${Math.round(s.length / 1024)} kB`;
 console.log(`dist/wuselwerk-single.html    ${kb(js)} Skript, alles eingebettet`);
 console.log(`dist/wuselwerk-artifact.html  nur Seiteninhalt`);
+console.log(`dist/spielen.html + ./spielen.html  Kopie für beide Pages-Betriebsarten`);
