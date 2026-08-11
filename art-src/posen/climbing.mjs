@@ -93,12 +93,29 @@ const KOPF = 6.05;
  * Umriss, ist also nie schmaler als drei Pixel — mehr Fülle daneben, und aus
  * dem Arm wird ein Balken.
  */
-const arm = (vorn, seitlich, unten, oben, kopfHoch) => ({
-  an: 'Head',
-  pos: [vorn, (oben + unten) / 2 - kopfHoch, seitlich],
-  mass: [1.1, oben - unten, 1.0],
-  farbe: 'werkzeug',
-});
+/**
+ * Ein nachgebauter Arm: Ärmel plus Hand.
+ *
+ * Zwei Teile statt einem, und beide nicht in Werkzeuggelb. Als einzelner
+ * gelber Balken las der Arm als Gerät — drei gelbe Flächen um einen Kopf
+ * ergeben Kletterhelm, Kletterhelm und Kletterhelm. Türkis ist die Farbe des
+ * Anzugs und damit dieselbe Aussage wie am Rumpf, und die sandfarbene Kuppe
+ * obendrauf ist das, was einen Arm zum Greifen macht: eine Hand.
+ */
+const arm = (vorn, seitlich, unten, oben, kopfHoch) => [
+  {
+    an: 'Head',
+    pos: [vorn, (oben + unten) / 2 - kopfHoch - 0.5, seitlich],
+    mass: [1.1, oben - unten - 1.0, 1.0],
+    farbe: 'anzug',
+  },
+  {
+    an: 'Head',
+    pos: [vorn, oben - kopfHoch - 0.5, seitlich],
+    mass: [1.3, 1.2, 1.2],
+    farbe: 'haut',
+  },
+];
 
 export default {
   clip: 'climbing',
@@ -179,9 +196,9 @@ export default {
       // Die greifende Hand bleibt auf 17,2 stehen, während die Schulter unter
       // ihr steigt: Der Arm wird im Zug von selbst um einen halben Pixel
       // kürzer. So zieht sich die Figur hoch, statt den Griff mitzunehmen.
-      arm(griff[0], griff[1], 11.4 + 0.5 * z, 17.2, kopfHoch),
+      ...arm(griff[0], griff[1], 11.4 + 0.5 * z, 17.2, kopfHoch),
       // Die andere Hand holt auf und ist beim nächsten Greifen oben.
-      arm(nach[0], nach[1], 11.0 + 0.5 * z, 14.4 + 1.6 * z, kopfHoch),
+      ...arm(nach[0], nach[1], 11.0 + 0.5 * z, 14.4 + 1.6 * z, kopfHoch),
     ];
   },
 };

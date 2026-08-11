@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { CELL_W, CELL_H, ANCHOR_X, ANCHOR_Y, DEFAULT_MANIFEST } from '../src/render/atlas';
 import type { AtlasManifest } from '../src/render/atlas';
+// Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
+// Node-Typen im Testpfad, und der Lader im Spiel holt das Blatt genauso.
+import blatt from '../src/art/wusel.atlas.json';
 
 /**
  * Das ausgelieferte Blatt gegen den Vertrag im Code.
@@ -13,9 +15,7 @@ import type { AtlasManifest } from '../src/render/atlas';
  * alten Blatt weiter und die Figuren sitzen verschoben. Das sieht man erst,
  * wenn man hinschaut — und dann meist zu spät.
  */
-const sheet = JSON.parse(
-  readFileSync(new URL('../src/art/wusel.atlas.json', import.meta.url), 'utf8'),
-) as AtlasManifest;
+const sheet = blatt as unknown as AtlasManifest;
 
 describe('Ausgeliefertes Sprite-Blatt', () => {
   it('hat das Zellmass aus dem Code', () => {

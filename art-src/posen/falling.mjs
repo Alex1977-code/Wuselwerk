@@ -84,6 +84,11 @@ export default {
       // Die Figur hängt über ihrem Fusspunkt. Der Wert flattert bewusst kaum:
       // Die leeren Reihen unter den Füssen sind das Erkennungszeichen, und ein
       // Bild, in dem sie zugehen, nimmt dem Zustand die halbe Aussage.
+      // Volles Nachschwingen der Strähnen. Im Fall gibt es keinen Halt, an dem
+      // sich Haar beruhigen könnte — und der Zustand ist das Warnsignal des
+      // Spiels, er darf der unruhigste sein.
+      _haar: 1,
+
       _versatz: [0, 1.4 + 0.15 * f],
     };
   },

@@ -1,4 +1,5 @@
 {
+  "version": 1,
   "cell": {
     "w": 28,
     "h": 28
@@ -7,6 +8,7 @@
     "x": 14,
     "y": 22
   },
+  "facing": "right",
   "clips": {
     "walking": {
       "row": 0,

@@ -100,6 +100,11 @@ const TEILFARBEN = {
   signal: { marker: [0, 128, 255], farbe: '#ff7a45' },
   haar: { marker: [255, 255, 0], farbe: '#e5372c' },
   haarglanz: { marker: [0, 255, 255], farbe: '#ff8f5e' },
+  // Für nachgebaute Körperteile: Ein Arm, der im Modell unter der Mähne
+  // begraben liegt, wird als Anbauteil neu gestellt — dann aber in der Farbe
+  // des Anzugs und der Haut, nicht in Werkzeuggelb. Gelb sagt "Gerät".
+  anzug: { marker: [0, 0, 255], farbe: '#2fc9b8' },
+  haut: { marker: [160, 0, 255], farbe: '#f4d7ac' },
 };
 
 /**

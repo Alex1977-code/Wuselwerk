@@ -38,6 +38,8 @@ export default {
       Spine01: [-3, 5 * sin(p), 0],
       Head: [-5 + 4 * sin(2 * p), 0, 5 * sin(p)],
 
+      _haar: 0.8,
+
       // Zwei Hebungen je Zyklus, eine je Schritt. Der Wert ist klein: Bei
       // 12 Pixeln Figurenhöhe ist ein halber Pixel schon deutlich sichtbar.
       _versatz: [0, 0.45 * Math.abs(sin(2 * p))],
