@@ -8,8 +8,8 @@ es muss kein Code angefasst werden.
 Je Atlas ein Paar mit gleichem Namensstamm:
 
 ```
-wusel.webp         das Blatt
-wusel.atlas.json   die Aufteilung
+murmel.webp        das Blatt
+murmel.atlas.json  Aufteilung, Haltedauern, Schopfanker
 ```
 
 Die Aufteilung ist **nicht frei wählbar**: Zellgrösse, Fusspunkt, Bildzahl und

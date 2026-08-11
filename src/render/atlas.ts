@@ -1,5 +1,6 @@
-import { State, type Wusel } from '../core/types';
+import { State, type SkillId, type Wusel } from '../core/types';
 import { sx, sy, type View } from './camera';
+import { drawSchopf, schopfFarbe } from './schopf';
 
 /**
  * Sprite-Atlas für die Figuren.
@@ -59,6 +60,18 @@ export interface ClipDef {
   holds: number[];
   /** Einmalige Abläufe frieren auf dem letzten Bild ein, statt zu wiederholen. */
   once?: boolean;
+  /**
+   * Ansatzpunkt des Schopfs je Einzelbild, in logischen Pixeln von der linken
+   * oberen Zellecke aus.
+   *
+   * Warum eine Tabelle und keine feste Stelle: Der Ansatz wandert je nach Pose
+   * zwischen y = 5,4 und y = 25,8 — beim Klettern sitzt er hoch, beim Sterben
+   * fast auf dem Boden, waagerecht schwankt er zwischen 10,6 und 25,0. Eine
+   * feste Stelle liesse den Schopf bei jeder Neigung vom Kopf rutschen.
+   */
+  anchors?: [number, number][];
+  /** Zustand des Schopfs je Einzelbild — Index in `SCHOPF_ZUSTAND`. */
+  tuff?: number[];
 }
 
 export interface AtlasManifest {
@@ -141,6 +154,40 @@ export function cycleTicks(clip: ClipDef): number {
 }
 
 /** Bildindex aus der Uhr dieser Figur. */
+/**
+ * Welchen Auftrag der Schopf anzeigt.
+ *
+ * Nicht „welchen Beruf hat die Figur", sondern **welcher wirkt gerade**. Ein
+ * Kletterer mit Schirm, der faellt, ist in diesem Moment ein Schirmspringer,
+ * und die Farbe muss das sagen — sonst zeigt sie einen Zustand an, der nicht
+ * stattfindet. Deshalb entscheidet der Zustand und nicht der Besitz.
+ *
+ * Die Zuendschnur steht ganz oben: Wer gleich hochgeht, ist nichts anderes
+ * mehr.
+ */
+export function schopfAuftrag(w: Wusel): SkillId | null {
+  if (w.fuse > 0) return 'bomber';
+  switch (w.state) {
+    case State.BLOCKING:
+      return 'blocker';
+    case State.BUILDING:
+      return 'builder';
+    case State.BASHING:
+      return 'basher';
+    case State.MINING:
+      return 'miner';
+    case State.DIGGING:
+      return 'digger';
+    case State.CLIMBING:
+    case State.HOISTING:
+      return 'climber';
+    case State.FALLING:
+      return w.hasFloater ? 'floater' : null;
+    default:
+      return null;
+  }
+}
+
 export function frameFor(clip: ClipDef, timer: number): number {
   const cycle = cycleTicks(clip);
   if (cycle <= 0) return 0;
@@ -248,6 +295,33 @@ export class SpriteAtlas {
       cw * s,
       ch * s,
     );
+
+    // Der Schopf, falls das Blatt einen kennt.
+    //
+    // Er wird hier gezeichnet und nicht daneben, weil er im selben gekippten
+    // Koordinatensystem sitzt: Die Spiegelung nach links gilt für ihn genauso,
+    // und weil der Ankerpunkt auf halber Zellbreite liegt, braucht es dafür
+    // keinen Versatzausgleich.
+    if (clip.anchors && clip.tuff) {
+      const n = clip.holds.length;
+      // Ein Bild Nachlauf: Der Schopf zeigt den Zustand des **vorherigen**
+      // Körperbildes. Das ist die gesamte Physik, die er braucht — ohne den
+      // Nachlauf wirkt er angeklebt, mit mehr als einem Bild wirkt er lose.
+      // Bei einmaligen Abläufen bleibt Bild 0 bei sich selbst, statt ans Ende
+      // zu springen: Ein Sterbender, dessen Schopf im ersten Bild schon platt
+      // liegt, stirbt zweimal.
+      const vor = clip.once ? Math.max(0, frame - 1) : (frame - 1 + n) % n;
+      const a = clip.anchors[frame] ?? clip.anchors[0];
+      const zustand = clip.tuff[vor] ?? 0;
+      drawSchopf(
+        ctx,
+        (a[0] - this.manifest.anchor.x) * s,
+        (a[1] - this.manifest.anchor.y) * s,
+        zustand,
+        schopfFarbe(schopfAuftrag(w)),
+        s,
+      );
+    }
     ctx.restore();
     return true;
   }
