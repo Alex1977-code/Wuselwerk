@@ -217,7 +217,7 @@ export const LEVELS: LevelDef[] = [
     id: 'w1-08',
     name: 'Die Weiche',
     chapter: 'Prüfung',
-    hint: 'Rechts endet der Boden. Der Blocker schickt den Pulk nach links — und links wartet der Abgrund aus Level 3.',
+    hint: 'Rechts geht es abwärts in die Sackgasse. Der Blocker schickt den Pulk nach links — und links wartet der Abgrund aus Level 3.',
     theme: 'grass',
     width: 720,
     height: 540,
@@ -236,6 +236,12 @@ export const LEVELS: LevelDef[] = [
     paint: [
       { t: 'ground', x: 0, w: 340, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
       { t: 'ground', x: 360, w: 200, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
+      // Rechts fällt der Boden ab — überlebbar, aber ohne Rückweg: sechzig
+      // Bildpunkte hinunter kommt jeder, sechzig hinauf niemand. Wer nicht
+      // eingreift, verliert seine Figuren an eine Sackgasse und nicht an einen
+      // Sturz. Das ist die freundlichere Lehre und die deutlichere: Ein Haufen
+      // Wusel, der unten hin- und herläuft, sagt mehr als ein Todesschrei.
+      { t: 'ground', x: 560, w: 160, y: 440, h: 100, mat: MAT.EARTH, rough: 2 },
     ],
   },
   {
@@ -288,6 +294,11 @@ export const LEVELS: LevelDef[] = [
     paint: [
       { t: 'ground', x: 0, w: 424, y: 340, h: 200, mat: MAT.EARTH, rough: 2 },
       { t: 'ground', x: 444, w: 516, y: 340, h: 200, mat: MAT.EARTH, rough: 2 },
+      // Die Schlucht hat einen Grund, und der liegt knapp innerhalb der
+      // tödlichen Fallhöhe. Wer hineinfällt, lebt und kommt nicht mehr heraus.
+      // In der Prüfung soll die Strafe für den zu späten Brückenbauer sichtbar
+      // sein, nicht endgültig.
+      { t: 'rect', x: 424, y: 410, w: 20, h: 130, mat: MAT.EARTH },
       // Deckel über dem Ausgang: Wer senkrecht darüber gräbt, steht auf Stahl.
       { t: 'rect', x: 560, y: 372, w: 300, h: 10, mat: MAT.STEEL },
       // Sohle des Stollens. Sie stoppt den Gräber auf genau der Höhe, auf der

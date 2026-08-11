@@ -113,12 +113,94 @@ function planLevel5(): Plan {
   };
 }
 
+/** Sechs Kletterer für sechs Gerettete — mehr gibt die Wand nicht her. */
+function planLevel6(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x < 395 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/** Die Zündschnur brennt fünf Sekunden — hundert Bildpunkte Vorhalt. */
+function planLevel7(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 249, 252, 1);
+    if (c && w.assign(c.id, 'bomber')) done = true;
+  };
+}
+
+/** Erst die Brücke über die Schlucht, dann der Blocker vor der Sackgasse. */
+function planLevel8(): Plan {
+  let gebaut = false;
+  let geblockt = false;
+  return (w) => {
+    if (!gebaut) {
+      const c = walkerNear(w, 360, 368, -1);
+      if (c && w.assign(c.id, 'builder')) gebaut = true;
+    }
+    if (!geblockt) {
+      const c = walkerNear(w, 500, 540, 1);
+      if (c && w.assign(c.id, 'blocker')) geblockt = true;
+    }
+  };
+}
+
+/** Kletterer und Schirm auf dieselbe Figur, beides noch auf dem Boden. */
+function planLevel9(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber && x.x < 295);
+    if (!c) return;
+    if (w.assign(c.id, 'climber')) {
+      w.assign(c.id, 'floater');
+      n++;
+    }
+  };
+}
+
+/** Brücke, Schacht bis auf den Stahl, dann an der linken Schachtwand der Stollen. */
+function planLevel10(): Plan {
+  let gebaut = false;
+  let graeber: number | null = null;
+  let gerammt = false;
+  return (w) => {
+    if (!gebaut) {
+      const c = walkerNear(w, 415, 423, 1);
+      if (c && w.assign(c.id, 'builder')) gebaut = true;
+      return;
+    }
+    if (graeber === null) {
+      const c = walkerNear(w, 876, 882, 1);
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (!gerammt) {
+      const d = w.wuselById(graeber);
+      if (d && d.state === State.WALKING && d.dir === -1 && d.y > 400 && d.x <= 874) {
+        if (w.assign(d.id, 'basher')) gerammt = true;
+      }
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
   'w1-03': planLevel3,
   'w1-04': planLevel4,
   'w1-05': planLevel5,
+  'w1-06': planLevel6,
+  'w1-07': planLevel7,
+  'w1-08': planLevel8,
+  'w1-09': planLevel9,
+  'w1-10': planLevel10,
 };
 
 function planFor(level: LevelDef): Plan {

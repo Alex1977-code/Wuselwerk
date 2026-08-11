@@ -218,16 +218,7 @@ function gebauteWelten(k: Katalog): { welt: Welt; level: LevelDef[] }[] {
   return out;
 }
 
-/**
- * Alle gebauten Level in Spielreihenfolge, über alle Welten hinweg.
- *
- * Die Freischaltung ist **eine einzige Kette**, nicht eine Kette je Welt. Der
- * Weltwechsel ist darin nur ein besonders schön dekoriertes Glied: Das letzte
- * Level einer Welt schaltet das erste der nächsten frei, so wie jedes andere
- * Level auch seinen Nachfolger freischaltet. Das erspart eine zweite Regel für
- * denselben Sachverhalt — und der Spieler sieht ohnehin nur, dass es
- * weitergeht.
- */
+/** Alle gebauten Level in Spielreihenfolge, über alle Welten hinweg. */
 export function spielReihenfolge(k: Katalog = KATALOG): LevelDef[] {
   return gebauteWelten(k).flatMap((w) => w.level);
 }
@@ -242,17 +233,39 @@ export function weltVon(levelId: string, k: Katalog = KATALOG): Welt | null {
 /**
  * Offen, gesperrt oder geschafft?
  *
- * Ein Level ist offen, wenn sein Vorgänger geschafft ist — das erste immer.
- * Ein geschafftes Level bleibt geschafft; es gibt keinen Weg zurück (siehe
- * `werkzeugeFuer`).
+ * Zwei Regeln, und die zweite ist der ganze Unterschied zwischen einer Liste
+ * und einer Karte:
+ *
+ * 1. **Innerhalb einer Welt** ist ein Level offen, sobald sein *Vorgänger*
+ *    geschafft ist. Mehr nicht — der Weg ist eine Perlenschnur.
+ * 2. **Am Weltanfang** ist das erste Level offen, sobald die *ganze* vorige
+ *    Welt steht. Das Weltentor ist also ein echtes Tor und keine Deko: Es geht
+ *    genau dann auf, wenn die Belohnung fällt. Ohne diese zweite Regel könnte
+ *    ein lückenhafter Spielstand in die nächste Welt durchrutschen, während
+ *    die Belohnung dafür ausbleibt — der Spieler stünde in einer neuen Welt
+ *    und wüsste nicht, warum er nichts bekommen hat.
+ *
+ * Ein geschafftes Level bleibt geschafft. Es gibt keinen Weg zurück; ein
+ * schlechter zweiter Versuch nimmt nichts weg (siehe `storage.recordResult`,
+ * das nur Bestwerte fortschreibt).
  */
 export function levelZustand(p: Progress, levelId: string, k: Katalog = KATALOG): LevelZustand {
-  const kette = spielReihenfolge(k);
-  const i = kette.findIndex((l) => l.id === levelId);
-  if (i < 0) return 'gesperrt';
-  if (istGeschafft(p, levelId)) return 'geschafft';
-  if (i === 0) return 'offen';
-  return istGeschafft(p, kette[i - 1].id) ? 'offen' : 'gesperrt';
+  if (istGeschafft(p, levelId)) {
+    // Nur, wenn es das Level überhaupt (noch) gibt — sonst steht im Spielstand
+    // eine Leiche aus einer früheren Fassung.
+    return spielReihenfolge(k).some((l) => l.id === levelId) ? 'geschafft' : 'gesperrt';
+  }
+  const welten = gebauteWelten(k);
+  for (let wi = 0; wi < welten.length; wi++) {
+    const liste = welten[wi].level;
+    const li = liste.findIndex((l) => l.id === levelId);
+    if (li < 0) continue;
+    if (li > 0) return istGeschafft(p, liste[li - 1].id) ? 'offen' : 'gesperrt';
+    if (wi === 0) return 'offen';
+    const vorige = welten[wi - 1].level;
+    return vorige.every((l) => istGeschafft(p, l.id)) ? 'offen' : 'gesperrt';
+  }
+  return 'gesperrt';
 }
 
 export function istFreigeschaltet(p: Progress, levelId: string, k: Katalog = KATALOG): boolean {
@@ -419,6 +432,9 @@ function abschnitte(k: Katalog): Abschnitt[] {
  * Einzelabfragen — beim Zeichnen will man nicht dreimal dieselbe Frage
  * stellen, und ein einziger Rückgabewert lässt sich in einem Test vollständig
  * nachrechnen.
+ *
+ * Gedacht als Aufruf beim Öffnen der Karte und nach jedem Levelende, nicht je
+ * Bild: Das Ergebnis ändert sich nur, wenn sich der Spielstand ändert.
  */
 export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
   const welten: WeltKarte[] = [];
@@ -426,13 +442,19 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
   let geschafftGesamt = 0;
   let sterneGesamt = 0;
   const teile = abschnitte(k);
+  // Ob die vorige Welt steht, entscheidet über das erste Level dieser — die
+  // Torregel aus `levelZustand`, hier einmal je Welt statt einmal je Level.
+  let vorigeWeltFertig = true;
 
   for (let wi = 0; wi < teile.length; wi++) {
     const { welt, defs, punkte, bandStart, bandBreite, tor } = teile[wi];
 
     const level: LevelKarte[] = defs.map((def, i) => {
       lauf++;
-      const zustand = levelZustand(p, def.id, k);
+      const geschafft = istGeschafft(p, def.id);
+      const offen =
+        i > 0 ? istGeschafft(p, defs[i - 1].id) : wi === 0 || vorigeWeltFertig;
+      const zustand: LevelZustand = geschafft ? 'geschafft' : offen ? 'offen' : 'gesperrt';
       const sterne = sternenZahl(p, def.id);
       if (zustand === 'geschafft') geschafftGesamt++;
       sterneGesamt += sterne;
@@ -491,6 +513,7 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
       tor,
       torZiel: teile[wi + 1] ? teile[wi + 1].welt.name : null,
     });
+    vorigeWeltFertig = fertig;
   }
 
   const letzterTeil = teile[teile.length - 1];
