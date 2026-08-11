@@ -73,6 +73,16 @@ async function check(label, viewport, shot) {
   await sleep(2500);
   await page.screenshot({ path: `${OUT}/${shot}` });
 
+  // Die Einzeldatei darf die Grafik nicht verlieren: Liegt das Blatt als
+  // eigene Datei statt als Data-URI vor, fällt sie still auf die prozedurale
+  // Zeichnung zurück. Genau das prüft diese Zeile.
+  const art = await page.evaluate(() => window.__wuselwerk?.debugArt() ?? null);
+  const artOk = art?.atlas === true;
+  console.log(
+    `${artOk ? '  ok  ' : ' FAIL '} ${label} — Sprite-Blatt eingebettet (${art?.clips ?? 0} Clips)`,
+  );
+  if (!artOk) problems.push(`${label}: Sprite-Blatt fehlt in der Einzeldatei`);
+
   const stats = await page.evaluate(() => window.__wuselwerk?.debugStats() ?? null);
   const running = stats && stats.screen === 'play' && stats.released > 0;
   console.log(

@@ -121,10 +121,10 @@ export function drawWusel(
       break;
   }
 
-  if (w.fuse > 0) drawFuse(ctx, v, w, tick);
+  if (w.fuse > 0) drawFuseOverlay(ctx, v, w, tick);
 }
 
-function drawFuse(
+export function drawFuseOverlay(
   ctx: CanvasRenderingContext2D,
   v: View,
   w: Wusel,

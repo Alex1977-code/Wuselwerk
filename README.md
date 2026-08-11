@@ -101,6 +101,33 @@ einer Massenrettung von selbst eine Melodie.
 in Safari auf dem iPhone nicht — dort bleibt das Spiel still. Diese Rückmeldung
 wäre erst in einer nativen Fassung möglich.
 
+## Grafik einwerfen
+
+Der Renderer zeichnet die Figuren prozedural — das bleibt die **Rückfallebene**
+und funktioniert immer. Darüber liegt ein Sprite-Lader:
+
+```bash
+npm run atlas:template   # schreibt die Malvorlage nach src/art/
+```
+
+Die Vorlage entsteht aus dem prozeduralen Zeichner selbst, hat also garantiert
+das richtige Zellraster (24 × 24 logisch) und den richtigen Fusspunkt (12, 20).
+Zelle für Zelle übermalen, Dateinamen behalten, fertig — der Lader findet das
+Paar `src/art/*.png` + `src/art/*.atlas.json` beim Bauen von allein. Kein Code
+muss angefasst werden, und es gibt keine Netzanfrage, die ins Leere laufen
+kann.
+
+**Die Rückfallebene greift je Figur, nicht je Spiel.** Kann ein Blatt einen
+Zustand nicht bedienen, zeichnet der prozedurale Weg genau diesen Zustand
+weiter. Halbfertige Grafik ist damit jederzeit spielbar.
+
+Bildzahl und Haltedauer je Zustand sind **nicht frei wählbar** — sie hängen an
+den Taktraten der Simulation und stehen in `docs/grafik-integration.md`,
+ausformuliert in `DEFAULT_MANIFEST` (`src/render/atlas.ts`). Zwei Punkte daraus
+sind leicht zu übersehen: `DIG_INTERVAL` ist prim, deshalb trägt jeder Clip
+eine Haltedauer **je Bild**; und Bild eins ist immer das Wirkungsbild, weil die
+Simulation bei `timer % interval === 0` arbeitet.
+
 ## Bildausschnitt und Übersicht
 
 Auf drei Bildschirmbreiten Level und sechs Zoll Anzeige ist die eigentliche

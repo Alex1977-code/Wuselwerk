@@ -104,6 +104,19 @@ async function main() {
   const mutedBack = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   check('§7 Stummschaltung schaltet um', mutedNow === true && mutedBack === false);
 
+  // --- Sprite-Blatt und Rückfallebene ---------------------------------------
+  const art = await page.evaluate(() => window.__wuselwerk.debugArt());
+  check('Sprite-Blatt wird gefunden und geladen', art.atlas === true, `${art.clips} Clips`);
+  await page.screenshot({ path: `${OUT}/12-atlas.png` });
+  await page.evaluate(() => window.__wuselwerk.debugClearAtlas());
+  await sleep(300);
+  const off = await page.evaluate(() => window.__wuselwerk.debugArt());
+  check('Ohne Blatt zeichnet die Rückfallebene weiter', off.atlas === false);
+  await page.screenshot({ path: `${OUT}/13-prozedural.png` });
+  await page.evaluate(() => window.__wuselwerk.debugUseTemplateAtlas());
+  const back = await page.evaluate(() => window.__wuselwerk.debugArt());
+  check('Blatt lässt sich zur Laufzeit wieder einsetzen', back.atlas === true);
+
   // --- Steuerung: einhändig schwenken und Übersichtskarte (GDD §3.5) --------
   const cam0 = await page.evaluate(() => window.__wuselwerk.debugCamera());
   await page.mouse.move(195, 300);

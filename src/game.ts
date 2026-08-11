@@ -19,6 +19,9 @@ import { drawMagnifier, magnifierCenter } from './render/magnifier';
 import { drawIntro, drawMenu, drawPause, drawResult, type Button } from './render/overlays';
 import { drawMinimap, minimapBox, minimapToLogical } from './render/minimap';
 import { drawOffscreenMarkers } from './render/offscreen';
+import { DEFAULT_MANIFEST, SpriteAtlas, loadImage } from './render/atlas';
+import { renderTemplateAtlas } from './render/atlasTemplate';
+import { findAtlasSource } from './art';
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
 import { loadProgress, recordResult, starConditions, type Progress } from './storage';
@@ -52,6 +55,7 @@ export class Game {
   private camera!: Camera;
 
   private audio = new GameAudio();
+  private atlas: SpriteAtlas | null = null;
   private selected: SkillId | null = null;
   private conditions: boolean[] = [false, false, false];
 
@@ -82,6 +86,21 @@ export class Game {
     canvas.addEventListener('pointerup', (e) => this.onUp(e));
     canvas.addEventListener('pointercancel', (e) => this.onUp(e));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    void this.initArt();
+  }
+
+  /**
+   * Sucht ein Sprite-Blatt in src/art. Findet sich keines oder lädt es nicht,
+   * bleibt `atlas` null und alles wird prozedural gezeichnet — das Spiel ist
+   * nie auf Grafikdateien angewiesen.
+   */
+  private async initArt(): Promise<void> {
+    const src = findAtlasSource();
+    if (!src) return;
+    const img = await loadImage(src.url);
+    if (!img) return;
+    this.atlas = new SpriteAtlas(img, src.manifest);
+    if (this.scene) this.scene.atlas = this.atlas;
   }
 
   start(): void {
@@ -109,6 +128,7 @@ export class Game {
     this.world = createWorld(level);
     this.terrainView = new TerrainView(this.world.terrain, level.theme);
     this.scene = new Scene(level, this.terrainView);
+    this.scene.atlas = this.atlas;
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
     this.audio.setTheme(level.theme);
     this.audio.stopMusic();
@@ -572,6 +592,34 @@ export class Game {
 
   debugRecenter(): void {
     this.camera.recenter();
+  }
+
+  debugArt(): { atlas: boolean; clips: number } {
+    return {
+      atlas: this.atlas !== null,
+      clips: this.atlas ? Object.keys(this.atlas.manifest.clips).length : 0,
+    };
+  }
+
+  /** Baut das Blatt aus dem prozeduralen Zeichner und schaltet darauf um. */
+  debugUseTemplateAtlas(): boolean {
+    const canvas = renderTemplateAtlas();
+    this.atlas = new SpriteAtlas(canvas, DEFAULT_MANIFEST);
+    if (this.scene) this.scene.atlas = this.atlas;
+    return true;
+  }
+
+  debugClearAtlas(): void {
+    this.atlas = null;
+    if (this.scene) this.scene.atlas = null;
+  }
+
+  /** Vorlage als Bilddaten — die Grundlage von `npm run atlas:template`. */
+  debugTemplatePng(): { png: string; manifest: unknown } {
+    return {
+      png: renderTemplateAtlas().toDataURL('image/png'),
+      manifest: DEFAULT_MANIFEST,
+    };
   }
 
   debugCamera(): { follow: boolean; cx: number; cy: number } {

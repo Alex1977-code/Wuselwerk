@@ -5,7 +5,8 @@ import type { LevelDef } from '../levels/types';
 import { mulberry32 } from '../levels/paint';
 import { sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
-import { drawWusel } from './sprites';
+import { drawFuseOverlay, drawWusel } from './sprites';
+import type { SpriteAtlas } from './atlas';
 import type { TerrainView } from './terrainView';
 
 interface Particle {
@@ -36,6 +37,8 @@ export class Scene {
   private particles: Particle[] = [];
   /** Bildschirmschütteln, nur bei Sprengungen (GDD §6). */
   shake = 0;
+  /** Liegt kein Blatt vor, zeichnet der prozedurale Weg weiter. */
+  atlas: SpriteAtlas | null = null;
 
   constructor(
     private level: LevelDef,
@@ -170,7 +173,15 @@ export class Scene {
     this.drawExit(ctx, v, world, tick);
     this.drawHatch(ctx, v, world);
 
-    for (const w of world.wusels) drawWusel(ctx, v, w, tick);
+    for (const w of world.wusels) {
+      // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
+      // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
+      if (this.atlas?.drawWusel(ctx, v, w)) {
+        if (w.fuse > 0) drawFuseOverlay(ctx, v, w, tick);
+      } else {
+        drawWusel(ctx, v, w, tick);
+      }
+    }
     this.drawParticles(ctx, v);
 
     ctx.restore();

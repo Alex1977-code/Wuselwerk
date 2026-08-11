@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:single": "vite build && node scripts/build-single.mjs",
-    "verify:single": "node scripts/verify-single.mjs"
+    "verify:single": "node scripts/verify-single.mjs",
+    "atlas:template": "vite build && node scripts/make-atlas-template.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0",
