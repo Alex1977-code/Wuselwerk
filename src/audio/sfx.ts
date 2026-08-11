@@ -1,7 +1,8 @@
 import { BUILD_BRICKS } from '../core/constants';
 import { DeathCause, SKILLS, type SkillId, type WorldEvent } from '../core/types';
 import type { AudioEngine } from './engine';
-import { kalimba, marimba, woodblock } from './instrumente';
+import { pling, woodblock } from './instrumente';
+import { bisNaechsteAchtel, schrittDauer, tonart } from './music';
 
 /**
  * Die Spielgeraeusche (GDD §7).
@@ -19,9 +20,18 @@ import { kalimba, marimba, woodblock } from './instrumente';
  *
  * ## Die vier Regeln, die alles zusammenhalten
  *
- * 1. **Tonart.** Alles Melodische steht in C-Dur pentatonisch (`PENTATONIC`,
- *    Grundton `GRUND`). Ein Effekt, der neben der laufenden Musik steht, klingt
- *    nach Fehler — auch wenn er fuer sich genommen schoen ist.
+ * 1. **Tonart — die des laufenden Stuecks.** Alles Melodische steht in der
+ *    Fuenftonleiter der gerade gespielten Welt (`tonart()` aus `music.ts`). Ein
+ *    Effekt, der neben der laufenden Musik steht, klingt nach Fehler — auch wenn
+ *    er fuer sich genommen schoen ist.
+ *
+ *    Vorher stand hier eine feste C-Dur-Pentatonik. Das ging bei zwei Welten
+ *    gut, aber nur durch einen Zufall: C D E G A liegt vollstaendig in
+ *    A-dorisch. Bei der dritten Welt haelt der Zufall nicht mehr — und der
+ *    Fehler waere einer von der leisen Sorte, den man nur als Unbehagen
+ *    bemerkt. Jetzt bringt jedes Stueck seine Leiter mit, und ein Test haelt
+ *    fest, dass jede Stufe darin ein Ton ist, den die Melodie dieser Welt selbst
+ *    benutzt.
  * 2. **Streuung.** Jeder Klang variiert seine Tonhoehe beim Abspielen, sonst
  *    nervt derselbe Ton nach einer halben Minute. Gestimmte Klaenge streuen in
  *    *Leiterstufen* (`stufenStreuung`), ungestimmte frei in Halbtoenen
@@ -48,10 +58,13 @@ import { kalimba, marimba, woodblock } from './instrumente';
  * Welt, sie klingt nur nie zweimal genau gleich.
  */
 
-/** Fuenftonleiter: gestapelte Rettungstoene klingen dadurch immer zusammen. */
-const PENTATONIC = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26];
-/** Grundton C. Alles Gestimmte in dieser Datei haengt daran (Regel 1). */
-const GRUND = 261.63;
+/**
+ * Wie weit die Leiter reicht: zwoelf Stufen, gut zwei Oktaven.
+ *
+ * Die Zahl ist kein Zufall — der Brueckenbauer legt genau zwoelf Stufen
+ * (`BUILD_BRICKS`), und daraus wird von selbst eine aufsteigende Tonleiter.
+ */
+const STUFEN = 12;
 /** Innerhalb dieser Zeit gilt eine Rettung als Teil derselben Kette. */
 const SAVE_CHAIN_MS = 1400;
 /** Regel 3. Mehr als drei gleiche Klaenge hoert ohnehin niemand als drei. */
@@ -62,25 +75,44 @@ const MAX_GLEICHE = 3;
  * Grenzen 16,7 ms auseinander, ein Ereignisbuendel selbst dagegen 0 ms.
  */
 const BILD_MS = 8;
-/** Marschtempo der Trippelschritte. */
-const SCHRITT_MS = 190;
-
 /**
  * Halbtoene ueber dem Grundton fuer eine Leiterstufe.
  *
- * Ausserhalb der Tabelle wird oktavweise weitergezaehlt. Das kostet zwei
- * Zeilen und erspart jeder Klangfunktion die Frage, ob ihre Stufe noch in der
- * Tabelle liegt — bei Trippelschritten (hoch) und Blubbern (tief) liegt sie es
- * naemlich nicht, und eine Funktion wuerde es irgendwann vergessen.
+ * Die fuenf Stufen kommen aus dem laufenden Stueck; darueber und darunter wird
+ * oktavweise weitergezaehlt. Das kostet eine Zeile und erspart jeder
+ * Klangfunktion die Frage, ob ihre Stufe noch in der Tabelle liegt — bei
+ * Trippelschritten (hoch) und Blubbern (tief) liegt sie es naemlich nicht, und
+ * eine Funktion wuerde es irgendwann vergessen.
  */
 function halbton(stufe: number): number {
-  if (stufe >= 0 && stufe < PENTATONIC.length) return PENTATONIC[stufe];
-  return PENTATONIC[((stufe % 5) + 5) % 5] + 12 * Math.floor(stufe / 5);
+  const s = tonart().stufen;
+  const n = s.length;
+  return s[((stufe % n) + n) % n] + 12 * Math.floor(stufe / n);
 }
 
 /** Frequenz einer Leiterstufe, wahlweise um ganze Oktaven verschoben. */
 function ton(stufe: number, oktave = 0): number {
-  return GRUND * Math.pow(2, halbton(stufe) / 12 + oktave);
+  return tonart().grund * Math.pow(2, halbton(stufe) / 12 + oktave);
+}
+
+/**
+ * Ein gewuerfelter Platz im Panorama, fuer Klaenge, von denen es viele gibt.
+ *
+ * Sechzig grabende Figuren an derselben Stelle im Stereobild sind ein Klumpen;
+ * dieselben sechzig verteilt sind eine **Menge**. Das ist derselbe Gedanke wie
+ * bei den gewuerfelten Tonhoehen eine Ebene tiefer, nur im Raum statt in der
+ * Frequenz.
+ *
+ * Reine Pegelverteilung (siehe `AudioEngine.anschliessen`), also in Mono
+ * kostenlos: Auf einem Handylautsprecher aendert sich dadurch nichts, auf
+ * Kopfhoerern alles.
+ *
+ * Kein Bezug zur Bildschirmstelle — die kennt diese Datei nicht, und sie
+ * einzufuehren hiesse, `index.ts` anzufassen. Gewuerfelt reicht fuer den Zweck:
+ * Es geht um Breite, nicht um Ortung.
+ */
+function seite(weite = 0.55): number {
+  return (Math.random() * 2 - 1) * weite;
 }
 
 /**
@@ -250,6 +282,7 @@ export class Sfx {
     farbe?: number;
     /** Sperrt die Stimmenbremse aus. Nur fuer die grossen Rufe. */
     fest?: boolean;
+    pan?: number;
   }): void {
     this.engine.tone({
       freq: o.freq,
@@ -262,6 +295,7 @@ export class Sfx {
       filterSweep: o.oeffnung ?? 0.7,
       delay: o.delay ?? 0,
       ignoreLimit: o.fest ?? false,
+      pan: o.pan ?? 0,
     });
   }
 
@@ -286,15 +320,19 @@ export class Sfx {
     for (let i = 0; i < 5; i++) {
       const stimmung = 1 + (i - 2) * 0.045;
       const spaeter = i * 0.035;
+      // Die fuenf stehen nebeneinander statt uebereinander. Ein Chor ist
+      // definitionsgemaess eine Menge, und eine Menge hat eine Breite — fuenf
+      // Stimmen auf demselben Punkt sind eine einzige, dickere Stimme.
+      const wo = (i - 2) * 0.3;
       // Erste Silbe, offen und kurz.
       this.silbe({
         freq: oben * stimmung, dur: 0.16, gain: 0.11, delay: spaeter,
-        farbe: 2.45, oeffnung: 0.75, fest: true,
+        farbe: 2.45, oeffnung: 0.75, fest: true, pan: wo,
       });
       // Zweite Silbe, tiefer und laenger — sie faellt weiter ab.
       this.silbe({
         freq: unten * stimmung, dur: 0.34, gain: 0.12, slide: ziel,
-        delay: 0.2 + spaeter, farbe: 4, oeffnung: 0.45, fest: true,
+        delay: 0.2 + spaeter, farbe: 4, oeffnung: 0.45, fest: true, pan: wo * 0.7,
       });
     }
   }
@@ -378,16 +416,32 @@ export class Sfx {
    * Trippelschritte: winziges Tapsen auf Holz, hoch und sehr leise.
    *
    * Hier gilt eine eigene, strengere Dichteregel als Regel 3, und zwar aus
-   * einem anderen Grund: Sechzig laufende Figuren erzeugen im Marschtempo
-   * mehrere hundert Schritte je Sekunde. Selbst auf drei Instanzen beschnitten
-   * waere das ein Prasseln — Pegel ohne Aussage. Das Ohr trennt ohnehin keine
-   * sechzig Fusspaare, es hoert eine Menge. Also klingt hier die Menge und
-   * nicht die einzelne Figur: **ein gemeinsamer Puls** im Marschtempo, dessen
-   * Lautstaerke mit der Wurzel der Anzahl waechst (doppelt so viele Laeufer
-   * klingen nicht doppelt so laut, sondern etwas lauter), und ab einer Handvoll
-   * Laeufern zwei bis drei leicht gegeneinander versetzte Tapser statt einem.
-   * Das ist der Unterschied zwischen einem Wusel und einer Herde — und mehr als
-   * drei Tapser gibt es auch hier nie.
+   * einem anderen Grund: Sechzig laufende Figuren erzeugen mehrere hundert
+   * Schritte je Sekunde. Selbst auf drei Instanzen beschnitten waere das ein
+   * Prasseln — Pegel ohne Aussage. Das Ohr trennt ohnehin keine sechzig
+   * Fusspaare, es hoert eine Menge. Also klingt hier die Menge und nicht die
+   * einzelne Figur: **ein gemeinsamer Puls**, dessen Lautstaerke mit der Wurzel
+   * der Anzahl waechst (doppelt so viele Laeufer klingen nicht doppelt so laut,
+   * sondern etwas lauter), und ab einer Handvoll Laeufern zwei bis drei leicht
+   * gegeneinander versetzte Tapser statt einem. Das ist der Unterschied zwischen
+   * einem Wusel und einer Herde — und mehr als drei Tapser gibt es auch hier nie.
+   *
+   * ## Der Puls ist jetzt eine Achtel der Musik
+   *
+   * Vorher lief er auf festen 190 Millisekunden. Das ist die auffaelligste
+   * Einzelheit der alten Fassung, sobald man es einmal gehoert hat: Beim Spielen
+   * klingen fast durchgehend Schritte, und solange sie eine **eigene Periode**
+   * haben, schweben sie gegen den Takt und zerlegen das Klangbild in „Musik"
+   * und „Spiel" — egal, wie gut beides fuer sich ist.
+   *
+   * Jetzt kommt das Mass aus dem laufenden Stueck (`schrittDauer`), und der
+   * Einsatz wird auf dessen Raster geschoben (`bisNaechsteAchtel`). Damit wird
+   * aus dem haeufigsten Geraeusch des Spiels eine Perkussionsspur. Die Torzeit
+   * liegt bei 90 % einer Achtel, damit ein Bild, das ein paar Millisekunden zu
+   * frueh kommt, nicht einen ganzen Schlag verschluckt.
+   *
+   * Die Herde steht dabei **breit** — jeder Tapser an einer anderen Stelle im
+   * Panorama. Sechzig Figuren an einem Punkt sind ein Klumpen.
    *
    * @param laufende Wie viele Figuren gerade gehen. 0 schaltet den Puls ab.
    * @param nowMs Dieselbe Uhr, die `handle` bekommt.
@@ -395,22 +449,29 @@ export class Sfx {
   schritte(laufende: number, nowMs: number): void {
     this.neuesBild(nowMs);
     if (laufende <= 0) return;
-    if (nowMs - this.letzterSchrittMs < SCHRITT_MS) return;
+    const achtelMs = schrittDauer() * 1000;
+    if (nowMs - this.letzterSchrittMs < achtelMs * 0.9) return;
     this.letzterSchrittMs = nowMs;
+    // Auf den naechsten Schlag warten. Ohne Musik kommt hier null heraus, und
+    // dann spielt es sofort — richtig so: Ohne Raster gibt es nichts, worauf man
+    // warten koennte.
+    const aufsRaster = bisNaechsteAchtel(this.engine.time);
     const menge = Math.min(MAX_GLEICHE, 1 + Math.floor(Math.log2(laufende) / 2));
     const pegel = Math.min(0.05, 0.016 * Math.sqrt(laufende));
     for (let i = 0; i < menge; i++) {
       if (!this.darf('schritt')) return;
       // Der Versatz ist gewuerfelt, weil gleichmaessig versetzte Tapser wie ein
-      // Wirbel klingen — eine Herde tritt nie im Takt.
-      const versatz = i * (0.012 + Math.random() * 0.022);
+      // Wirbel klingen — eine Herde tritt nie *genau* im Takt. Sie tritt im
+      // Takt, und das ist etwas anderes.
+      const versatz = aufsRaster + i * (0.012 + Math.random() * 0.022);
+      const wo = seite(0.6);
       this.engine.tone({
         freq: ton(9 + stufenStreuung(), 1), dur: 0.022, type: 'triangle',
-        gain: pegel, slide: 0.62, delay: versatz,
+        gain: pegel, slide: 0.62, delay: versatz, pan: wo,
       });
       this.engine.noise({
         dur: 0.014, gain: pegel * 0.5, filter: 'highpass',
-        freq: 4200 * streuung(), delay: versatz,
+        freq: 4200 * streuung(), delay: versatz, pan: wo,
       });
     }
   }
@@ -512,10 +573,14 @@ export class Sfx {
    */
   private grabenErde(): void {
     const s = streuung();
-    this.engine.noise({ dur: 0.055, gain: 0.11, filter: 'lowpass', freq: 1400 * s, sweep: 0.35 });
+    // Jeder Graeber an einer anderen Stelle im Panorama — sonst sind zwanzig
+    // Schaufeln ein Klumpen statt einer Baustelle. Beide Koerner an derselben
+    // Stelle: Sie sind ein Ereignis, nicht zwei.
+    const wo = seite();
+    this.engine.noise({ dur: 0.055, gain: 0.11, filter: 'lowpass', freq: 1400 * s, sweep: 0.35, pan: wo });
     this.engine.noise({
       dur: 0.04, gain: 0.07, filter: 'bandpass', freq: 900 * s, q: 0.8, sweep: 0.6,
-      delay: 0.045 + Math.random() * 0.02,
+      delay: 0.045 + Math.random() * 0.02, pan: wo,
     });
   }
 
@@ -530,12 +595,14 @@ export class Sfx {
    * die naechsten Schlaege zudecken.
    */
   private hackenStein(): void {
+    const wo = seite();
     this.engine.noise({
       dur: 0.045, gain: 0.11, filter: 'bandpass', freq: 3200 * streuung(), q: 1.6, sweep: 0.55,
+      pan: wo,
     });
     const f = ton(9 + stufenStreuung(), 1);
-    this.engine.tone({ freq: f, dur: 0.16, type: 'sine', gain: 0.075, attack: 0.002 });
-    this.engine.tone({ freq: f * 2.76, dur: 0.09, type: 'sine', gain: 0.03, attack: 0.001 });
+    this.engine.tone({ freq: f, dur: 0.16, type: 'sine', gain: 0.075, attack: 0.002, pan: wo });
+    this.engine.tone({ freq: f * 2.76, dur: 0.09, type: 'sine', gain: 0.03, attack: 0.001, pan: wo });
   }
 
   /**
@@ -549,20 +616,27 @@ export class Sfx {
    */
   private bohren(): void {
     const s = streuung();
-    this.engine.noise({ dur: 0.15, gain: 0.1, filter: 'lowpass', freq: 520 * s, sweep: 0.6 });
+    const wo = seite(0.45);
+    this.engine.noise({ dur: 0.15, gain: 0.1, filter: 'lowpass', freq: 520 * s, sweep: 0.6, pan: wo });
     this.engine.noise({
       dur: 0.022, gain: 0.05, filter: 'bandpass', freq: 2600 * streuung(4), q: 3,
-      delay: 0.05 + Math.random() * 0.08,
+      delay: 0.05 + Math.random() * 0.08, pan: wo,
     });
   }
 
   /**
-   * Brueckenstufe legen: Holz-Klack, mit jeder Stufe eine hoeher.
+   * Brueckenstufe legen: ein Pling, mit jeder Stufe eine hoeher.
    *
-   * Der Brueckenbauer hat genau zwoelf Stufen, und `PENTATONIC` hat genau
-   * zwoelf Eintraege. Aus dem Baufortschritt wird damit von selbst eine
-   * aufsteigende Leiter ueber zwei Oktaven: Man hoert, wie viel Bruecke noch
-   * kommt, ohne hinzusehen, und die letzte Stufe ist zugleich der Schlusston.
+   * Der Brueckenbauer hat genau zwoelf Stufen, und die Leiter reicht genau
+   * zwoelf Stufen weit (`STUFEN`). Aus dem Baufortschritt wird damit von selbst
+   * eine aufsteigende Leiter ueber zwei Oktaven: Man hoert, wie viel Bruecke
+   * noch kommt, ohne hinzusehen, und die letzte Stufe ist zugleich der
+   * Schlusston.
+   *
+   * Dass hier der Pling steht und nicht mehr ein Dreieckston mit Rauschen, ist
+   * kein Schoenheitsgriff: Der Brueckenbau ist die einzige Stelle im Spiel, an
+   * der ein Geraeusch **eine Melodie spielt**. Wenn es dabei genau so klingt wie
+   * der Anschlag unter der Melodie der Musik, gehoert es dazu.
    *
    * Hier gilt Regel 2 nicht fuer die Tonhoehe — sie *ist* die Information, und
    * gewuerfelt waere die Leiter zerhackt. Gestreut wird stattdessen das
@@ -578,11 +652,18 @@ export class Sfx {
     this.brueckeStufe = stufe + 1;
     if (!this.darf('brick')) return;
     const hoehe = stufe / (BUILD_BRICKS - 1);
-    this.engine.tone({
-      freq: ton(stufe, 1), dur: 0.055 - 0.02 * hoehe, type: 'triangle',
-      gain: 0.11 - 0.035 * hoehe, slide: 0.82,
+    // Schlank, weil bis zu drei Bauer im selben Bild eine Stufe legen koennen
+    // und die Stimmenbremse Teiltoene zaehlt — siehe `pling`. Ein voller Pling
+    // liesse den zweiten und dritten Klack ausfallen, und gerade hier traegt die
+    // Tonhoehe die Aussage.
+    //
+    // Der frueher hier stehende zusaetzliche Rauschtupfer ist weg: Der Pling
+    // bringt seinen Anschlag mit, und zwei Anschlaege uebereinander sind kein
+    // schaerferer Klack, sondern ein breiigerer.
+    pling(this.engine, {
+      freq: ton(stufe), dur: 0.2 - 0.07 * hoehe, gain: 0.1 - 0.03 * hoehe,
+      bus: 'sfx', fest: false, pan: seite(0.3), schlank: true,
     });
-    this.engine.noise({ dur: 0.03, gain: 0.05, filter: 'highpass', freq: 1800 * streuung(3) });
   }
 
   /**
@@ -681,6 +762,9 @@ export class Sfx {
       this.engine.tone({
         freq: ton(s0 + i * 2, 1), dur: 0.1, type: 'sine', gain: 0.07 - i * 0.016,
         delay: 0.07 + i * 0.06, attack: 0.002,
+        // Die Funken stieben nach oben *und* auseinander, und sie gehen ins
+        // Echo: Ein Comic-Bumms endet nicht, er klingt aus.
+        pan: (i - 1) * 0.45, echo: 0.3,
       });
     }
   }
@@ -725,11 +809,16 @@ export class Sfx {
     if (!this.darf('saved')) return;
     if (this.saveStep === 0) this.jubel();
     this.engine.duck(0.25);
-    const stufe = Math.min(this.saveStep, PENTATONIC.length - 1);
+    const stufe = Math.min(this.saveStep, STUFEN - 1);
     this.saveStep++;
     const f = ton(stufe, 1);
+    // Mitte, kein Panorama: Die Rettung ist die Aussage des ganzen Spiels und
+    // steht nicht am Rand. Der Oberton geht ins Echo — bei einer Massenrettung
+    // entsteht daraus eine Girlande, die ueber der Kette stehenbleibt.
     this.engine.tone({ freq: f, dur: 0.16, type: 'triangle', gain: 0.2, ignoreLimit: true });
-    this.engine.tone({ freq: f * 2, dur: 0.1, type: 'sine', gain: 0.09, delay: 0.02, ignoreLimit: true });
+    this.engine.tone({
+      freq: f * 2, dur: 0.1, type: 'sine', gain: 0.09, delay: 0.02, ignoreLimit: true, echo: 0.3,
+    });
   }
 
   /** Tod: kurzer, tiefer Puls. Jeder Verlust soll spuerbar sein. */
@@ -757,17 +846,21 @@ export class Sfx {
   // Tippen verschluckt. Alle liegen unter 200 Millisekunden.
 
   /**
-   * Werkzeug gewaehlt: Marimba-Note plus Holzblock.
+   * Werkzeug gewaehlt: ein Pling plus Holzblock.
    *
    * Die Tonhoehe haengt am Werkzeug, nicht am Zufall — acht Werkzeuge, acht
    * Stufen der Leiter. Wer eine Weile spielt, hoert, was er gewaehlt hat, ohne
    * hinzusehen; die Streuung aus Regel 2 wuerde genau das zerstoeren. Gestreut
    * wird deshalb der Holzblock, dessen Tonhoehe nichts bedeutet.
+   *
+   * Der Pling ist hier bewusst dasselbe Objekt wie der Anschlag unter der
+   * Melodie: Es ist der Klang, den man beim Spielen am haeufigsten bewusst
+   * ausloest, und deshalb der beste Ort fuer das Erkennungszeichen des Spiels.
    */
   werkzeugGewaehlt(skill?: SkillId): void {
     const i = skill ? Math.max(0, SKILLS.indexOf(skill)) : 0;
-    marimba(this.engine, { freq: ton(i), dur: 0.18, gain: 0.13, bus: 'sfx', fest: false });
-    woodblock(this.engine, { freq: 1250 * streuung(), gain: 0.07, bus: 'sfx', fest: false });
+    pling(this.engine, { freq: ton(i), dur: 0.24, gain: 0.12, bus: 'sfx', fest: false });
+    woodblock(this.engine, { freq: 1250 * streuung(), gain: 0.06, bus: 'sfx', fest: false });
   }
 
   /**
@@ -831,14 +924,19 @@ export class Sfx {
   }
 
   /**
-   * Knopf tippen: trockener Kalimba-Anschlag.
+   * Knopf tippen: ein trockener Pling.
    *
-   * Trocken heisst kurz: Die Kalimba klingt von sich aus lange nach, und ein
-   * nachklingender Knopf klebt am naechsten Tippen fest. Die Stufe wuerfelt,
-   * weil ein Knopf oft und schnell hintereinander gedrueckt wird — genau der
-   * Fall, fuer den Regel 2 da ist.
+   * Trocken heisst kurz: Ein nachklingender Knopf klebt am naechsten Tippen
+   * fest. Die Stufe wuerfelt, weil ein Knopf oft und schnell hintereinander
+   * gedrueckt wird — genau der Fall, fuer den Regel 2 da ist.
+   *
+   * Derselbe Klang wie die Werkzeugwahl, nur kuerzer und leiser. Das ist
+   * Absicht: Ein Spiel, in dem jede Schaltflaeche ihren eigenen huebschen Klang
+   * hat, hat kein Klangbild, sondern eine Sammlung.
    */
   knopf(): void {
-    kalimba(this.engine, { freq: ton(7 + stufenStreuung()), dur: 0.17, gain: 0.1, bus: 'sfx', fest: false });
+    pling(this.engine, {
+      freq: ton(7 + stufenStreuung()), dur: 0.16, gain: 0.095, bus: 'sfx', fest: false,
+    });
   }
 }

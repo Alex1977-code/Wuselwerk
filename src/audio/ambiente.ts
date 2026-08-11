@@ -201,6 +201,34 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
 };
 
 /**
+ * Der Raum je Welt.
+ *
+ * Das ist die Groesse, die aus „dasselbe Stueck in einer anderen Farbe" einen
+ * anderen **Ort** macht — und sie war bisher fuer alle Welten gleich. Ein
+ * Federhall von 0,34 s ist eine Kiste; das Bild des Spiels zeigt drei
+ * gestaffelte Huegelketten unter freiem Himmel.
+ *
+ * Man hoert den Unterschied, bevor der erste Melodieton da ist, und zwar an
+ * genau drei Zahlen:
+ *
+ * - **Wiese.** Kurz (1,5 s), hell (5 kHz), leise (0,8). Ueber einer Wiese ist
+ *   nach oben nichts, was zurueckwirft — die Weite kommt von der Helligkeit und
+ *   davon, dass die Fahne schnell weg ist. Ein langer Hall auf einer Wiese
+ *   klingt nicht nach draussen, sondern nach Turnhalle.
+ * - **Hoehle.** Lang (2,9 s), dunkel (1,4 kHz), lauter (1,25). Stein schluckt
+ *   die Hoehen und wirft den Rest lange zurueck. Der Tiefpass ist dabei
+ *   wichtiger als die Laenge: Ein langer *heller* Hall klingt nach Kirche, ein
+ *   langer dunkler nach Fels.
+ *
+ * Eine neue Welt braucht hier eine Zeile — sonst klingt sie unweigerlich wie
+ * eine der beiden bestehenden.
+ */
+const RAEUME: Record<ThemeId, { dauer: number; pegel: number; daempfung: number }> = {
+  grass: { dauer: 1.5, pegel: 0.8, daempfung: 5000 },
+  crystal: { dauer: 2.9, pegel: 1.25, daempfung: 1400 },
+};
+
+/**
  * Der Ausgang.
  *
  * Warm unten, glaesern oben, in der Mitte nichts — dieselbe Luecke von 800 Hz
@@ -215,6 +243,21 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
 const SCHIMMER: readonly Schicht[] = [
   { art: 'brummen', pause: [3.2, 4.4], gain: 0.013, hz: 220, schwebungHz: 0.33, dauer: 5.5, oberton: 0.35 },
   { art: 'brummen', pause: [2.4, 3.6], gain: 0.005, hz: 3520, schwebungHz: 0.5, dauer: 4.0, oberton: 0 },
+  // Die dritte Schicht: das Gold.
+  //
+  // Im Bild ist der Ausgang das **einzige Objekt, das selbst leuchtet** — ein
+  // cremig-goldener Torbogen, von innen hell. Geklungen hat er bisher blau:
+  // ein warmer Liegeton ganz unten, ein glaeserner ganz oben, und dazwischen
+  // nichts. Genau die Mitte ist aber das, was das Ohr als „warm" liest.
+  //
+  // 659,25 Hz ist das E — in beiden Welten ein Akkordton (Terz der Wiese,
+  // Quinte der Hoehle) und damit an keiner Stelle des Stuecks im Weg. Die
+  // Schwebung ist mit 0,22 Hz die langsamste von allen dreien: Ein Leuchten
+  // pulsiert nicht, es atmet.
+  //
+  // Der Pegel bleibt unter dem Bett. Der Ausgang soll auffindbar sein, nicht
+  // rufen — wer ihn sucht, merkt ihn, wer plant, hoert ihn nicht.
+  { art: 'brummen', pause: [3.6, 5.2], gain: 0.007, hz: 659.25, schwebungHz: 0.22, dauer: 6.0, oberton: 0.22 },
 ];
 
 /**
@@ -346,6 +389,15 @@ export class Ambiente {
    */
   private bettZeiten: number[] = [];
   private schimmerZeiten: number[] = [];
+  /**
+   * Steht der Raum schon auf dieser Welt?
+   *
+   * Als Merker und nicht als Aufruf in `setTheme`, weil es dort die
+   * Klangwerkstatt noch gar nicht gibt: Sie entsteht erst nach der ersten
+   * Nutzergeste, `setTheme` laeuft aber schon beim Laden des Levels. `update`
+   * traegt es nach, sobald es etwas nachzutragen gibt.
+   */
+  private raumGesetzt = false;
 
   /** Diagnose fuer die automatisierte Sichtprobe. */
   get state(): { playing: boolean; events: number; bett: ThemeId; ausgang: boolean } {
@@ -364,6 +416,7 @@ export class Ambiente {
     // klingt, klingt aus — ein Weltwechsel blendet dadurch von selbst ueber,
     // statt abzuschneiden.
     this.bettZeiten = [];
+    this.raumGesetzt = false;
   }
 
   /** Das Spiel weiss, ob ein Ausgang sichtbar ist; hier kommt die Antwort an. */
@@ -386,6 +439,13 @@ export class Ambiente {
 
   update(engine: AudioEngine): void {
     if (!this.playing || !engine.ready || engine.muted) return;
+    // Der Raum gehoert zum Bett und nicht zur Musik: Er sagt, **wo** man ist,
+    // und das ist dieselbe Aussage, die die Windboeen und die Vogelrufe machen.
+    if (!this.raumGesetzt) {
+      const r = RAEUME[this.theme];
+      engine.setRaum(r.dauer, r.pegel, r.daempfung);
+      this.raumGesetzt = true;
+    }
     const horizon = engine.time + LOOKAHEAD;
     this.plane(engine, BETTEN[this.theme], this.bettZeiten, horizon);
     if (this.ausgang) this.plane(engine, SCHIMMER, this.schimmerZeiten, horizon);

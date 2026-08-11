@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARPEGGIO, STUECKE } from '../src/audio/music';
+import { ARPEGGIO, BASSFIGUR, PULS, STUECKE } from '../src/audio/music';
 
 /**
  * Pruefungen am Notentext, nicht am Klang.
@@ -37,6 +37,59 @@ describe('Die laufende Sechzehntelfigur', () => {
       hoechste = Math.max(hoechste, p.grund * Math.pow(2, (wurzel + oben) / 12));
     }
     expect(hoechste).toBeLessThan(800);
+  });
+});
+
+describe('Der Puls und die Basslinie', () => {
+  it('teilen sich die acht Achtel lückenlos und überschneidungsfrei', () => {
+    // Das ist die Eigenschaft, an der die tiefe Lage auf einem
+    // Handylautsprecher hängt, und sie ist der Grund, warum der Groove von vier
+    // Vierteln auf 3-3-2 wechseln durfte, ohne dass unten etwas verlorenging:
+    //
+    // - **Lückenlos**, damit das Ohr eine durchgehende tiefe Linie hört. Eine
+    //   Lücke im Bass klingt nicht nach Pause, sondern nach Aussetzer.
+    // - **Überschneidungsfrei**, damit nie zwei tiefe Töne gleichzeitig laufen.
+    //   Genau dort entsteht sonst der Matsch, den kleine Lautsprecher nicht
+    //   mehr auflösen.
+    //
+    // Beim Verschieben eines einzelnen Schlags fällt beides sofort auseinander,
+    // und man hört es erst auf dem Zielgerät.
+    expect(PULS.length).toBe(8);
+    expect(BASSFIGUR.length).toBe(8);
+    for (let i = 0; i < 8; i++) {
+      expect(
+        PULS[i] !== (BASSFIGUR[i] !== null),
+        `Achtel ${i} ist ${PULS[i] ? 'doppelt belegt' : 'unbelegt'}`,
+      ).toBe(true);
+    }
+  });
+
+  it('meidet die Terz — wie die laufende Figur', () => {
+    // Dieselbe Begründung wie bei `ARPEGGIO`: Die Terz sagt, ob ein Akkord Dur
+    // oder Moll ist. Diese eine Figur läuft über alle Akkorde beider Stücke —
+    // die Wiese in Dur, die Höhle in dorisch —, ohne je umgeschrieben zu
+    // werden. Eine grosse Terz darin wäre in der Höhle schlicht der falsche
+    // Ton, und beim Schreiben fällt es nicht auf: Über dem Dur-Stück klingt sie
+    // richtig.
+    for (const eintrag of BASSFIGUR) {
+      if (!eintrag) continue;
+      expect([0, 7], `${eintrag[0]} Halbtöne ist weder Grundton noch Quinte`).toContain(
+        eintrag[0] % 12,
+      );
+    }
+  });
+
+  it('setzt den Schlag dreimal je Takt, ungleich verteilt', () => {
+    // Drei Schläge auf acht Achteln, und zwar in den Abständen 3–3–2. Wären
+    // sie gleich verteilt, stünde wieder ein Zählwerk da; genau die ungleiche
+    // Verteilung ist der Gang.
+    const stellen = PULS.map((an, i) => (an ? i : -1)).filter((i) => i >= 0);
+    expect(stellen.length).toBe(3);
+    const abstaende = stellen.map((s, k) =>
+      k === 0 ? s + 8 - stellen[stellen.length - 1] : s - stellen[k - 1],
+    );
+    expect(new Set(abstaende).size, 'alle Abstände gleich — das ist ein Metronom').toBeGreaterThan(1);
+    expect(abstaende.reduce((a, b) => a + b, 0)).toBe(8);
   });
 });
 
@@ -94,7 +147,59 @@ describe('Notentext der Begleitmusik', () => {
       it('spielt die Melodie mit einer haltenden Stimme', () => {
         // Ein Stabspiel kann keinen Ton halten. Eine Melodie daraus ist eine
         // Folge von Punkten, keine Linie — genau das klang nach Piepen.
-        expect(['akkordeon', 'klarinette', 'panfloete']).toContain(p.melodieStimme);
+        //
+        // Die Liste ist absichtlich hier ausgeschrieben und wird nicht aus
+        // `music.ts` importiert: Sonst prüfte der Test nur noch, dass eine
+        // Angabe mit sich selbst übereinstimmt. Wer eine Stimme hinzufügt, muss
+        // hier bewusst bestätigen, dass sie halten kann.
+        expect(['akkordeon', 'klarinette', 'panfloete', 'okarina']).toContain(p.melodieStimme);
+      });
+
+      it('stimmt die Geräusche auf Töne, die in der Melodie vorkommen', () => {
+        // Bis hierher hing alles Melodische der Spielgeräusche an einer festen
+        // C-Dur-Pentatonik. Dass das bei zwei Welten aufging, war Glück: C D E
+        // G A liegt vollständig in A-dorisch. Bei der dritten Welt hält das
+        // Glück nicht mehr — und der Fehler wäre einer von der leisen Sorte:
+        // Man hört, dass etwas nicht stimmt, ohne zu wissen, was.
+        //
+        // Der Maßstab ist bewusst die **Melodie selbst** und nicht eine
+        // Tonleitertabelle. Eine Tabelle könnte falsch sein, ohne dass es
+        // auffällt; die Melodie ist abgenommen und definiert damit, welche
+        // Töne diese Welt hat.
+        const inDerMelodie = new Set(
+          p.melodie
+            .map(([ton]) => ton)
+            .filter((t): t is number => t !== null)
+            .map((t) => ((t % 12) + 12) % 12),
+        );
+        for (const stufe of p.sfxStufen) {
+          const halbton = ((stufe % 12) + 12) % 12;
+          expect(
+            inDerMelodie.has(halbton),
+            `Geräuschstufe ${stufe} kommt in der Melodie von "${name}" nicht vor`,
+          ).toBe(true);
+        }
+      });
+
+      it('hat einen Fanfarengrundton, auf dem ein Durdreiklang steht', () => {
+        // Eine Fanfare muss in Dur stehen, sonst ist sie kein Sieg. Geprüft
+        // wird deshalb, dass Grundton, grosse Terz und Quinte über
+        // `fanfareGrund` alle drei Töne der Welt sind — bei einem Stück in
+        // Moll oder dorisch ist das nur auf der Paralleltonart der Fall, und
+        // genau darauf muss der Wert zeigen.
+        const vorrat = new Set(
+          [
+            ...p.melodie.map(([ton]) => ton).filter((t): t is number => t !== null),
+            ...p.akkorde,
+          ].map((t) => ((t % 12) + 12) % 12),
+        );
+        for (const stufe of [0, 4, 7]) {
+          const halbton = (((p.fanfareGrund + stufe) % 12) + 12) % 12;
+          expect(
+            vorrat.has(halbton),
+            `Der Durdreiklang auf ${p.fanfareGrund} liegt in "${name}" nicht im Tonvorrat (${halbton})`,
+          ).toBe(true);
+        }
       });
     });
   }

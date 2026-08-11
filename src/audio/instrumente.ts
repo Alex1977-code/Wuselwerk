@@ -24,6 +24,15 @@ import type { AudioEngine, Bus } from './engine';
  * Anschlag, die Blasstimme haelt den Ton. Zusammen klingen sie nach einem
  * Instrument mit Anschlag *und* Koerper, was keines von beiden allein kann.
  *
+ * ## Das eine Zeichen, das ueberall vorkommt
+ *
+ * Ein Klangbild wird nicht dadurch wiedererkennbar, dass jeder einzelne Klang
+ * gut ist, sondern dadurch, dass **ein** Klang an mehreren Stellen wiederkehrt.
+ * Das ist der `pling` weiter unten: Holzstab mit Glaskante. Er ist der Anschlag
+ * unter der Melodie, der Glitzer darueber, die Werkzeugwahl, der Knopf, jede
+ * Brueckenstufe und das Konfetti im Stinger. Wer ihn aendert, aendert das
+ * Gesicht des Spiels; wer eine neue Welt baut, laesst ihn stehen.
+ *
  * ## Woran man ein Instrument erkennt
  *
  * Nicht an der Grundfrequenz — die ist bei allen dieselbe. Es sind drei andere
@@ -134,15 +143,32 @@ export function marimba(e: E, t: TonOpts): void {
  *
  * Der Echoanteil geht nur auf den Holzkoerper. Glas und Anschlag bleiben
  * einmalig — was sich wiederholen soll, ist der Ton, nicht das Klicken.
+ *
+ * ## `schlank`: dieselbe Farbe, drei Stimmen statt fuenf
+ *
+ * Die Stimmenbremse der Klangwerkstatt zaehlt **Teiltoene**, nicht Klaenge
+ * (`AudioEngine.take`). Ein voller Pling kostet damit fuenf von acht Plaetzen
+ * eines Bildes — was fuer einen Klang, den man einzeln ausloest, richtig ist und
+ * fuer einen, von dem drei gleichzeitig kommen koennen, nicht: Beim Brueckenbau
+ * fielen sonst der zweite und dritte Klack aus, und ausgerechnet dort traegt die
+ * Tonhoehe eine Aussage.
+ *
+ * Weggelassen wird deshalb genau das, was in der Menge ohnehin niemand einzeln
+ * hoert: der zweite Glasteilton und der Stabteilton. Was bleibt, sind Koerper,
+ * eine Glaskante und der Anschlag — und damit bleibt auch das Erkennungszeichen.
  */
-export function pling(e: E, t: TonOpts): void {
+export function pling(e: E, t: TonOpts & { schlank?: boolean }): void {
   const g = t.gain ?? 0.13;
   const d = t.dur ?? 0.4;
   e.tone({ freq: t.freq, dur: d, type: 'sine', gain: g, attack: 0.003, ...o(t) });
-  e.tone({ freq: t.freq * 4, dur: d * 0.26, type: 'sine', gain: g * 0.3, attack: 0.002, ...ohneEcho(t) });
+  if (!t.schlank) {
+    e.tone({ freq: t.freq * 4, dur: d * 0.26, type: 'sine', gain: g * 0.3, attack: 0.002, ...ohneEcho(t) });
+  }
   // Die Glaskante. Sehr leise — sie soll die Farbe geben, nicht den Ton.
   e.tone({ freq: t.freq * 5.4, dur: 0.05, type: 'sine', gain: g * 0.16, attack: 0.001, ...ohneEcho(t) });
-  e.tone({ freq: t.freq * 7.6, dur: 0.035, type: 'sine', gain: g * 0.09, attack: 0.001, ...ohneEcho(t) });
+  if (!t.schlank) {
+    e.tone({ freq: t.freq * 7.6, dur: 0.035, type: 'sine', gain: g * 0.09, attack: 0.001, ...ohneEcho(t) });
+  }
   e.noise({ dur: 0.008, gain: g * 0.24, filter: 'bandpass', freq: t.freq * 6, q: 1.1, ...ohneEcho(t) });
 }
 
@@ -280,7 +306,13 @@ export function klarinette(e: E, t: TonOpts): void {
 }
 
 /**
- * Akkordeon — die Hookline-Stimme der Wiese.
+ * Akkordeon — Jahrmarkt.
+ *
+ * **Nicht mehr die Stimme der Wiese** (das ist jetzt die `okarina`), aber
+ * absichtlich behalten: Die Musette-Stimmung ist der Klang einer Drehorgel, und
+ * dafuer gibt es im Spiel eine vorgesehene Stelle — die Sonderlevel. Wenn diese
+ * Welt kommt, ist die Stimme fertig da, und sie klingt dort richtig, statt hier
+ * falsch.
  *
  * 1. **Huellkurve.** Haelt wie die Klarinette, aber mit schnellerem Anstieg:
  *    Ein Balg steht sofort unter Druck, eine Luftsaeule muss erst in Gang
@@ -549,6 +581,6 @@ export function kies(e: E, t: TonOpts): void {
 /** Uhrentick — die Ebene, die bei knapper Zeit dazukommt. */
 export function tick(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.08;
-  e.noise({ dur: 0.015, gain: g, filter: 'bandpass', freq: 2600, q: 3, ...o(t) });
-  e.tone({ freq: 1800, dur: 0.02, type: 'square', gain: g * 0.5, ...o(t) });
+  e.noise({ dur: 0.015, gain: g, filter: 'bandpass', freq: 2600, q: 3, ...ohneEcho(t) });
+  e.tone({ freq: 1800, dur: 0.02, type: 'square', gain: g * 0.5, ...ohneEcho(t) });
 }

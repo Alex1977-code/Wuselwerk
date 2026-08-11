@@ -1,5 +1,6 @@
 import type { AudioEngine } from './engine';
-import { bass, glocke, kalimba, shaker, steeldrum, woodblock } from './instrumente';
+import { bass, glocke, kalimba, kies, pling, steeldrum, woodblock } from './instrumente';
+import { tonart } from './music';
 
 /**
  * Stingers — die Klaenge, die einen Abschnitt schliessen.
@@ -36,19 +37,30 @@ import { bass, glocke, kalimba, shaker, steeldrum, woodblock } from './instrumen
  *
  * ## Woher die Toene kommen
  *
- * Aus dem C-Dur-Dreiklang und der C-Dur-Pentatonik, Grundton 261,63 Hz wie in
- * `sfx.ts`. Das ist keine Bequemlichkeit: Die Begleitmusik laeuft weiter,
+ * Aus dem Durdreiklang und der Pentatonik **der laufenden Welt** (`tonart()`
+ * aus `music.ts`). Das ist keine Bequemlichkeit: Die Begleitmusik laeuft weiter,
  * waehrend der Stinger spielt, und nur so klingen beide zusammen statt
  * gegeneinander. Ein Dreiklang gehoert niemandem — nachgebaut wird hier weder
  * eine Melodie noch ein Klang aus dem Vorbild von 1991.
+ *
+ * Vorher stand hier ein fester Grundton C. Dass das bisher aufging, war Glueck:
+ * Die Hoehle steht in A-dorisch, und C-Dur ist deren Paralleltonart. Bei der
+ * dritten Welt geht das Glueck aus. Jetzt bringt jedes Stueck seinen
+ * Fanfarengrundton mit (`fanfareGrund`), und der ist so gewaehlt, dass die
+ * Fanfare **immer in Dur** steht — ohne Dur ist eine Fanfare kein Sieg.
  */
 
-/** Grundton C, gleich dem Rettungsjingle in `sfx.ts`. */
-const GRUND = 261.63;
-
-/** Halbtoene ueber dem Grundton in Hertz. Negative Werte gehen nach unten. */
+/**
+ * Halbtoene ueber dem Fanfarengrundton, in Hertz. Negative Werte gehen nach
+ * unten.
+ *
+ * Der Grundton wird bei **jedem Aufruf** neu geholt und nicht einmal
+ * gespeichert: Ein Stinger kann in jeder Welt fallen, und zwischen zwei
+ * Stingern kann die Welt gewechselt haben.
+ */
 function hz(halbton: number): number {
-  return GRUND * Math.pow(2, halbton / 12);
+  const t = tonart();
+  return t.grund * Math.pow(2, (t.fanfare + halbton) / 12);
 }
 
 /**
@@ -63,13 +75,13 @@ function hz(halbton: number): number {
  * unveraenderter Wert liegt hier also rund 4,6 dB lauter — deshalb stehen in
  * dieser Datei durchweg kleinere Zahlen.
  */
-function direkt(delay: number) {
-  return { bus: 'sfx' as const, delay, ignoreLimit: true };
+function direkt(delay: number, pan = 0) {
+  return { bus: 'sfx' as const, delay, ignoreLimit: true, pan };
 }
 
 /** Dasselbe fuer die fertigen Stimmen aus `instrumente.ts`. */
-function fuerStimme(delay: number) {
-  return { bus: 'sfx' as const, delay, fest: true };
+function fuerStimme(delay: number, pan = 0) {
+  return { bus: 'sfx' as const, delay, fest: true, pan };
 }
 
 /**
@@ -109,7 +121,7 @@ function streu(anteil: number): number {
  * Unterschied zwischen einer Trompete und einem Register: Fanfaren spielt man
  * nie allein, und zwei exakt gleiche Stimmen ergeben nur eine lautere.
  */
-function blech(e: AudioEngine, freq: number, dauer: number, ab: number, gain = 0.11): void {
+function blech(e: AudioEngine, freq: number, dauer: number, ab: number, gain = 0.11, echo = 0): void {
   // Ansatz. Auf 0,3 s gedeckelt, weil ein Blaeser beim Einsetzen aufblueht und
   // nicht ueber die ganze Note hinweg — bei einem langen Schlusston waere ein
   // Filterlauf ueber die volle Laenge ein Synthesizer-Effekt, kein Ansatz.
@@ -126,7 +138,16 @@ function blech(e: AudioEngine, freq: number, dauer: number, ab: number, gain = 0
   // Koerper. Der Filter sitzt am fuenften Teilton (die Resonanz des Filters
   // macht daraus eine Art Formant) und faellt zum Ende leicht ab: Der Ton
   // verliert seinen Glanz zuerst, so wie der Blaeser am Ende der Note nachlaesst.
-  for (const stimmung of [1, 1.0035]) {
+  //
+  // Die zwei Stimmen gehen jetzt auch **auseinander**, nicht nur auseinander in
+  // der Stimmung. Ein Blechsatz ist ein Register aus mehreren Spielern, und
+  // mehrere Spieler stehen nebeneinander; uebereinander gestapelt bleiben sie
+  // ein einziger, dickerer Ton. Nur ±0,22 — eine Fanfare ist eine Ansage und
+  // gehoert in die Mitte, sie soll nur nicht schmal sein.
+  for (const [stimmung, seite] of [
+    [1, -0.22],
+    [1.0035, 0.22],
+  ] as const) {
     e.tone({
       freq: freq * stimmung,
       dur: dauer,
@@ -135,7 +156,8 @@ function blech(e: AudioEngine, freq: number, dauer: number, ab: number, gain = 0
       attack: 0.05,
       filterHz: freq * 5,
       filterSweep: 0.7,
-      ...direkt(ab),
+      ...direkt(ab, seite),
+      echo,
     });
   }
   // Der Luftstoss liegt als Band um den zweiten Teilton, damit er zum Ton
@@ -209,12 +231,19 @@ const AKKORD_AB = 1.32;
 function anlauf(e: AudioEngine, ab: number): void {
   for (const n of ANLAUF) {
     const f = hz(n.ton);
-    blech(e, f, n.dauer, ab + n.ab, 0.14);
-    // Steeldrum auf jeden Ansatz. Das Blech braucht 40 ms, bis es steht — bis
-    // dahin traegt der Anschlag des Blechs den Rhythmus. Er macht die Figur
-    // scharf, ohne sie hart zu machen, und bindet die Fanfare an die
-    // Klangwelt des Spiels, in der die Steeldrum ohnehin zu Hause ist.
-    steeldrum(e, { freq: f, dur: n.dauer * 1.4, gain: 0.085, ...fuerStimme(ab + n.ab) });
+    // Der letzte, lange Ton geht ins Echo. Die kurzen davor nicht — sonst
+    // liegen die Wiederholungen der ersten Toene noch unter den spaeteren und
+    // machen aus einer Ansage einen Brei.
+    blech(e, f, n.dauer, ab + n.ab, 0.14, n.dauer > 0.3 ? 0.3 : 0);
+    // Pling auf jeden Ansatz. Das Blech braucht 40 ms, bis es steht — bis dahin
+    // traegt der Anschlag den Rhythmus. Er macht die Figur scharf, ohne sie hart
+    // zu machen.
+    //
+    // Frueher stand hier eine Steeldrum. Der Pling tut dasselbe und noch etwas:
+    // Er ist derselbe Klang wie der Anschlag unter der Melodie, wie die
+    // Werkzeugwahl und wie jede Brueckenstufe. Damit ist der lauteste Moment des
+    // Spiels aus demselben Material gebaut wie sein leisester.
+    pling(e, { freq: f, dur: n.dauer * 1.5, gain: 0.08, ...fuerStimme(ab + n.ab) });
   }
   // Fundament: G3 bei 196 Hz, die Dominante unter dem Anlauf. Tiefer geht es
   // nicht — das tiefe C bei 131 Hz gibt ein Handylautsprecher nicht wieder, und
@@ -243,13 +272,16 @@ function schlussakkord(e: AudioEngine, ab: number, toene: readonly number[], dau
   for (const t of toene) {
     blech(e, hz(t), dauer, ab, 0.088);
   }
-  for (const t of toene.slice(-3)) {
+  toene.slice(-3).forEach((t, k) => {
     // Das Glockenspiel legt selbst eine Oktave drauf (siehe `instrumente.ts`),
     // klingt also eine Oktave ueber dem Akkordton — genau die Ebene, auf der
-    // der Glitzer sitzt.
-    glocke(e, { freq: hz(t), dur: dauer * 0.8, gain: 0.05, ...fuerStimme(ab) });
-    steeldrum(e, { freq: hz(t), dur: dauer * 0.5, gain: 0.058, ...fuerStimme(ab) });
-  }
+    // der Glitzer sitzt. Die drei obersten Toene werden ueber die Breite
+    // verteilt: Ein Akkord, dessen Toene alle an derselben Stelle stehen, ist
+    // ein Klang; einer, der auseinandergezogen ist, ist ein Ensemble.
+    const wo = (k - 1) * 0.42;
+    glocke(e, { freq: hz(t), dur: dauer * 0.8, gain: 0.05, ...fuerStimme(ab, wo), echo: 0.25 });
+    steeldrum(e, { freq: hz(t), dur: dauer * 0.5, gain: 0.058, ...fuerStimme(ab, -wo * 0.6) });
+  });
   bass(e, { freq: hz(0), dur: dauer * 0.5, gain: 0.16, ...fuerStimme(ab) });
   // Nachschwelle auf den beiden obersten Toenen. Die Huellkurve der
   // Klangwerkstatt faellt immer exponentiell ab, ein wirklich *gehaltener* Ton
@@ -277,11 +309,21 @@ function konfetti(e: AudioEngine, ab: number, dauer: number, anzahl = 14): void 
     const p = i / anzahl;
     const t = ab + dauer * p * streu(0.09);
     const ton = GLITZER[(i * 3) % GLITZER.length];
+    // Auch die Seite wandert, und zwar in einer eigenen Schrittfolge (fuenf
+    // Plaetze, jedes Mal zwei weiter). Konfetti faellt ueberall, nicht in einer
+    // Linie — und weil Tonhoehe und Ort verschieden schnell umlaufen, wiederholt
+    // sich keine Kombination.
+    const wo = ((i * 2) % 5) / 2 - 1;
     // Nach hinten leiser: Konfetti faellt, es wird nicht geworfen.
-    glocke(e, { freq: hz(ton), dur: 0.85, gain: 0.06 * (1 - p * 0.6), ...fuerStimme(t) });
-    // Das Schuettelrohr ist der Papierschnipsel dazu — ohne ein Geraeusch
-    // zwischen den Glocken bleibt es ein Glockenspiel und wird kein Konfetti.
-    if (i % 3 === 0) shaker(e, { freq: 0, gain: 0.045, ...fuerStimme(t) });
+    glocke(e, { freq: hz(ton), dur: 0.85, gain: 0.06 * (1 - p * 0.6), ...fuerStimme(t, wo * 0.7) });
+    // Jeder dritte Schnipsel ist ein Pling statt einer Glocke: das
+    // Erkennungszeichen des Spiels, mitten im Jubel.
+    if (i % 3 === 1) {
+      pling(e, { freq: hz(ton), dur: 0.3, gain: 0.045 * (1 - p * 0.5), ...fuerStimme(t, -wo * 0.5) });
+    }
+    // Der Kies ist der Papierschnipsel dazu — ohne ein Geraeusch zwischen den
+    // Glocken bleibt es ein Glockenspiel und wird kein Konfetti.
+    if (i % 3 === 0) kies(e, { freq: 0, gain: 0.04, ...fuerStimme(t, wo) });
   }
 }
 
@@ -295,12 +337,20 @@ function konfetti(e: AudioEngine, ab: number, dauer: number, anzahl = 14): void 
  */
 function jubelRassel(e: AudioEngine, ab: number, dauer: number): void {
   const abstand = 0.042;
+  let k = 0;
   for (let t = 0; t < dauer; t += abstand * streu(0.35)) {
     const p = t / dauer;
     // Schnell an, langsam aus. Der Faktor bleibt immer ueber null, weil die
     // Huellkurve exponentiell laeuft und einen Pegel von genau null nicht kennt.
     const g = 0.05 * (0.25 + 0.75 * Math.min(1, p * 5)) * (1 - p * 0.7);
-    e.noise({ dur: 0.012, gain: g, filter: 'bandpass', freq: 3200, q: 1.4, ...direkt(ab + t) });
+    // Die Ratsche wandert von links nach rechts durch. Sie ist der einzige
+    // Klang im Spiel, der lang genug dauert, dass man eine Bewegung im Raum
+    // ueberhaupt verfolgen kann — und eine gedrehte Ratsche bewegt sich.
+    e.noise({
+      dur: 0.012, gain: g, filter: 'bandpass', freq: 3200, q: 1.4,
+      ...direkt(ab + t, Math.sin(k * 0.9) * 0.5),
+    });
+    k++;
   }
 }
 
@@ -344,7 +394,7 @@ export function alleGerettet(e: AudioEngine): void {
     [24, AKKORD_AB + 0.2],
   ] as const) {
     blech(e, hz(ton), 0.2, ab, 0.13);
-    steeldrum(e, { freq: hz(ton), dur: 0.3, gain: 0.08, ...fuerStimme(ab) });
+    pling(e, { freq: hz(ton), dur: 0.32, gain: 0.075, ...fuerStimme(ab) });
   }
   const akkordAb = AKKORD_AB + 0.44;
   schlussakkord(e, akkordAb, [4, 7, 12, 16, 19, 28], 2.1);
@@ -474,8 +524,13 @@ export function neuerBestwert(e: AudioEngine, ab = 0): void {
   e.duck(ab + 2.1);
   LAUF.forEach((ton, i) => {
     // Nach oben leiser werdend: So klingt es nach einer Hand, die ueber die
-    // Saiten streicht, und nicht nach zehn einzeln angeschlagenen Toenen.
-    kalimba(e, { freq: hz(ton), dur: 0.5, gain: 0.115 - i * 0.004, ...fuerStimme(ab + i * 0.048) });
+    // Saiten streicht, und nicht nach zehn einzeln angeschlagenen Toenen. Und
+    // der Lauf wandert dabei von links nach rechts — eine Hand, die ueber Saiten
+    // streicht, bewegt sich.
+    kalimba(e, {
+      freq: hz(ton), dur: 0.5, gain: 0.115 - i * 0.004,
+      ...fuerStimme(ab + i * 0.048, -0.5 + i / (LAUF.length - 1)),
+    });
   });
   // Triller auf E6/G6 (das Glockenspiel klingt eine Oktave ueber dem
   // uebergebenen Ton). Acht Wechsel in 0,56 s — schnell genug, dass man zwei
@@ -484,10 +539,12 @@ export function neuerBestwert(e: AudioEngine, ab = 0): void {
   for (let i = 0; i < 8; i++) {
     glocke(e, {
       freq: hz(i % 2 === 0 ? 16 : 19), dur: 0.35, gain: 0.06,
-      ...fuerStimme(ab + 0.5 + i * 0.07),
+      // Die zwei Toene des Trillers stehen auf zwei Seiten. Das ist der Grund,
+      // warum man sie einzeln erkennt und trotzdem als eine Flaeche hoert.
+      ...fuerStimme(ab + 0.5 + i * 0.07, i % 2 === 0 ? -0.35 : 0.35),
     });
   }
   // Schlusston eine Oktave ueber dem Grundton — er faengt den Triller auf,
   // sonst bricht der Stinger mitten in der Bewegung ab.
-  glocke(e, { freq: hz(24), dur: 0.85, gain: 0.09, ...fuerStimme(ab + 1.1) });
+  glocke(e, { freq: hz(24), dur: 0.85, gain: 0.09, ...fuerStimme(ab), delay: ab + 1.1, echo: 0.35 });
 }

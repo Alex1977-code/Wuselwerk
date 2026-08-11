@@ -3,16 +3,16 @@ import type { AudioEngine } from './engine';
 import {
   akkordeon,
   bass,
-  chip,
+  erdschlag,
   flaeche,
   glocke,
   kalimba,
-  kick,
+  kies,
   klarinette,
-  marimba,
+  okarina,
   panfloete,
   pizzicato,
-  shaker,
+  pling,
   tick,
   ukulele,
   woodblock,
@@ -37,30 +37,62 @@ import {
  *
  * ## Zwei Sorten Musik in einem Stueck
  *
- * Ueber dem Ganzen liegt ein Volkslied — Achttakter, Kopfmotiv, Blasstimme.
- * Darunter laeuft eine **Maschine**: Kick auf jede Viertel, Bass auf jede
- * Achtel dazwischen, eine gehaltene Flaeche und eine Sechzehntelfigur. Das ist
- * der Bau eines Tanzstuecks, nicht der einer Blaskapelle.
+ * Ueber dem Ganzen liegt ein Volkslied — Achttakter, Kopfmotiv, gehaltene
+ * Stimme. Darunter laeuft eine **Maschine**: ein Puls im Dreier-Dreier-Zweier,
+ * ein Bass, der jede uebrige Achtel besetzt, eine gehaltene Flaeche und eine
+ * Sechzehntelfigur.
  *
  * Dass beides zusammengeht, liegt an einer strengen Aufteilung des Frequenz-
  * bandes und nicht am Zufall: Die Maschine bleibt **unter** 800 Hz, die Melodie
  * darueber. Wo beide dasselbe Band beanspruchen, gewinnt keiner — man dreht nur
  * lauter, bis alles zu laut ist.
  *
+ * ## Was diese Fassung von einem Sequenzer unterscheidet
+ *
+ * Vorher lag jedes Ereignis exakt auf dem Raster und der Puls stand auf jeder
+ * Viertel. Das ist der Klang einer Maschine, die Noten abspielt. Drei Eingriffe
+ * machen daraus Musik, und alle drei sind **deterministisch** — feste Zahlen,
+ * kein Wuerfeln:
+ *
+ * 1. **Der Puls ist 3-3-2** (`PULS`). Der Schlag steht auf den Achteln 0, 3 und
+ *    6 statt auf jeder Viertel. Die tiefe Lage bleibt trotzdem lueckenlos
+ *    belegt, weil der Bass genau die Achteln nimmt, die der Schlag frei laesst.
+ *    Es aendert sich also nicht die Dichte, sondern der **Akzent** — und damit
+ *    aus „vier gerade durch" ein Gang mit Federung wird.
+ * 2. **Swing auf den Sechzehnteln** (`SCHWUNG`). Die zweite Sechzehntel jeder
+ *    Achtel kommt gut ein Zehntel spaeter. Das ist Lockerheit, kein Shuffle.
+ * 3. **Mikroversatz** (`VERSATZ`). Der Bass zieht (6 ms zu frueh), die Harmonie
+ *    lehnt sich zurueck (14 ms zu spaet), der Kies zieht leicht mit. Wenn alles
+ *    auf derselben Millisekunde liegt, hoert man einen Ausloeser; mit Versatz
+ *    hoert man Stimmen.
+ *
+ * Dazu zwei Dinge aus der Mischung, die hier ausgeloest werden: Bei jedem Schlag
+ * weicht der Pad-Zweig kurz zurueck (`AudioEngine.pumpe`) — das ist, was
+ * „basslastig" auf einem Telefon wirklich heisst —, und die Melodie geht in ein
+ * tempogekoppeltes Echo (`AudioEngine.setEcho`).
+ *
+ * ## Der Bogen
+ *
+ * Die Schleife ist acht Takte lang, und sie hat jetzt eine Richtung: Kies und
+ * Sechzehntelfigur schwellen ueber die acht Takte an und fallen beim
+ * Wiedereinstieg zurueck (`bogen`). Ohne das klingt Takt 8 wie Takt 1, und der
+ * Punkt, an dem die Schleife herumkommt, ist die auffaelligste Stelle des
+ * Stuecks.
+ *
  * ## Die Ebenen
  *
- * Sieben Spuren, die einzeln zu- und abgeschaltet werden: Kick, Bass, Flaeche,
- * Perkussion, Sechzehntelfigur, Harmonie, Melodie, dazu der Glitzer. Das ist
+ * Sieben Spuren, die einzeln zu- und abgeschaltet werden: Schlag, Bass, Flaeche,
+ * Kies, Sechzehntelfigur, Harmonie, Melodie, dazu der Glitzer. Das ist
  * der Unterschied zu 1991 — dort lief ein Band, hier reagiert die Musik auf die
  * Lage:
  *
  * | Lage | was passiert |
  * |---|---|
  * | Normal | alle Spuren |
- * | Restzeit unter 30 % | Schuettelrohr doppelt, Uhrentick dazu, Melodie raus, alles einen Halbton hoeher |
+ * | Restzeit unter 30 % | Kies auf jede Achtel, Uhrentick dazu, Melodie raus, alles einen Halbton hoeher |
  * | Letzte zehn Sekunden | nur noch Bass und Tick |
- * | Pause | Tiefpass auf 400 Hz statt Stille — die Musik rueckt weg, statt abzureissen |
- * | Alle gerettet, Level laeuft noch | Glitzer verdoppelt, Glockenspiel-Girlande darueber |
+ * | Pause | Tiefpass auf 400 Hz und doppelte Luft statt Stille — die Musik rueckt weg, statt abzureissen |
+ * | Alle gerettet, Level laeuft noch | Glitzer verdoppelt, Glockengirlande darueber |
  */
 
 /**
@@ -87,11 +119,113 @@ interface Stueck {
    * Anschlaegen piekst nur vor sich hin. Den Anschlag gibt ohnehin das Stabspiel
    * darunter dazu — siehe `update`.
    */
-  melodieStimme: 'akkordeon' | 'klarinette' | 'panfloete';
+  melodieStimme: 'akkordeon' | 'klarinette' | 'panfloete' | 'okarina';
   harmonieStimme: 'ukulele' | 'kalimba';
+  /**
+   * Die Fuenftonleiter, in der die **Geraeusche** dieser Welt stehen.
+   *
+   * Bisher hingen alle Spielgeraeusche fest an C-Dur pentatonisch. Bei diesen
+   * zwei Welten geht das gut, aber nur durch einen Zufall: Die C-Pentatonik
+   * (C D E G A) liegt vollstaendig in A-dorisch. Bei der dritten Welt haelt der
+   * Zufall nicht mehr, und der Fehler ist einer von der leisen Sorte — man hoert
+   * nur, dass etwas nicht stimmt, ohne zu wissen, was.
+   *
+   * Deshalb bringt jedes Stueck seine eigene Leiter mit, und `tonart()` reicht
+   * sie an `sfx.ts` und `stinger.ts` weiter. Abgesichert durch einen Test:
+   * **Jede Stufe muss ein Ton sein, den die Melodie dieser Welt selbst
+   * benutzt** — dann kann eine Geraeuschleiter gar nicht neben ihrem Stueck
+   * stehen.
+   */
+  sfxStufen: readonly number[];
+  /**
+   * Grundton der Fanfare, in Halbtoenen ueber `grund`.
+   *
+   * Eine Fanfare muss in Dur stehen, sonst ist sie kein Sieg. Bei einem Stueck
+   * in Dur ist das der Grundton selbst; bei einem in Moll oder dorisch ist es
+   * die **Paralleltonart** — der Ton drei Halbtoene darueber. Dass beide Welten
+   * dadurch heute auf C landen, ist ein Ergebnis und keine Voraussetzung.
+   */
+  fanfareGrund: number;
 }
 
 const TAKT = 8;
+
+/**
+ * Der Puls: Dreier–Dreier–Zweier.
+ *
+ * Acht Achtel, Schlag auf 0, 3 und 6. Das ist die aelteste und verbreitetste
+ * Synkope ueberhaupt, und sie tut hier genau eine Sache: Sie nimmt dem Stueck
+ * das Metronom, ohne ihm den Antrieb zu nehmen. Vier gerade Viertel sind ein
+ * Zaehlwerk; drei–drei–zwei ist ein Gang — zwei lange Schritte, ein kurzer, und
+ * dann faellt man von selbst in den naechsten Takt.
+ *
+ * Der Bass besetzt genau die uebrigen Achtel (1, 2, 4, 5, 7). Damit bleibt die
+ * Eigenschaft erhalten, an der die alte Fassung haengt und die auf einem
+ * Handylautsprecher entscheidet: **Nie liegen zwei tiefe Toene gleichzeitig.**
+ * Das Ohr hoert eine durchgehende tiefe Linie, und trotzdem matscht unten
+ * nichts zusammen.
+ */
+export const PULS: readonly boolean[] = [true, false, false, true, false, false, true, false];
+
+/**
+ * Was der Bass auf den uebrigen Achteln spielt: Halbtoene ueber dem
+ * Akkordgrundton und Pegelfaktor.
+ *
+ * Nur Grundton und Quinte — dieselbe Begruendung wie bei `ARPEGGIO`: Diese
+ * Figur laeuft ueber alle Akkorde beider Stuecke, die Wiese in Dur, die Hoehle
+ * in dorisch. Die Terz waere in der Hoehle der falsche Ton, Grundton und Quinte
+ * passen ueber jeden Dreiklang jeder Tonart.
+ *
+ * Die Quinte steht auf 5 und 7, also auf den beiden Achteln, die in die naechste
+ * schwere Zeit hineinfuehren. Das ist der aelteste Zug einer Basslinie: Ein Ton,
+ * der nicht der Grundton ist, **will irgendwohin**, und das Ohr hoert das als
+ * Zug nach vorn. Eine Linie aus lauter Grundtoenen steht nur da.
+ */
+export const BASSFIGUR: readonly (readonly [number, number] | null)[] = [
+  null,      // 0 — Schlag
+  [0, 0.72], // 1   Nachschlag zur Eins
+  [0, 1.0],  // 2   zweite Viertel, voll
+  null,      // 3 — Schlag
+  [0, 1.0],  // 4   dritte Viertel, voll
+  [7, 0.78], // 5   Quinte, hebt an
+  null,      // 6 — Schlag
+  [7, 0.95], // 7   Quinte, zieht in den naechsten Takt
+];
+
+/**
+ * Kies auf den Achteln, die der Schlag frei laesst — mit Pegelmuster.
+ *
+ * Dieselbe Rhythmik wie der Bass, nur zwei Oktaven weiter oben. Dass sich beide
+ * Schichten einig sind, wo „daneben" ist, macht den Groove lesbar: Es gibt genau
+ * zwei Sorten Zeit in diesem Takt, und beide Enden des Frequenzbandes sagen
+ * dasselbe darueber.
+ */
+const KIES_MUSTER: readonly number[] = [0, 1.0, 0.6, 0, 0.9, 0.6, 0, 1.0];
+
+/**
+ * Wie weit die zweite Sechzehntel nach hinten rutscht, als Anteil einer Achtel.
+ *
+ * 0,06 einer Achtel sind 12 % einer Sechzehntel. Das ist die Groessenordnung, in
+ * der man es als **Lockerheit** hoert und nicht als Stilzitat; ab etwa einem
+ * Drittel wird daraus ein Shuffle, und der wuerde gegen die abgenommene Melodie
+ * laufen, die gerade Achtel hat.
+ */
+const SCHWUNG = 0.06;
+
+/**
+ * Mikroversatz in Sekunden. Negativ heisst frueher.
+ *
+ * Das ist der Unterschied zwischen einer Band und einem Auslöser. Ein Bassist
+ * zieht, ein Rhythmusgitarrist lehnt sich zurueck; keiner von beiden trifft die
+ * Millisekunde des Schlagzeugers, und genau daran erkennt das Ohr Menschen. Die
+ * Werte sind fest und nicht gewuerfelt — es geht um eine **Haltung**, und die
+ * ist bei jedem Takt dieselbe.
+ *
+ * Der Schlag steht auf null, weil er das Raster *ist*. Die Melodie auch: Sie
+ * traegt die Aussage, und eine verschobene Melodie klingt nicht locker, sondern
+ * falsch.
+ */
+const VERSATZ = { bass: -0.006, kies: -0.003, harmonie: 0.014 } as const;
 
 export const STUECKE: Record<ThemeId, Stueck> = {
   /**
@@ -130,10 +264,22 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
     akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
     farbe: [4, 7],
-    bpm: 126,
+    // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
+    // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
+    //
+    // 1. **Schritttempo.** 120 Viertel je Minute ist der Gang eines Menschen.
+    //    Das Level heisst „Spaziergang", und die Figuren laufen darin herum.
+    // 2. **Rundes Raster.** Eine Achtel dauert damit genau 250 ms. Daran haengt
+    //    mehr, als es aussieht: das Echo (punktierte Achtel, 375 ms) und die
+    //    Trippelschritte, die jetzt auf demselben Achtelraster laufen statt auf
+    //    freien 190 ms (`schrittDauer`).
+    bpm: 120,
     grund: 261.63,
-    melodieStimme: 'akkordeon',
+    melodieStimme: 'okarina',
     harmonieStimme: 'ukulele',
+    // C-Dur pentatonisch. Jede Stufe kommt in der Melodie oben vor.
+    sfxStufen: [0, 2, 4, 7, 9],
+    fanfareGrund: 0,
   },
   /**
    * Welt 2 — Hoehle. Derselbe Bau, andere Tonleiter: dorisch auf A.
@@ -161,12 +307,102 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     ],
     akkorde: [0, 10, 0, 5, 10, 3, 5, 0],
     farbe: [3, 7],
-    bpm: 112,
+    // 100 statt 112. Der alte Abstand zur Wiese war elf Prozent — hoerbar, aber
+    // zu wenig, um die Hoehle zu einem anderen **Ort** zu machen statt zu
+    // derselben Musik in Blau. Mit 100 gegen 120 sind es sechzehn Prozent, und
+    // dazu kommt der laengere, dunklere Raum (`ambiente.ts`).
+    //
+    // Dass die Melodie dabei nicht schleppt, liegt am Bau des Stuecks: Ihre
+    // Noten sind fast durchweg Viertel, waehrend die Sechzehntelfigur darunter
+    // weiterlaeuft. Langsame Harmonie ueber schneller Oberflaeche — so bleibt
+    // ein langsames Stueck in Bewegung, ohne hektisch zu werden.
+    bpm: 100,
     grund: 220,
     melodieStimme: 'klarinette',
     harmonieStimme: 'kalimba',
+    // A-Moll pentatonisch. Jede Stufe kommt in der Melodie oben vor — und alle
+    // fuenf liegen in A-dorisch, das ist derselbe Tonvorrat.
+    sfxStufen: [0, 3, 5, 7, 10],
+    // Drei Halbtoene ueber A ist C. Die Paralleltonart, also die Durfarbe, die
+    // zu diesem Stueck gehoert.
+    fanfareGrund: 3,
   },
 };
+
+// ---------------------------------------------------------------------------
+// Was der Rest der Tonschicht vom laufenden Stueck wissen muss
+// ---------------------------------------------------------------------------
+
+/**
+ * Welches Stueck gerade laeuft — als Modulzustand.
+ *
+ * Warum hier und nicht als Feld der Klasse: `sfx.ts` und `stinger.ts` brauchen
+ * die Tonart und das Achtelraster, haben aber keinen Zugriff auf die
+ * `Music`-Instanz. Ueber `GameAudio` liefe es nur mit einer Aenderung an
+ * `index.ts`, und die Datei gehoert mir nicht. Der Modulzustand ist der
+ * ehrlichere Weg: Es gibt im ganzen Spiel genau ein laufendes Stueck, also ist
+ * „welches" auch genau eine Angabe und kein Zustand je Objekt.
+ *
+ * `GameAudio.setTheme` ruft `music.setTheme` **vor** `sfx.reset`, die Reihenfolge
+ * stimmt also von selbst.
+ */
+let laufendesThema: ThemeId = 'grass';
+
+/** Zeitpunkt der naechsten noch nicht geplanten Achtel, in der Klanguhr. */
+let naechsteAchtel = 0;
+
+export interface Tonart {
+  /** Grundton in Hertz. */
+  grund: number;
+  /** Die Fuenftonleiter dieser Welt, in Halbtoenen ueber dem Grundton. */
+  stufen: readonly number[];
+  /** Grundton der Fanfare, in Halbtoenen ueber dem Grundton. */
+  fanfare: number;
+}
+
+/**
+ * Die Tonart des laufenden Stuecks. Fuer Geraeusche und Stingers.
+ *
+ * Das ist das dritte der vier Bindemittel zwischen Musik und Geraeuschen (die
+ * anderen sind der gemeinsame Raum, das gemeinsame Material und der gemeinsame
+ * Takt). Ein Effekt, der neben der laufenden Musik steht, klingt nach Fehler —
+ * auch wenn er fuer sich genommen schoen ist.
+ */
+export function tonart(): Tonart {
+  const p = STUECKE[laufendesThema];
+  return { grund: p.grund, stufen: p.sfxStufen, fanfare: p.fanfareGrund };
+}
+
+/**
+ * Wie lang eine Achtel des laufenden Stuecks dauert, in Sekunden.
+ *
+ * Gebraucht von den Trippelschritten: Sie liefen bisher auf festen 190 ms und
+ * damit als einziger Klang des Spiels **gegen** die Musik. Beim Spielen hoert
+ * man fast durchgehend Schritte; solange sie eine eigene Periode haben,
+ * zerfaellt das Klangbild in „Musik" und „Spiel", egal wie gut beides fuer sich
+ * ist.
+ */
+export function schrittDauer(): number {
+  return 60 / STUECKE[laufendesThema].bpm / 2;
+}
+
+/**
+ * Verzoegerung bis zur naechsten Achtel, in Sekunden.
+ *
+ * Damit landet ein Klang, der irgendwann im Bild ausgeloest wird, auf dem Raster
+ * der Musik statt daneben. Der Rest der Division ist noetig, weil die Musik
+ * ihren Vorlauf plant und `naechsteAchtel` deshalb bis zu 0,35 s voraus liegen
+ * kann — gemeint ist aber die *naechste* Achtel, nicht die naechste ungeplante.
+ *
+ * Laeuft keine Musik, kommt null heraus und der Klang spielt sofort. Das ist
+ * richtig so: Ohne Raster gibt es nichts, worauf man warten koennte.
+ */
+export function bisNaechsteAchtel(jetzt: number): number {
+  const d = schrittDauer();
+  if (naechsteAchtel <= 0 || d <= 0) return 0;
+  const rest = (((naechsteAchtel - jetzt) % d) + d) % d;
+  return rest;
+}
 
 const LOOKAHEAD = 0.35;
 
@@ -228,6 +464,8 @@ export class Music {
   private theme: ThemeId = 'grass';
   private lage: Lage = { restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false };
   private gefiltert = false;
+  /** Steht die Echozeit schon auf dem Tempo des laufenden Stuecks? */
+  private echoGesetzt = false;
 
   get state(): { playing: boolean; notes: number; lage: string } {
     return {
@@ -247,6 +485,11 @@ export class Music {
 
   setTheme(theme: ThemeId): void {
     this.theme = theme in STUECKE ? theme : 'grass';
+    laufendesThema = this.theme;
+    // Das Echo muss neu gesetzt werden, aber die Klangwerkstatt gibt es zu
+    // diesem Zeitpunkt vielleicht noch nicht (sie entsteht erst nach der ersten
+    // Nutzergeste). Also nur vormerken; `update` traegt es nach.
+    this.echoGesetzt = false;
   }
 
   /** Jedes Bild aus dem Spiel heraus setzen. */
@@ -276,6 +519,10 @@ export class Music {
     const zu = this.lage.pausiert;
     if (zu !== this.gefiltert) {
       engine.musikFilter(zu ? 400 : 18000);
+      // Und der Raum geht auf. Ein Tiefpass allein klingt nach einem Geraet,
+      // dem etwas fehlt; Tiefpass plus doppelte Luft klingt nach einem Schritt
+      // zurueck — und genau das ist eine Pause.
+      engine.raumWeite(zu ? 2.2 : 1);
       this.gefiltert = zu;
     }
 
@@ -284,6 +531,12 @@ export class Music {
     const p = STUECKE[this.theme];
     const raster = RASTER[this.theme];
     const stepDur = 60 / p.bpm / 2;
+    // Punktierte Achtel: drei Sechzehntel gegen zwei. Sie laeuft dadurch gegen
+    // das Raster, statt es zu verdoppeln — deshalb ist sie die uebliche Wahl.
+    if (!this.echoGesetzt) {
+      engine.setEcho(stepDur * 1.5);
+      this.echoGesetzt = true;
+    }
     const horizon = engine.time + LOOKAHEAD;
     if (this.nextTime < engine.time) this.nextTime = engine.time + 0.02;
 
@@ -301,52 +554,89 @@ export class Music {
       const wurzel = p.akkorde[takt] + schiebung;
       const f = (h: number, oktave = 0) => p.grund * Math.pow(2, h / 12 + oktave);
       const g = { delay, bus: 'music' as const, fest: true };
+      // Der Pad-Zweig. Alles, was hier hineingeht, weicht bei jedem Schlag kurz
+      // zurueck — siehe `AudioEngine.pumpe`.
+      const gp = { delay, bus: 'pad' as const, fest: true };
+      /** Sicher verschobener Einsatz. Negativ waere „sofort", nicht „frueher". */
+      const ab = (versatz: number) => Math.max(0, delay + versatz);
+      // Stelle im Achttakter, 0 am Anfang, 1 am Ende. Der Bogen (siehe Dateikopf).
+      const bogen = takt / Math.max(1, p.akkorde.length - 1);
+      const imTakt = i % TAKT;
 
-      // --- Der Motor: Kick unten auf dem Schlag, Bass in die Luecke ----------
+      // --- Der Motor: Schlag im Dreier-Dreier-Zweier, Bass in die Luecken ----
       //
-      // Das ist die ganze Maschine, und sie ist deshalb so wirksam, weil sich
-      // die beiden **nie in die Quere kommen**: Auf jeder Viertel nimmt der
-      // Kick den Platz ganz unten, auf jeder Achtel dazwischen faellt der Bass
-      // hinein. Das Ohr hoert daraus einen durchgehenden Bass, obwohl zu keinem
-      // Zeitpunkt zwei tiefe Toene gleichzeitig laufen — genau darum bleibt es
-      // wuchtig statt matschig.
+      // Die Aufteilung ist dieselbe geblieben und traegt aus demselben Grund:
+      // Schlag und Bass kommen sich **nie in die Quere**. Wo der eine steht,
+      // steht der andere nicht. Das Ohr hoert daraus eine durchgehende tiefe
+      // Linie, obwohl zu keinem Zeitpunkt zwei tiefe Toene gleichzeitig laufen —
+      // genau darum bleibt es wuchtig statt matschig.
       //
-      // Die Achtel dazwischen ist auch der Grund, warum das nach vorne zieht:
-      // Ein Ton auf dem unbetonten Teil laesst das Ohr den naechsten Schlag
-      // erwarten. Der Puls entsteht aus dem Warten, nicht aus der Lautstaerke.
+      // Geaendert hat sich, **wo** der Schlag steht: 0, 3, 6 statt auf jeder
+      // Viertel. Die Dichte unten ist unveraendert, der Akzent ist es nicht.
       if (!endspurt) {
-        if (i % 2 === 0) kick(engine, { freq: 0, gain: 0.2, ...g });
-        else bass(engine, { freq: f(wurzel, -1), dur: stepDur * 0.75, gain: 0.19, ...g });
+        if (PULS[imTakt]) {
+          erdschlag(engine, { freq: 0, gain: 0.21, ...g });
+          // Zum selben Zeitpunkt weicht alles Liegende kurz zurueck. Das ist
+          // der Grund, warum eine moderne Mischung unten wuchtig klingt, ohne
+          // lauter zu sein: Der Schlag bekommt jedes Mal den Platz fuer sich.
+          engine.pumpe(delay, 0.3);
+        } else {
+          const figur = BASSFIGUR[imTakt];
+          if (figur) {
+            bass(engine, {
+              freq: f(wurzel + figur[0], -1),
+              dur: stepDur * 0.78,
+              gain: 0.2 * figur[1],
+              ...g,
+              delay: ab(VERSATZ.bass),
+            });
+          }
+        }
       } else {
         // Im Endspurt bleibt nur das nackte Fundament auf dem Schlag.
         if (i % 2 === 0) bass(engine, { freq: f(wurzel, -1), dur: stepDur * 0.9, gain: 0.24, ...g });
       }
 
-      // Das Fundament des Takts, gehalten. Es fuellt die Luecken zwischen Kick
+      // Das Fundament des Takts, gehalten. Es fuellt die Luecken zwischen Schlag
       // und Bass, damit unten nichts flackert — der Unterschied zwischen "es
       // schlaegt Bass" und "es *liegt* Bass".
-      if (!endspurt && i % TAKT === 0) {
+      if (!endspurt && imTakt === 0) {
         flaeche(engine, {
-          freq: f(wurzel, -1), dur: stepDur * TAKT * 0.96, gain: 0.04, ...g,
+          freq: f(wurzel, -1), dur: stepDur * TAKT * 0.96, gain: 0.04, ...gp,
         });
       }
 
       // --- Perkussion -------------------------------------------------------
       if (!endspurt) {
-        // Das Schuettelrohr sitzt auf den Achteln zwischen den Schlaegen: die
-        // Gegenbewegung zum Kick, oben statt unten.
-        if (knapp || i % 2 === 1) shaker(engine, { freq: 0, gain: 0.05, ...g });
-        // Der Holzblock ist vom Taktgeber zum Akzent geworden — den Takt gibt
-        // jetzt der Kick. Er steht auf der letzten Achtel des Takts und zieht
-        // von dort in die naechste Eins.
-        if (i % TAKT === 7) woodblock(engine, { freq: 1250, gain: 0.06, ...g });
+        // Der Kies sitzt auf den Achteln zwischen den Schlaegen: dieselbe
+        // Rhythmik wie der Bass, nur zwei Oktaven weiter oben. Dass beide Enden
+        // des Frequenzbandes sich einig sind, wo „daneben" ist, macht den Groove
+        // lesbar.
+        //
+        // Er wechselt dabei die Seite. Das ist die billigste Bewegung, die es
+        // gibt — reine Pegelverteilung, in Mono nicht einmal messbar — und auf
+        // Kopfhoerern der Unterschied zwischen einer Spur und einem Feld.
+        const staerke = knapp ? 1 : KIES_MUSTER[imTakt];
+        if (staerke > 0) {
+          kies(engine, {
+            freq: 0,
+            gain: (0.036 + 0.014 * bogen) * staerke,
+            ...g,
+            pan: imTakt % 2 === 0 ? -0.32 : 0.3,
+            delay: ab(VERSATZ.kies),
+          });
+        }
+        // Der Holzblock steht auf der letzten Achtel des Takts und zieht von
+        // dort in die naechste Eins. Rechts aussen, damit er nicht mit dem
+        // Schlag in der Mitte um denselben Platz streitet.
+        if (imTakt === 7) woodblock(engine, { freq: 1250, gain: 0.055, ...g, pan: 0.45 });
       }
       if (knapp && i % 2 === 0) tick(engine, { freq: 0, gain: 0.09, ...g });
 
       // --- Akkordflaeche ----------------------------------------------------
-      if (!endspurt && i % TAKT === 0) {
+      if (!endspurt && imTakt === 0) {
         for (const ton of p.farbe) {
-          flaeche(engine, { freq: f(wurzel + ton), dur: stepDur * TAKT * 0.96, gain: 0.022, ...g });
+          flaeche(engine, { freq: f(wurzel + ton), dur: stepDur * TAKT * 0.96, gain: 0.022, ...gp });
         }
       }
 
@@ -358,27 +648,53 @@ export class Music {
       // leise: Diese Figur soll man als Bewegung spueren, nicht als Stimme
       // hoeren. Genau das trennt eine treibende Begleitung von einem zweiten
       // Melodieversuch.
+      // Der Swing sitzt genau hier und nirgends sonst: Die zweite Sechzehntel
+      // rutscht um `SCHWUNG` nach hinten. Alles andere im Stueck laeuft auf
+      // Achteln oder groesser und bliebe von einem Shuffle unberuehrt — das
+      // Lockere entsteht also allein aus dieser einen Zeile.
       if (!knapp) {
         for (const halb of [0, 1]) {
           const ton = ARPEGGIO[(i * 2 + halb) % ARPEGGIO.length];
           pizzicato(engine, {
             freq: f(wurzel + ton),
             dur: stepDur * 0.42,
-            gain: 0.032,
+            gain: (0.026 + 0.011 * bogen) * (halb === 0 ? 1 : 0.78),
             ...g,
-            delay: delay + halb * stepDur * 0.5,
+            // Wechselseitig, aber enger als der Kies: Die Figur traegt
+            // Bewegung und darf sich deshalb nicht ganz von der Mitte loesen.
+            pan: halb === 0 ? -0.18 : 0.22,
+            delay: delay + stepDur * (halb === 0 ? 0 : 0.5 + SCHWUNG),
           });
         }
       }
 
       // --- Harmonie auf den Nachschlaegen ----------------------------------
-      // Der Rest des Volksliedes: gezupfte Nachschlaege. Sie sind jetzt leiser,
-      // weil unter ihnen eine Maschine laeuft, die es vorher nicht gab.
-      if (!endspurt && i % 4 === 2) {
+      //
+      // Gezupfte Nachschlaege auf den Achteln 1 und 5 — den unbetonten Haelften
+      // der ersten und dritten Viertel. Vorher standen sie auf 2 und 6, also auf
+      // schweren Zeiten, und verdoppelten damit den Puls, statt ihm zu
+      // antworten. Auf dem Nachschlag ist es ein **Gegengewicht**: Man hoert
+      // die Harmonie dort, wo unten gerade nichts passiert.
+      //
+      // Dazu vierzehn Millisekunden zu spaet (`VERSATZ.harmonie`) — die Haltung
+      // eines Rhythmusgitarristen, der sich zurueckliegen laesst.
+      //
+      // Die Akkordtoene werden ueber die Breite verteilt, von links nach rechts
+      // aufsteigend. Ein Dreiklang, dessen Toene alle an derselben Stelle
+      // stehen, ist ein Klang; einer, der auseinandergezogen ist, ist ein Griff.
+      if (!endspurt && (imTakt === 1 || imTakt === 5)) {
         const stimme = p.harmonieStimme === 'ukulele' ? ukulele : kalimba;
-        for (const ton of [0, ...p.farbe]) {
-          stimme(engine, { freq: f(wurzel + ton), gain: 0.04, dur: stepDur * 1.4, ...g });
-        }
+        const toene = [0, ...p.farbe];
+        toene.forEach((ton, k) => {
+          stimme(engine, {
+            freq: f(wurzel + ton),
+            gain: 0.038,
+            dur: stepDur * 1.3,
+            ...gp,
+            pan: -0.4 + (0.8 * k) / Math.max(1, toene.length - 1),
+            delay: ab(VERSATZ.harmonie),
+          });
+        });
       }
 
       // --- Melodie ----------------------------------------------------------
@@ -393,35 +709,52 @@ export class Music {
         const halbton = note[0] + schiebung;
         const laenge = stepDur * note[1];
         const stimme =
-          p.melodieStimme === 'akkordeon'
-            ? akkordeon
-            : p.melodieStimme === 'klarinette'
-              ? klarinette
-              : panfloete;
+          p.melodieStimme === 'okarina'
+            ? okarina
+            : p.melodieStimme === 'akkordeon'
+              ? akkordeon
+              : p.melodieStimme === 'klarinette'
+                ? klarinette
+                : panfloete;
         // Etwas kuerzer als der Notenwert: Zwischen zwei Toenen muss eine
         // Kante bleiben, sonst verschmelzen sie zu einem Gleiten.
-        stimme(engine, { freq: f(halbton, 1), dur: laenge * 0.86, gain: 0.16, ...g });
-        // Der Anschlag. Deutlich leiser als die Blasstimme — er soll die Kante
-        // setzen, nicht selbst als Stimme auftreten.
-        const anschlag = p.melodieStimme === 'klarinette' ? kalimba : marimba;
-        anschlag(engine, { freq: f(halbton, 1), dur: Math.min(0.3, laenge), gain: 0.07, ...g });
-        // Die Achtbit-Ebene verdoppelt nur — nie Hauptstimme. Sie liegt jetzt
-        // auf der Melodie statt eine Oktave darueber: `chip` verdoppelt selbst
-        // schon (siehe `instrumente.ts`), und mit dem zusaetzlichen Oktavsprung
-        // sass eine Rechteckwelle bei zwei Kilohertz ueber allem. Das war das
-        // Piepen.
-        chip(engine, { freq: f(halbton), dur: Math.min(0.14, laenge * 0.5), gain: 0.022, ...g });
+        //
+        // Der Echoanteil ist das eine Merkmal, an dem man diese Fassung in einer
+        // Sekunde von der vorigen unterscheidet: Die Melodie hat einen Nachsatz.
+        // Er sitzt auf der punktierten Achtel und laeuft dadurch **gegen** das
+        // Raster — daraus entsteht Bewegung statt Verdopplung. Und er ist der
+        // Grund, warum die Melodie ihr Fenster kraeftiger besetzt als vorher,
+        // ohne lauter zu sein: Sie ist danach laenger da.
+        stimme(engine, { freq: f(halbton, 1), dur: laenge * 0.86, gain: 0.16, ...g, echo: 0.3 });
+        // Der Anschlag: der Pling, das Erkennungszeichen des Spiels. Deutlich
+        // leiser als die gehaltene Stimme — er setzt die Kante, er tritt nicht
+        // selbst als Stimme auf.
+        //
+        // Er ersetzt zwei Dinge auf einmal: das Stabspiel von vorher (Marimba
+        // bzw. Kalimba) **und** die Achtbit-Ebene. Deren Aufgabe war, der
+        // Melodie eine Kante zu geben; die uebernimmt der Glasanteil des Plings.
+        // Der Unterschied ist, dass eine Rechteckwelle ein Zitat von 1991 ist —
+        // im Bild des Spiels ist nichts mehr gerastert — und dass sie
+        // ausgerechnet im Fenster der Melodie sass.
+        pling(engine, { freq: f(halbton, 1), dur: Math.min(0.34, laenge), gain: 0.07, ...g });
         this.notes++;
       }
 
       // --- Glitzer ----------------------------------------------------------
       // Wenn alle gerettet sind, das Level aber noch laeuft: doppelt so dicht.
+      // Er geht ins Echo, weil er als einziger Klang oben nichts traegt und
+      // deshalb ausfransen darf — das ist die Stelle, an der ein Echo Luft
+      // erzeugt statt Unordnung.
       const glitzerTakt = this.lage.alleGerettet ? 4 : 16;
       if (!endspurt && i % glitzerTakt === 12 % glitzerTakt) {
-        glocke(engine, { freq: f(wurzel + 12), gain: this.lage.alleGerettet ? 0.075 : 0.045, ...g });
+        glocke(engine, {
+          freq: f(wurzel + 12), gain: this.lage.alleGerettet ? 0.07 : 0.042,
+          ...g, pan: 0.28, echo: 0.4,
+        });
       }
 
       this.nextTime += stepDur;
+      naechsteAchtel = this.nextTime;
       this.step = (this.step + 1) % raster.length;
     }
   }

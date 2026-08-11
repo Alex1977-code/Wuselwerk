@@ -30,8 +30,29 @@ export type Bus = 'sfx' | 'music' | 'pad';
  * geschrieben hiesse, dass jede Aenderung an der Lautstaerke beim naechsten
  * Ducken stillschweigend zurueckgenommen wird.
  */
-const MUSIK_PEGEL = 0.5;
-const SFX_PEGEL = 0.8;
+/**
+ * Warum die Schienen lauter stehen als vorher (0,56 bzw. 0,85).
+ *
+ * Nicht, weil es lauter sein soll, sondern weil das Panorama Pegel kostet — und
+ * zwar ausgerechnet dort, wo gemessen wird. Ein `StereoPannerNode` verteilt
+ * nach dem Gesetz gleicher **Leistung**: Bei Mitte stehen links und rechts auf
+ * 0,707, ganz aussen auf 1 und 0. Auf zwei Lautsprechern kommt dabei jedes Mal
+ * dieselbe Leistung heraus, beim Zusammenlegen zu Mono aber nicht — dort fehlen
+ * in der Mitte drei und ganz aussen sechs Dezibel.
+ *
+ * Das ist kein Fehler, sondern die Eigenschaft, die diese Breite brauchbar
+ * macht: Auf einem Handylautsprecher ruecken die gespreizten Stimmen von selbst
+ * nach hinten und lassen Melodie, Bass und Schlag — die alle in der Mitte
+ * stehen — vorne allein. Auf Kopfhoerern steht dagegen alles da. Eine Mischung,
+ * die sich dem Wiedergabegeraet anpasst, ohne dass jemand etwas umschaltet.
+ *
+ * Bezahlt wird es hier: Beide Schienen kommen um den Betrag hoch, den die
+ * Spreizung in der Summe gekostet hat. Uebersteuern kann dabei nichts — die
+ * Saettigungskennlinie am Ausgang endet bei 0,92, unabhaengig davon, was
+ * hineingeht.
+ */
+const MUSIK_PEGEL = 0.7;
+const SFX_PEGEL = 0.9;
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -236,9 +257,24 @@ export class AudioEngine {
     if (this.echoAus) this.echoAus.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.06);
   }
 
-  /** Begrenzt die Stimmen pro Bild — 60 grabende Figuren duerfen nicht knallen. */
+  /**
+   * Begrenzt die Stimmen pro Bild — 60 grabende Figuren duerfen nicht matschen.
+   *
+   * Gezaehlt werden **Teiltoene**, nicht Klaenge: Ein Aufruf von `tone()` oder
+   * `noise()` ist eine Stimme, ein Instrument aus vier Teiltoenen sind vier.
+   * Das ist grob, aber es ist die Groesse, die zaehlt — Rechenlast und
+   * Klangbrei haengen an der Zahl der Oszillatoren und nicht daran, wie man sie
+   * gruppiert.
+   *
+   * Acht statt sechs, seit der Pling auch in den Spielgeraeuschen steht: Ein
+   * zusammengesetzter Klang kostet dort mehrere Plaetze, und bei sechs fielen
+   * beim Brueckenbau der zweite und dritte Klack aus — ausgerechnet dort, wo die
+   * Tonhoehe eine Aussage traegt. Die Bremse gegen Uebersteuerung ist das hier
+   * ohnehin nicht mehr: Das leistet die Saettigungskennlinie am Ausgang, und
+   * zwar zugesichert statt wahrscheinlich.
+   */
   private voicesThisFrame = 0;
-  private readonly maxVoicesPerFrame = 6;
+  private readonly maxVoicesPerFrame = 8;
 
   muted = false;
 
