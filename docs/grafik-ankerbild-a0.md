@@ -358,7 +358,50 @@ zu, und übrig bleibt ein roter Fleck über einem gelben Werkzeug. Bei 9 Grad li
 Das ist keine Geschmacksfrage, sondern folgt direkt aus dem Kopfanteil dieser Figur, und
 gilt für jede Pose.
 
-### 7.5 Was der Backweg nicht kann
+### 7.5 Was am Bild gelernt wurde
+
+Zehn Zustände wurden gebaut, gebacken und angesehen — im Schnitt achtmal je
+Zustand. Drei Befunde gelten für alle und sind wichtiger als jede einzelne Pose:
+
+**Die Arme tragen kein Pixel.** Mehrfach unabhängig nachgemessen: Die Schulter sitzt 5,4
+logische Pixel über der Sohle, die gestreckte Hand reicht bis 8,3 — die Mähne steht bis
+14,0. Jeder erhobene Arm endet also im Haar, in *jeder* Pose, bei jedem Winkel. Ein Agent
+hat einen ganzen Durchgang darauf verwendet, sechs Armstellungen am selben Körper zu backen:
+bis auf eine war keine im Bild vorhanden. Wer bei dieser Figur eine Geste über den Kopf
+erzählen will, muss sie als Anbauteil bauen — der echte Arm steht im Modell trotzdem
+richtig, für den Tag, an dem die Kamera sich ändert.
+
+**Den Kopf zurückzulegen richtet die Mähne nicht auf, sondern kippt sie um.** Meine Vorgabe
+für `falling` lautete „Kopf stark negativ, damit die Mähne senkrecht steht". Das ist falsch:
+Die Haarmasse sitzt hinten am Kopf; bei `Head: −70` fällt sie nach hinten-unten über den
+Rumpf, die Figur wird drei Zeilen kürzer und zwei breiter. Am höchsten steht der Scheitel
+bei `Head: 0`. Die Vorgabe wurde zugunsten der Silhouette gebrochen — richtig so.
+
+**Zwei Beine sind bei dieser Figurengrösse nicht zu trennen.** Vom Becken (2,9 über der
+Sohle) bis zum Boden sind es drei Zeilen bei zwei bis drei Pixeln Breite. Jede Spreizung
+über etwa 25 Grad verteilt das Bein auf zwei Spalten, von denen keine die Deckungsschwelle
+erreicht — es löst sich auf, statt zu wandern. Vier Zustände sind unabhängig auf dieselbe
+Grenze gelaufen. Die Beine sind eine Säule; erzählt wird oben.
+
+### 7.6 Zwei Fehler im Backweg, die dabei auffielen
+
+**Markerfarben überlebten den Renderer nicht.** `new THREE.Color(r, g, b)` setzt Werte im
+linearen Arbeitsraum, der Ausgang rechnet nach sRGB — aus dem Marker `(0, 128, 255)` wurde
+im Bild `(0, 188, 255)`. Reine 0 und 255 überstehen das, alles dazwischen nicht. Der
+Blockermarker fiel mit exakt 60 Stufen Abstand knapp aus der Erkennung und wurde als
+Anzugstürkis eingerastet: Die orangen Arme verschwanden im eigenen Ärmel. Behoben mit
+`setRGB(..., SRGBColorSpace)`, das die Farbe sauber zurückrechnet; die Erkennung darf
+seither eng sein.
+
+**Die Zotteln folgten dem Kopf nicht.** Anbauteile übernahmen vom Gelenk nur die *Lage*,
+nicht die *Drehung*. Für ein Werkzeug in der Faust ist das brauchbar — man richtet es
+ohnehin von Hand aus. Für Haarsträhnen war es falsch: Sie standen bei jeder Pose gleich und
+ragten immer rund zehn Pixel über das Kopfgelenk. Ein zusammenbrechender Wusel behielt so
+eine kerzengerade Frisur, und `dying` konnte gar nicht flach werden. Anbauteile können jetzt
+`folgt` setzen; gerechnet wird mit der Differenz zur Bindepose, damit die Achsen bleiben,
+wie sie überall in diesem Weg gelten.
+
+### 7.7 Was der Backweg nicht kann
 
 - **Kein Ausblenden.** Das Blatt kennt nur Pixel. `saving` und `dying` müssen ihre
   Auflösung über Haltung und Versatz erzählen, nicht über Durchsichtigkeit.

@@ -167,6 +167,7 @@ for (const c of CLIPS) {
       teile.push({
         an: 'Head',
         form: 'spitz',
+        folgt: true,
         pos: z.pos,
         mass: z.mass,
         dreh: [z.dreh[0] + w * 19, z.dreh[1], z.dreh[2] + w * 8],
@@ -181,6 +182,10 @@ const ohnePose = CLIPS.filter((c) => !posen[c.name]).map((c) => c.name);
 // --- Seite ------------------------------------------------------------------
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
 
+// Achtung beim Bearbeiten: Alles bis zum schliessenden Zeichen ist eine
+// Vorlagenzeichenkette. Ein einzelnes Rückwärtshochkomma darin — auch in einem
+// Kommentar — beendet sie vorzeitig, und der Fehler zeigt auf eine harmlose
+// Kommentarzeile. Deshalb steht hier drinnen kein Wort in Hochkommata.
 const PAGE = `<!doctype html><meta charset="utf-8">
 <script type="importmap">
 {"imports":{"three":"/node_modules/three/build/three.module.js",
@@ -293,6 +298,13 @@ window.__ready = (async () => {
   });
 
   const heim = root.position.clone();
+  // Weltdrehung jedes Knochens in der Bindepose. Sie ist der Bezugspunkt für
+  // Anbauteile, die dem Knochen folgen sollen (siehe folgt in anbauen()).
+  const bindWelt = {};
+  root.updateMatrixWorld(true);
+  for (const [name, b] of Object.entries(knochen)) {
+    bindWelt[name] = b.getWorldQuaternion(new THREE.Quaternion());
+  }
   const _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _i = new THREE.Quaternion();
   /**
    * Setzt eine Pose. Die Winkel gelten in *Weltachsen*: Ein Rig benennt seine
@@ -327,7 +339,7 @@ window.__ready = (async () => {
   const MARKER = Object.entries(TEILFARBEN).map(([k, v]) => [k, v.marker]);
   const marke = (r, g, b) => {
     for (const [k, m] of MARKER) {
-      if (Math.abs(r-m[0]) < 60 && Math.abs(g-m[1]) < 60 && Math.abs(b-m[2]) < 60) return k;
+      if (Math.abs(r-m[0]) < 20 && Math.abs(g-m[1]) < 20 && Math.abs(b-m[2]) < 20) return k;
     }
     return null;
   };
@@ -366,16 +378,33 @@ window.__ready = (async () => {
   // --- Anbauteile ----------------------------------------------------------
   const teileGruppe = new THREE.Group();
   scene.add(teileGruppe);
+  /**
+   * Markerfarben müssen den Renderer unverändert überstehen.
+   *
+   * Genau das taten sie nicht: new THREE.Color(r, g, b) setzt Werte im
+   * *linearen* Arbeitsraum, der Ausgang rechnet sie nach sRGB — aus dem Marker
+   * (0, 128, 255) wurde im Bild (0, 188, 255). Reine 0 und 255 überleben das,
+   * alles dazwischen nicht. Der Blockermarker fiel dadurch mit exakt 60 Stufen
+   * Abstand knapp aus der Erkennung und wurde als Anzugstürkis eingerastet —
+   * die orangen Arme verschwanden im eigenen Ärmel.
+   *
+   * Mit setRGB(..., SRGBColorSpace) rechnet three die Farbe beim Setzen nach
+   * linear und am Ausgang zurück; sie kommt exakt so an, wie sie hier steht.
+   * Deshalb darf die Erkennung unten auch eng sein.
+   */
   const teilStoffe = Object.fromEntries(
     Object.entries(TEILFARBEN).map(([k, v]) => [
       k,
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color(v.marker[0]/255, v.marker[1]/255, v.marker[2]/255),
+        color: new THREE.Color().setRGB(
+          v.marker[0]/255, v.marker[1]/255, v.marker[2]/255, THREE.SRGBColorSpace,
+        ),
         toneMapped: false,
       }),
     ]),
   );
-  const _v = new THREE.Vector3();
+  const _v = new THREE.Vector3(), _o = new THREE.Vector3();
+  const _f = new THREE.Quaternion(), _g = new THREE.Quaternion(), _h = new THREE.Quaternion();
   /**
    * Setzt die Anbauteile dieses Bildes.
    *
@@ -392,6 +421,23 @@ window.__ready = (async () => {
     for (const t of teile) {
       const bone = knochen[t.an];
       if (!bone) { window.__fehlend = (window.__fehlend ?? []).concat(t.an); continue; }
+      /**
+       * folgt heisst: Das Teil dreht sich mit dem Knochen, nicht nur mit.
+       *
+       * Ohne das folgt ein Anbauteil dem Gelenk nur in der *Lage*. Für ein
+       * Werkzeug in der Faust ist das brauchbar — man richtet es ohnehin von
+       * Hand aus. Für Haarsträhnen ist es falsch: Sie standen bei jeder Pose
+       * gleich, egal wie der Kopf lag, und ragten immer rund zehn Pixel über
+       * das Kopfgelenk. Ein zusammenbrechender Wusel behielt so eine
+       * kerzengerade Frisur, und der Zustand konnte nicht flach werden.
+       *
+       * Gerechnet wird mit der *Differenz* zur Bindepose: In ihr gelten die
+       * angegebenen Achsen wie überall in dieser Datei, und alles, was der
+       * Knochen seither gedreht hat, kommt obendrauf.
+       */
+      const folge = t.folgt ? _f.copy(bone.getWorldQuaternion(_g)).multiply(
+        _h.copy(bindWelt[t.an]).invert(),
+      ) : null;
       const [mv, mh, ms] = t.mass;
       // Zwei Formen: Kasten für Werkzeuge (harte Ecken, Katalog §2.4) und
       // Spitze für Haarsträhnen. Vier Seiten genügen — bei dieser Grösse ist
@@ -412,9 +458,14 @@ window.__ready = (async () => {
       );
       bone.getWorldPosition(_v);
       const [pv, ph, ps] = t.pos ?? [0, 0, 0];
-      box.position.set(_v.x + ps * einheit, _v.y + ph * einheit, _v.z + pv * einheit);
+      _o.set(ps * einheit, ph * einheit, pv * einheit);
+      if (folge) _o.applyQuaternion(folge);
+      box.position.copy(_v).add(_o);
       const [rx, ry, rz] = t.dreh ?? [0, 0, 0];
-      box.rotation.set(rx*Math.PI/180, ry*Math.PI/180, rz*Math.PI/180);
+      box.quaternion.setFromEuler(
+        new THREE.Euler(rx*Math.PI/180, ry*Math.PI/180, rz*Math.PI/180, 'XYZ'),
+      );
+      if (folge) box.quaternion.premultiply(folge);
       teileGruppe.add(box);
     }
   };

@@ -192,7 +192,7 @@ export default {
       an,
       pos: [vorn, -0.3, seitlich],
       mass: [4.6, 2.4, 1.8],
-      farbe: 'haarglanz',
+      farbe: 'signal',
     });
 
     return [

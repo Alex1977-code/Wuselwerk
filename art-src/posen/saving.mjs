@@ -31,21 +31,23 @@
  * Jubel gibt diese Figur nicht her, und darum tragen ihn die drei Formen, die
  * gross genug sind:
  *
- *   **Mähne** — sie ist die grösste Fläche der Figur. Der Kopf legt sich weit
- *   zurück, das Haar kippt mit ihm nach hinten und unten und zieht als Schweif
- *   hinter der steigenden Figur her. Zusätzlich wächst der Strähnenschlag
- *   (`_haar`) mit dem Aufstieg: Die Mähne fächert auf, statt als Klotz zu
- *   stehen.
+ *   **Mähne** — sie ist die grösste Fläche der Figur. Der Kopf legt sich bis auf
+ *   52° zurück, die Haarmasse kippt mit ihm nach hinten und unten und zieht als
+ *   Schweif hinter der steigenden Figur her. Dazu der Strähnenschlag (`_haar`):
+ *   Er springt beim Absprung auf und lässt die Mähne auffächern, statt sie als
+ *   Klotz stehen zu lassen. Eine Strähne bleibt dabei senkrecht und steht als
+ *   Spitze über allem — die Linie, an der das Auge das Steigen festmacht.
  *   **Rumpf** — zurückgelehnt, Brust voran, Blick nach oben zum Ausgang. Nur
  *   zehn Grad; nach vorn wären schon zwölf zu viel, weil die Mähne dann den
  *   ganzen Körper zudeckt, nach hinten räumt sie das Gesicht frei.
  *   **Beine** — Bild 0 steht mit flachen Sohlen auf der Linie, ab Bild 2 hängen
- *   sie gestreckt nach hinten und die Füsse spitzen sich nach unten. Zwei Pixel
- *   Fuss sind wenig, aber es ist der einzige Unterschied zwischen „steht" und
- *   „schwebt", den diese Figur hergibt.
+ *   sie gestreckt und die Füsse spitzen sich nach unten. Zwei Pixel Fuss sind
+ *   wenig, aber es ist der einzige Unterschied zwischen „steht" und „schwebt",
+ *   den diese Figur hergibt.
  *
- * Zusammen ist das eine nach hinten gebogene Figur mit Schweif, deren Sohlen
- * über der Bodenlinie stehen — im ganzen Blatt gibt es das sonst nicht.
+ * Zusammen ist das eine nach hinten gebogene Figur mit Schweif und Spitze,
+ * deren Sohlen über der Bodenlinie stehen — im ganzen Blatt gibt es das sonst
+ * nicht.
  */
 
 /**
@@ -63,8 +65,8 @@ const K = {
   spine01: [3, 0, -5, -8, -10, -10],
   spine02: [1, 0, -2, -3, -4, -4],
   // Kopfneigung gegen den Rumpf, negativ heisst zurück. Im Bild ankommt die
-  // Summe der Kette: 6, -6, -25, -37, -44, -44.
-  kopf: [2, -6, -18, -26, -30, -30],
+  // Summe der Kette: 6, -6, -27, -43, -52, -52.
+  kopf: [2, -6, -20, -32, -38, -38],
 
   /**
    * Arme. Z klappt sie aus dem T heraus: ∓90 stellt sie senkrecht nach oben,
@@ -95,9 +97,10 @@ const K = {
   wadeH: [0, 0, 6, 12, 14, 14],
   fussH: [-10, -16, 14, 20, 24, 26],
 
-  // Strähnenschlag. Er wächst mit dem Aufstieg — die Mähne ist die grösste
-  // Fläche der Figur, und ihr Auffächern ist der Jubel.
-  haar: [0.25, 0.6, 1.0, 1.25, 1.15, 1.0],
+  // Strähnenschlag: ruhig am Boden, voll ab dem Absprung, danach wieder etwas
+  // zurück — sonst schlägt das Haar im Standbild 5 unruhig aus, und gerade
+  // dieses Bild bleibt am längsten stehen.
+  haar: [0.25, 0.5, 1.0, 1.15, 0.95, 0.85],
 };
 
 export default {
@@ -115,8 +118,9 @@ export default {
       R_Forearm: [K.unterarmV[i], 0, 0],
       L_Forearm: [K.unterarmH[i], 0, 0],
 
-      // Die Beine stehen in der Tiefe auseinander: übereinander gelegt wären
-      // sie im Bild ein einziger Strich, und die Figur hätte nur ein Bein.
+      // Seitlich leicht gespreizt. Zwei Beine sind bei drei Pixeln Länge im
+      // Bild ohnehin nie zu trennen — die Spreizung verhindert nur, dass sie
+      // zu einer Fläche verschmelzen.
       R_Thigh: [K.schenkelV[i], 0, 5],
       L_Thigh: [K.schenkelH[i], 0, -5],
       R_Calf: [K.wadeV[i], 0, 0],

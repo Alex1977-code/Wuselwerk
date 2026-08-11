@@ -8,48 +8,65 @@
  *
  * ## Die Silhouette
  *
- * Der Zustand hat genau eine Aussage, und sie ist eine Formaussage: **Die Figur
- * wird kürzer.** Aus zwölf Pixeln Höhe werden sechs, und die Masse, die oben
- * verschwindet, taucht seitlich wieder auf. Aufrecht und schmal wird liegend
- * und breit. Das ist der einzige Unterschied, der bei dieser Grösse auch als
- * schwarzer Umriss trägt (GDD §6) — und er ist gegen jeden anderen Zustand
- * eindeutig, weil kein anderer die Figur unter ihre halbe Höhe drückt.
+ * Der Zustand hat genau eine Aussage, und sie ist eine Formaussage: **aufrecht
+ * und schmal wird liegend und breit.** Am gebackenen Bild ausgemessen, Höhe ×
+ * Breite in Zellpixeln:
+ *
+ *   Bild  0     1     2     3     4     5     6     7
+ *         16×11 15×12 15×11 15× 9 14×10 14×13 12×14 12×14
+ *
+ * Bild 0 ist um die Hälfte höher als breit, Bild 7 breiter als hoch. Dieses
+ * Kippen des Seitenverhältnisses ist der Unterschied, der auch als schwarzer
+ * Umriss trägt (GDD §6): Kein anderer Zustand auf dem Blatt wird jemals breiter
+ * als hoch. Die Oberkante fällt dabei von Zeile 6 auf Zeile 12 — sechs Zeilen,
+ * die Hälfte der Figurenhöhe.
  *
  * Der Ablauf zerfällt in zwei Hälften, die einander widersprechen sollen:
  *
  *   0–2  **Erschrecken.** Die Figur streckt sich, geht auf die Zehen, der Kopf
  *        fliegt in den Nacken, die Arme hoch. Sie ist hier *höher* als im
  *        Stand. Ohne diese Gegenbewegung liest der Rest als Hinsetzen.
- *   3–7  **Sacken.** Die Knie geben nach, `_versatz` trägt die Figur um knapp
- *        drei Pixel hinunter, die Beine legen sich nach vorn und hinten flach,
- *        und der Kopf fällt nach vorn. Bild 7 ist ein Häufchen.
+ *   3–7  **Sacken.** Die Knie geben nach, die Figur kippt über ihr eigenes
+ *        Becken nach vorn, die Beine schleifen flach nach hinten hinaus.
  *
- * ## Warum der Rumpf trotzdem kaum gebeugt wird
+ * ## Was die Figur flach macht — und was nicht
  *
- * Der Kopf ist fast die halbe Figur und die Mähne hängt an ihm. Ein weit
- * vorgebeugter Rumpf legt sie über den ganzen Körper, und übrig bleibt ein
- * roter Fleck in Standhöhe — also genau das Bild, das der Zustand *nicht*
- * erzählen soll. `Spine01` geht deshalb nie über 11°.
+ * Drei Versuche, gebacken und gemessen, bevor die Form stand:
  *
- * Das Sacken tragen zwei andere Dinge:
+ * 1. **Nur `_versatz` nach unten reicht nicht.** Er verschiebt Ober- *und*
+ *    Unterkante gleich weit; die Figur wandert nach unten, aber ihre Höhe
+ *    bleibt bis aufs Pixel dieselbe. Mit −2,8 allein blieb es bei 16 Zeilen.
+ * 2. **Den Kopf nach vorn zu drehen reicht auch nicht.** Naheliegend, weil die
+ *    Mähne am Kopfgelenk hängt — aber sie ist eine Kugel, und eine Kugel wird
+ *    durchs Drehen nicht flacher. 86° Kopfneigung brachten null Zeilen.
+ *    Dazu kommt: Die Zotteln, die der Backweg oben aufsetzt, stehen in
+ *    *Welt*achsen und folgen dem Kopf gar nicht erst. Sie ragen bei jeder Pose
+ *    rund 10 Pixel über das Kopfgelenk hinaus — die Oberkante des Bildes ist
+ *    damit schlicht `Kopfgelenk + 10`, ganz gleich, wie der Kopf steht.
+ * 3. **Es geht nur über die Höhe des Kopfgelenks selbst.** Und dafür gibt es
+ *    genau ein Gelenk: `Hip` sitzt über Becken *und* Beinen und kippt als
+ *    einziges die ganze Figur. 76° Sturz holen das Kopfgelenk von 6,1 Pixeln
+ *    über der Sohle auf 3,4 herunter, der Versatz die restlichen 2,4.
  *
- * 1. **`_versatz` nach unten.** Die Beine sind vom Becken bis zur Sohle nur gut
- *    drei Pixel lang; legt man sie flach, fällt das Becken um genau diese drei
- *    Pixel. Der Versatz ist nicht Zierrat, sondern die Rechnung dazu — ohne ihn
- *    stünde die Figur mit angezogenen Beinen in der Luft. Unter −4 schneidet die
- *    Zelle unten ab, deshalb endet er bei −2,8.
- * 2. **Der Kopf, nicht der Rumpf.** Die Mähne folgt dem Kopfgelenk. Ein Kopf,
- *    der nach vorn-unten fällt, kippt die grösste Fläche der Figur nach vorn
- *    aus der Senkrechten heraus — dieselbe Wirkung wie ein gebeugter Rücken,
- *    aber ohne dass der Körper darunter verschwindet.
+ * Der **Rücken** trägt bewusst fast nichts bei: `Spine01` geht nie über 10°.
+ * Weiter gebeugt legt sich die Mähne über den ganzen Körper, und übrig bliebe
+ * ein roter Fleck. Der Sturz aus `hip` erreicht dasselbe, ohne dass sich Kopf
+ * und Rumpf gegeneinander verschieben — die Figur fällt als Stück.
  *
  * ## Die Beine liegen ungleich
  *
- * Nicht gekniet, sondern gespreizt: das vordere Bein streckt sich nach vorn
- * flach aus, das hintere schleift nach hinten. Symmetrisch angezogene Beine
- * geben einen Klumpen, und ein Klumpen ist im Umriss von einem sitzenden Wusel
- * nicht zu unterscheiden. Die Spreizung macht die Form lang und niedrig — und
- * lang und niedrig ist das Gegenteil von allem anderen auf dem Blatt.
+ * Nicht gekniet, sondern gestaffelt: Das vordere Bein knickt zuerst weg, das
+ * hintere folgt versetzt, und am Ende schleifen beide flach nach hinten hinaus.
+ * Symmetrisch angezogene Beine geben einen Klumpen, und ein Klumpen ist im
+ * Umriss von einem sitzenden Wusel nicht zu unterscheiden. Die Staffelung macht
+ * die Form lang und niedrig — und lang und niedrig ist das Gegenteil von allem
+ * anderen auf dem Blatt.
+ *
+ * Unter der Fusspunktlinie liegt im letzten Bild eine Zeile Haar. Das ist kein
+ * Versehen: Die Mähne reicht rund zweieinhalb Pixel unter das Kopfgelenk, und
+ * wenn das Kopfgelenk auf dem Boden liegt, liegt sie eben daneben. Im Spiel
+ * sieht das aus wie ausgebreitetes Haar auf der Erde. Abgeschnitten wird erst
+ * ab Zeile 28, davon ist die Figur weit entfernt.
  */
 
 /**
@@ -75,9 +92,9 @@ const K = {
   //
   // Daher auch die Grenze des ganzen Zustands: Das Bein ist vom Becken bis zur
   // Sohle nur 2,6 Pixel lang. Tiefer als 2,6 kann eine Figur nicht sacken, ohne
-  // in den Boden zu sinken — und deshalb endet `hoch` bei −2,45 und nicht bei
+  // in den Boden zu sinken — und deshalb endet `hoch` bei −2,4 und nicht bei
   // den −4, ab denen die Zelle unten abschneidet.
-  hoch: [0.0, 0.5, 0.2, -0.35, -0.9, -1.65, -2.15, -2.45],
+  hoch: [0.0, 0.5, 0.2, -0.3, -0.85, -1.6, -2.1, -2.4],
   // Nach *hinten*, und das ist Absicht. Der Sturz aus `hip` trägt Kopf und
   // Mähne — die schwerste Fläche der Figur — gut drei Pixel nach vorn; ohne
   // Gegenzug stünde das Häufchen am rechten Zellrand statt über seinem
@@ -117,9 +134,13 @@ const K = {
   // Ablauf: stehen · Knie knicken nach vorn weg · die Figur kippt über die Knie
   // hinweg nach vorn · die Beine schleifen flach nach hinten hinaus.
   weltSchenkelV: [2, 3, 5, -45, -70, 0, 60, 80],
-  weltSchenkelH: [-2, -1, 0, -25, -40, 30, 75, 92],
+  // Das hintere Bein bleibt in Bild 3 und 4 stärker gebeugt als das vordere,
+  // statt weiter ausgestreckt: Gestreckt reicht seine Sohle unter die des
+  // vorderen, die Zelle bekommt unten eine Zeile dazu, und die Figur wird in
+  // genau den Bildern wieder höher, in denen sie sacken soll.
+  weltSchenkelH: [-2, -1, 0, -20, -25, 30, 75, 92],
   wadeV: [2, 0, 3, 65, 105, 95, 35, 15],
-  wadeH: [2, 0, 2, 45, 80, 70, 25, 5],
+  wadeH: [2, 0, 2, 60, 90, 70, 25, 5],
   fussV: [10, 26, 20, 6, -10, -25, -30, -32],
   fussH: [10, 26, 20, 10, -6, -20, -26, -30],
 
