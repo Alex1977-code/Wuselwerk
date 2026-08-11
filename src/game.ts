@@ -568,6 +568,8 @@ export class Game {
       skillsUsed: this.world?.skillsUsed ?? 0,
       selected: this.selected,
       wusels: this.world?.activeCount ?? 0,
+      diggerX:
+        this.world?.wusels.find((w) => w.state === State.DIGGING)?.x ?? null,
     };
   }
 

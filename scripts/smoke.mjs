@@ -171,6 +171,17 @@ async function main() {
     if (!pos) await sleep(60);
   }
   check('Figur im Zielstreifen gefunden', !!pos);
+  let shaftPlaced = false;
+
+  // Der Schacht muss über der Tür liegen, sonst kann dieser Durchlauf gar
+  // nicht gewinnen. Landet er daneben, ist das kein Spielfehler, sondern eine
+  // verfehlte Zuweisung — dann neu ansetzen statt zufällig rot melden.
+  const shaftOverExit = async () => {
+    const d = await page.evaluate(() =>
+      (window.__wuselwerk.debugStats().diggerX ?? null),
+    );
+    return d === null || (d >= 224 && d <= 255);
+  };
 
   if (pos) {
     await page.mouse.move(pos.x, pos.y);
@@ -185,6 +196,8 @@ async function main() {
     await sleep(400);
     const st = await page.evaluate(() => window.__wuselwerk.debugStats());
     check('§3.3 Tippen vergibt den Beruf', st.skillsUsed === 1, `skillsUsed=${st.skillsUsed}`);
+    shaftPlaced = await shaftOverExit();
+    check('Der Schacht sitzt über der Ausgangstür', shaftPlaced);
     await page.screenshot({ path: `${OUT}/06-graebt.png` });
   }
 
@@ -196,10 +209,12 @@ async function main() {
     if (end.phase === 'result') break;
   }
   await page.screenshot({ path: `${OUT}/07-ergebnis.png` });
+  const wonIt = end?.phase === 'result' && end.saved >= 8;
   check(
     'Level 1 im Browser gewonnen',
-    end?.phase === 'result' && end.saved >= 8,
-    `gerettet ${end?.saved}, verloren ${end?.dead}, Berufe ${end?.skillsUsed}`,
+    wonIt,
+    `gerettet ${end?.saved}, verloren ${end?.dead}, Berufe ${end?.skillsUsed}` +
+      (wonIt ? '' : shaftPlaced ? ' — Schacht sass richtig, echter Fehler' : ' — Zuweisung verfehlt, kein Spielfehler'),
   );
 
   // --- §3.3 Auswahl-Fächer: eigener Durchlauf mit voller Freisetzungsrate ---
