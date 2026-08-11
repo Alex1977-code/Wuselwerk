@@ -38,6 +38,13 @@ type Phase = 'intro' | 'running' | 'paused' | 'result';
  * betroffen — sie greift nur über leerem Grund.
  */
 const PAN_SCHWELLE = 10;
+/**
+ * Dieselbe Schwelle, wenn die Geste auf einer Figur begann.
+ *
+ * Deutlich grösser, damit das Nachzielen von einer Figur zur nächsten nicht
+ * unterwegs zum Schwenken wird — dazwischen liegt regelmässig leerer Grund.
+ */
+const PAN_SCHWELLE_ZIEL = 44;
 
 interface PointerState {
   id: number;
@@ -46,6 +53,8 @@ interface PointerState {
   startX: number;
   startY: number;
   role: 'aim' | 'rate' | 'ui' | 'pinch' | 'map' | 'pan';
+  /** Lag beim Aufsetzen eine gültige Figur im Fangradius? */
+  traf?: boolean;
 }
 
 export class Game {
@@ -249,9 +258,11 @@ export class Game {
     this.aim = ps;
     this.fan = null;
     this.fanIndex = 0;
+    ps.traf = false;
     if (!this.selected) return;
     const p = toLogical(this.camera.view(this.layout.play), ps.x, ps.y);
     const cands = findCandidates(this.world, this.selected, p.x, p.y);
+    ps.traf = cands.length > 0;
     // Zwei gültige Kandidaten dicht beieinander: Auswahl-Fächer.
     if (needsFan(cands)) this.fan = cands.slice(0, FAN_MAX);
     this.refreshTarget();
@@ -420,8 +431,7 @@ export class Game {
       this.refreshTarget();
 
       /**
-       * Aus dem Zielen wird ein Schwenken, sobald der Finger weit gezogen hat
-       * und dabei **niemanden unter sich hat**.
+       * Wann aus dem Zielen ein Schwenken wird.
        *
        * Vorher hing das am gewählten Beruf: Mit Beruf blieb jedes Ziehen ein
        * Zielversuch, und Schieben ging nur noch über die Übersichtskarte oder
@@ -429,13 +439,24 @@ export class Game {
        * Zeit spielt — der Beruf ist ja gewählt, weil man ihn gleich vergeben
        * will. Schieben war damit praktisch nicht erreichbar.
        *
-       * Die Frage ist nicht "ist ein Beruf gewählt", sondern "meint der Finger
-       * jemanden". Liegt eine Figur unter ihm, will man zuweisen; liegt dort
-       * nichts, will man das Bild bewegen. Der Auswahl-Fächer ist davon
-       * ausgenommen: Dort zeigt der Finger absichtlich ins Leere, weil er auf
-       * einen aufgefächerten Kandidaten deutet.
+       * Die Frage ist nicht "ist ein Beruf gewählt", sondern **womit die
+       * Geste angefangen hat**:
+       *
+       * - **Auf leerem Grund begonnen** — dort war niemand zu treffen, also
+       *   ist es ein Schwenken, sobald der Finger sich bewegt.
+       * - **Auf einer Figur begonnen** — dann bleibt es ein Zielen, auch wenn
+       *   der Finger unterwegs über Leeres streicht. Genau das tut man beim
+       *   Nachzielen von einer Figur zur nächsten; würde dabei umgeschaltet,
+       *   verlöre man die Zuweisung mitten in der Bewegung.
+       * - Erst ein **langer** Zug über Leeres wird auch dann zum Schwenken.
+       *   Der Fangradius ist grosszügig; wer knapp neben einer Figur ansetzt
+       *   und dann weit zieht, meint ersichtlich das Bild und nicht sie.
+       *
+       * Der Auswahl-Fächer ist ausgenommen: Dort zeigt der Finger absichtlich
+       * ins Leere, weil er auf einen aufgefächerten Kandidaten deutet.
        */
-      const weit = Math.hypot(x - ps.startX, y - ps.startY) > PAN_SCHWELLE;
+      const strecke = Math.hypot(x - ps.startX, y - ps.startY);
+      const weit = strecke > (ps.traf ? PAN_SCHWELLE_ZIEL : PAN_SCHWELLE);
       if (weit && !this.fan && !this.target) {
         ps.role = 'pan';
         this.aim = null;
@@ -621,6 +642,15 @@ export class Game {
     return this.audio.toggleMute();
   }
 
+  /**
+   * Springt an eine Levelstelle — dasselbe, was ein Tipp auf die
+   * Übersichtskarte tut. Die automatische Kamera bleibt dabei aus, sonst
+   * gleitet das Bild sofort wieder zum Pulk zurück.
+   */
+  debugCenterOn(x: number, y: number): void {
+    this.camera.centerOn(x, y);
+  }
+
   debugRecenter(): void {
     this.camera.recenter();
   }
@@ -668,6 +698,28 @@ export class Game {
 
   debugTicks(): number {
     return this.world?.tickCount ?? 0;
+  }
+
+  /** Was liegt gerade unter dem Finger? Für die Fehlersuche beim Zielen. */
+  debugAim(): {
+    aim: boolean;
+    rolle: string | null;
+    ziel: number | null;
+    faecher: number;
+    kandidaten: number;
+  } {
+    let kandidaten = 0;
+    if (this.aim && this.selected) {
+      const p = toLogical(this.camera.view(this.layout.play), this.aim.x, this.aim.y);
+      kandidaten = findCandidates(this.world, this.selected, p.x, p.y).length;
+    }
+    return {
+      aim: this.aim !== null,
+      rolle: this.aim ? (this.pointers.get(this.aim.id)?.role ?? null) : null,
+      ziel: this.target ? this.target.id : null,
+      faecher: this.fan ? this.fan.length : 0,
+      kandidaten,
+    };
   }
 
   debugFanSize(): number {

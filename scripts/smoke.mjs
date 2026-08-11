@@ -46,6 +46,25 @@ async function waitForServer() {
 const errors = [];
 const checks = [];
 
+/**
+ * Wartet, bis die Auto-Kamera zur Ruhe gekommen ist.
+ *
+ * Sie gleitet nach jedem Zurückholen weich zum Pulk. Wer währenddessen eine
+ * Bildschirmstelle ausrechnet und dann darauf drückt, drückt auf eine
+ * veraltete Stelle — je grösser der Massstab, desto weiter daneben. Das ist
+ * kein Spielfehler, sondern eine Eigenheit einer folgenden Kamera; die Prüfung
+ * muss sie abwarten wie ein Spieler auch.
+ */
+async function kameraRuhig(page, ms = 2500) {
+  let vorher = null;
+  for (let i = 0; i < ms / 80; i++) {
+    const c = await page.evaluate(() => window.__wuselwerk.debugCamera());
+    if (vorher && Math.abs(c.cx - vorher.cx) < 0.4 && Math.abs(c.cy - vorher.cy) < 0.4) return;
+    vorher = c;
+    await sleep(80);
+  }
+}
+
 function check(name, ok, detail = '') {
   checks.push({ name, ok, detail });
   console.log(`${ok ? '  ok  ' : ' FAIL '} ${name}${detail ? ` — ${detail}` : ''}`);
@@ -231,7 +250,13 @@ async function main() {
     nachDrag.skillsUsed === 0,
     `skillsUsed=${nachDrag.skillsUsed}`,
   );
-  await page.evaluate(() => window.__wuselwerk.debugRecenter());
+  // Vor dem Zielen dorthin schauen, wo gezielt wird — genau das tut ein
+  // Spieler mit der Übersichtskarte. Nötig, seit das Sichtfenster 180 statt
+  // 300 logische Pixel breit ist: Pulk und Ausgangstür liegen nicht mehr
+  // gleichzeitig im Bild, und die Figur über der Tür stand ausserhalb.
+  // Nebeneffekt, der die Prüfung stabiler macht: Ohne Auto-Kamera wandern die
+  // Bildschirmstellen zwischen Ausrechnen und Antippen nicht mehr.
+  await page.evaluate(() => window.__wuselwerk.debugCenterOn(240, 300));
   await sleep(200);
 
   // --- §3.2/§3.3: über der Ausgangstür zielen und zuweisen ------------------
@@ -257,10 +282,23 @@ async function main() {
     await page.mouse.move(pos.x, pos.y);
     await page.mouse.down();
     await sleep(700);
+    const zielzustand = await page.evaluate(() => window.__wuselwerk.debugAim());
+    check(
+      '§3.3 Beim Halten liegt ein Ziel unter dem Finger',
+      zielzustand.ziel !== null,
+      `${JSON.stringify(zielzustand)} bei ${pos.x.toFixed(0)}/${pos.y.toFixed(0)}, Karte ${JSON.stringify(mapBox)}`,
+    );
     await page.screenshot({ path: `${OUT}/05-lupe-fokuszeit.png` });
     // So spielt man wirklich: während der Fokuszeit nachjustieren, dann loslassen.
+    //
+    // Nur ein *kleiner* Versatz. Der Rückgabewert kann eine ganz andere Figur
+    // im Zielstreifen sein, hundert Pixel entfernt; dorthin zu springen wäre
+    // keine Nachjustierung, sondern ein Zug über den halben Bildschirm — und
+    // den wertet das Spiel zu Recht als Schwenken (siehe PAN_SCHWELLE_ZIEL).
     const adj = await page.evaluate(() => window.__wuselwerk.debugWalkerScreenPos(236, 244));
-    if (adj) await page.mouse.move(adj.x, adj.y);
+    if (adj && Math.hypot(adj.x - pos.x, adj.y - pos.y) < 36) {
+      await page.mouse.move(adj.x, adj.y);
+    }
     await sleep(60);
     await page.mouse.up();
     await sleep(400);
@@ -297,6 +335,7 @@ async function main() {
   await page.mouse.click(btn.x, btn.y); // Gräber wählen
   await page.evaluate(() => window.__wuselwerk.debugSetRate(99));
   await sleep(2000);
+  await kameraRuhig(page);
 
   let fanned = 0;
   for (let attempt = 0; attempt < 40 && fanned < 2; attempt++) {

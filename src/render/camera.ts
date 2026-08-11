@@ -8,14 +8,27 @@ import type { Box } from './layout';
  *
  * Der Massstab ergibt sich aus der *engeren* der beiden Vorgaben. Im
  * Hochformat begrenzt die Breite, im Querformat die Höhe — und weil beide
- * Werte dasselbe Verhältnis ergeben, bleibt die Figur in jeder Lage rund
- * sechzehn Bildschirmpixel gross. Ohne diese Kopplung würde sie im Querformat
- * entweder winzig oder riesig.
+ * Werte dasselbe Verhältnis ergeben, ist die Figur in jeder Lage gleich gross.
+ * Ohne diese Kopplung würde sie im Querformat entweder winzig oder riesig.
+ *
+ * **Die Zahlen bestimmen, wie gross die Figur erscheint** — nicht `WUSEL_H`.
+ * Sie standen auf 300 × 200, das ergab rund sechzehn Bildschirmpixel. Das war
+ * das Verhältnis des Vorbilds von 1991 und passte zur gepixelten Darstellung;
+ * einer gemalten Figur nimmt es alles, was an ihr gemalt ist. Jetzt 180 × 120,
+ * also rund sechsundzwanzig Pixel.
+ *
+ * Der Preis ist Übersicht: Bei Zoom 1 sieht man von einem 960 breiten Level
+ * nur noch ein knappes Fünftel. Deshalb geht der Zoom jetzt auch unter 1 —
+ * wer aufziehen will, bekommt mit 0,6 mehr Fläche zu sehen als die alte
+ * Vorgabe je zeigte.
+ *
+ * Die Simulation ist von all dem unberührt. Sie rechnet in logischen Pixeln,
+ * und wie viele Bildschirmpixel einer davon ist, geht sie nichts an.
  */
-export const VIEW_LOGICAL_W = 300;
-export const VIEW_LOGICAL_H = 200;
-export const ZOOM_MIN = 1;
-export const ZOOM_MAX = 3;
+export const VIEW_LOGICAL_W = 180;
+export const VIEW_LOGICAL_H = 120;
+export const ZOOM_MIN = 0.6;
+export const ZOOM_MAX = 2.4;
 
 export interface View {
   /** Linke obere Ecke des Ausschnitts in logischen Koordinaten. */
