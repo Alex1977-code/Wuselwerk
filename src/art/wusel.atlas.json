@@ -8,6 +8,7 @@
     "x": 14,
     "y": 22
   },
+  "ppl": 4,
   "facing": "right",
   "clips": {
     "walking": {

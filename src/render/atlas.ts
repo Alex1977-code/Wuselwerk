@@ -63,6 +63,18 @@ export interface ClipDef {
 export interface AtlasManifest {
   cell: { w: number; h: number };
   anchor: { x: number; y: number };
+  /**
+   * Bildpunkte je logischem Pixel im Blatt.
+   *
+   * `1` heisst Pixelgrafik: Ein logischer Pixel ist ein Bildpunkt, und der
+   * Renderer vergrössert hart. Alles darüber heisst gemalt: Das Blatt hält
+   * mehr Auflösung vor, als die Simulation kennt, und wird weich skaliert.
+   *
+   * Die Simulation ist davon unberührt — sie kennt nur Fusspunkt und
+   * Figurenhöhe, beide in logischen Pixeln. `ppl` betrifft ausschliesslich,
+   * wie fein das Blatt dieselbe Figur beschreibt.
+   */
+  ppl?: number;
   clips: Record<string, ClipDef>;
 }
 
@@ -161,6 +173,10 @@ export class SpriteAtlas {
 
     const cw = this.manifest.cell.w;
     const ch = this.manifest.cell.h;
+    // Bildpunkte je logischem Pixel. Ein gemaltes Blatt hält mehr Auflösung
+    // vor, als die Simulation kennt — die Zelle im Bild ist entsprechend
+    // grösser als die Zelle in logischen Pixeln.
+    const ppl = this.manifest.ppl ?? 1;
     const frame = frameFor(clip, w.timer);
     const s = v.scale;
 
@@ -168,15 +184,18 @@ export class SpriteAtlas {
     const footY = Math.round(sy(v, w.y));
 
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
+    // Pixelgrafik wird hart vergrössert, Gemaltes weich verkleinert. Beides
+    // ist hier richtig: Beim harten Vergrössern wäre Glättung ein Verwaschen,
+    // beim weichen Verkleinern wäre ihr Fehlen ein Flimmern.
+    ctx.imageSmoothingEnabled = ppl > 1;
     ctx.translate(footX, footY);
     if (w.dir < 0) ctx.scale(-1, 1);
     ctx.drawImage(
       this.image,
-      frame * cw,
-      clip.row * ch,
-      cw,
-      ch,
+      frame * cw * ppl,
+      clip.row * ch * ppl,
+      cw * ppl,
+      ch * ppl,
       -this.manifest.anchor.x * s,
       -this.manifest.anchor.y * s,
       cw * s,

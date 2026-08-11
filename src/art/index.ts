@@ -13,7 +13,10 @@ const manifests = import.meta.glob('./*.atlas.json', {
   import: 'default',
 }) as Record<string, AtlasManifest>;
 
-const images = import.meta.glob('./*.png', {
+// Beide Formate: Pixelblätter liegen als PNG, gemalte als WebP — bei weicher
+// Schattierung ist PNG rund viermal so gross, und das Blatt liegt eingebettet
+// in der Einzeldatei.
+const images = import.meta.glob('./*.{png,webp}', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -28,7 +31,7 @@ export interface AtlasSource {
 export function findAtlasSource(): AtlasSource | null {
   for (const [path, manifest] of Object.entries(manifests)) {
     const base = path.replace(/\.atlas\.json$/, '');
-    const url = images[`${base}.png`];
+    const url = images[`${base}.webp`] ?? images[`${base}.png`];
     if (url) return { manifest, url, name: base.replace('./', '') };
   }
   return null;

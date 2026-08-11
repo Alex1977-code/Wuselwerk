@@ -24,7 +24,7 @@
  */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, rmSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -48,6 +48,25 @@ const nurClip = args.includes('--clip') ? args[args.indexOf('--clip') + 1] : nul
  * und die Spiegelung ergibt sauber die andere Dreiviertelansicht.
  */
 const BLICK = args.includes('--blick') ? Number(args[args.indexOf('--blick') + 1]) : 30;
+
+/**
+ * Zwei Ausgabearten aus demselben Modell.
+ *
+ * **Fein** (Vorgabe): Das Blatt hat mehrere Bildpunkte je logischem Pixel,
+ * bleibt weich schattiert und bekommt statt einer harten Kontur einen weichen
+ * dunklen Saum. So sieht die Figur aus wie das Ankerbild — gemalt, mit Volumen.
+ *
+ * **Pixel** (`--pixel`): der alte Weg. Mehrheitsentscheid je Zelle, Einrasten
+ * auf neun Farben, harter Umriss. Bleibt erhalten, weil er die Rückfallebene
+ * und die Malvorlage bedient und weil man beides nebeneinander sehen können
+ * soll.
+ *
+ * Die Simulation ist von der Wahl nicht berührt: Sie kennt nur den Fusspunkt
+ * und die Figurenhöhe, beides in logischen Pixeln. Das Blatt sagt über `ppl`,
+ * wie viele Bildpunkte auf einen logischen Pixel kommen.
+ */
+const PIXEL = args.includes('--pixel');
+const PPL = PIXEL ? 1 : 4;
 
 // --- Vertrag aus dem Code lesen ---------------------------------------------
 // Zellmass und Bildzahlen stehen in src/render/atlas.ts. Sie hier noch einmal
@@ -198,6 +217,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CELL_W = ${CELL_W}, CELL_H = ${CELL_H};
 const ANCHOR_X = ${ANCHOR_X}, ANCHOR_Y = ${ANCHOR_Y};
 const SS = ${SS};
+const PPL = ${PPL};
+const PIXEL = ${PIXEL};
 const BLICK = ${BLICK} * Math.PI / 180;
 const PALETTE = ${JSON.stringify(PALETTE)};
 const UMRISS = '${UMRISS}';
@@ -395,12 +416,23 @@ window.__ready = (async () => {
   const teilStoffe = Object.fromEntries(
     Object.entries(TEILFARBEN).map(([k, v]) => [
       k,
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color().setRGB(
-          v.marker[0]/255, v.marker[1]/255, v.marker[2]/255, THREE.SRGBColorSpace,
-        ),
-        toneMapped: false,
-      }),
+      // Markerfarben braucht nur der Pixelweg, um das Teil beim Einrasten
+      // wiederzuerkennen. Der feine Weg rastet nichts ein - dort steht das
+      // Teil gleich in seiner echten Farbe und wird beleuchtet wie der Rest,
+      // sonst haette ein Werkzeug kein Volumen und eine Haarstraehne wuerde
+      // sich nicht in die Maehne einfuegen.
+      PIXEL
+        ? new THREE.MeshBasicMaterial({
+            color: new THREE.Color().setRGB(
+              v.marker[0]/255, v.marker[1]/255, v.marker[2]/255, THREE.SRGBColorSpace,
+            ),
+            toneMapped: false,
+          })
+        : new THREE.MeshStandardMaterial({
+            color: new THREE.Color(v.farbe),
+            roughness: 0.72,
+            metalness: 0,
+          }),
     ]),
   );
   const _v = new THREE.Vector3(), _o = new THREE.Vector3();
@@ -593,6 +625,29 @@ window.__ready = (async () => {
       }
     }
 
+    if (!PIXEL) {
+      // Feiner Weg: aus der Überabtastung glatt herunterrechnen, dann einen
+      // weichen dunklen Saum darunterlegen. Der Saum ersetzt die harte Kontur
+      // - ohne ihn verliert die Figur auf brauner Erde ihre Kante, mit einer
+      // harten Linie sähe sie wieder gezeichnet statt gemalt aus.
+      const zw = CELL_W * PPL, zh = CELL_H * PPL;
+      const fein = document.createElement('canvas');
+      fein.width = zw; fein.height = zh;
+      const fx = fein.getContext('2d', { willReadFrequently: true });
+      fx.imageSmoothingEnabled = true;
+      fx.imageSmoothingQuality = 'high';
+      fx.save();
+      fx.shadowColor = 'rgba(6, 9, 15, 0.7)';
+      fx.shadowBlur = PPL * 1.1;
+      for (let i = 0; i < 3; i++) fx.drawImage(out, 0, 0, zw, zh);
+      fx.restore();
+      fx.drawImage(out, 0, 0, zw, zh);
+      const fd = fx.getImageData(0, 0, zw, zh).data;
+      let n = 0;
+      for (let i = 3; i < fd.length; i += 4) if (fd[i] > 40) n++;
+      return { png: fein.toDataURL('image/webp', 0.92), belegt: Math.round(n / (PPL * PPL)) };
+    }
+
     const klein = document.createElement('canvas');
     klein.width = CELL_W; klein.height = CELL_H;
     const kctx = klein.getContext('2d');
@@ -672,7 +727,7 @@ for (const a of auftrag) {
 const fehlend = await page.evaluate(() => window.__fehlend ?? []);
 
 const { blatt, gross } = await page.evaluate(
-  async ([bilder, cw, ch, spalten, zeilen, einzeln]) => {
+  async ([bilder, cw, ch, spalten, zeilen, einzeln, fein]) => {
     const c = document.createElement('canvas');
     c.width = cw * spalten;
     c.height = ch * zeilen;
@@ -683,12 +738,14 @@ const { blatt, gross } = await page.evaluate(
       await img.decode();
       x.drawImage(img, b.frame * cw, b.row * ch);
     }
-    const blatt = c.toDataURL('image/png');
+    // WebP fuer das gemalte Blatt: Bei weicher Schattierung ist PNG rund
+    // viermal so gross, und das Blatt liegt eingebettet in der Einzeldatei.
+    const blatt = c.toDataURL(einzeln && !fein ? 'image/png' : fein ? 'image/webp' : 'image/png', 0.92);
     if (!einzeln) return { blatt, gross: null };
 
     // Kontrollbild: nur die Zeile dieses Zustands, zehnfach, auf neutralem
     // Grund. Ein Blatt in Originalgrösse kann kein Mensch beurteilen.
-    const S = 10;
+    const S = Math.max(2, Math.round(40 / (cw / 28)));
     const zeile = bilder[0].row;
     const g = document.createElement('canvas');
     g.width = cw * spalten * S;
@@ -700,7 +757,7 @@ const { blatt, gross } = await page.evaluate(
     gx.drawImage(c, 0, zeile * ch, cw * spalten, ch, 0, 0, g.width, g.height);
     return { blatt, gross: g.toDataURL('image/png') };
   },
-  [bilder, CELL_W, CELL_H, SPALTEN, CLIPS.length, Boolean(nurClip)],
+  [bilder, CELL_W * PPL, CELL_H * PPL, SPALTEN, CLIPS.length, Boolean(nurClip), !PIXEL],
 );
 
 await browser.close();
@@ -712,12 +769,19 @@ if (probleme.length) {
 
 mkdirSync(ZIEL, { recursive: true });
 const png = Buffer.from(blatt.split(',')[1], 'base64');
+const ENDUNG = PIXEL ? 'png' : 'webp';
 if (!nurClip) {
-  writeFileSync(join(ZIEL, 'wusel.png'), png);
+  // Nur eine Blattdatei im Ordner: Der Lader nimmt sonst die falsche.
+  for (const alt of ['png', 'webp']) {
+    if (alt !== ENDUNG && existsSync(join(ZIEL, `wusel.${alt}`))) rmSync(join(ZIEL, `wusel.${alt}`));
+  }
+  writeFileSync(join(ZIEL, `wusel.${ENDUNG}`), png);
   const manifest = {
     version: 1,
     cell: { w: CELL_W, h: CELL_H },
     anchor: { x: ANCHOR_X, y: ANCHOR_Y },
+    // Bildpunkte je logischem Pixel. 1 heisst Pixelgrafik.
+    ppl: PPL,
     facing: 'right',
     clips: Object.fromEntries(
       CLIPS.map((c) => [c.name, { row: c.row, holds: c.holds, ...(c.once ? { once: true } : {}) }]),
@@ -737,7 +801,7 @@ const leer = bilder.filter((b) => b.belegt < 12);
 console.log(`Modell    Körperhöhe ${masse.höhe.toFixed(3)}, ${masse.knochen} Knochen`);
 console.log(`Gelenke   ${Object.entries(masse.höhen).map(([k, v]) => `${k} ${v}`).join(', ')} (logische Pixel über der Sohle)`);
 console.log(`Zelle     ${CELL_W} × ${CELL_H}, Fusspunkt (${ANCHOR_X}, ${ANCHOR_Y})`);
-console.log(`Blatt     ${CELL_W * SPALTEN} × ${CELL_H * CLIPS.length}, ${bilder.length} Bilder, ${Math.round(png.length / 1024)} kB`);
+console.log(`Blatt     ${CELL_W * PPL * SPALTEN} × ${CELL_H * PPL * CLIPS.length}, ${bilder.length} Bilder, ${Math.round(png.length / 1024)} kB, ${PIXEL ? 'Pixel' : `fein ${PPL}×`}`);
 console.log(`Deckung   ${Math.min(...bilder.map((b) => b.belegt))} bis ${Math.max(...bilder.map((b) => b.belegt))} Pixel je Bild`);
 if (ohnePose.length && !nurClip) console.log(`Ohne Pose ${ohnePose.join(', ')} — stehen in der Bindepose`);
 if (fehlend.length) console.log(`WARNUNG   unbekannte Gelenke: ${[...new Set(fehlend)].join(', ')}`);
@@ -748,5 +812,5 @@ if (leer.length) {
 console.log(
   nurClip
     ? `art-src/proben/${nurClip}.png und ${nurClip}-gross.png (10×, zum Anschauen)`
-    : `${ZIEL}/wusel.png + wusel.atlas.json`,
+    : `${ZIEL}/wusel.${ENDUNG} + wusel.atlas.json`,
 );

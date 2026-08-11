@@ -26,6 +26,8 @@ interface HillLayer {
   step: number;
   factor: number;
   color: string;
+  /** Fusston des Verlaufs innerhalb der Schicht. */
+  deep: string;
 }
 
 const MAX_PARTICLES = 320;
@@ -66,7 +68,13 @@ export class Scene {
         y = Math.max(this.level.height * 0.12, Math.min(this.level.height * 0.85, y));
         pts.push(y);
       }
-      return { pts, step, factor: s.factor, color: this.palette.hills[li] };
+      return {
+        pts,
+        step,
+        factor: s.factor,
+        color: this.palette.hills[li],
+        deep: this.palette.hillsDeep[li],
+      };
     });
   }
 
@@ -154,13 +162,18 @@ export class Scene {
     this.drawSky(ctx, v);
     this.drawHills(ctx, v);
 
-    // Die Glättung nur für dieses eine Bild abschalten und den Zustand danach
-    // zurückgeben. Vorher stand hier ein hartes Wiedereinschalten — das wäre
-    // jedem künftigen Sprite-drawImage in die Quere gekommen, weil Sprites
-    // scharf bleiben müssen, die heruntergerechnete Übersichtskarte dagegen
-    // nicht.
+    // Das Terrain wird weich vergrössert, nicht hart.
+    //
+    // Die Maske bleibt pixelgenau — sie ist die Spielregel, jeder Spatenstich
+    // schreibt einen Pixel. Aber sie hart zu vergrössern hiesse, jeden dieser
+    // Pixel als Treppenstufe zu zeigen, und daneben stünden weich gemalte
+    // Figuren. Weich vergrössert wird aus der Bruchkante eine Kante mit
+    // Übergang; das Korn im Inneren wird dabei zur Textur statt zum Raster.
+    // Wo genau der Boden aufhört, sieht man weiterhin — die Maske ist
+    // unverändert, nur ihre Darstellung hat einen halben Pixel Weichzeichnung.
     ctx.save();
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(
       this.terrainView.canvas,
       sx(v, 0),
@@ -187,35 +200,65 @@ export class Scene {
     ctx.restore();
   }
 
+  /**
+   * Himmel mit drei Stützstellen statt zwei.
+   *
+   * Ein Verlauf zwischen zwei Farben ist eine Rampe und sieht auch so aus.
+   * Der dritte Wert auf halber Höhe biegt ihn — oben bleibt es lange dunkel,
+   * zum Horizont hin wird es schnell hell. Das ist, was ein Abendhimmel tut.
+   */
   private drawSky(ctx: CanvasRenderingContext2D, v: View): void {
     const g = ctx.createLinearGradient(0, v.box.y, 0, v.box.y + v.box.h);
     g.addColorStop(0, this.palette.skyTop);
+    g.addColorStop(0.62, this.palette.skyMid);
     g.addColorStop(1, this.palette.skyBottom);
     ctx.fillStyle = g;
     ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
   }
 
+  /**
+   * Hügelzüge als weiche Kurven statt als Streckenzüge.
+   *
+   * Gezogen wird durch die Mittelpunkte je zweier Stützstellen, mit der
+   * Stützstelle selbst als Kontrollpunkt. Das ist die übliche Glättung eines
+   * Streckenzugs und kostet nichts — der Umriss bekommt dadurch Rundungen,
+   * statt aus geraden Teilstücken zu bestehen.
+   *
+   * Dazu je Schicht ein senkrechter Verlauf: oben am Kamm heller, nach unten
+   * dunkler. Eine Fläche in einem einzigen Ton liest als Papierschnitt; erst
+   * der Verlauf macht daraus Luft zwischen den Schichten.
+   */
   private drawHills(ctx: CanvasRenderingContext2D, v: View): void {
     for (const layer of this.hills) {
-      ctx.fillStyle = layer.color;
-      ctx.beginPath();
       const ox = v.ox * layer.factor;
       const oy = v.oy * layer.factor;
-      let started = false;
+
+      const pts: { x: number; y: number }[] = [];
       for (let i = 0; i < layer.pts.length; i++) {
-        const lx = i * layer.step;
-        const px = v.box.x + (lx - ox) * v.scale;
+        const px = v.box.x + (i * layer.step - ox) * v.scale;
         const py = v.box.y + (layer.pts[i] - oy) * v.scale;
         if (px < v.box.x - layer.step * v.scale * 2) continue;
         if (px > v.box.x + v.box.w + layer.step * v.scale * 2) break;
-        if (!started) {
-          ctx.moveTo(px, py);
-          started = true;
-        } else {
-          ctx.lineTo(px, py);
-        }
+        pts.push({ x: px, y: py });
       }
-      if (!started) continue;
+      if (pts.length < 2) continue;
+
+      let kamm = Infinity;
+      for (const p of pts) kamm = Math.min(kamm, p.y);
+      const g = ctx.createLinearGradient(0, kamm, 0, v.box.y + v.box.h);
+      g.addColorStop(0, layer.color);
+      g.addColorStop(1, layer.deep);
+      ctx.fillStyle = g;
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last.x, last.y);
       ctx.lineTo(v.box.x + v.box.w, v.box.y + v.box.h);
       ctx.lineTo(v.box.x, v.box.y + v.box.h);
       ctx.closePath();
