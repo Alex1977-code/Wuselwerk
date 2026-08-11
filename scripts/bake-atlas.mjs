@@ -31,7 +31,7 @@ import { pathToFileURL } from 'node:url';
 const GLB = 'art-src/wuselwerker-v4.glb';
 const POSEN = 'art-src/posen';
 const ZIEL = 'src/art';
-const SS = 6; // Überabtastung je Achse
+const SS = 9; // Überabtastung je Achse — fein genug für einzelne Strähnen
 
 const args = process.argv.slice(2);
 const nurClip = args.includes('--clip') ? args[args.indexOf('--clip') + 1] : null;
@@ -210,13 +210,24 @@ window.__ready = (async () => {
 
   const scene = new THREE.Scene();
   scene.add(root);
-  scene.add(new THREE.AmbientLight(0xffffff, 2.3));
+  // Wenig Grundhelligkeit, dafür ein deutliches Licht von oben.
+  //
+  // Flaches Licht wäre bequem, macht aber aus der Mähne eine einzige Fläche:
+  // Alle Strähnen bekommen denselben Ton, die Zwischenräume auch, und beim
+  // Einrasten auf drei Stufen bleibt ein Klotz übrig. Erst der Helligkeits-
+  // unterschied zwischen Strähnenrücken und Zwischenraum lässt daraus Haar
+  // werden — hell oben auf den Spitzen, dunkel in den Furchen.
+  scene.add(new THREE.AmbientLight(0xffffff, 1.35));
   // Schlüssellicht von vorn oben. Es darf nicht von der Seite kommen: Der
   // Renderer spiegelt die Figur, und ein seitliches Licht wäre bei jeder
   // zweiten Figur auf der falschen Seite (grafik-katalog.md §2.7).
-  const key = new THREE.DirectionalLight(0xffffff, 1.0);
+  const key = new THREE.DirectionalLight(0xffffff, 1.5);
   key.position.set(0, 3, 2);
   scene.add(key);
+  // Senkrecht von oben — das ist das Licht, das die Strähnen trennt.
+  const oben = new THREE.DirectionalLight(0xffffff, 1.15);
+  oben.position.set(0, 5, -0.4);
+  scene.add(oben);
 
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
   renderer.setSize(CELL_W * SS, CELL_H * SS, false);
@@ -282,8 +293,19 @@ window.__ready = (async () => {
   // würden bei Rot (Grundton-Helligkeit 91) und Haut (218) dasselbe bedeuten
   // und eine der beiden Rampen flachlegen.
   const lum = ([r,g,b]) => 0.2126*r + 0.7152*g + 0.0722*b;
+  // Haar bekommt ein engeres Band um den Grundton als Haut und Anzug.
+  //
+  // Bei Haut und Anzug ist eine grosse ruhige Fläche gewollt — dort sollen nur
+  // deutliche Lichter und Schatten abweichen. Beim Haar ist es umgekehrt: Jede
+  // Furche zwischen zwei Strähnen soll auf die dunkle Stufe fallen und jeder
+  // Strähnenrücken auf die helle. Sonst steht die Mähne als eine einzige rote
+  // Fläche da, und eine einzige Fläche liest als Mütze, nicht als Haar.
+  const BAND = { haar: [1.07, 0.83], haut: [1.22, 0.7], anzug: [1.22, 0.7] };
   const SCHWELLE = Object.fromEntries(
-    Object.entries(RAMPEN).map(([k, ramp]) => [k, [lum(ramp[1]) * 1.22, lum(ramp[1]) * 0.7]]),
+    Object.entries(RAMPEN).map(([k, ramp]) => [
+      k,
+      [lum(ramp[1]) * BAND[k][0], lum(ramp[1]) * BAND[k][1]],
+    ]),
   );
   const stufe = (r, g, b, fam) => {
     const l = 0.2126*r + 0.7152*g + 0.0722*b;
@@ -356,12 +378,18 @@ window.__ready = (async () => {
     octx.drawImage(renderer.domElement, 0, 0);
     const d = octx.getImageData(0, 0, out.width, out.height).data;
 
-    // Verkleinern mit Mehrheitsentscheid je Block.
+    // --- Verkleinern -------------------------------------------------------
+    // Erst je Block auszählen, entschieden wird danach: Die Haarkante braucht
+    // die Nachbarschaft, und die kennt ein Block für sich allein nicht.
     const zelle = new Array(CELL_W * CELL_H).fill(null);
+    const haaranteil = new Float32Array(CELL_W * CELL_H);
+    const sieger = new Array(CELL_W * CELL_H).fill(null);
+    const gedeckt = new Float32Array(CELL_W * CELL_H);
+
     for (let cy = 0; cy < CELL_H; cy++) {
       for (let cx = 0; cx < CELL_W; cx++) {
         const zähler = new Map();
-        let deckung = 0;
+        let deckung = 0, haar = 0;
         for (let sy = 0; sy < SS; sy++) {
           for (let sx = 0; sx < SS; sx++) {
             const o = (((cy*SS + sy) * out.width) + (cx*SS + sx)) * 4;
@@ -377,14 +405,62 @@ window.__ready = (async () => {
             }
             const fam = familie(d[o], d[o+1], d[o+2]);
             if (!fam) continue;
+            if (fam === 'haar') haar++;
             const k = fam + stufe(d[o], d[o+1], d[o+2], fam);
             zähler.set(k, (zähler.get(k) ?? 0) + 1);
           }
         }
-        if (deckung < SS * SS * 0.42) continue;
         let best = null, n = -1;
         for (const [k, v] of zähler) if (v > n) { n = v; best = k; }
-        if (best) zelle[cy*CELL_W + cx] = best;
+        const i = cy*CELL_W + cx;
+        sieger[i] = best;
+        gedeckt[i] = deckung / (SS*SS);
+        haaranteil[i] = haar / (SS*SS);
+      }
+    }
+
+    /**
+     * Entscheiden — für Haar anders als für den Rest.
+     *
+     * Am Rumpf ist eine halb gedeckte Randzelle Teil einer glatten Kante und
+     * gehört dazu. Am Rand der Mähne ist sie etwas anderes: entweder der
+     * Zwischenraum zwischen zwei Strähnen oder die Spitze einer einzelnen.
+     * Beides gleich zu behandeln füllt die Lücken und kappt die Spitzen — und
+     * genau daraus entsteht der Eindruck einer Mütze.
+     *
+     * Deshalb zwei Regeln fürs Haar:
+     *   Kern     — ab drei Vierteln Deckung steht die Fläche.
+     *   Zacke    — darunter nur, wenn die Zelle mehr Haar trägt als ihre
+     *              Nachbarschaft im Mittel. Das ist genau eine herausstehende
+     *              Strähne; ein Zwischenraum liegt unter dem Mittel und fällt
+     *              heraus. Die Zacken folgen damit dem Modell und sind nicht
+     *              aufgestreutes Rauschen.
+     */
+    const umfeld = (x, y) => {
+      let summe = 0, n = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue;
+          const nx = x+dx, ny = y+dy;
+          if (nx < 0 || nx >= CELL_W || ny < 0 || ny >= CELL_H) continue;
+          summe += haaranteil[ny*CELL_W + nx]; n++;
+        }
+      }
+      return n ? summe / n : 0;
+    };
+
+    for (let cy = 0; cy < CELL_H; cy++) {
+      for (let cx = 0; cx < CELL_W; cx++) {
+        const i = cy*CELL_W + cx;
+        const best = sieger[i];
+        if (!best) continue;
+        if (!best.startsWith('haar')) {
+          if (gedeckt[i] >= 0.42) zelle[i] = best;
+          continue;
+        }
+        const h = haaranteil[i];
+        if (h >= 0.74) { zelle[i] = best; continue; }
+        if (h >= 0.24 && h > umfeld(cx, cy) + 0.03) zelle[i] = best;
       }
     }
 

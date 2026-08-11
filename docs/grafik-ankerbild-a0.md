@@ -287,10 +287,36 @@ werden. Damit heisst „−34 um X" am Oberschenkel dasselbe wie am Oberarm: nac
 `WUSEL_H = 12`. Der Backweg misst diese Strecke an der Geometrie und stellt die Kamera
 danach. Ein anderes Modell braucht deshalb keine Handarbeit.
 
-**Verkleinert wird mit Mehrheitsentscheid, nicht mit Mittelwert.** Bei 6 × 6 Bildpunkten je
+**Verkleinert wird mit Mehrheitsentscheid, nicht mit Mittelwert.** Bei 9 × 9 Bildpunkten je
 Zelle erzeugt ein Mittelwert Zwischentöne, die es in der Palette nicht gibt; die Mehrheit
 erhält Flächen und harte Kanten. Anbauteile zählen dabei doppelt — ein Werkzeug ist dünn und
 würde sonst gegen den Körper dahinter verlieren, obwohl gerade es den Beruf lesbar macht.
+
+**Haar wird anders verkleinert als der Rest — sonst wird daraus eine Mütze.** Das war der
+erste sichtbare Fehler des Backwegs, und er lohnt die Erklärung. Eine halb gedeckte Randzelle
+bedeutet an den beiden Orten Verschiedenes: Am Rumpf ist sie Teil einer glatten Kante und
+gehört dazu. Am Rand der Mähne ist sie entweder der Zwischenraum zwischen zwei Strähnen
+oder die Spitze einer einzelnen. Behandelt man beides gleich, werden die Lücken gefüllt und
+die Spitzen gekappt — übrig bleibt ein glatter roter Klotz, und die Figur sieht aus, als
+trüge sie eine Mütze.
+
+Deshalb gelten fürs Haar zwei Regeln statt einer:
+
+| | |
+|---|---|
+| **Kern** | ab drei Vierteln Deckung steht die Fläche |
+| **Zacke** | darunter nur, wenn die Zelle mehr Haar trägt als ihre Nachbarschaft im Mittel |
+
+Die zweite Regel ist der Kniff: Eine herausstehende Strähne liegt über dem Mittel ihrer
+Umgebung und bleibt, ein Zwischenraum liegt darunter und fällt heraus. Die Zacken folgen
+damit der Geometrie des Modells und sind nicht aufgestreutes Rauschen — dieselbe Pose
+ergibt immer dieselben Zacken.
+
+Dazu kommt das Licht: wenig Grundhelligkeit, dafür ein deutliches Licht senkrecht von oben.
+Flaches Licht gäbe allen Strähnen und allen Zwischenräumen denselben Ton, und nach dem
+Einrasten auf drei Stufen bliebe wieder eine Fläche übrig. Erst der Helligkeitsunterschied
+zwischen Strähnenrücken und Furche macht daraus Haar. Aus demselben Grund ist das Farbband
+ums Haar enger gefasst als bei Haut und Anzug: `[1,07 · 0,83]` statt `[1,22 · 0,70]`.
 
 **Die Kamera steht 30 Grad aus dem Profil.** Das ist eine Abkehr vom alten Kanon
 („strict orthographic side view") und hat einen gemessenen Grund: Im strengen Profil ist der
