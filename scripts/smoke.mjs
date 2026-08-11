@@ -123,6 +123,32 @@ async function main() {
       for (const v of d) s += v * v;
       return Math.sqrt(s / d.length);
     };
+    // Anteil eines Frequenzbandes an der Gesamtenergie.
+    //
+    // Damit lassen sich zwei Fragen stellen, die der Pegel allein nicht
+    // beantwortet: Traegt das Fundament (120 bis 320 Hz — tiefer zu messen
+    // hiesse, sich Bass vorzurechnen, den ein Handylautsprecher gar nicht
+    // wiedergibt)? Und kommt die Melodie noch durch (800 Hz bis 3 kHz)?
+    //
+    // Ein Anteil, kein Pegel: Lauter drehen aendert ihn nicht, eine andere
+    // Verteilung schon.
+    window.__bandAnteil = (von, bis) => {
+      if (!window.__tap) return 0;
+      const n = window.__tap.frequencyBinCount;
+      const d = new Float32Array(n);
+      window.__tap.getFloatFrequencyData(d);
+      const hzJeFach = window.__tap.context.sampleRate / 2 / n;
+      let band = 0;
+      let alles = 0;
+      for (let i = 1; i < n; i++) {
+        // Aus Dezibel zurueck in Leistung — Dezibel darf man nicht addieren.
+        const p = Math.pow(10, d[i] / 10);
+        const hz = i * hzJeFach;
+        alles += p;
+        if (hz >= von && hz <= bis) band += p;
+      }
+      return alles > 0 ? band / alles : 0;
+    };
   });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -172,13 +198,40 @@ async function main() {
   // gegen die Effekte unter.
   let pegel = 0;
   let effektiv = 0;
-  for (let i = 0; i < 14; i++) {
-    const [p, r] = await page.evaluate(() => [window.__peak(), window.__rms()]);
+  let bassSumme = 0;
+  let melodieSumme = 0;
+  let proben = 0;
+  for (let i = 0; i < 20; i++) {
+    const [p, r, b, m] = await page.evaluate(() => [
+      window.__peak(),
+      window.__rms(),
+      window.__bandAnteil(120, 320),
+      window.__bandAnteil(800, 3000),
+    ]);
     pegel = Math.max(pegel, p);
     effektiv = Math.max(effektiv, r);
-    await sleep(140);
+    // Die Bandanteile werden gemittelt, nicht maximiert: Ein einzelner
+    // Kickschlag trifft sonst zufaellig das kurze Messfenster und meldet Bass,
+    // den es zwischen den Schlaegen gar nicht gibt.
+    if (b > 0) {
+      bassSumme += b;
+      melodieSumme += m;
+      proben++;
+    }
+    await sleep(120);
   }
+  const bassAnteil = proben > 0 ? bassSumme / proben : 0;
+  const melodieAnteil = proben > 0 ? melodieSumme / proben : 0;
   check('§7 Musik kommt hörbar am Ausgang an', pegel > 0.03, `Spitze ${pegel.toFixed(3)}`);
+  // Nach oben ist genauso wichtig wie nach unten, und diese Grenze hat schon
+  // einmal gefehlt: Beim Lauterdrehen stand die Spitze bei 1,37 und damit weit
+  // über der Vollaussteuerung. Das hört man sofort als Verzerrung, aber keine
+  // Prüfung hat es gemeldet — sie fragte nur, ob überhaupt etwas ankommt.
+  check(
+    '§7 Nichts übersteuert am Ausgang',
+    pegel < 0.99,
+    `Spitze ${pegel.toFixed(3)} (Vollaussteuerung ist 1,0)`,
+  );
   // Der Effektivwert trennt eine Melodie von einer Folge von Anschlaegen.
   // Gemessen wurde er, als die Melodie noch aus Marimba-Anschlaegen bestand:
   // 0,006 bei einer Spitze von 0,17 — viel Kante, fast keine Energie. Genau so
@@ -188,6 +241,23 @@ async function main() {
     '§7 Die Melodie trägt, statt zu piepen',
     effektiv > 0.02,
     `Effektivwert ${effektiv.toFixed(4)} bei Spitze ${pegel.toFixed(3)}`,
+  );
+  // Das Fundament muss im Band liegen, das ein Handy wiedergibt. Zu wenig
+  // heisst dünn, zu viel heisst matschig — und matschig faellt sonst niemandem
+  // auf, bis man es auf einem echten Geraet hört.
+  check(
+    '§7 Das Fundament trägt im hörbaren Bassband',
+    bassAnteil > 0.12 && bassAnteil < 0.8,
+    `${(bassAnteil * 100).toFixed(1)} % der Energie zwischen 120 und 320 Hz`,
+  );
+  // Die Gegenprobe zum Bass, und sie ist die wichtigere: Eine Begleitung, die
+  // treibt, kann die Melodie zudecken, ohne dass eine einzige andere Prüfung
+  // das meldet — Pegel, Effektivwert und Bassanteil sähen alle besser aus als
+  // vorher. Nur dieses Band verrät, ob die Melodie noch da oben steht.
+  check(
+    '§7 Die Melodie behält ihr Fenster',
+    melodieAnteil > 0.03,
+    `${(melodieAnteil * 100).toFixed(1)} % der Energie zwischen 800 Hz und 3 kHz`,
   );
   // Das Umgebungsbett plant seine Boeen und Rufe einzeln in die Zukunft. Es
   // laeuft also genau dann, wenn der Zaehler waechst — ein "playing: true"

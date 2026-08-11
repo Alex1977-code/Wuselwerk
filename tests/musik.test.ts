@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STUECKE } from '../src/audio/music';
+import { ARPEGGIO, STUECKE } from '../src/audio/music';
 
 /**
  * Pruefungen am Notentext, nicht am Klang.
@@ -13,6 +13,32 @@ import { STUECKE } from '../src/audio/music';
  */
 
 const TAKT = 8;
+
+describe('Die laufende Sechzehntelfigur', () => {
+  it('meidet die Terz', () => {
+    // Die Terz sagt, ob ein Akkord Dur oder Moll ist. Diese eine Figur laeuft
+    // ueber alle Akkorde beider Stuecke — die Wiese in Dur, die Hoehle in
+    // dorisch —, ohne je umgeschrieben zu werden. Eine grosse Terz darin waere
+    // in der Hoehle schlicht der falsche Ton, und sie faellt beim Schreiben
+    // nicht auf: Ueber dem Dur-Stueck klingt sie richtig.
+    for (const halbton of ARPEGGIO) {
+      expect([0, 7], `${halbton} Halbtoene ist weder Grundton noch Quinte`).toContain(halbton % 12);
+    }
+  });
+
+  it('bleibt unter dem Fenster der Melodie', () => {
+    // 800 Hz bis 3 kHz gehoert der Melodie. Eine Begleitfigur, die dort
+    // mitspielt, zwingt einen dazu, die Melodie lauter zu drehen — und dann ist
+    // alles zu laut.
+    let hoechste = 0;
+    for (const p of Object.values(STUECKE)) {
+      const wurzel = Math.max(...p.akkorde);
+      const oben = Math.max(...ARPEGGIO);
+      hoechste = Math.max(hoechste, p.grund * Math.pow(2, (wurzel + oben) / 12));
+    }
+    expect(hoechste).toBeLessThan(800);
+  });
+});
 
 describe('Notentext der Begleitmusik', () => {
   for (const [name, p] of Object.entries(STUECKE)) {

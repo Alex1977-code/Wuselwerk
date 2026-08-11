@@ -4,11 +4,14 @@ import {
   akkordeon,
   bass,
   chip,
+  flaeche,
   glocke,
   kalimba,
+  kick,
   klarinette,
   marimba,
   panfloete,
+  pizzicato,
   shaker,
   tick,
   ukulele,
@@ -30,14 +33,26 @@ import {
  *
  * Nicht die Melodie, sondern Instrumentierung, Groove und Klangtextur. Deshalb
  * liegt das Gewicht hier auf den Klangfarben (`instrumente.ts`), auf dem
- * huepfenden Zweiertakt und auf dem gemeinsamen Federhall, durch den Musik und
- * Geraeusche gehen.
+ * Puls und auf dem gemeinsamen Federhall, durch den Musik und Geraeusche gehen.
+ *
+ * ## Zwei Sorten Musik in einem Stueck
+ *
+ * Ueber dem Ganzen liegt ein Volkslied — Achttakter, Kopfmotiv, Blasstimme.
+ * Darunter laeuft eine **Maschine**: Kick auf jede Viertel, Bass auf jede
+ * Achtel dazwischen, eine gehaltene Flaeche und eine Sechzehntelfigur. Das ist
+ * der Bau eines Tanzstuecks, nicht der einer Blaskapelle.
+ *
+ * Dass beides zusammengeht, liegt an einer strengen Aufteilung des Frequenz-
+ * bandes und nicht am Zufall: Die Maschine bleibt **unter** 800 Hz, die Melodie
+ * darueber. Wo beide dasselbe Band beanspruchen, gewinnt keiner — man dreht nur
+ * lauter, bis alles zu laut ist.
  *
  * ## Die Ebenen
  *
- * Ein Stueck besteht aus fuenf Spuren, die einzeln zu- und abgeschaltet werden:
- * Perkussion, Bass, Harmonie, Melodie, Glitzer. Das ist der Unterschied zu
- * 1991 — dort lief ein Band, hier reagiert die Musik auf die Lage:
+ * Sieben Spuren, die einzeln zu- und abgeschaltet werden: Kick, Bass, Flaeche,
+ * Perkussion, Sechzehntelfigur, Harmonie, Melodie, dazu der Glitzer. Das ist
+ * der Unterschied zu 1991 — dort lief ein Band, hier reagiert die Musik auf die
+ * Lage:
  *
  * | Lage | was passiert |
  * |---|---|
@@ -48,7 +63,13 @@ import {
  * | Alle gerettet, Level laeuft noch | Glitzer verdoppelt, Glockenspiel-Girlande darueber |
  */
 
-/** Ein Ton: Halbtöne über dem Grundton (null = Pause) und Länge in Achteln. */
+/**
+ * Ein Ton: Halbtöne über dem Grundton (null = Pause) und Länge in Achteln.
+ *
+ * **Die Tonfolgen in `STUECKE` sind abgenommen** (`docs/musik-abnahme.md`).
+ * Wer sie ändern will, fragt vorher. Instrumentierung, Begleitung, Groove und
+ * Mischung sind ausdruecklich nicht mit abgenommen und duerfen sich bewegen.
+ */
 type Note = readonly [number | null, number];
 
 interface Stueck {
@@ -148,6 +169,31 @@ export const STUECKE: Record<ThemeId, Stueck> = {
 };
 
 const LOOKAHEAD = 0.35;
+
+/**
+ * Die Sechzehntelfigur, in Halbtoenen ueber dem Grundton des jeweiligen Takts.
+ *
+ * **Nur Grundton, Quinte und Oktave — und die Terz mit Absicht nicht.** Genau
+ * die Terz sagt, ob ein Akkord Dur oder Moll ist, und diese Figur laeuft ueber
+ * alle acht Akkorde beider Stuecke, ohne dass jemand sie je umschreibt: Die
+ * Wiese steht in Dur, die Hoehle in dorisch. Eine grosse Terz waere in der
+ * Hoehle schlicht der falsche Ton. Grundton, Quinte und Oktave passen dagegen
+ * ueber jeden Dreiklang jeder Tonart — deshalb kann die Figur so stur bleiben.
+ *
+ * Der Bau ist der aelteste Trick einer laufenden Begleitung: **sie kehrt
+ * staendig zum gleichen Ton zurueck** — hier die Quinte auf jeder zweiten
+ * Stelle — und springt dazwischen weg. Daraus entsteht Bewegung ohne Melodie.
+ * Eine Figur, die selbst eine Melodie waere, traete gegen die eigentliche an.
+ *
+ * Der hoechste Ton liegt bei rund 780 Hz und damit unter dem Fenster von 800 Hz
+ * bis 3 kHz, das der Melodie gehoert. Das ist keine Schaetzung, sondern der
+ * Rechenweg: hoechster Akkordgrundton (10 Halbtoene in der Hoehle) plus 12
+ * Halbtoene ueber dem Grundton 220 Hz.
+ *
+ * Acht Stellen, also genau ein halber Takt: Damit faellt der Anfang der Figur
+ * zweimal je Takt mit dem Schlag zusammen und nicht irgendwo dazwischen.
+ */
+export const ARPEGGIO = [0, 7, 12, 7, 0, 7, 12, 7] as const;
 
 function aufRaster(m: readonly Note[]): (Note | null)[] {
   const raster: (Note | null)[] = [];
@@ -256,25 +302,82 @@ export class Music {
       const f = (h: number, oktave = 0) => p.grund * Math.pow(2, h / 12 + oktave);
       const g = { delay, bus: 'music' as const, fest: true };
 
+      // --- Der Motor: Kick unten auf dem Schlag, Bass in die Luecke ----------
+      //
+      // Das ist die ganze Maschine, und sie ist deshalb so wirksam, weil sich
+      // die beiden **nie in die Quere kommen**: Auf jeder Viertel nimmt der
+      // Kick den Platz ganz unten, auf jeder Achtel dazwischen faellt der Bass
+      // hinein. Das Ohr hoert daraus einen durchgehenden Bass, obwohl zu keinem
+      // Zeitpunkt zwei tiefe Toene gleichzeitig laufen — genau darum bleibt es
+      // wuchtig statt matschig.
+      //
+      // Die Achtel dazwischen ist auch der Grund, warum das nach vorne zieht:
+      // Ein Ton auf dem unbetonten Teil laesst das Ohr den naechsten Schlag
+      // erwarten. Der Puls entsteht aus dem Warten, nicht aus der Lautstaerke.
+      if (!endspurt) {
+        if (i % 2 === 0) kick(engine, { freq: 0, gain: 0.2, ...g });
+        else bass(engine, { freq: f(wurzel, -1), dur: stepDur * 0.75, gain: 0.19, ...g });
+      } else {
+        // Im Endspurt bleibt nur das nackte Fundament auf dem Schlag.
+        if (i % 2 === 0) bass(engine, { freq: f(wurzel, -1), dur: stepDur * 0.9, gain: 0.24, ...g });
+      }
+
+      // Das Fundament des Takts, gehalten. Es fuellt die Luecken zwischen Kick
+      // und Bass, damit unten nichts flackert — der Unterschied zwischen "es
+      // schlaegt Bass" und "es *liegt* Bass".
+      if (!endspurt && i % TAKT === 0) {
+        flaeche(engine, {
+          freq: f(wurzel, -1), dur: stepDur * TAKT * 0.96, gain: 0.04, ...g,
+        });
+      }
+
       // --- Perkussion -------------------------------------------------------
       if (!endspurt) {
-        if (i % 4 === 0) woodblock(engine, { freq: i % 8 === 0 ? 900 : 1250, gain: 0.075, ...g });
-        // Bei knapper Zeit laeuft das Schuettelrohr auf doppelter Zeit.
-        if (knapp ? true : i % 2 === 1) shaker(engine, { freq: 0, gain: 0.04, ...g });
+        // Das Schuettelrohr sitzt auf den Achteln zwischen den Schlaegen: die
+        // Gegenbewegung zum Kick, oben statt unten.
+        if (knapp || i % 2 === 1) shaker(engine, { freq: 0, gain: 0.05, ...g });
+        // Der Holzblock ist vom Taktgeber zum Akzent geworden — den Takt gibt
+        // jetzt der Kick. Er steht auf der letzten Achtel des Takts und zieht
+        // von dort in die naechste Eins.
+        if (i % TAKT === 7) woodblock(engine, { freq: 1250, gain: 0.06, ...g });
       }
       if (knapp && i % 2 === 0) tick(engine, { freq: 0, gain: 0.09, ...g });
 
-      // --- Bass -------------------------------------------------------------
-      // Zweiertakt: Grundton auf die Eins, Quinte auf die Drei. Das ist der
-      // huepfende Gang, den das Vorbild von der Blasmusik geerbt hat.
-      if (i % TAKT === 0) bass(engine, { freq: f(wurzel, -1), dur: stepDur * 1.5, ...g });
-      else if (i % TAKT === 4) bass(engine, { freq: f(wurzel + 7, -1), dur: stepDur * 1.3, gain: 0.19, ...g });
+      // --- Akkordflaeche ----------------------------------------------------
+      if (!endspurt && i % TAKT === 0) {
+        for (const ton of p.farbe) {
+          flaeche(engine, { freq: f(wurzel + ton), dur: stepDur * TAKT * 0.96, gain: 0.022, ...g });
+        }
+      }
+
+      // --- Laufende Figur, Sechzehntel --------------------------------------
+      //
+      // Zwei Toene je Achtel, also doppelt so schnell wie alles andere. Sie
+      // liegen **unter** der Melodie (hoechstens rund 780 Hz, siehe `ARPEGGIO`),
+      // damit sie das Fenster von 800 Hz bis 3 kHz nicht zustellen, und sie sind
+      // leise: Diese Figur soll man als Bewegung spueren, nicht als Stimme
+      // hoeren. Genau das trennt eine treibende Begleitung von einem zweiten
+      // Melodieversuch.
+      if (!knapp) {
+        for (const halb of [0, 1]) {
+          const ton = ARPEGGIO[(i * 2 + halb) % ARPEGGIO.length];
+          pizzicato(engine, {
+            freq: f(wurzel + ton),
+            dur: stepDur * 0.42,
+            gain: 0.032,
+            ...g,
+            delay: delay + halb * stepDur * 0.5,
+          });
+        }
+      }
 
       // --- Harmonie auf den Nachschlaegen ----------------------------------
+      // Der Rest des Volksliedes: gezupfte Nachschlaege. Sie sind jetzt leiser,
+      // weil unter ihnen eine Maschine laeuft, die es vorher nicht gab.
       if (!endspurt && i % 4 === 2) {
         const stimme = p.harmonieStimme === 'ukulele' ? ukulele : kalimba;
         for (const ton of [0, ...p.farbe]) {
-          stimme(engine, { freq: f(wurzel + ton), gain: 0.055, dur: stepDur * 1.4, ...g });
+          stimme(engine, { freq: f(wurzel + ton), gain: 0.04, dur: stepDur * 1.4, ...g });
         }
       }
 

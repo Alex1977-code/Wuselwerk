@@ -13,6 +13,17 @@
 
 export type Bus = 'sfx' | 'music';
 
+/**
+ * Pegel der Musikschiene.
+ *
+ * Steht als Konstante, weil `duck()` ihn kennen muss: Das Ducken faehrt den
+ * Pegel herunter und danach wieder **auf diesen Wert**. Als Zahl an zwei Stellen
+ * geschrieben hiesse, dass jede Aenderung an der Lautstaerke beim naechsten
+ * Ducken stillschweigend zurueckgenommen wird.
+ */
+const MUSIK_PEGEL = 0.56;
+const SFX_PEGEL = 0.85;
+
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -60,10 +71,9 @@ export class AudioEngine {
     const bis = jetzt + sekunden;
     if (bis <= this.duckBis) return;
     this.duckBis = bis;
-    const voll = 0.5;
     g.gain.cancelScheduledValues(jetzt);
-    g.gain.setTargetAtTime(voll * 0.84, jetzt, 0.02);
-    g.gain.setTargetAtTime(voll, bis, 0.12);
+    g.gain.setTargetAtTime(MUSIK_PEGEL * 0.84, jetzt, 0.02);
+    g.gain.setTargetAtTime(MUSIK_PEGEL, bis, 0.12);
   }
 
   /**
@@ -155,11 +165,54 @@ export class AudioEngine {
       // gehen und knacken. Erst mit dieser Bremse darf die Musik so laut
       // stehen, dass man sie auf einem Handy ueberhaupt hoert.
       const komp = this.ctx.createDynamicsCompressor();
-      komp.threshold.value = -8;
-      komp.knee.value = 12;
-      komp.ratio.value = 4;
+      komp.threshold.value = -14;
+      komp.knee.value = 10;
+      komp.ratio.value = 5;
       komp.attack.value = 0.004;
-      komp.release.value = 0.18;
+      komp.release.value = 0.16;
+
+      // Bandsaettigung ganz am Ende — und zugleich die Sicherheitsbremse.
+      //
+      // Eine Kennlinie in Form eines Tangens hyperbolicus: In der Mitte fast
+      // gerade, an den Raendern flach. Was daraus folgt, ist genau das, was ein
+      // Tonband tut und was die Vorgabe unter "warme Bandsaettigung" meint —
+      // leise Stellen kommen etwas lauter heraus, laute werden weich
+      // eingefangen statt abgeschnitten.
+      //
+      // Zwei Dinge auf einmal, und beide werden hier gebraucht:
+      //
+      // 1. **Lauter ohne lauter zu drehen.** Bei halber Aussteuerung hebt die
+      //    Kurve um gut drei Dezibel an. Genau das heisst "mehr Volumen": nicht
+      //    hoehere Spitzen, sondern mehr Energie dazwischen.
+      // 2. **Uebersteuerung ist ausgeschlossen, nicht unwahrscheinlich.** Ein
+      //    Waveshaper begrenzt seine Eingabe von sich aus auf plus/minus eins;
+      //    die Kurve endet bei 0,92. Damit *kann* nichts mehr ueber die
+      //    Vollaussteuerung hinaus, egal wie viele Spitzen zufaellig
+      //    zusammenfallen. Ein Kompressor kann das nicht versprechen: Er regelt
+      //    nach, und in der Anregelzeit rutscht der erste Transient durch.
+      //    Genau so ist die Spitze von 1,009 entstanden.
+      //
+      // Das ist nicht das Brickwall-Limiting, das die Vorgabe ablehnt. Das will
+      // Lautheit erzwingen und drueckt dafuer die ganze Zeit; diese Kurve
+      // veraendert leise Passagen kaum und den Dynamikumfang gar nicht.
+      const saettigung = this.ctx.createWaveShaper();
+      const stufen = 1024;
+      const kurve = new Float32Array(stufen);
+      // Wie stark die Kurve kruemmt. Darueber wird aus Saettigung Verzerrung.
+      const trieb = 1.6;
+      for (let i = 0; i < stufen; i++) {
+        const x = (i / (stufen - 1)) * 2 - 1;
+        // 0,85 und nicht 0,99: Die Ueberabtastung filtert beim Zurueckrechnen,
+        // und ein Filter schwingt an Kanten ueber. Gemessen kamen dadurch 0,968
+        // heraus, wo die Kurve auf 0,92 endete. Der Abstand ist fuer diesen
+        // Ueberschwinger da, nicht fuer die Kurve.
+        kurve[i] = (0.85 * Math.tanh(x * trieb)) / Math.tanh(trieb);
+      }
+      saettigung.curve = kurve;
+      // Ohne Ueberabtastung entstehen an der Kruemmung Spiegelfrequenzen, die
+      // als schriller Beiklang hoerbar werden — besonders bei den hohen
+      // Glockentoenen.
+      saettigung.oversample = '4x';
 
       // Hochpass vor dem Ausgang.
       //
@@ -171,9 +224,28 @@ export class AudioEngine {
       hoch.frequency.value = 85;
       hoch.Q.value = 0.7;
 
+      // Bassanhebung — und zwar genau dort, wo ein Handy noch etwas hergibt.
+      //
+      // "Mehr Bass" heisst auf einem Telefon nicht "tiefer". Unter etwa 150 Hz
+      // bewegt so ein Lautsprecher keine Luft mehr, egal wie viel man
+      // hineinschickt; die Energie verschwindet einfach. Was man dort wirklich
+      // hoert, liegt zwischen 150 und 250 Hz — deshalb sitzt die Anhebung auf
+      // 230 Hz und nicht bei 60. Ueber Kopfhoerer kommt der Tiefgang ohnehin
+      // vom Hochpass darunter, der nur wegnimmt, was nirgends ankommt.
+      //
+      // Sie steht **vor** der Bremse, damit die Bremse den angehobenen Bass
+      // mitbekommt. Danach angehoben wuerde er die Aussteuerung sprengen, die
+      // die Bremse gerade erst hergestellt hat.
+      const bassSchiene = this.ctx.createBiquadFilter();
+      bassSchiene.type = 'lowshelf';
+      bassSchiene.frequency.value = 230;
+      bassSchiene.gain.value = 3.5;
+
       this.master.connect(hoch);
-      hoch.connect(komp);
-      komp.connect(this.ctx.destination);
+      hoch.connect(bassSchiene);
+      bassSchiene.connect(komp);
+      komp.connect(saettigung);
+      saettigung.connect(this.ctx.destination);
 
       // Federhall. Er ist der Leim zwischen Musik und Geraeuschen: Beide gehen
       // durch denselben Raum, und dadurch klingen sie wie am selben Ort
@@ -187,7 +259,7 @@ export class AudioEngine {
 
       for (const bus of ['sfx', 'music'] as Bus[]) {
         const g = this.ctx.createGain();
-        g.gain.value = bus === 'music' ? 0.5 : 0.85;
+        g.gain.value = bus === 'music' ? MUSIK_PEGEL : SFX_PEGEL;
         this.busGain[bus] = g;
 
         if (bus === 'music') {

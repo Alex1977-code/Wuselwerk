@@ -264,6 +264,55 @@ export function chip(e: E, t: TonOpts): void {
   e.tone({ freq: t.freq * 2, dur: t.dur ?? 0.16, type: 'square', gain: g, attack: 0.002, ...o(t) });
 }
 
+/**
+ * Kick — der Schlag auf jede Viertel.
+ *
+ * Ein Kick ist kein Ton, sondern ein **Tonhoehenabsturz**: Er setzt hoch an und
+ * faellt in wenigen Hundertstelsekunden weit herunter. Das Ohr hoert den Sturz
+ * als Anschlag und den Rest als Bass. Ohne den Sturz waere es ein Basston mit
+ * hartem Anfang, und der klingt nach Fehler.
+ *
+ * Der Landepunkt liegt bei 150 Hz, nicht bei 50. Das ist keine Bescheidenheit:
+ * Ein Handylautsprecher bewegt unterhalb von etwa 150 Hz keine Luft mehr, und
+ * der Hochpass vor dem Ausgang nimmt es ohnehin heraus. Ein Kick, der auf 50 Hz
+ * landet, ist auf dem Zielgeraet kein tieferer Kick — er ist gar keiner.
+ *
+ * Das Knacken obendrauf ist der Teil, den auch der kleinste Lautsprecher
+ * wiedergibt. Auf einem Telefon *ist* es der Kick.
+ */
+export function kick(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.3;
+  e.tone({ freq: 330, dur: 0.19, type: 'sine', gain: g, slide: 150 / 330, attack: 0.003, ...o(t) });
+  e.noise({ dur: 0.012, gain: g * 0.28, filter: 'highpass', freq: 1800, ...o(t) });
+}
+
+/**
+ * Flaeche — der gehaltene Akkord darunter.
+ *
+ * Erst seit `tone()` halten kann, gibt es sie ueberhaupt: Eine Flaeche ist
+ * definitionsgemaess ein Ton, der steht. Zwei Dinge machen sie zur Flaeche und
+ * nicht zu einer lauten Orgel:
+ *
+ * 1. **Sehr langsam anschwellen** (`attack` gut ein Zehntel der Laenge). Was
+ *    schnell einsetzt, hoert man als Ereignis; was langsam einsetzt, hoert man
+ *    als Raum.
+ * 2. **Tief gefiltert.** Von 800 Hz bis 3 kHz gehoert die Melodie. Eine Flaeche,
+ *    die dort mitspielt, zwingt einen dazu, die Melodie lauter zu drehen — und
+ *    dann ist alles zu laut. Der Tiefpass haelt sie unten, wo sie traegt.
+ *
+ * Zwei leicht verstimmte Stimmen, weil eine allein steht und nicht atmet.
+ */
+export function flaeche(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.04;
+  const d = t.dur ?? 1.6;
+  for (const stimmung of [1, 1.0045]) {
+    e.tone({
+      freq: t.freq * stimmung, dur: d, type: 'sawtooth', gain: g, attack: d * 0.12,
+      hold: 0.82, filterHz: Math.min(760, t.freq * 3.2), filterSweep: 1.15, ...o(t),
+    });
+  }
+}
+
 /** Holzblock — trockener Klopfer fuer den Takt. */
 export function woodblock(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.1;
