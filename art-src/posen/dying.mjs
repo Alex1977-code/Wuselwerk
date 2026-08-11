@@ -64,12 +64,25 @@ const K = {
   // Sohle auf der Fusspunktlinie, nur Bild 1 hebt sich um einen halben Pixel —
   // der Schreck als kurzer Ruck. Danach hinunter, aber nicht tiefer als bis zur
   // Linie: Ein Häufchen unter dem eigenen Fusspunkt sähe eingegraben aus.
-  hoch: [0.0, 0.5, 0.2, -0.6, -1.5, -2.1, -2.4, -2.5],
+  //
+  // Die Werte sind nicht geschätzt, sondern ausgerechnet. Der Oberschenkel ist
+  // 1,01 lang, der Unterschenkel 1,56, das Fussgelenk sitzt 0,4 über der Sohle
+  // (am Modell gemessen). Beim Beugen bleibt in dieser Kette das *Becken*
+  // stehen und der Fuss steigt — der Versatz muss ihn also um genau den Betrag
+  // wieder herunterholen, den das Beugen ihn gehoben hat:
+  //
+  //   hoch = 0,4 − 2,9 + 1,01·cos(Schenkel) + 1,56·cos(Schiene)
+  //
+  // Daher auch die Grenze des ganzen Zustands: Das Bein ist vom Becken bis zur
+  // Sohle nur 2,6 Pixel lang. Tiefer als 2,6 kann eine Figur nicht sacken, ohne
+  // in den Boden zu sinken — und deshalb endet `hoch` bei −2,45 und nicht bei
+  // den −4, ab denen die Zelle unten abschneidet.
+  hoch: [0.0, 0.5, 0.2, -0.35, -0.9, -1.65, -2.15, -2.45],
   // Nach *hinten*, und das ist Absicht. Der Sturz aus `hip` trägt Kopf und
   // Mähne — die schwerste Fläche der Figur — gut drei Pixel nach vorn; ohne
   // Gegenzug stünde das Häufchen am rechten Zellrand statt über seinem
   // Fusspunkt. Der Versatz holt es zurück auf die Mitte.
-  vorn: [0.0, 0.0, 0.0, -0.1, -0.4, -0.8, -1.1, -1.3],
+  vorn: [0.0, 0.0, 0.0, -0.1, -0.5, -0.9, -1.2, -1.4],
 
   // **Das Hauptgelenk dieses Ablaufs.** `Hip` sitzt über Becken *und* Beinen und
   // ist damit das einzige, das die ganze Figur kippt. Beim Erschrecken lehnt sie
@@ -77,22 +90,25 @@ const K = {
   // vorn — und *nur* so kommt das Kopfgelenk von 6,1 Pixeln über der Sohle
   // hinunter auf gut 1,5. Ohne diesen Sturz bliebe die Mähne oben stehen: Sie
   // ist eine Kugel, und eine Kugel wird durch Drehen nicht flacher.
-  hip: [-5, -11, -9, -2, 8, 30, 52, 65],
+  hip: [-5, -11, -9, 4, 32, 55, 68, 76],
 
   // Rücken zusätzlich, aber sparsam. Nie über 10° — was die Figur flach macht,
   // ist der Sturz aus `hip`, nicht ein krummer Rücken.
-  spine01: [-5, -9, -7, -1, 4, 8, 10, 10],
+  spine01: [-5, -9, -7, 0, 5, 8, 10, 10],
   spine02: [-3, -5, -4, 0, 3, 5, 6, 6],
   // Hals und Kopf legen nur noch nach. Im Bild ankommt die Summe der ganzen
-  // Kette: −22, −40, −33, −5, +27, +51, +72, +85. Bild 1 schaut senkrecht nach
-  // oben, Bild 7 mit dem Gesicht in den Boden.
-  nacken: [-4, -6, -5, 0, 4, 4, 4, 5],
-  kopf: [-5, -9, -8, -2, 8, 8, 8, 9],
+  // Kette: −22, −40, −33, −4, +46, +74, +90, +96. Bild 1 schaut senkrecht nach
+  // oben, Bild 7 liegt mit dem Gesicht im Boden.
+  nacken: [-4, -6, -5, -3, 2, 2, 2, 1],
+  kopf: [-5, -9, -8, -5, 4, 4, 4, 3],
 
   // Arme: Z klappt sie aus dem T herunter, X schwingt sie dann nach vorn-oben.
   // −160 ist über dem Kopf, −20 hängt aus der gekippten Brust nach vorn-unten.
-  oberarm: [-115, -162, -152, -110, -80, -50, -30, -22],
-  unterarm: [26, 6, 12, 34, 48, 34, 16, 6],
+  // Im Bild sind sie fast nie zu sehen — bei drei Pixeln Armlänge gegen acht
+  // Pixel Mähne überlebt kein Arm den Mehrheitsentscheid beim Verkleinern. Sie
+  // stehen trotzdem richtig: Wird die Kamera je geändert, stimmt die Haltung.
+  oberarm: [-115, -162, -152, -120, -85, -50, -28, -20],
+  unterarm: [26, 6, 12, 40, 50, 34, 16, 6],
 
   // Die Beine stehen hier in **Weltwinkeln**, nicht gegen `hip` — sonst müsste
   // man beim Ändern des Sturzes jeden Beinwert nachziehen. Abgezogen wird erst
@@ -100,12 +116,12 @@ const K = {
   //
   // Ablauf: stehen · Knie knicken nach vorn weg · die Figur kippt über die Knie
   // hinweg nach vorn · die Beine schleifen flach nach hinten hinaus.
-  weltSchenkelV: [2, 3, 5, -20, -44, -10, 45, 78],
-  weltSchenkelH: [-2, -1, 0, -8, -28, 15, 60, 88],
-  wadeV: [2, 0, 3, 30, 72, 70, 34, 14],
-  wadeH: [2, 0, 2, 20, 55, 50, 24, 8],
-  fussV: [10, 26, 20, 4, -14, -22, -26, -30],
-  fussH: [10, 26, 20, 8, -10, -18, -24, -28],
+  weltSchenkelV: [2, 3, 5, -45, -70, 0, 60, 80],
+  weltSchenkelH: [-2, -1, 0, -25, -40, 30, 75, 92],
+  wadeV: [2, 0, 3, 65, 105, 95, 35, 15],
+  wadeH: [2, 0, 2, 45, 80, 70, 25, 5],
+  fussV: [10, 26, 20, 6, -10, -25, -30, -32],
+  fussH: [10, 26, 20, 10, -6, -20, -26, -30],
 
   // Seitliche Spreizung — nur damit die beiden Beine im Bild nicht zu einem
   // Strich zusammenfallen. Breite holt sie keine: Aus 30° zum Profil sieht die
@@ -115,7 +131,7 @@ const K = {
 
   // Ausschlag der Haarsträhnen. Beim Aufbäumen fliegen sie, im letzten Bild
   // liegen sie still: Ein weiterschwingendes Haar nähme dem Ende die Ruhe.
-  haar: [0.5, 1.5, 1.2, 0.7, 1.0, 1.3, 0.5, 0.0],
+  haar: [0.5, 1.5, 1.2, 0.8, 1.1, 1.3, 0.5, 0.0],
 };
 
 export default {

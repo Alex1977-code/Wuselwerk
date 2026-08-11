@@ -88,12 +88,12 @@ const K = {
   // Beine. Die Summe Schenkel + Wade + Fuss ist der Winkel der Sohle: null
   // heisst flach auf dem Boden, positiv heisst Fussspitze nach unten. Bild 0
   // steht deshalb auf beiden Sohlen, ohne dass ein Bein gestreckt sein müsste.
-  schenkelV: [-14, -20, -2, 12, 18, 20],
-  wadeV: [14, 22, 6, 0, 0, 0],
-  fussV: [0, -2, 14, 16, 12, 10],
-  schenkelH: [10, 16, 6, -4, -8, -10],
-  wadeH: [0, 0, 6, 10, 12, 12],
-  fussH: [-10, -16, 14, 22, 26, 28],
+  schenkelV: [-14, -20, -2, 14, 20, 22],
+  wadeV: [14, 22, 6, 2, 0, 0],
+  fussV: [0, -2, 14, 14, 10, 8],
+  schenkelH: [10, 16, 6, -6, -12, -14],
+  wadeH: [0, 0, 6, 12, 14, 14],
+  fussH: [-10, -16, 14, 20, 24, 26],
 
   // Strähnenschlag. Er wächst mit dem Aufstieg — die Mähne ist die grösste
   // Fläche der Figur, und ihr Auffächern ist der Jubel.
