@@ -83,7 +83,7 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.font = '600 15px system-ui, sans-serif';
   ctx.fillText(`${w.saved}/${w.needed}`, midX, 20);
 
-  drawIconButton(ctx, L.soundBtn, s.muted ? '🔇' : '🔊', false);
+  drawSoundButton(ctx, L.soundBtn, s.muted);
   drawIconButton(ctx, L.nukeBtn, '☢', false);
   drawIconButton(ctx, L.pauseBtn, '❚❚', false);
 
@@ -98,6 +98,51 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.fillRect(bar.w - w.dead * per, bar.y, w.dead * per, bar.h);
   ctx.fillStyle = COL.text;
   ctx.fillRect(w.needed * per - 1, bar.y - 1, 2, bar.h + 2);
+}
+
+function drawSoundButton(ctx: CanvasRenderingContext2D, b: Box, muted: boolean): void {
+  ctx.fillStyle = '#161d29';
+  roundRect(ctx, b.x, b.y, b.w, b.h, 9);
+  ctx.fill();
+  ctx.strokeStyle = COL.line;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  ctx.save();
+  ctx.translate(cx - 2, cy);
+  ctx.fillStyle = muted ? '#4d5972' : COL.text;
+  ctx.strokeStyle = muted ? '#4d5972' : COL.text;
+  ctx.lineWidth = 1.4;
+  ctx.lineCap = 'round';
+
+  // Membran und Trichter
+  ctx.beginPath();
+  ctx.moveTo(-5, -2.5);
+  ctx.lineTo(-2, -2.5);
+  ctx.lineTo(2, -6);
+  ctx.lineTo(2, 6);
+  ctx.lineTo(-2, 2.5);
+  ctx.lineTo(-5, 2.5);
+  ctx.closePath();
+  ctx.fill();
+
+  if (muted) {
+    ctx.beginPath();
+    ctx.moveTo(4.5, -4.5);
+    ctx.lineTo(9.5, 4.5);
+    ctx.moveTo(9.5, -4.5);
+    ctx.lineTo(4.5, 4.5);
+    ctx.stroke();
+  } else {
+    for (let i = 0; i < 2; i++) {
+      ctx.beginPath();
+      ctx.arc(3, 0, 4 + i * 3, -0.85, 0.85);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
 }
 
 function drawIconButton(

@@ -73,8 +73,9 @@ export function computeLayout(cssW: number, cssH: number): Layout {
   const pauseBtn: Box = { x: cssW - pad - btn, y: 8, w: btn, h: btn };
   const nukeBtn: Box = { x: cssW - pad - btn * 2 - 6, y: 8, w: btn, h: btn };
   const soundBtn: Box = { x: cssW - pad - btn * 3 - 12, y: 8, w: btn, h: btn };
+  // Unten links: unten rechts sitzt die Übersichtskarte.
   const recenterBtn: Box = {
-    x: cssW - pad - btn,
+    x: pad,
     y: play.y + play.h - btn - 8,
     w: btn,
     h: btn,

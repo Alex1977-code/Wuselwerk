@@ -17,6 +17,8 @@ import { COL, drawControls, drawRecenter, drawTopBar } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
 import { drawIntro, drawMenu, drawPause, drawResult, type Button } from './render/overlays';
+import { drawMinimap, minimapBox, minimapToLogical } from './render/minimap';
+import { drawOffscreenMarkers } from './render/offscreen';
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
 import { loadProgress, recordResult, starConditions, type Progress } from './storage';
@@ -31,7 +33,7 @@ interface PointerState {
   y: number;
   startX: number;
   startY: number;
-  role: 'aim' | 'rate' | 'ui' | 'pinch';
+  role: 'aim' | 'rate' | 'ui' | 'pinch' | 'map' | 'pan';
 }
 
 export class Game {
@@ -309,6 +311,22 @@ export class Game {
     }
 
     if (inBox(L.play, x, y)) {
+      // Übersichtskarte hat Vorrang: Sie ist zugleich der Schieber.
+      const map = minimapBox(L, this.level);
+      if (map && inBox(map, x, y)) {
+        const p = minimapToLogical(map, this.level, x, y);
+        this.camera.centerOn(p.x, p.y);
+        this.pointers.set(e.pointerId, {
+          id: e.pointerId,
+          x,
+          y,
+          startX: x,
+          startY: y,
+          role: 'map',
+        });
+        return;
+      }
+
       const others = [...this.pointers.values()].filter((p) => p.role === 'aim' || p.role === 'pinch');
       const ps: PointerState = { id: e.pointerId, x, y, startX: x, startY: y, role: 'aim' };
       if (others.length >= 1) {
@@ -356,7 +374,30 @@ export class Game {
       }
       return;
     }
-    if (ps.role === 'aim') this.refreshTarget();
+    if (ps.role === 'map') {
+      const map = minimapBox(this.layout, this.level);
+      if (map) {
+        const p = minimapToLogical(map, this.level, x, y);
+        this.camera.centerOn(p.x, p.y);
+      }
+      return;
+    }
+    if (ps.role === 'pan') {
+      const scale = this.camera.scaleFor(this.layout.play);
+      this.camera.panBy((x - prevX) / scale, (y - prevY) / scale);
+      return;
+    }
+    if (ps.role === 'aim') {
+      // Ohne gewählten Beruf gibt es nichts zu vergeben — dann wird aus dem
+      // Ziehen ein Schwenken. Ein Finger genügt, wie §3.5 es verlangt.
+      if (!this.selected && Math.hypot(x - ps.startX, y - ps.startY) > 14) {
+        ps.role = 'pan';
+        this.aim = null;
+        this.target = null;
+        return;
+      }
+      this.refreshTarget();
+    }
   }
 
   private onUp(e: PointerEvent): void {
@@ -424,6 +465,21 @@ export class Game {
     const view = this.playView();
     this.scene.draw(ctx, view, this.world, this.anim);
     this.drawAimOverlay(ctx, view);
+
+    drawOffscreenMarkers(ctx, this.layout.play, view, this.world);
+    const map = minimapBox(this.layout, this.level);
+    if (map) {
+      const grabbed = [...this.pointers.values()].some((p) => p.role === 'map');
+      drawMinimap(
+        ctx,
+        map,
+        this.level,
+        this.world,
+        this.terrainView.canvas,
+        this.camera.view(this.layout.play),
+        grabbed,
+      );
+    }
 
     drawTopBar(ctx, this.layout, this.hudState());
     drawControls(ctx, this.layout, this.hudState());
@@ -512,6 +568,18 @@ export class Game {
 
   debugToggleSound(): boolean {
     return this.audio.toggleMute();
+  }
+
+  debugRecenter(): void {
+    this.camera.recenter();
+  }
+
+  debugCamera(): { follow: boolean; cx: number; cy: number } {
+    return { follow: this.camera.follow, cx: this.camera.cx, cy: this.camera.cy };
+  }
+
+  debugMinimapBox() {
+    return minimapBox(this.layout, this.level);
   }
 
   debugTicks(): number {

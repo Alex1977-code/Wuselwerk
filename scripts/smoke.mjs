@@ -104,6 +104,34 @@ async function main() {
   const mutedBack = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   check('§7 Stummschaltung schaltet um', mutedNow === true && mutedBack === false);
 
+  // --- Steuerung: einhändig schwenken und Übersichtskarte (GDD §3.5) --------
+  const cam0 = await page.evaluate(() => window.__wuselwerk.debugCamera());
+  await page.mouse.move(195, 300);
+  await page.mouse.down();
+  await page.mouse.move(120, 300, { steps: 8 });
+  await page.mouse.up();
+  const cam1 = await page.evaluate(() => window.__wuselwerk.debugCamera());
+  check(
+    '§3.5 Ziehen mit einem Finger schwenkt das Bild',
+    cam1.follow === false && Math.abs(cam1.cx - cam0.cx) > 10,
+    `cx ${cam0.cx.toFixed(0)} -> ${cam1.cx.toFixed(0)}`,
+  );
+
+  const mapBox = await page.evaluate(() => window.__wuselwerk.debugMinimapBox());
+  check('Übersichtskarte vorhanden', !!mapBox, mapBox ? `${mapBox.w}x${mapBox.h}` : 'keine');
+  if (mapBox) {
+    await page.mouse.click(mapBox.x + mapBox.w * 0.2, mapBox.y + mapBox.h * 0.5);
+    const cam2 = await page.evaluate(() => window.__wuselwerk.debugCamera());
+    check(
+      'Tippen auf die Karte springt dorthin',
+      cam2.cx < cam1.cx - 5,
+      `cx ${cam1.cx.toFixed(0)} -> ${cam2.cx.toFixed(0)}`,
+    );
+  }
+  await page.screenshot({ path: `${OUT}/09-karte.png` });
+  // Auto-Kamera wieder einschalten
+  await page.evaluate(() => window.__wuselwerk.debugRecenter());
+
   // --- Gräber wählen -------------------------------------------------------
   const btn = await page.evaluate(() => {
     const w = window.innerWidth;

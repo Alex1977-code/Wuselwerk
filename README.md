@@ -36,6 +36,7 @@ node scripts/smoke.mjs   # spielt Level 1 im echten Browser durch, legt Screensh
 | §3.2 Lupe | Runder Ausschnitt 2,5× **oberhalb** des Daumens, weicht am oberen Rand nach unten aus. |
 | §3.3 Intelligentes Zielen | Fangradius sucht die nächste Figur, **für die der Beruf gültig ist**. Auswahl-Fächer, wenn zwei Kandidaten dicht beieinander stehen. |
 | §3.5 Daumen-Layout | Untere ~26 % Steuerung, acht Berufe im Bogen, Freisetzungsrate als senkrechter Schieber links, erst Beruf → dann Figur, Skill bleibt aktiv. |
+| §3.5 Einhändig schwenken | Übersichtskarte unten rechts, zugleich Schieber. Ziehen ohne gewählten Beruf schwenkt. Randmarken zeigen Ausgang und Figuren ausserhalb des Bildes. Auto-Kamera folgt dem Median. |
 | §4 Berufe | Alle acht Klassiker plus Freisetzungsrate und Selbstzerstörung. |
 | §5 Aus den 90ern | Pixelgenau zerstörbares Terrain, Stahl, Falltür, leuchtende Ausgangstür, Rettungsquote-Balken, sture Läufer ohne Wegfindung, sichtbares Sterben. |
 | §6 Grafik | Terrainmaske in logischer Auflösung, frisch gegrabenes Material heller als altes, Grasnarbe nur auf unberührter Oberfläche, Partikel, Parallax, Bildschirmschütteln nur bei Sprengungen, Berufe an der Silhouette erkennbar. |
@@ -99,6 +100,32 @@ einer Massenrettung von selbst eine Melodie.
 **Haptik nur unter Android.** Die Vibrations-Schnittstelle des Browsers gibt es
 in Safari auf dem iPhone nicht — dort bleibt das Spiel still. Diese Rückmeldung
 wäre erst in einer nativen Fassung möglich.
+
+## Bildausschnitt und Übersicht
+
+Auf drei Bildschirmbreiten Level und sechs Zoll Anzeige ist die eigentliche
+Frage nicht "wie bewege ich das Bild", sondern "woher weiss ich, dass da noch
+etwas ist". Vier Dinge greifen ineinander:
+
+- **Übersichtskarte unten rechts.** Sie zeigt Geländeschnitt, Figuren, Ausgang
+  und das Sichtfenster als Rahmen — und ist zugleich der Schieber: Antippen
+  oder Ziehen springt dorthin. Der Geländeschnitt entsteht durch schlichtes
+  Herunterskalieren der Terrain-Leinwand, deshalb erscheinen gegrabene Stollen
+  sofort auch in der Übersicht.
+- **Ziehen mit einem Finger schwenkt**, solange kein Beruf gewählt ist. Dann
+  gibt es ohnehin nichts zu vergeben. Das behebt einen echten Fehler der ersten
+  Fassung: Schwenken brauchte zwei Finger und widersprach damit der Vorgabe
+  "einhändig spielbar".
+- **Randmarken.** Ist der Ausgang ausserhalb des Bildes, zeigt ein Pfeil am
+  Rand dorthin. Links und rechts stehen kleine Zähler, wie viele Figuren gerade
+  ausserhalb laufen.
+- **Auto-Kamera auf dem Median statt dem Mittelwert.** Beim Mittelwert zieht
+  eine einzelne weit entfernte Figur die Kamera genau zwischen zwei Gruppen —
+  dorthin, wo nichts passiert. Der Median bleibt beim Pulk; wo die Ausreisser
+  stecken, sagen Karte und Randmarken.
+
+Zwei Finger bleiben für den Zoom (1× bis 3×). Der Knopf unten links stellt die
+Auto-Kamera wieder an.
 
 ## Fragen für den Spieltest
 
