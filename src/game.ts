@@ -183,6 +183,19 @@ export class Game {
     // Sie steht deshalb hier und nicht in der Tonschicht: Nur das Spiel weiss,
     // wie es gerade steht.
     if (this.screen === 'play') {
+      // Der Ausgang klingt nur, solange er im Bild ist. Damit wird das
+      // Schwenken hoerbar: Wer die Kamera zum Ziel fuehrt, hoert es kommen.
+      // Bewusst ohne das Ruetteln aus `playView` — der Zufall dort gehoert zur
+      // Darstellung und hat im Ton nichts zu suchen.
+      const v = this.camera.view(this.layout.play);
+      const ex = this.level.exit;
+      this.audio.setAusgangHoerbar(
+        ex.x + ex.w > v.ox &&
+          ex.x < v.ox + v.box.w / v.scale &&
+          ex.y + ex.h > v.oy &&
+          ex.y < v.oy + v.box.h / v.scale,
+      );
+
       const grenze = this.level.timeLimitSec * TICK_HZ;
       const rest = this.world.timeLeftTicks;
       this.audio.update({

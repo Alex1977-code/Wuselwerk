@@ -1,5 +1,6 @@
 import type { WorldEvent } from '../core/types';
 import type { ThemeId } from '../levels/types';
+import { Ambiente } from './ambiente';
 import { AudioEngine } from './engine';
 import { Haptics } from './haptics';
 import { Music, type Lage } from './music';
@@ -10,6 +11,7 @@ export class GameAudio {
   private engine = new AudioEngine();
   private sfx = new Sfx(this.engine);
   private music = new Music();
+  private ambiente = new Ambiente();
   readonly haptics = new Haptics();
 
   get muted(): boolean {
@@ -34,15 +36,27 @@ export class GameAudio {
 
   setTheme(theme: ThemeId): void {
     this.music.setTheme(theme);
+    this.ambiente.setTheme(theme);
     this.sfx.reset();
   }
 
+  /**
+   * Das Umgebungsbett laeuft mit der Musik — es ist kein zweiter Schalter.
+   * Wer die Musik anhaelt, will Ruhe, nicht Wind ohne Melodie.
+   */
   startMusic(): void {
     this.music.start(this.engine);
+    this.ambiente.start(this.engine);
   }
 
   stopMusic(): void {
     this.music.stop();
+    this.ambiente.stop();
+  }
+
+  /** Der Ausgang klingt nur, solange er im Bild ist — siehe `Ambiente`. */
+  setAusgangHoerbar(sichtbar: boolean): void {
+    this.ambiente.setAusgang(sichtbar);
   }
 
   /** Der Ruf beim Weltuntergang — siehe `Sfx.ohNo`. */
@@ -59,6 +73,7 @@ export class GameAudio {
   update(lage?: Lage): void {
     if (lage) this.music.setLage(lage);
     this.music.update(this.engine);
+    this.ambiente.update(this.engine);
   }
 
   /** Diagnose für die automatisierte Sichtprobe. */
@@ -67,12 +82,14 @@ export class GameAudio {
     muted: boolean;
     haptics: boolean;
     music: { playing: boolean; notes: number; lage: string };
+    ambiente: { playing: boolean; events: number; bett: ThemeId; ausgang: boolean };
   } {
     return {
       ready: this.engine.ready,
       muted: this.engine.muted,
       haptics: this.haptics.supported,
       music: this.music.state,
+      ambiente: this.ambiente.state,
     };
   }
 
