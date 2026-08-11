@@ -46,12 +46,13 @@ jobs:
       - name: Bauen (Normalfassung und Einzeldatei)
         run: npm run build:single
 
+      # Setzt voraus, dass Pages im Repo einmalig freigeschaltet ist:
+      # Settings -> Pages -> Source: GitHub Actions.
+      # Das laesst sich hier nicht automatisieren — das Token eines Workflows
+      # darf Pages nicht anlegen ("Resource not accessible by integration").
+      # Nur ein Repo-Besitzer kann den Schalter umlegen, danach laeuft alles
+      # bei jedem Push von allein.
       - uses: actions/configure-pages@v5
-        with:
-          # Schaltet Pages beim ersten Lauf selbst frei, falls noch nicht
-          # geschehen. Schlaegt das fehl, muss es einmalig von Hand in den
-          # Repo-Einstellungen unter Pages -> Source: GitHub Actions passieren.
-          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
