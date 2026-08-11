@@ -1,4 +1,4 @@
-import type { AudioEngine } from './engine';
+import type { AudioEngine, Bus } from './engine';
 
 /**
  * Die Klangfarben des Spiels.
@@ -45,9 +45,20 @@ export interface TonOpts {
   dur?: number;
   gain?: number;
   delay?: number;
-  bus?: 'sfx' | 'music';
+  bus?: Bus;
   /** Sperrt die Stimmenbegrenzung aus — fuer Musik, die nie ausfallen darf. */
   fest?: boolean;
+  /**
+   * Panorama, −1 bis +1.
+   *
+   * Wer hier stehen darf, ist geregelt und nicht Geschmack: Bass, Erdschlag und
+   * Melodie bleiben bei 0. Sie tragen Fundament und Aussage, und beides gehoert
+   * auf einem Handylautsprecher — der genau einen Ort hat — in die Mitte.
+   * Gespreizt wird, was schmueckt.
+   */
+  pan?: number;
+  /** Anteil ins tempogekoppelte Echo. Siehe `AudioEngine.setEcho`. */
+  echo?: number;
 }
 
 type E = AudioEngine;
@@ -58,7 +69,22 @@ function o(t: TonOpts) {
     delay: t.delay ?? 0,
     bus: t.bus ?? ('music' as const),
     ignoreLimit: t.fest ?? true,
+    pan: t.pan ?? 0,
+    echo: t.echo ?? 0,
   };
+}
+
+/**
+ * Wie `o()`, aber ohne Echo.
+ *
+ * Fuer die Nebenstimmen eines Klangs — Obertoene, Anschlagsgeraeusche,
+ * Anblasrauschen. Sie gehoeren zum Ton, aber nicht ins Echo: Ein Echo, das die
+ * Anschlaege mitnimmt, wiederholt das Klicken statt des Klangs, und nach drei
+ * Wiederholungen steht ein Rascheln im Weg. Ins Echo geht immer nur der
+ * **Koerper** einer Stimme.
+ */
+function ohneEcho(t: TonOpts) {
+  return { ...o(t), echo: 0 };
 }
 
 /**
@@ -75,6 +101,49 @@ export function marimba(e: E, t: TonOpts): void {
   e.tone({ freq: t.freq * 4, dur: d * 0.3, type: 'sine', gain: g * 0.34, attack: 0.002, ...o(t) });
   e.tone({ freq: t.freq * 9.2, dur: d * 0.1, type: 'sine', gain: g * 0.1, attack: 0.001, ...o(t) });
   e.noise({ dur: 0.014, gain: g * 0.3, filter: 'bandpass', freq: t.freq * 6, q: 1.2, ...o(t) });
+}
+
+/**
+ * **Der Pling — das Erkennungszeichen des Spiels.**
+ *
+ * Von allen Klaengen hier ist dieser der einzige, der eine Aufgabe hat, die
+ * ueber seinen eigenen Klang hinausgeht: Er ist das Objekt, das in **allen drei
+ * Schichten** vorkommt und sie dadurch zu einer Sache macht.
+ *
+ * - In der Musik ist er der Anschlag unter der Melodie und der Glitzer darueber.
+ * - In den Geraeuschen ist er die Werkzeugwahl, der Knopf und jede
+ *   Brueckenstufe.
+ * - Im Stinger ist er der Anschlag auf der Fanfare und das Konfetti.
+ *
+ * Wiedererkennung entsteht nicht aus vielen schoenen Einzelklaengen, sondern aus
+ * der **Wiederkehr desselben Objekts an verschiedenen Orten**. Das ist derselbe
+ * Satz wie bei einer Melodie mit Kopfmotiv, nur eine Ebene tiefer.
+ *
+ * Was er ist: ein **Holzstab, mit einer Glaskante angeschlagen**. Drei Teile,
+ * und keiner davon ist beliebig:
+ *
+ * 1. **Holz.** Sinuston mit dem Teilton bei Faktor 4 — der Stabschwingung, an
+ *    der man ein Stabspiel ohne Nachdenken erkennt (siehe `marimba`).
+ * 2. **Glas.** Zwei sehr kurze, sehr leise Teiltoene bei Faktor 5,4 und 7,6.
+ *    Beide passen in keine Oktave; unharmonisch und kurz heisst „hart und
+ *    sproede", und genau das ist Glas. Sie klingen fuenfzig Millisekunden lang
+ *    und sind der eigentliche Fingerabdruck: Ein Stabspiel ohne sie klingt
+ *    freundlich, mit ihnen klingt es **nach diesem Spiel**.
+ * 3. **Anschlag.** Ein Rauschstoss von acht Millisekunden. Ohne ihn ist es kein
+ *    angeschlagener Ton, sondern eine Floete mit schneller Huellkurve.
+ *
+ * Der Echoanteil geht nur auf den Holzkoerper. Glas und Anschlag bleiben
+ * einmalig — was sich wiederholen soll, ist der Ton, nicht das Klicken.
+ */
+export function pling(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.13;
+  const d = t.dur ?? 0.4;
+  e.tone({ freq: t.freq, dur: d, type: 'sine', gain: g, attack: 0.003, ...o(t) });
+  e.tone({ freq: t.freq * 4, dur: d * 0.26, type: 'sine', gain: g * 0.3, attack: 0.002, ...ohneEcho(t) });
+  // Die Glaskante. Sehr leise — sie soll die Farbe geben, nicht den Ton.
+  e.tone({ freq: t.freq * 5.4, dur: 0.05, type: 'sine', gain: g * 0.16, attack: 0.001, ...ohneEcho(t) });
+  e.tone({ freq: t.freq * 7.6, dur: 0.035, type: 'sine', gain: g * 0.09, attack: 0.001, ...ohneEcho(t) });
+  e.noise({ dur: 0.008, gain: g * 0.24, filter: 'bandpass', freq: t.freq * 6, q: 1.1, ...ohneEcho(t) });
 }
 
 /**
@@ -239,59 +308,167 @@ export function akkordeon(e: E, t: TonOpts): void {
 }
 
 /**
- * Bass — federnd, kurz, mit Fundament bei 150 bis 250 Hz.
+ * Okarina — die Melodiestimme der Wiese.
  *
- * Bewusst nicht tiefer: Was unter 150 Hz liegt, gibt ein Handylautsprecher
- * nicht wieder, und der Hochpass vor dem Ausgang nimmt es ohnehin heraus. Der
- * Oberton eine Oktave darueber traegt den Ton auf kleinen Lautsprechern.
+ * Sie loest das Akkordeon ab, und der Grund steht im Bild: Eine
+ * Musette-Stimmung — drei gegeneinander verstimmte Zungen — ist der Klang eines
+ * Jahrmarkts. Das Spiel zeigt aber einen Mittag ueber offenen Huegeln. Die
+ * Melodie bleibt Note fuer Note dieselbe (sie ist abgenommen); nur wer sie
+ * spielt, aendert sich.
+ *
+ * Eine Okarina ist akustisch fast ein Sonderfall, und genau das macht sie hier
+ * brauchbar:
+ *
+ * 1. **Teiltoene.** Ein Helmholtz-Resonator — ein geschlossenes Gefaess mit
+ *    Loechern — hat kaum Obertoene. Praktisch nur der Grundton und ein
+ *    schwacher zweiter. Deshalb steht sie im Melodiefenster (800 Hz bis 3 kHz)
+ *    **allein**, statt es mit einem Saegezahnkamm zuzustellen, wie es das
+ *    Akkordeon mit seinen drei Zungen tat. Weniger Klangfarbe, mehr Melodie.
+ * 2. **Huellkurve.** Sie haelt (`hold: 0.78`) und setzt weich ein. Das ist die
+ *    Bedingung dafuer, dass eine Melodie eine Linie wird und keine Punktfolge —
+ *    derselbe Grund wie bei Klarinette und Panfloete.
+ * 3. **Atem.** Ein Anblasrauschen um den zweiten Teilton, laenger als bei der
+ *    Panfloete und leiser. Eine Okarina ist eine gedeckte Pfeife: Man hoert die
+ *    Luft im Gefaess, nicht am Schneidenrand.
+ *
+ * Die zwei Stimmen stehen sechs Cent auseinander und ±0,15 im Panorama. Sechs
+ * Cent sind eine Schwebung von rund einem halben Hertz — man hoert sie nicht als
+ * Verstimmung, sondern als Groesse. Elf Cent waeren wieder Musette gewesen.
+ *
+ * Der Echoanteil geht auf den Koerper. Das ist das Merkmal, an dem man diese
+ * Fassung von der vorigen in einer Sekunde unterscheidet: Die Melodie hat einen
+ * Nachsatz, der auf der punktierten Achtel wiederkommt.
+ */
+export function okarina(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.11;
+  const d = t.dur ?? 0.4;
+  for (const [stimmung, seite] of [
+    [0.99826, -0.15],
+    [1.00174, 0.15],
+  ] as const) {
+    e.tone({
+      freq: t.freq * stimmung,
+      dur: d,
+      type: 'triangle',
+      gain: g * 0.5,
+      attack: 0.03,
+      hold: 0.78,
+      vibratoHz: 5.2,
+      vibratoCents: 8,
+      ...o(t),
+      pan: (t.pan ?? 0) + seite,
+    });
+  }
+  // Der schwache zweite Teilton. Sinus, weil an einer Okarina nichts scharf ist.
+  e.tone({
+    freq: t.freq * 2, dur: d * 0.7, type: 'sine', gain: g * 0.13, attack: 0.04,
+    hold: 0.6, ...ohneEcho(t),
+  });
+  e.noise({
+    dur: Math.min(0.13, d), gain: g * 0.2, filter: 'bandpass',
+    freq: t.freq * 2.1, q: 1.3, ...ohneEcho(t),
+  });
+}
+
+/**
+ * Bass — angerissen statt angeblasen.
+ *
+ * Vorher stand hier ein Dreieck mit Huellkurve. Das ist ein *Ton* in der
+ * richtigen Lage, aber kein Bass: Ihm fehlt der Anfang. Was man an einem
+ * gezupften Bass zuerst hoert, ist nicht die Tonhoehe, sondern der **Anriss** —
+ * ein kurzer, breitbandiger Ruck, bevor der Ton steht.
+ *
+ * Nachgebaut mit dem Mittel, mit dem eine gezupfte Saite es selbst macht: Ein
+ * Saegezahn (alle Teiltoene) laeuft durch einen Tiefpass, der in wenigen
+ * Hundertstelsekunden von der sechsfachen auf die anderthalbfache Grundfrequenz
+ * zufaehrt. Genau das tut eine angerissene Saite — sie verliert ihre Hoehen
+ * zuerst. Das Ergebnis hat einen hoerbaren Anfang und danach einen runden
+ * Koerper.
+ *
+ * Warum das gerade auf einem Telefon zaehlt: Der Grundton bei 130 bis 200 Hz
+ * kommt dort ohnehin nur zur Haelfte an. Der Anriss dagegen liegt bei 800 Hz und
+ * darueber und kommt vollstaendig an. **Auf dem Zielgeraet ist der Anriss der
+ * Bass.** Deshalb war „basslastiger" mit mehr Pegel unten nicht zu erfuellen,
+ * mit dieser Kurve schon.
+ *
+ * Bewusst nicht tiefer als 150 Hz: Was darunter liegt, gibt ein
+ * Handylautsprecher nicht wieder, und der Hochpass vor dem Ausgang nimmt es
+ * ohnehin heraus. Der Sinus eine Oktave darueber traegt den Ton auf kleinen
+ * Membranen. Immer Mitte, nie Panorama.
  */
 export function bass(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.24;
   const d = t.dur ?? 0.24;
-  e.tone({ freq: t.freq, dur: d, type: 'triangle', gain: g, attack: 0.008, ...o(t) });
-  e.tone({ freq: t.freq * 2, dur: d * 0.6, type: 'sine', gain: g * 0.3, attack: 0.006, ...o(t) });
+  e.tone({
+    freq: t.freq, dur: d, type: 'sawtooth', gain: g * 0.62, attack: 0.005,
+    filterHz: t.freq * 6, filterSweep: 0.25, ...ohneEcho(t), pan: 0,
+  });
+  // Der runde Koerper darunter. Er allein waere der alte Bass; erst zusammen
+  // mit dem Anriss darueber ist es ein Instrument.
+  e.tone({
+    freq: t.freq, dur: d, type: 'triangle', gain: g * 0.55, attack: 0.009,
+    ...ohneEcho(t), pan: 0,
+  });
+  e.tone({
+    freq: t.freq * 2, dur: d * 0.55, type: 'sine', gain: g * 0.26, attack: 0.006,
+    ...ohneEcho(t), pan: 0,
+  });
+  // Das Fingergeraeusch. Acht Millisekunden, hoch, sehr leise — man hoert es
+  // nicht als Rauschen, sondern als Kante.
+  e.noise({
+    dur: 0.008, gain: g * 0.1, filter: 'bandpass', freq: 2200, q: 0.9,
+    ...ohneEcho(t), pan: 0,
+  });
 }
 
 /**
- * Quadratwelle als duenne Achtbit-Ebene.
+ * Erdschlag — der Puls. Frueher hiess das hier „Kick".
  *
- * Nach Vorgabe **nie Hauptstimme**, immer Verdoppelung: Sie liegt eine Oktave
- * ueber der Melodie und traegt nur die Kante. Allein klaenge sie nach
- * Klingelton, unter einer Marimba nach Amiga.
+ * Der Bau ist derselbe geblieben, weil er stimmt: Ein Schlag ist kein Ton,
+ * sondern ein **Tonhoehenabsturz**. Er setzt hoch an und faellt in wenigen
+ * Hundertstelsekunden weit herunter; das Ohr hoert den Sturz als Anschlag und
+ * den Rest als Bass. Der Landepunkt liegt bei 150 Hz und nicht bei 50 — darunter
+ * bewegt ein Handylautsprecher keine Luft mehr, und der Hochpass vor dem Ausgang
+ * nimmt es ohnehin heraus. Ein Schlag, der auf 50 Hz landet, ist auf dem
+ * Zielgeraet kein tieferer Schlag, sondern gar keiner.
+ *
+ * Geaendert hat sich das **Material**, und zwar aus dem Bild heraus. Im Spiel
+ * gibt es kein Schlagzeug; es gibt Erde, in der gegraben wird. Also:
+ *
+ * - **Weicherer Ansatz** (8 statt 3 ms) und ein etwas laengerer Sturz. Ein Fuss
+ *   auf festgetretener Erde setzt auf, er schlaegt nicht an. Der harte Ansatz
+ *   von vorher ist der eines Verstaerkers.
+ * - **Holzklopfen bei 900 Hz statt Zischen bei 1800.** Das ist der Teil, den
+ *   auch der kleinste Lautsprecher wiedergibt — auf einem Telefon *ist* dieser
+ *   Anteil der Schlag. Ein Zischer bei 1800 Hz gehoert zu einer Bassdrum mit
+ *   Kunststofffell; ein Klopfen bei 900 Hz zu etwas Holzigem auf Boden.
+ * - **Ein tiefer, sehr kurzer Rauschtupfer** darunter: der Staub. Er hat keine
+ *   Tonhoehe und ist einzeln nicht zu hoeren, aber ohne ihn ist der Schlag ein
+ *   sauberer Sinus und klingt nach Testgeraet.
+ *
+ * Immer in der Mitte. Das Fundament hat auf einem Geraet mit einem Lautsprecher
+ * nur einen Ort.
  */
-export function chip(e: E, t: TonOpts): void {
-  const g = t.gain ?? 0.045;
-  e.tone({ freq: t.freq * 2, dur: t.dur ?? 0.16, type: 'square', gain: g, attack: 0.002, ...o(t) });
-}
-
-/**
- * Kick — der Schlag auf jede Viertel.
- *
- * Ein Kick ist kein Ton, sondern ein **Tonhoehenabsturz**: Er setzt hoch an und
- * faellt in wenigen Hundertstelsekunden weit herunter. Das Ohr hoert den Sturz
- * als Anschlag und den Rest als Bass. Ohne den Sturz waere es ein Basston mit
- * hartem Anfang, und der klingt nach Fehler.
- *
- * Der Landepunkt liegt bei 150 Hz, nicht bei 50. Das ist keine Bescheidenheit:
- * Ein Handylautsprecher bewegt unterhalb von etwa 150 Hz keine Luft mehr, und
- * der Hochpass vor dem Ausgang nimmt es ohnehin heraus. Ein Kick, der auf 50 Hz
- * landet, ist auf dem Zielgeraet kein tieferer Kick — er ist gar keiner.
- *
- * Das Knacken obendrauf ist der Teil, den auch der kleinste Lautsprecher
- * wiedergibt. Auf einem Telefon *ist* es der Kick.
- */
-export function kick(e: E, t: TonOpts): void {
+export function erdschlag(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.3;
-  e.tone({ freq: 330, dur: 0.19, type: 'sine', gain: g, slide: 150 / 330, attack: 0.003, ...o(t) });
-  e.noise({ dur: 0.012, gain: g * 0.28, filter: 'highpass', freq: 1800, ...o(t) });
+  e.tone({
+    freq: 320, dur: 0.22, type: 'sine', gain: g, slide: 150 / 320, attack: 0.008,
+    ...ohneEcho(t), pan: 0,
+  });
+  e.noise({
+    dur: 0.016, gain: g * 0.26, filter: 'bandpass', freq: 900, q: 1.6,
+    ...ohneEcho(t), pan: 0,
+  });
+  e.noise({
+    dur: 0.05, gain: g * 0.09, filter: 'lowpass', freq: 420, sweep: 0.5,
+    ...ohneEcho(t), pan: 0,
+  });
 }
 
 /**
  * Flaeche — der gehaltene Akkord darunter.
  *
- * Erst seit `tone()` halten kann, gibt es sie ueberhaupt: Eine Flaeche ist
- * definitionsgemaess ein Ton, der steht. Zwei Dinge machen sie zur Flaeche und
- * nicht zu einer lauten Orgel:
+ * Drei Dinge machen sie zur Flaeche und nicht zu einer lauten Orgel:
  *
  * 1. **Sehr langsam anschwellen** (`attack` gut ein Zehntel der Laenge). Was
  *    schnell einsetzt, hoert man als Ereignis; was langsam einsetzt, hoert man
@@ -299,16 +476,31 @@ export function kick(e: E, t: TonOpts): void {
  * 2. **Tief gefiltert.** Von 800 Hz bis 3 kHz gehoert die Melodie. Eine Flaeche,
  *    die dort mitspielt, zwingt einen dazu, die Melodie lauter zu drehen — und
  *    dann ist alles zu laut. Der Tiefpass haelt sie unten, wo sie traegt.
+ * 3. **Sie steht breit.** Die zwei verstimmten Stimmen gehen nach links und
+ *    rechts auseinander (±0,55). Das ist die Stelle, an der Breite am meisten
+ *    bringt und am wenigsten kostet: Eine Flaeche traegt keine Aussage, die man
+ *    orten muesste, und wenn sie aussen steht, wird in der Mitte Platz frei —
+ *    genau dort, wo Bass, Schlag und Melodie stehen. Breite ist hier also nicht
+ *    Schmuck, sondern **Raeumen**.
  *
- * Zwei leicht verstimmte Stimmen, weil eine allein steht und nicht atmet.
+ * Die Verstimmung ist mit 4,5 Promille bewusst klein. Sie erzeugt eine Schwebung
+ * von etwa einem Hertz; zusammen mit der Spreizung wandert der Klang dadurch
+ * langsam zwischen den Seiten hin und her, ohne dass irgendetwas moduliert wird.
+ *
+ * Laeuft ueber den Pad-Zweig: Sie ist es, die bei jedem Erdschlag kurz
+ * zurueckweicht (`AudioEngine.pumpe`).
  */
 export function flaeche(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.04;
   const d = t.dur ?? 1.6;
-  for (const stimmung of [1, 1.0045]) {
+  for (const [stimmung, seite] of [
+    [1, -0.55],
+    [1.0045, 0.55],
+  ] as const) {
     e.tone({
       freq: t.freq * stimmung, dur: d, type: 'sawtooth', gain: g, attack: d * 0.12,
-      hold: 0.82, filterHz: Math.min(760, t.freq * 3.2), filterSweep: 1.15, ...o(t),
+      hold: 0.82, filterHz: Math.min(760, t.freq * 3.2), filterSweep: 1.15,
+      ...ohneEcho(t), bus: t.bus ?? 'pad', pan: seite,
     });
   }
 }
@@ -316,14 +508,41 @@ export function flaeche(e: E, t: TonOpts): void {
 /** Holzblock — trockener Klopfer fuer den Takt. */
 export function woodblock(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.1;
-  e.tone({ freq: t.freq, dur: 0.035, type: 'square', gain: g, slide: 0.5, ...o(t) });
-  e.noise({ dur: 0.02, gain: g * 0.5, filter: 'bandpass', freq: t.freq * 3, q: 2, ...o(t) });
+  e.tone({ freq: t.freq, dur: 0.035, type: 'square', gain: g, slide: 0.5, ...ohneEcho(t) });
+  e.noise({ dur: 0.02, gain: g * 0.5, filter: 'bandpass', freq: t.freq * 3, q: 2, ...ohneEcho(t) });
 }
 
-/** Schuettelrohr — Rauschen statt Becken, damit es auf dem Handy nicht zischt. */
-export function shaker(e: E, t: TonOpts): void {
+/**
+ * Kies — die Gegenbewegung oben. Frueher hiess das hier „Schuettelrohr".
+ *
+ * Vorher war es ein einzelner Hochpass-Rauschstoss bei 5,2 kHz. Das ist der
+ * Klang einer Hi-Hat, und eine Hi-Hat kommt im Bild dieses Spiels nicht vor.
+ * Was vorkommt, sind die hellen Kiesel in der Erde.
+ *
+ * Der Unterschied zwischen „tss" und Kies ist **Koernung**, und Koernung
+ * entsteht nicht aus mehr Rauschen, sondern aus **zwei getrennten Baendern mit
+ * verschiedener Laenge**: ein kurzes helles Korn bei 7 kHz und ein etwas
+ * laengeres, dunkleres bei 3,4 kHz, zwei Millisekunden versetzt. Das Ohr liest
+ * daraus zwei aneinanderstossende Teilchen statt einer Zischflaeche — derselbe
+ * Trick wie beim Grabegeraeusch in `sfx.ts`, und aus demselben Grund.
+ *
+ * Das dunklere Korn ist der Teil, der das Bett mit der Erde verbindet: Reines
+ * Hochtonrauschen klingt nach Metall, ein Anteil um 3 kHz nach Stein.
+ *
+ * Darf im Panorama stehen und soll es auch — Kies liegt verstreut. Es ist der
+ * einzige Klang der Perkussion, der die Mitte verlassen darf, weil er nichts
+ * traegt.
+ */
+export function kies(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.05;
+  const p = t.pan ?? 0;
   e.noise({
-    dur: 0.045, gain: t.gain ?? 0.05, filter: 'highpass', freq: 5200, sweep: 0.7, ...o(t),
+    dur: 0.028, gain: g, filter: 'bandpass', freq: 7000, q: 0.7, sweep: 0.75,
+    ...ohneEcho(t), pan: p,
+  });
+  e.noise({
+    dur: 0.05, gain: g * 0.55, filter: 'bandpass', freq: 3400, q: 1.1, sweep: 0.6,
+    ...ohneEcho(t), pan: p * 0.6, delay: (t.delay ?? 0) + 0.002,
   });
 }
 

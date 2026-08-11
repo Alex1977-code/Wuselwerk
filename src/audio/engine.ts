@@ -11,7 +11,16 @@
  * ihn der Browser. Deshalb wird alles erst in `unlock()` angelegt.
  */
 
-export type Bus = 'sfx' | 'music';
+/**
+ * Die drei Schienen.
+ *
+ * `pad` ist keine dritte gleichberechtigte Schiene, sondern ein **Unterzweig
+ * der Musik**: Er haengt hinter `music` und bekommt dadurch Ducken, Pausen-
+ * Tiefpass und beide Hallwege geschenkt. Er existiert nur, damit ein einziger
+ * Pegel automatisiert werden kann, ohne alles andere mitzunehmen — siehe
+ * `pumpe()`.
+ */
+export type Bus = 'sfx' | 'music' | 'pad';
 
 /**
  * Pegel der Musikschiene.
@@ -21,18 +30,32 @@ export type Bus = 'sfx' | 'music';
  * geschrieben hiesse, dass jede Aenderung an der Lautstaerke beim naechsten
  * Ducken stillschweigend zurueckgenommen wird.
  */
-const MUSIK_PEGEL = 0.56;
-const SFX_PEGEL = 0.85;
+const MUSIK_PEGEL = 0.5;
+const SFX_PEGEL = 0.8;
 
 export class AudioEngine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
-  private busGain: Record<Bus, GainNode | null> = { sfx: null, music: null };
+  private busGain: Record<Bus, GainNode | null> = { sfx: null, music: null, pad: null };
   private noiseBuffer: AudioBuffer | null = null;
   private stille: HTMLAudioElement | null = null;
   private hall: ConvolverNode | null = null;
   private duckBis = 0;
   private musikLp: BiquadFilterNode | null = null;
+  /** Kann der Browser Panorama? Sonst bleibt alles in der Mitte — kein Fehler. */
+  private kannPanorama = false;
+  // --- Luft: der zweite, lange Nachhall. Siehe `setRaum`. -------------------
+  private luft: ConvolverNode | null = null;
+  private luftVor: DelayNode | null = null;
+  private luftLp: BiquadFilterNode | null = null;
+  private luftPegel: GainNode | null = null;
+  private luftSende: Record<'sfx' | 'music', GainNode | null> = { sfx: null, music: null };
+  private luftBasis = 1;
+  // --- Echo: die punktierte Achtel. Siehe `setEcho`. ------------------------
+  private echoEin: GainNode | null = null;
+  private echoZeit: DelayNode | null = null;
+  private echoLp: BiquadFilterNode | null = null;
+  private echoAus: BiquadFilterNode | null = null;
 
   /**
    * Kurzer, heller Nachhall aus abklingendem Rauschen.
@@ -52,6 +75,130 @@ export class AudioEngine {
       }
     }
     return buf;
+  }
+
+  /**
+   * Die **Luft** — der zweite, lange Nachhall.
+   *
+   * Der Federhall oben ist die Naehe: Er klebt Musik und Geraeusche zusammen und
+   * ist nach einem Drittel einer Sekunde vorbei. Was er nicht kann, ist Weite.
+   * Das Bild des Spiels ist eine Tagszene mit drei gestaffelten Huegelketten;
+   * in einem Raum von 0,34 s spielt so etwas nicht.
+   *
+   * Drei Unterschiede zum Federhall, und jeder hat einen Grund:
+   *
+   * 1. **Flachere Kurve** (Exponent 1,6 statt 3,2). Eine Fahne, die langsam
+   *    ausgeht, statt eines Aufschlags, der schnell weg ist.
+   * 2. **Anlauf statt Sofortstart.** Die ersten Millisekunden sind leise und
+   *    schwellen an. Ein grosser Raum antwortet nicht sofort — er antwortet aus
+   *    der Entfernung, und genau das trennt Weite von Watte vor den Ohren.
+   * 3. **Getrennte Kanaele.** Links und rechts wuerfeln unabhaengig. Daraus
+   *    entsteht die Breite; zwei gleiche Kanaele waeren nur ein lauteres Mono.
+   */
+  private luftKurve(sek: number): AudioBuffer {
+    const ctx = this.ctx!;
+    const n = Math.max(1, Math.floor(ctx.sampleRate * sek));
+    const buf = ctx.createBuffer(2, n, ctx.sampleRate);
+    // Anschwellen ueber die ersten 6 % — bei 1,6 s sind das knapp 100 ms.
+    const rampe = Math.max(1, Math.floor(n * 0.06));
+    for (let k = 0; k < 2; k++) {
+      const d = buf.getChannelData(k);
+      for (let i = 0; i < n; i++) {
+        const auf = i < rampe ? i / rampe : 1;
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 1.6) * auf;
+      }
+    }
+    return buf;
+  }
+
+  /**
+   * Den Raum einstellen — einmal je Welt.
+   *
+   * Das ist die Groesse, die aus „dasselbe Stueck in einer anderen Farbe" einen
+   * anderen **Ort** macht. Eine Wiese unter freiem Himmel hat eine kurze, helle,
+   * leise Fahne (nach oben ist nichts, was zurueckwirft); eine Hoehle hat eine
+   * lange, dunkle, lautere. Man erkennt den Unterschied, bevor der erste Ton der
+   * Melodie da ist — und ohne ihn klingen zwei Welten unweigerlich gleich.
+   *
+   * @param dauer Laenge der Fahne in Sekunden.
+   * @param pegel Rueckweg zum Ausgang. Der Raum soll traegen, nicht auffallen.
+   * @param daempfungHz Tiefpass hinter dem Hall. Tiefer heisst dunkler, also
+   *   groesser und weiter weg — Hoehen werden in der Luft zuerst geschluckt.
+   */
+  setRaum(dauer: number, pegel: number, daempfungHz: number): void {
+    if (!this.ctx || !this.luft || !this.luftLp || !this.luftPegel) return;
+    const jetzt = this.ctx.currentTime;
+    this.luft.buffer = this.luftKurve(Math.max(0.2, Math.min(4, dauer)));
+    this.luftLp.frequency.setTargetAtTime(daempfungHz, jetzt, 0.08);
+    this.luftBasis = pegel;
+    this.luftPegel.gain.setTargetAtTime(pegel, jetzt, 0.08);
+  }
+
+  /**
+   * In der Pause rueckt der Raum nach vorn.
+   *
+   * Der Tiefpass allein (`musikFilter`) klingt nach einem Geraet, dem etwas
+   * fehlt. Zusammen mit mehr Nachhall klingt dasselbe nach einem **Schritt
+   * zurueck**: weniger direkt, mehr Raum — genau die Wahrnehmung, die eine
+   * Pause ist. Zwei Regler, eine Geste.
+   */
+  raumWeite(faktor: number): void {
+    if (!this.ctx || !this.luftPegel) return;
+    this.luftPegel.gain.setTargetAtTime(this.luftBasis * faktor, this.ctx.currentTime, 0.1);
+  }
+
+  /**
+   * Die Echozeit setzen — einmal je Stueck, aus dessen Tempo.
+   *
+   * Ein Echo, das *nicht* auf dem Tempo sitzt, ist ein Effektgeraet. Eines, das
+   * darauf sitzt, ist Teil des Arrangements: Die Wiederholung faellt mit der
+   * naechsten Note zusammen und verdichtet sie, statt daneben zu stehen. Die
+   * punktierte Achtel ist dafuer die uebliche Wahl, weil sie gegen das
+   * Achtelraster laeuft (drei Sechzehntel gegen zwei) und dadurch Bewegung
+   * erzeugt statt nur Verdopplung.
+   *
+   * Die Rueckfuehrung laeuft durch einen Tiefpass. Ohne ihn wird jede
+   * Wiederholung so hell wie die erste, und nach der dritten steht ein Kamm aus
+   * Hoehen im Weg. Mit ihm sinkt jede Wiederholung tiefer weg — so verhaelt sich
+   * ein Echo in Luft.
+   */
+  setEcho(sekunden: number): void {
+    if (!this.ctx || !this.echoZeit) return;
+    // Die Delayzeit weich fahren: Ein Sprung darin klingt wie ein Bandriss.
+    this.echoZeit.delayTime.setTargetAtTime(
+      Math.max(0.05, Math.min(1.9, sekunden)),
+      this.ctx.currentTime,
+      0.12,
+    );
+  }
+
+  /**
+   * Das **Pumpen** — Flaeche und Harmonie machen dem Schlag Platz.
+   *
+   * Das ist der Klang, den „basslastig" auf einem Handy wirklich bedeutet. Mehr
+   * Pegel unten geht nicht: Der Lautsprecher gibt ihn nicht her, und die
+   * Aussteuerungsreserve ist endlich. Was dagegen immer geht, ist **Platz**:
+   * Wenn alles Liegende im Moment des Schlags kurz zurueckweicht, hoert das Ohr
+   * den Schlag als groesser — nicht weil er lauter ist, sondern weil in seinem
+   * Moment nichts anderes da ist.
+   *
+   * Nur der Pad-Zweig wird gefahren, nicht die ganze Musik. Wuerde die Melodie
+   * mitpumpen, waere es kein Platzmachen mehr, sondern ein Lautstaerkeeffekt,
+   * den man als solchen hoert.
+   *
+   * Der Einbruch ist kurz und der Ruecklauf traege — schnell rein, langsam
+   * raus. Andersherum klingt es nach Zittern.
+   *
+   * @param delay Wann, in Sekunden ab jetzt. Der Aufrufer plant im Voraus.
+   * @param tiefe Wie weit herunter, als Anteil. 0,3 sind gut drei Dezibel.
+   */
+  pumpe(delay: number, tiefe = 0.3): void {
+    const g = this.busGain.pad;
+    if (!g || !this.ctx) return;
+    const t = this.ctx.currentTime + Math.max(0, delay);
+    g.gain.setValueAtTime(1, t);
+    g.gain.linearRampToValueAtTime(Math.max(0.1, 1 - tiefe), t + 0.008);
+    g.gain.setTargetAtTime(1, t + 0.01, 0.045);
   }
 
   /**
@@ -83,6 +230,10 @@ export class AudioEngine {
   musikFilter(hz: number): void {
     if (!this.ctx || !this.musikLp) return;
     this.musikLp.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.06);
+    // Das Echo faehrt mit zu. Es liegt hinter der Musikschiene und wuerde sonst
+    // in der Pause als einziges hell stehenbleiben — die Wiederholungen der
+    // letzten Melodienote waeren dann ploetzlich der Vordergrund.
+    if (this.echoAus) this.echoAus.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.06);
   }
 
   /** Begrenzt die Stimmen pro Bild — 60 grabende Figuren duerfen nicht knallen. */
@@ -241,11 +392,37 @@ export class AudioEngine {
       bassSchiene.frequency.value = 230;
       bassSchiene.gain.value = 3.5;
 
+      // Senke bei 4,2 kHz — die einzige rein geraetebezogene Entzerrung hier.
+      //
+      // Ein Handylautsprecher hat in diesem Band seine Eigenresonanz; alles,
+      // was dort liegt, kommt lauter heraus, als es gemischt wurde. Dazu
+      // kommt, dass genau dort jede Synthese ihre Kanten hat — die Obertoene
+      // der Rechteck- und Saegezahnwellen, die Anschlagsgeraeusche, die
+      // Glasteiltoene. Ohne die Senke klingt das zusammen nach Plastik, und
+      // zwar ausgerechnet auf dem Zielgeraet und nicht am Schreibtisch.
+      //
+      // Breit (Q 0,9) und nur zweieinhalb Dezibel: Das ist eine Neigung, kein
+      // Loch. Schmaler waere ein hoerbarer Eingriff, tiefer nimmt der Musik den
+      // Glanz. Nebenwirkung, die hier erwuenscht ist: Der Anteil des
+      // Melodiefensters (800 Hz bis 3 kHz) an der Gesamtenergie steigt, weil
+      // darueber weniger steht.
+      const senke = this.ctx.createBiquadFilter();
+      senke.type = 'peaking';
+      senke.frequency.value = 4200;
+      senke.Q.value = 0.9;
+      senke.gain.value = -2.5;
+
       this.master.connect(hoch);
       hoch.connect(bassSchiene);
-      bassSchiene.connect(komp);
+      bassSchiene.connect(senke);
+      senke.connect(komp);
       komp.connect(saettigung);
       saettigung.connect(this.ctx.destination);
+
+      // Kann dieser Browser Panorama? Safari konnte es lange nicht, und ein
+      // fehlender Knoten darf nicht die ganze Tonschicht kosten. Ohne Panorama
+      // bleibt alles in der Mitte — das ist genau der Zustand von vorher.
+      this.kannPanorama = typeof this.ctx.createStereoPanner === 'function';
 
       // Federhall. Er ist der Leim zwischen Musik und Geraeuschen: Beide gehen
       // durch denselben Raum, und dadurch klingen sie wie am selben Ort
@@ -257,7 +434,60 @@ export class AudioEngine {
       this.hall.connect(hallPegel);
       hallPegel.connect(this.master);
 
-      for (const bus of ['sfx', 'music'] as Bus[]) {
+      // Die Luft — der zweite Hallweg, siehe `luftKurve` und `setRaum`.
+      //
+      // Die Vorlaufzeit von 28 ms ist der wichtigste Wert daran und der am
+      // leichtesten zu uebersehende: Sie ist die Zeit, die der Schall bis zur
+      // ersten Wand und zurueck braucht, und **sie allein** entscheidet, ob ein
+      // Klang vor dem Raum steht oder darin ertrinkt. Ohne Vorlauf faengt die
+      // Fahne im selben Moment an wie der Ton, und der Ton verliert seine Kante.
+      this.luftVor = this.ctx.createDelay(0.2);
+      this.luftVor.delayTime.value = 0.028;
+      this.luft = this.ctx.createConvolver();
+      this.luft.buffer = this.luftKurve(1.6);
+      this.luftLp = this.ctx.createBiquadFilter();
+      this.luftLp.type = 'lowpass';
+      this.luftLp.frequency.value = 2600;
+      this.luftPegel = this.ctx.createGain();
+      this.luftPegel.gain.value = this.luftBasis;
+      this.luftVor.connect(this.luft);
+      this.luft.connect(this.luftLp);
+      this.luftLp.connect(this.luftPegel);
+      this.luftPegel.connect(this.master);
+
+      // Das Echo. Rueckfuehrung 0,3 — mehr laesst die Wiederholungen stehen
+      // bleiben und verstopft das Melodiefenster, weniger hoert man nur einmal.
+      this.echoEin = this.ctx.createGain();
+      this.echoZeit = this.ctx.createDelay(2);
+      this.echoZeit.delayTime.value = 0.375;
+      this.echoLp = this.ctx.createBiquadFilter();
+      this.echoLp.type = 'lowpass';
+      this.echoLp.frequency.value = 2000;
+      const echoRueck = this.ctx.createGain();
+      echoRueck.gain.value = 0.3;
+      // Der Ausgangsfilter faehrt beim Pausieren mit der Musik zu. Ohne ihn
+      // stuende in der Pause ein helles Echo vor einer dumpfen Musik.
+      this.echoAus = this.ctx.createBiquadFilter();
+      this.echoAus.type = 'lowpass';
+      this.echoAus.frequency.value = 18000;
+      const echoPegel = this.ctx.createGain();
+      echoPegel.gain.value = 0.5;
+      this.echoEin.connect(this.echoZeit);
+      this.echoZeit.connect(this.echoLp);
+      this.echoLp.connect(echoRueck);
+      echoRueck.connect(this.echoZeit);
+      this.echoZeit.connect(this.echoAus);
+      this.echoAus.connect(echoPegel);
+      echoPegel.connect(this.master);
+      // Das Echo geht seinerseits in die Luft. Dadurch wandern die
+      // Wiederholungen nach hinten weg, statt auf derselben Ebene zu bleiben —
+      // das ist der Unterschied zwischen einem Echo und einem Doppler.
+      const echoInLuft = this.ctx.createGain();
+      echoInLuft.gain.value = 0.35;
+      echoPegel.connect(echoInLuft);
+      echoInLuft.connect(this.luftVor);
+
+      for (const bus of ['sfx', 'music'] as const) {
         const g = this.ctx.createGain();
         g.gain.value = bus === 'music' ? MUSIK_PEGEL : SFX_PEGEL;
         this.busGain[bus] = g;
@@ -276,7 +506,25 @@ export class AudioEngine {
         send.gain.value = bus === 'music' ? 0.1 : 0.14;
         g.connect(send);
         send.connect(this.hall);
+
+        // Die Musik steht weiter im Raum als die Geraeusche. Das ist kein
+        // Zufallswert: Ein Geraeusch ist eine Handlung und muss unmittelbar
+        // wirken, ein Musikstueck ist eine Umgebung und darf entfernt sein.
+        const luftSend = this.ctx.createGain();
+        luftSend.gain.value = bus === 'music' ? 0.3 : 0.16;
+        g.connect(luftSend);
+        luftSend.connect(this.luftVor);
+        this.luftSende[bus] = luftSend;
       }
+
+      // Der Pad-Zweig haengt **hinter** der Musik und nicht daneben. Dadurch
+      // gilt fuer ihn alles, was fuer die Musik gilt — Ducken, Pausenfilter,
+      // beide Hallwege —, und `pumpe()` bekommt trotzdem einen eigenen Pegel,
+      // den es fahren kann, ohne die Melodie mitzunehmen.
+      const pad = this.ctx.createGain();
+      pad.gain.value = 1;
+      pad.connect(this.busGain.music!);
+      this.busGain.pad = pad;
 
       // Rauschen einmal erzeugen und wiederverwenden.
       const len = Math.floor(this.ctx.sampleRate * 0.6);
@@ -312,6 +560,47 @@ export class AudioEngine {
   }
 
   /**
+   * Den Ausgang einer Stimme anschliessen — Panorama und Echoanteil in einem.
+   *
+   * ## Warum Panorama hier reine Pegelverteilung ist, und bleiben muss
+   *
+   * Ein `StereoPannerNode` verteilt denselben Klang mit unterschiedlicher
+   * Staerke auf zwei Kanaele. Er verzoegert nichts und dreht keine Phase.
+   * Daraus folgt die Eigenschaft, an der auf einem Telefon alles haengt: Legt
+   * man links und rechts wieder zusammen, kommt **exakt derselbe Klang** heraus
+   * wie ohne Panorama, nur ein wenig leiser. Nichts loescht sich aus.
+   *
+   * Genau das ist bei den ueblichen Verbreiterungsverfahren nicht so — kurze
+   * Verzoegerungen oder gedrehte Phasen klingen auf Kopfhoerern gross und auf
+   * einem Monolautsprecher duenn oder halb weg. Deshalb steht hier nur dieser
+   * eine Knoten und kein Kunstgriff daneben.
+   *
+   * Wer breit stehen darf, ist trotzdem streng geregelt (siehe `music.ts`):
+   * Bass, Erdschlag und Melodie bleiben in der Mitte, weil sie das Fundament
+   * und die Aussage tragen. Gespreizt wird nur, was schmueckt.
+   */
+  private anschliessen(g: GainNode, dest: GainNode, pan: number, echo: number): void {
+    const ctx = this.ctx!;
+    let letzter: AudioNode = g;
+    if (pan !== 0 && this.kannPanorama) {
+      const p = ctx.createStereoPanner();
+      p.pan.value = Math.max(-1, Math.min(1, pan));
+      g.connect(p);
+      letzter = p;
+    }
+    letzter.connect(dest);
+    // Der Echoanteil wird **vor** dem Panorama abgegriffen: Ein Echo, das die
+    // Seite seines Originals erbt, klebt daran fest. Aus der Mitte heraus legt
+    // es sich dagegen hinter das Ganze, und das ist der Ort, an den es gehoert.
+    if (echo > 0 && this.echoEin) {
+      const s = ctx.createGain();
+      s.gain.value = echo;
+      g.connect(s);
+      s.connect(this.echoEin);
+    }
+  }
+
+  /**
    * Ein Ton mit Huellkurve.
    * `slide` verstimmt zum Ende hin — damit entstehen Auf- und Abwaertsrutscher.
    */
@@ -344,6 +633,10 @@ export class AudioEngine {
     vibratoHz?: number;
     /** Wie weit das Vibrato ausschlaegt, in Cent. */
     vibratoCents?: number;
+    /** Panorama, −1 ganz links bis +1 ganz rechts. Siehe `anschliessen`. */
+    pan?: number;
+    /** Anteil, der zusaetzlich ins tempogekoppelte Echo geht. 0 heisst keins. */
+    echo?: number;
   }): void {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -409,7 +702,7 @@ export class AudioEngine {
     } else {
       osc.connect(g);
     }
-    g.connect(dest);
+    this.anschliessen(g, dest, opts.pan ?? 0, opts.echo ?? 0);
     osc.start(t);
     osc.stop(t + opts.dur + 0.02);
   }
@@ -425,6 +718,10 @@ export class AudioEngine {
     bus?: Bus;
     delay?: number;
     ignoreLimit?: boolean;
+    /** Panorama, −1 bis +1. Siehe `anschliessen`. */
+    pan?: number;
+    /** Anteil ins tempogekoppelte Echo. */
+    echo?: number;
   }): void {
     const ctx = this.ctx;
     if (!ctx || !this.noiseBuffer) return;
@@ -457,7 +754,7 @@ export class AudioEngine {
 
     src.connect(bq);
     bq.connect(g);
-    g.connect(dest);
+    this.anschliessen(g, dest, opts.pan ?? 0, opts.echo ?? 0);
     src.start(t);
     src.stop(t + opts.dur + 0.02);
   }
