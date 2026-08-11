@@ -170,34 +170,56 @@ const TEILFARBEN = {
 // `mass[1]` ihre Länge nach aussen.
 const ZOTTELN = (() => {
   /**
-   * Die Strähnen tragen jetzt die Silhouette, nicht die Haarmasse des Modells.
+   * Dreadlocks: gleichmaessig dicke Straenge, die fallen statt zu strahlen.
    *
-   * Deshalb sind es zwölf statt fünf, und sie sind gefächert: `x` neigt nach
-   * hinten (0 = senkrecht, 100 = fast waagerecht), `z` kippt zur Seite. Beide
-   * Reihen laufen bewusst *durch* — keine zwei Strähnen teilen sich Winkel und
-   * Ansatz, sonst kleben sie im Bild zusammen und man sieht wieder eine Masse
-   * statt einzelner Zöpfe.
+   * Drei Dinge machen den Unterschied zum Stachel:
    *
-   * Und keine steht allein senkrecht: Eine einzelne aufrechte Strähne über
-   * einem gefächerten Rest liest als Fehler, nicht als Frisur. Der Fächer
-   * beginnt deshalb bei −18 Grad und läuft gleichmässig bis 104.
+   * 1. **Form.** Kapsel statt Kegel — gleiche Dicke ueber die Laenge, rundes
+   *    Ende. Ein Kegel ist ein Stachel, egal wie man ihn dreht.
+   * 2. **Biegung.** Jede Straehne besteht aus drei Gliedern, und jedes ist ein
+   *    Stueck weiter geneigt als das vorige. Ein gerades Rohr ist ein Stock;
+   *    erst die Kruemmung macht daraus etwas, das haengt.
+   * 3. **Dicke.** 1,1 bis 1,3. Dicker sah aus wie eine Handvoll Wuerstchen,
+   *    duenner wie Draht. Dazwischen liegt Haar.
+   *
+   * Der Faecher laeuft weiter gleichmaessig durch, damit keine zwei Straenge
+   * uebereinanderliegen — sonst kleben sie im Bild zusammen und man sieht
+   * wieder eine Masse.
    */
+  // Vorzeichen: Ein positiver X-Winkel kippt ein Anbauteil nach *vorn* — anders
+  // als bei den Knochen, wo dieselbe Drehung an einem nach unten zeigenden Bein
+  // nach hinten führt. Hier zeigt die Strähne nach oben, also dreht sich das
+  // um. Deshalb stehen unten negative Werte: Der Fächer soll nach hinten
+  // fallen, nicht nach vorn abstehen.
+  // Vorzeichen: Ein positiver X-Winkel kippt ein Anbauteil nach *vorn* — anders
+  // als bei den Knochen, wo dieselbe Drehung an einem nach unten zeigenden Bein
+  // nach hinten führt. Hier zeigt die Strähne nach oben, also dreht sich das
+  // um. Deshalb stehen unten negative Werte: Der Fächer soll nach hinten
+  // fallen, nicht nach vorn abstehen.
+  //
+  // Die Spannweite ist erlaufen. Bei einem Fächer über 120 Grad plus 24 Grad
+  // Biegung je Strähne legte sich das Haar als Rad um den Kopf — jede Strähne
+  // war einzeln zu sehen, aber zusammen ergaben sie einen Kranz und keine
+  // Frisur. 90 Grad Fächer und halb so viel Biegung sitzt.
   const F = [
-    // [x, z, länge, dicke, ansatz vorn, ansatz hoch, ansatz seit]
-    [-18, -14, 8.2, 1.3, 1.9, 3.0, -1.0],
-    [-6, 16, 8.8, 1.2, 1.6, 3.4, 1.2],
-    [8, -4, 9.6, 1.4, 0.9, 3.8, -0.2],
-    [20, 22, 8.6, 1.2, 0.2, 3.6, 1.6],
-    [32, -24, 9.2, 1.3, -0.4, 3.7, -1.7],
-    [44, 6, 10.2, 1.4, -1.0, 3.6, 0.4],
-    [56, -14, 9.4, 1.2, -1.6, 3.3, -1.2],
-    [68, 20, 8.8, 1.3, -2.1, 3.0, 1.4],
-    [80, -6, 9.0, 1.2, -2.5, 2.5, -0.4],
-    [92, 14, 8.0, 1.1, -2.8, 1.9, 1.0],
-    [104, -18, 7.6, 1.1, -2.9, 1.2, -1.3],
-    [14, 0, 7.2, 1.1, 2.2, 3.2, 0.2],
+    // [x, z, länge, dicke, biegung, ansatz vorn, ansatz hoch, ansatz seit]
+    [12, -10, 7.0, 1.2, -12, 2.2, 3.2, -1.0],
+    [4, 14, 7.6, 1.15, -14, 1.9, 3.5, 1.2],
+    [-6, -2, 8.4, 1.3, -16, 1.2, 3.8, -0.2],
+    [-16, 19, 7.8, 1.15, -13, 0.5, 3.8, 1.6],
+    [-26, -21, 8.2, 1.25, -15, -0.1, 3.8, -1.7],
+    [-36, 4, 8.4, 1.3, -16, -0.7, 3.7, 0.4],
+    [-46, -12, 8.0, 1.15, -14, -1.3, 3.5, -1.2],
+    [-56, 17, 7.6, 1.2, -12, -1.8, 3.2, 1.4],
+    [-66, -4, 7.2, 1.15, -11, -2.2, 2.7, -0.4],
+    [-76, 12, 6.8, 1.1, -10, -2.5, 2.1, 1.0],
+    [-86, -15, 6.4, 1.1, -9, -2.7, 1.4, -1.3],
+    [-10, 1, 6.6, 1.1, -14, 2.4, 3.3, 0.2],
   ];
-  return F.map(([x, z, l, d, pv, ph, ps], i) => ({
+  return F.map(([x, z, l, d, b, pv, ph, ps], i) => ({
+    form: 'strang',
+    glieder: 3,
+    biegung: b,
     pos: [pv, ph, ps],
     mass: [d, l, d],
     dreh: [x, 0, z],
@@ -239,7 +261,9 @@ for (const c of CLIPS) {
       const w = Math.sin(((i / c.frames) + z.phase) * Math.PI * 2) * schwung;
       teile.push({
         an: 'Head',
-        form: 'spitz',
+        form: z.form ?? 'spitz',
+        glieder: z.glieder,
+        biegung: z.biegung,
         folgt: true,
         pos: z.pos,
         mass: z.mass,
@@ -707,9 +731,54 @@ window.__ready = (async () => {
         _h.copy(bindWelt[t.an]).invert(),
       ) : null;
       const [mv, mh, ms] = t.mass;
-      // Zwei Formen: Kasten für Werkzeuge (harte Ecken, Katalog §2.4) und
-      // Spitze für Haarsträhnen. Vier Seiten genügen — bei dieser Grösse ist
-      // jede weitere Kante ein Pixel, das es nicht gibt.
+
+      /**
+       * Strang: eine Haarsträhne aus mehreren gebogenen Gliedern.
+       *
+       * Ein Kegel ergibt einen Stachel - dick unten, spitz oben, kerzengerade.
+       * Eine Dreadlock ist das Gegenteil: gleichmaessig dick, rund am Ende, und
+       * sie faellt. Beides braucht eine andere Form (Kapsel statt Kegel) und
+       * mehr als ein Glied: Ein gerades Rohr ist ein Stock. Erst die Biegung
+       * ueber drei Glieder macht daraus etwas, das haengt.
+       *
+       * Gebaut wird die Kette im Bindeframe des Kopfes und erst am Ende mit
+       * folgt gedreht - so bleibt die Angabe der Winkel dieselbe wie ueberall
+       * in dieser Datei.
+       */
+      if (t.form === 'strang') {
+        const glieder = t.glieder ?? 3;
+        const segL = (mh / glieder) * einheit;
+        const [rx0, , rz0] = t.dreh ?? [0, 0, 0];
+        const [pv0, ph0, ps0] = t.pos ?? [0, 0, 0];
+        const spitze = new THREE.Vector3(ps0 * einheit, ph0 * einheit, pv0 * einheit);
+        let wx = rx0;
+        bone.getWorldPosition(_v);
+        for (let k = 0; k < glieder; k++) {
+          const q = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler((wx * Math.PI) / 180, 0, (rz0 * Math.PI) / 180, 'XYZ'),
+          );
+          const richtung = new THREE.Vector3(0, 1, 0).applyQuaternion(q);
+          // Zur Spitze hin etwas duenner - eine Dreadlock ist nicht ganz
+          // zylindrisch, und ein rundes Ende braucht Platz.
+          const r = ((ms / 2) * einheit) * (1 - k * 0.14);
+          const kap = new THREE.Mesh(
+            new THREE.CapsuleGeometry(r, Math.max(0.001, segL - r * 2), 2, 6),
+            teilStoffe[t.farbe ?? 'haar'] ?? teilStoffe.haar,
+          );
+          const mitte = spitze.clone().addScaledVector(richtung, segL / 2);
+          if (folge) mitte.applyQuaternion(folge);
+          kap.position.copy(_v).add(mitte);
+          kap.quaternion.copy(q);
+          if (folge) kap.quaternion.premultiply(folge);
+          teileGruppe.add(kap);
+          spitze.addScaledVector(richtung, segL);
+          wx += t.biegung ?? 0;
+        }
+        continue;
+      }
+
+      // Zwei weitere Formen: Kasten für Werkzeuge (harte Ecken, Katalog §2.4)
+      // und Spitze, wo eine Spitze gewollt ist.
       const geom = t.form === 'spitz'
         ? new THREE.ConeGeometry((ms / 2) * einheit, mh * einheit, 4)
         : new THREE.BoxGeometry(ms * einheit, mh * einheit, mv * einheit);
