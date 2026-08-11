@@ -168,18 +168,44 @@ const TEILFARBEN = {
 // gut 11 darüber hinaus. Eine Strähne muss also länger als 11 sein, sonst
 // steckt sie in der Masse und man sieht nichts von ihr. `pos` ist ihr Ansatz,
 // `mass[1]` ihre Länge nach aussen.
-const ZOTTELN = [
-  { pos: [-0.8, 3.6, 0.2], mass: [1.5, 8.4, 1.5], dreh: [26, 0, 2], phase: 0.0, farbe: 'haarglanz' },
-  { pos: [-2.2, 3.0, 1.2], mass: [1.4, 8.0, 1.4], dreh: [58, 0, 14], phase: 0.35, farbe: 'haar' },
-  { pos: [-2.8, 1.6, -1.3], mass: [1.3, 7.4, 1.3], dreh: [92, 0, -10], phase: 0.7, farbe: 'haar' },
-  { pos: [0.8, 3.4, -1.1], mass: [1.3, 6.8, 1.3], dreh: [2, 0, -10], phase: 0.2, farbe: 'haar' },
-  { pos: [-1.8, 3.4, -1.8], mass: [1.3, 7.6, 1.3], dreh: [44, 0, -20], phase: 0.55, farbe: 'haar' },
-  { pos: [0.2, 3.8, 1.5], mass: [1.2, 7.0, 1.2], dreh: [16, 0, 22], phase: 0.85, farbe: 'haarglanz' },
-  { pos: [-3.2, 2.6, 0.2], mass: [1.2, 6.6, 1.2], dreh: [74, 0, 4], phase: 0.15, farbe: 'haar' },
-  { pos: [1.6, 2.6, 0.4], mass: [1.1, 5.8, 1.1], dreh: [-16, 0, 8], phase: 0.45, farbe: 'haar' },
-  { pos: [-1.2, 3.9, -0.6], mass: [1.1, 9.0, 1.1], dreh: [34, 0, -6], phase: 0.62, farbe: 'haar' },
-  { pos: [-2.6, 3.2, -0.9], mass: [1.1, 6.2, 1.1], dreh: [66, 0, -14], phase: 0.28, farbe: 'haarglanz' },
-];
+const ZOTTELN = (() => {
+  /**
+   * Die Strähnen tragen jetzt die Silhouette, nicht die Haarmasse des Modells.
+   *
+   * Deshalb sind es zwölf statt fünf, und sie sind gefächert: `x` neigt nach
+   * hinten (0 = senkrecht, 100 = fast waagerecht), `z` kippt zur Seite. Beide
+   * Reihen laufen bewusst *durch* — keine zwei Strähnen teilen sich Winkel und
+   * Ansatz, sonst kleben sie im Bild zusammen und man sieht wieder eine Masse
+   * statt einzelner Zöpfe.
+   *
+   * Und keine steht allein senkrecht: Eine einzelne aufrechte Strähne über
+   * einem gefächerten Rest liest als Fehler, nicht als Frisur. Der Fächer
+   * beginnt deshalb bei −18 Grad und läuft gleichmässig bis 104.
+   */
+  const F = [
+    // [x, z, länge, dicke, ansatz vorn, ansatz hoch, ansatz seit]
+    [-18, -14, 8.2, 1.3, 1.9, 3.0, -1.0],
+    [-6, 16, 8.8, 1.2, 1.6, 3.4, 1.2],
+    [8, -4, 9.6, 1.4, 0.9, 3.8, -0.2],
+    [20, 22, 8.6, 1.2, 0.2, 3.6, 1.6],
+    [32, -24, 9.2, 1.3, -0.4, 3.7, -1.7],
+    [44, 6, 10.2, 1.4, -1.0, 3.6, 0.4],
+    [56, -14, 9.4, 1.2, -1.6, 3.3, -1.2],
+    [68, 20, 8.8, 1.3, -2.1, 3.0, 1.4],
+    [80, -6, 9.0, 1.2, -2.5, 2.5, -0.4],
+    [92, 14, 8.0, 1.1, -2.8, 1.9, 1.0],
+    [104, -18, 7.6, 1.1, -2.9, 1.2, -1.3],
+    [14, 0, 7.2, 1.1, 2.2, 3.2, 0.2],
+  ];
+  return F.map(([x, z, l, d, pv, ph, ps], i) => ({
+    pos: [pv, ph, ps],
+    mass: [d, l, d],
+    dreh: [x, 0, z],
+    phase: (i * 0.37) % 1,
+    // Nur jede vierte trägt den Glanzton — sonst leuchtet die ganze Frisur.
+    farbe: i % 4 === 2 ? 'haarglanz' : 'haar',
+  }));
+})();
 
 // --- Posen einsammeln -------------------------------------------------------
 const posen = {};
@@ -511,12 +537,14 @@ window.__ready = (async () => {
     knochen.Head.getWorldPosition(_w);
     const mitte = mesh.worldToLocal(_w.clone());
     const P = geo.attributes.position;
-    // Waagerecht staerker als senkrecht: Die Hoehe der Maehne ist die
-    // Silhouette, die Breite ist die Dichte.
+    // Deutlich staerker als zuvor. Die Masse des Modells ist jetzt nur noch
+    // der Ansatz - eine flache Haube, aus der die Straehnen wachsen. Alles,
+    // was man an Laenge sieht, kommt von den Zotteln. Vorher war es umgekehrt,
+    // und einzelne Straehnen gingen in der Kugel unter.
     for (const v of nurHaar) {
-      P.setX(v, mitte.x + (P.getX(v) - mitte.x) * 0.74);
-      P.setY(v, mitte.y + (P.getY(v) - mitte.y) * 0.86);
-      P.setZ(v, mitte.z + (P.getZ(v) - mitte.z) * 0.74);
+      P.setX(v, mitte.x + (P.getX(v) - mitte.x) * 0.46);
+      P.setY(v, mitte.y + (P.getY(v) - mitte.y) * 0.5);
+      P.setZ(v, mitte.z + (P.getZ(v) - mitte.z) * 0.46);
     }
     P.needsUpdate = true;
     window.__haarPunkte = nurHaar.size;
