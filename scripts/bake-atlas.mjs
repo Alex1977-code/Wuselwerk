@@ -101,6 +101,26 @@ const PALETTE = {
   haut: ['#fff0d2', '#f4d7ac', '#bd9e74'],
   anzug: ['#57e2d0', '#2fc9b8', '#1d8f85'],
 };
+
+/**
+ * Kleidung in drei Teilen statt einem Overall.
+ *
+ * Das Modell trägt einen einteiligen türkisen Anzug; die Trennung entsteht
+ * hier. Warum überhaupt: Bei 26 Bildschirmpixeln ist eine einfarbige Säule von
+ * der Schulter bis zum Boden die halbe Figur, und sie erzählt nichts. Drei
+ * Tonwerte übereinander geben ihr eine Gliederung, an der das Auge Hüfte und
+ * Boden ablesen kann.
+ *
+ * Die Farbwahl folgt dem Untergrund, auf dem die Figur steht: Türkis oben hält
+ * sowohl gegen Nachthimmel als auch gegen braune Erde, das Schiefer­blau der
+ * Hose liegt zwischen beiden, und die Schuhe sind der dunkelste Wert der Figur
+ * — sie setzen sie auf den Boden, statt sie schweben zu lassen.
+ */
+const KLEIDUNG = {
+  oberteil: '#2fc9b8',
+  hose: '#3d5b78',
+  schuhe: '#2a2018',
+};
 const UMRISS = '#0c1119';
 
 /**
@@ -146,11 +166,16 @@ const TEILFARBEN = {
 // steckt sie in der Masse und man sieht nichts von ihr. `pos` ist ihr Ansatz,
 // `mass[1]` ihre Länge nach aussen.
 const ZOTTELN = [
-  { pos: [-1.0, 3.8, 0.2], mass: [1.7, 7.6, 1.7], dreh: [34, 0, 0], phase: 0.0, farbe: 'haarglanz' },
-  { pos: [-2.2, 3.0, 1.2], mass: [1.6, 7.8, 1.6], dreh: [64, 0, 12], phase: 0.35, farbe: 'haar' },
-  { pos: [-2.8, 1.6, -1.3], mass: [1.5, 7.2, 1.5], dreh: [92, 0, -10], phase: 0.7, farbe: 'haar' },
-  { pos: [0.6, 3.6, -1.1], mass: [1.5, 6.4, 1.5], dreh: [6, 0, -10], phase: 0.2, farbe: 'haar' },
-  { pos: [-1.8, 3.4, -1.8], mass: [1.5, 7.4, 1.5], dreh: [50, 0, -18], phase: 0.55, farbe: 'haar' },
+  { pos: [-0.8, 3.6, 0.2], mass: [1.5, 8.4, 1.5], dreh: [26, 0, 2], phase: 0.0, farbe: 'haarglanz' },
+  { pos: [-2.2, 3.0, 1.2], mass: [1.4, 8.0, 1.4], dreh: [58, 0, 14], phase: 0.35, farbe: 'haar' },
+  { pos: [-2.8, 1.6, -1.3], mass: [1.3, 7.4, 1.3], dreh: [92, 0, -10], phase: 0.7, farbe: 'haar' },
+  { pos: [0.8, 3.4, -1.1], mass: [1.3, 6.8, 1.3], dreh: [2, 0, -10], phase: 0.2, farbe: 'haar' },
+  { pos: [-1.8, 3.4, -1.8], mass: [1.3, 7.6, 1.3], dreh: [44, 0, -20], phase: 0.55, farbe: 'haar' },
+  { pos: [0.2, 3.8, 1.5], mass: [1.2, 7.0, 1.2], dreh: [16, 0, 22], phase: 0.85, farbe: 'haarglanz' },
+  { pos: [-3.2, 2.6, 0.2], mass: [1.2, 6.6, 1.2], dreh: [74, 0, 4], phase: 0.15, farbe: 'haar' },
+  { pos: [1.6, 2.6, 0.4], mass: [1.1, 5.8, 1.1], dreh: [-16, 0, 8], phase: 0.45, farbe: 'haar' },
+  { pos: [-1.2, 3.9, -0.6], mass: [1.1, 9.0, 1.1], dreh: [34, 0, -6], phase: 0.62, farbe: 'haar' },
+  { pos: [-2.6, 3.2, -0.9], mass: [1.1, 6.2, 1.1], dreh: [66, 0, -14], phase: 0.28, farbe: 'haarglanz' },
 ];
 
 // --- Posen einsammeln -------------------------------------------------------
@@ -221,6 +246,7 @@ const PPL = ${PPL};
 const PIXEL = ${PIXEL};
 const BLICK = ${BLICK} * Math.PI / 180;
 const PALETTE = ${JSON.stringify(PALETTE)};
+const KLEIDUNG = ${JSON.stringify(KLEIDUNG)};
 const UMRISS = '${UMRISS}';
 const TEILFARBEN = ${JSON.stringify(TEILFARBEN)};
 
@@ -260,8 +286,11 @@ window.__ready = (async () => {
   };
   let minY = 1e9, maxY = -1e9, fussZ0 = 1e9, fussZ1 = -1e9;
   const körperV = new Set();
+  const haarDreieck = [];
   for (let t = 0; t < idx.length; t += 3) {
-    if (istHaar(idx[t]) && istHaar(idx[t+1]) && istHaar(idx[t+2])) continue;
+    const h = istHaar(idx[t]) && istHaar(idx[t+1]) && istHaar(idx[t+2]);
+    haarDreieck.push(h);
+    if (h) continue;
     for (let k = 0; k < 3; k++) körperV.add(idx[t+k]);
   }
   for (const v of körperV) {
@@ -318,6 +347,98 @@ window.__ready = (async () => {
     bind[o.name] = o.quaternion.clone();
   });
 
+  // --- Kleidung trennen -----------------------------------------------------
+  // Das Modell hat ein Material fuer alles. Getrennt wird deshalb hier, in drei
+  // Schritten: Haar steht schon fest (Textur), Haut ebenfalls (Textur), und der
+  // Stoff dazwischen wird nach *Hoehe* aufgeteilt - oberhalb der Huefte
+  // Oberteil, darunter Hose, unterhalb der Knoechel Schuhe. Die Hoehen kommen
+  // aus dem Skelett, nicht aus geratenen Zahlen.
+  const _w = new THREE.Vector3();
+  knochen.Waist.getWorldPosition(_w);
+  const hueftY = _w.y;
+  knochen.L_Foot.getWorldPosition(_w);
+  // Nicht am Fussgelenk selbst: Der Schaft des Stiefels gehoert zum Schuh,
+  // sonst ist er im Bild nur eine Zeile und verschwindet gegen die Hose.
+  const knoechelY = minY + höhe * 0.17;
+
+  const istHaut = (v) => {
+    const px = Math.min(tc.width-1, Math.max(0, Math.round(uv[v*2] * tc.width)));
+    const py = Math.min(tc.height-1, Math.max(0, Math.round(uv[v*2+1] * tc.height)));
+    const o = (py * tc.width + px) * 4;
+    const r = td[o], g = td[o+1], b = td[o+2];
+    // Haut ist warm und hell, Stoff ist gruenstichig.
+    return r > 90 && g < r * 0.92 && b < r * 0.8 && g > b;
+  };
+
+  const GRUPPEN = ['haar', 'haut', 'oberteil', 'hose', 'schuhe'];
+  const eimer = { haar: [], haut: [], oberteil: [], hose: [], schuhe: [] };
+  for (let t = 0, d = 0; t < idx.length; t += 3, d++) {
+    const a = idx[t], b = idx[t+1], c = idx[t+2];
+    let g;
+    if (haarDreieck[d]) g = 'haar';
+    else if (istHaut(a) || istHaut(b) || istHaut(c)) g = 'haut';
+    else {
+      const y = (pos[a*3+1] + pos[b*3+1] + pos[c*3+1]) / 3;
+      g = y > hueftY ? 'oberteil' : y > knoechelY ? 'hose' : 'schuhe';
+    }
+    eimer[g].push(a, b, c);
+  }
+
+  const neuIdx = [];
+  const gruppen = [];
+  for (let i = 0; i < GRUPPEN.length; i++) {
+    const list = eimer[GRUPPEN[i]];
+    gruppen.push({ start: neuIdx.length, count: list.length, name: GRUPPEN[i] });
+    for (const v of list) neuIdx.push(v);
+  }
+  geo.setIndex(new THREE.BufferAttribute(new Uint32Array(neuIdx), 1));
+  geo.clearGroups();
+  for (let i = 0; i < gruppen.length; i++) {
+    geo.addGroup(gruppen[i].start, gruppen[i].count, i);
+  }
+  // Haar und Haut behalten die gemalte Textur - dort steckt das Gesicht. Die
+  // Kleidungsteile bekommen glatte Farben; ihre Textur war ohnehin einfarbig.
+  const mitTextur = () => new THREE.MeshStandardMaterial({
+    map: mesh.material.map, roughness: 0.78, metalness: 0,
+  });
+  const einfarbig = (hex) => new THREE.MeshStandardMaterial({
+    color: new THREE.Color(hex), roughness: 0.78, metalness: 0,
+  });
+  mesh.material = [
+    mitTextur(),
+    mitTextur(),
+    einfarbig(KLEIDUNG.oberteil),
+    einfarbig(KLEIDUNG.hose),
+    einfarbig(KLEIDUNG.schuhe),
+  ];
+  window.__gruppen = gruppen.map((g) => g.name + ' ' + (g.count / 3));
+
+  // --- Maehne ausduennen ----------------------------------------------------
+  // Das Modell traegt eine dichte, geschlossene Haarkugel. Bei Spielgroesse
+  // liest sie als Flaeche, und einzelne Straehnen gehen darin unter. Die Masse
+  // wird deshalb zum Kopf hin geschrumpft; was danach heraussteht, sind die
+  // Zotteln - und die stehen dann einzeln, statt in der Kugel zu versinken.
+  {
+    const nurHaar = new Set();
+    for (let t = 0, d = 0; t < idx.length; t += 3, d++) {
+      if (!haarDreieck[d]) continue;
+      for (let k = 0; k < 3; k++) nurHaar.add(idx[t+k]);
+    }
+    for (const v of körperV) nurHaar.delete(v);
+    knochen.Head.getWorldPosition(_w);
+    const mitte = mesh.worldToLocal(_w.clone());
+    const P = geo.attributes.position;
+    // Waagerecht staerker als senkrecht: Die Hoehe der Maehne ist die
+    // Silhouette, die Breite ist die Dichte.
+    for (const v of nurHaar) {
+      P.setX(v, mitte.x + (P.getX(v) - mitte.x) * 0.74);
+      P.setY(v, mitte.y + (P.getY(v) - mitte.y) * 0.86);
+      P.setZ(v, mitte.z + (P.getZ(v) - mitte.z) * 0.74);
+    }
+    P.needsUpdate = true;
+    window.__haarPunkte = nurHaar.size;
+  }
+
   const heim = root.position.clone();
   // Weltdrehung jedes Knochens in der Bindepose. Sie ist der Bezugspunkt für
   // Anbauteile, die dem Knochen folgen sollen (siehe folgt in anbauen()).
@@ -366,6 +487,10 @@ window.__ready = (async () => {
   };
   const familie = (r, g, b) => {
     if (r < 40 && g < 40 && b < 40) return null;
+    // Sehr dunkel heisst Kleidung, nicht Haut: Schuhe und Hosenschatten liegen
+    // im Kanalverhaeltnis dicht bei Haut, aber weit unter ihr in der
+    // Helligkeit. Ohne diese Zeile bekaeme die Figur sandfarbene Stiefel.
+    if (0.2126*r + 0.7152*g + 0.0722*b < 72) return 'anzug';
     if (g > r + 12) return 'anzug';
     const gr = g / Math.max(1, r), br = b / Math.max(1, r);
     if (gr < 0.52 && br < 0.42) return 'haar';
@@ -717,6 +842,7 @@ page.on('pageerror', (e) => probleme.push(String(e)));
 await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__ready, null, { timeout: 60000 });
 const masse = await page.evaluate(() => window.__masse);
+const gruppen = await page.evaluate(() => window.__gruppen ?? []);
 
 // --- Alle Bilder backen und zum Blatt setzen --------------------------------
 const bilder = [];
@@ -800,6 +926,7 @@ if (!nurClip) {
 const leer = bilder.filter((b) => b.belegt < 12);
 console.log(`Modell    Körperhöhe ${masse.höhe.toFixed(3)}, ${masse.knochen} Knochen`);
 console.log(`Gelenke   ${Object.entries(masse.höhen).map(([k, v]) => `${k} ${v}`).join(', ')} (logische Pixel über der Sohle)`);
+console.log(`Teile     ${gruppen.join(', ')} Dreiecke`);
 console.log(`Zelle     ${CELL_W} × ${CELL_H}, Fusspunkt (${ANCHOR_X}, ${ANCHOR_Y})`);
 console.log(`Blatt     ${CELL_W * PPL * SPALTEN} × ${CELL_H * PPL * CLIPS.length}, ${bilder.length} Bilder, ${Math.round(png.length / 1024)} kB, ${PIXEL ? 'Pixel' : `fein ${PPL}×`}`);
 console.log(`Deckung   ${Math.min(...bilder.map((b) => b.belegt))} bis ${Math.max(...bilder.map((b) => b.belegt))} Pixel je Bild`);

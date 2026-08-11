@@ -358,7 +358,32 @@ zu, und übrig bleibt ein roter Fleck über einem gelben Werkzeug. Bei 9 Grad li
 Das ist keine Geschmacksfrage, sondern folgt direkt aus dem Kopfanteil dieser Figur, und
 gilt für jede Pose.
 
-### 7.5 Was am Bild gelernt wurde
+### 7.5 Zwei Abweichungen vom Ankerbild, auf Ansage
+
+Beide sind bewusst und stehen hier, damit niemand sie für Fehler hält.
+
+**Die Kleidung ist dreiteilig statt einteilig.** Das Ankerbild zeigt einen
+einteiligen türkisen Overall. Bei Spielgrösse ist das eine einfarbige Säule von
+der Schulter bis zum Boden — die halbe Figur, und sie erzählt nichts. Getrennt
+wird im Backweg, nicht am Modell: Haar und Haut stehen über die Textur fest,
+der Stoff dazwischen wird nach **Höhe** aufgeteilt, und die Höhen kommen aus dem
+Skelett (`Waist` für die Hüfte, ein Sechstel der Figurenhöhe für den Knöchel) —
+nicht aus geratenen Zahlen.
+
+| Teil | Farbe | Grund |
+|---|---|---|
+| Oberteil | `#2fc9b8` | hält gegen Nachthimmel *und* gegen braune Erde |
+| Hose | `#3d5b78` | liegt zwischen beiden Untergründen |
+| Schuhe | `#2a2018` | der dunkelste Wert der Figur — er setzt sie auf den Boden |
+
+**Die Mähne ist ausgedünnt.** Das Modell trägt eine dichte, geschlossene
+Haarkugel; bei Spielgrösse liest sie als Fläche, und einzelne Strähnen gehen
+darin unter. Die Masse wird deshalb zum Kopf hin geschrumpft — waagerecht auf
+74 %, senkrecht auf 86 %, weil die Höhe die Silhouette trägt und die Breite nur
+die Dichte. Dafür stehen jetzt zehn statt fünf Zotteln heraus. Was übrig bleibt,
+ist dieselbe Menge Haar, aber als einzelne Strähnen statt als Kugel.
+
+### 7.6 Was am Bild gelernt wurde
 
 Zehn Zustände wurden gebaut, gebacken und angesehen — im Schnitt achtmal je
 Zustand. Drei Befunde gelten für alle und sind wichtiger als jede einzelne Pose:
@@ -383,7 +408,7 @@ Sohle) bis zum Boden sind es drei Zeilen bei zwei bis drei Pixeln Breite. Jede S
 erreicht — es löst sich auf, statt zu wandern. Vier Zustände sind unabhängig auf dieselbe
 Grenze gelaufen. Die Beine sind eine Säule; erzählt wird oben.
 
-### 7.6 Zwei Fehler im Backweg, die dabei auffielen
+### 7.7 Zwei Fehler im Backweg, die dabei auffielen
 
 **Markerfarben überlebten den Renderer nicht.** `new THREE.Color(r, g, b)` setzt Werte im
 linearen Arbeitsraum, der Ausgang rechnet nach sRGB — aus dem Marker `(0, 128, 255)` wurde
@@ -401,7 +426,7 @@ eine kerzengerade Frisur, und `dying` konnte gar nicht flach werden. Anbauteile 
 `folgt` setzen; gerechnet wird mit der Differenz zur Bindepose, damit die Achsen bleiben,
 wie sie überall in diesem Weg gelten.
 
-### 7.7 Was der Backweg nicht kann
+### 7.8 Was der Backweg nicht kann
 
 - **Kein Ausblenden.** Das Blatt kennt nur Pixel. `saving` und `dying` müssen ihre
   Auflösung über Haltung und Versatz erzählen, nicht über Durchsichtigkeit.
