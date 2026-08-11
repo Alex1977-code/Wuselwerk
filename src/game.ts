@@ -321,6 +321,9 @@ export class Game {
     }
     if (inBox(L.nukeBtn, x, y)) {
       this.world.nuke();
+      // Der Ruf gehoert zum Knopf, nicht zu einem Weltereignis: Er faellt
+      // einmal, wenn der Spieler alles aufgibt — nicht je Figur.
+      this.audio.ohNo();
       return;
     }
     if (!this.camera.follow && inBox(L.recenterBtn, x, y)) {

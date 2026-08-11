@@ -45,6 +45,11 @@ export class GameAudio {
     this.music.stop();
   }
 
+  /** Der Ruf beim Weltuntergang — siehe `Sfx.ohNo`. */
+  ohNo(): void {
+    this.sfx.ohNo();
+  }
+
   /** Einmal pro Bild, vor dem Verarbeiten der Ereignisse. */
   beginFrame(): void {
     this.engine.beginFrame();
@@ -60,7 +65,7 @@ export class GameAudio {
     ready: boolean;
     muted: boolean;
     haptics: boolean;
-    music: { playing: boolean; notes: number };
+    music: { playing: boolean; notes: number; quelle: string };
   } {
     return {
       ready: this.engine.ready,

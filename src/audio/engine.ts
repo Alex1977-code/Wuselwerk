@@ -18,6 +18,7 @@ export class AudioEngine {
   private master: GainNode | null = null;
   private busGain: Record<Bus, GainNode | null> = { sfx: null, music: null };
   private noiseBuffer: AudioBuffer | null = null;
+  private stille: HTMLAudioElement | null = null;
 
   /** Begrenzt die Stimmen pro Bild — 60 grabende Figuren duerfen nicht knallen. */
   private voicesThisFrame = 0;
@@ -33,8 +34,53 @@ export class AudioEngine {
     return this.ctx ? this.ctx.currentTime : 0;
   }
 
+  /**
+   * Erzeugt eine sehr kurze stille Tondatei und spielt sie ab.
+   *
+   * Der Grund ist ein Sonderweg von iOS: Web Audio laeuft dort in der
+   * Kategorie "ambient" und wird vom **Klingelschalter am Geraeterand**
+   * stummgeschaltet — auch wenn die Lautstaerke oben steht. Sobald die Seite
+   * einmal ein gewoehnliches Audioelement abgespielt hat, wechselt die Sitzung
+   * in die Kategorie "playback", und Web Audio ist auch bei stummem Klingeln
+   * zu hoeren. Genau dafuer ist diese Datei da; ihr Inhalt ist Stille.
+   *
+   * Das ist ein Verdacht, kein Beweis: Wer den Schalter umlegt, hoert auch
+   * ohne diesen Umweg etwas. Aber es ist der einzige Weg, auf dem eine Seite
+   * das von sich aus richtigstellen kann.
+   */
+  private weckeTonsitzung(): void {
+    if (this.stille) return;
+    const rate = 8000;
+    const n = rate / 10;
+    const buf = new Uint8Array(44 + n * 2);
+    const dv = new DataView(buf.buffer);
+    const text = (o: number, t: string) => {
+      for (let i = 0; i < t.length; i++) buf[o + i] = t.charCodeAt(i);
+    };
+    text(0, 'RIFF');
+    dv.setUint32(4, 36 + n * 2, true);
+    text(8, 'WAVEfmt ');
+    dv.setUint32(16, 16, true);
+    dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true);
+    dv.setUint32(24, rate, true);
+    dv.setUint32(28, rate * 2, true);
+    dv.setUint16(32, 2, true);
+    dv.setUint16(34, 16, true);
+    text(36, 'data');
+    dv.setUint32(40, n * 2, true);
+    const el = new Audio(URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+    el.setAttribute('playsinline', '');
+    el.volume = 1;
+    void el.play().catch(() => {
+      /* Wenn der Browser das nicht will, bleibt es beim Klingelschalter. */
+    });
+    this.stille = el;
+  }
+
   /** Beim ersten Fingerdruck aufrufen. Mehrfachaufrufe sind harmlos. */
   unlock(): void {
+    this.weckeTonsitzung();
     if (!this.ctx) {
       const Ctor =
         window.AudioContext ??
@@ -116,6 +162,10 @@ export class AudioEngine {
     bus?: Bus;
     delay?: number;
     ignoreLimit?: boolean;
+    /** Tiefpass in Hertz. Aus einem Sägezahn wird damit ein Vokal. */
+    filterHz?: number;
+    /** Faktor, um den der Tiefpass bis zum Ende wandert. */
+    filterSweep?: number;
   }): void {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -141,7 +191,22 @@ export class AudioEngine {
     g.gain.exponentialRampToValueAtTime(peak, t + atk);
     g.gain.exponentialRampToValueAtTime(0.0001, t + opts.dur);
 
-    osc.connect(g);
+    if (opts.filterHz) {
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.Q.value = 6;
+      lp.frequency.setValueAtTime(opts.filterHz, t);
+      if (opts.filterSweep && opts.filterSweep !== 1) {
+        lp.frequency.exponentialRampToValueAtTime(
+          Math.max(60, opts.filterHz * opts.filterSweep),
+          t + opts.dur,
+        );
+      }
+      osc.connect(lp);
+      lp.connect(g);
+    } else {
+      osc.connect(g);
+    }
     g.connect(dest);
     osc.start(t);
     osc.stop(t + opts.dur + 0.02);

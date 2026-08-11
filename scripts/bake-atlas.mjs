@@ -118,7 +118,10 @@ const PALETTE = {
  */
 const KLEIDUNG = {
   oberteil: '#2fc9b8',
-  hose: '#3d5b78',
+  // Heller als zuerst gesetzt. Bei 26 Bildschirmpixeln sind die Beine drei
+  // Pixel breit; ein dunkles Blau lag zwischen Oberteil und Schuhen so eng,
+  // dass die Hose als eigenes Kleidungsstueck gar nicht zu erkennen war.
+  hose: '#6f97c4',
   schuhe: '#2a2018',
 };
 const UMRISS = '#0c1119';
@@ -357,9 +360,14 @@ window.__ready = (async () => {
   knochen.Waist.getWorldPosition(_w);
   const hueftY = _w.y;
   knochen.L_Foot.getWorldPosition(_w);
-  // Nicht am Fussgelenk selbst: Der Schaft des Stiefels gehoert zum Schuh,
-  // sonst ist er im Bild nur eine Zeile und verschwindet gegen die Hose.
-  const knoechelY = minY + höhe * 0.17;
+  // Der Knoechel liegt tiefer, als er im Modell aussieht.
+  //
+  // Das Modell traegt hohe Stiefel bis fast zum Knie. Bei 26 Bildschirmpixeln
+  // ist das Bein aber nur drei Pixel lang: Mit dem Stiefelschaft blieb fuer die
+  // Hose weniger als ein Pixel, und genau deshalb war sie nicht zu erkennen.
+  // Elf Prozent der Figurenhoehe geben etwa ein Drittel Schuh und zwei Drittel
+  // Hose — das ist das Verhaeltnis, das man bei dieser Groesse noch sieht.
+  const knoechelY = minY + höhe * 0.11;
 
   const istHaut = (v) => {
     const px = Math.min(tc.width-1, Math.max(0, Math.round(uv[v*2] * tc.width)));
@@ -384,17 +392,49 @@ window.__ready = (async () => {
       (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)],
     );
     const lum = (r, g, b) => 0.2126*r + 0.7152*g + 0.0722*b;
-    const rot = (r, g, b) => r > 70 && g < r * 0.55 && b < r * 0.55;
+
+    /**
+     * Umgefaerbt wird nach *Flaeche*, nicht nach Farbe.
+     *
+     * Der erste Anlauf nahm jeden satten roten Bildpunkt der Textur. Das trifft
+     * auch die Nase, die Wangen und den Mund - die Figur bekam eine lila Nase.
+     * Jetzt entscheidet die Zugehoerigkeit zum Haar: Die Haardreiecke werden in
+     * die Texturebene gezeichnet und ergeben eine Maske. Was ausserhalb liegt,
+     * bleibt unberuehrt, egal wie rot es ist.
+     */
+    const mc = document.createElement('canvas');
+    mc.width = tc.width; mc.height = tc.height;
+    const mx = mc.getContext('2d', { willReadFrequently: true });
+    mx.fillStyle = '#fff';
+    for (let t = 0, d = 0; t < idx.length; t += 3, d++) {
+      if (!haarDreieck[d]) continue;
+      mx.beginPath();
+      for (let k = 0; k < 3; k++) {
+        const v = idx[t+k];
+        const X = uv[v*2] * tc.width, Y = uv[v*2+1] * tc.height;
+        if (k === 0) mx.moveTo(X, Y); else mx.lineTo(X, Y);
+      }
+      mx.closePath();
+      mx.fill();
+      // Die Kante der Maske mitzeichnen: Ein Dreieck deckt seine eigene
+      // Randlinie nicht ganz ab, und uebrig blieben rote Saeume.
+      mx.strokeStyle = '#fff';
+      mx.lineWidth = 2;
+      mx.stroke();
+    }
+    const md = mx.getImageData(0, 0, mc.width, mc.height).data;
+    const rot = (i) => md[i+3] > 0 && md[i] > 128;
+
     let lo = 255, hi = 0;
     for (let i = 0; i < td.length; i += 4) {
-      if (!rot(td[i], td[i+1], td[i+2])) continue;
+      if (!rot(i)) continue;
       const l = lum(td[i], td[i+1], td[i+2]);
       if (l < lo) lo = l;
       if (l > hi) hi = l;
     }
     const spanne = Math.max(1, hi - lo);
     for (let i = 0; i < td.length; i += 4) {
-      if (!rot(td[i], td[i+1], td[i+2])) continue;
+      if (!rot(i)) continue;
       const t = Math.min(1, Math.max(0, (lum(td[i], td[i+1], td[i+2]) - lo) / spanne));
       // Zwei Abschnitte: Schatten zu Grundton, Grundton zu Glanz.
       const [a, b2, f] = t < 0.5

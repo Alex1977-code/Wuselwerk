@@ -105,11 +105,53 @@ export class Sfx {
     this.engine.tone({ freq: 2100, dur: 0.06, type: 'square', gain: 0.07, slide: 1.5 });
   }
 
-  /** Sprengung: tiefer Schlag mit Nachhall aus Rauschen. */
+  /**
+   * Sprengung: erst der Knall, dann das Platzen.
+   *
+   * Zwei Ereignisse in einem Klang, und die Reihenfolge ist der Witz daran:
+   * ein kurzer harter Knacks (das Platzen der Figur), unmittelbar gefolgt vom
+   * tiefen Schlag und dem Nachhall (die Sprengung im Boden). Ohne den Knacks
+   * ist es nur ein Rumpeln irgendwo; mit ihm hoert man, dass es *jemanden*
+   * erwischt hat.
+   */
   private explode(): void {
-    this.engine.tone({ freq: 150, dur: 0.5, type: 'sine', gain: 0.42, slide: 0.22, ignoreLimit: true });
-    this.engine.noise({ dur: 0.55, gain: 0.3, filter: 'lowpass', freq: 1600, sweep: 0.16, ignoreLimit: true });
-    this.engine.noise({ dur: 0.3, gain: 0.14, filter: 'highpass', freq: 900, sweep: 0.4, delay: 0.02, ignoreLimit: true });
+    // Das Platzen: sehr kurz, mittig, mit einem hoerbaren Zischen obendrauf.
+    this.engine.tone({ freq: 720, dur: 0.05, type: 'square', gain: 0.3, slide: 0.35, ignoreLimit: true });
+    this.engine.noise({ dur: 0.07, gain: 0.26, filter: 'bandpass', freq: 2400, q: 0.7, sweep: 0.3, ignoreLimit: true });
+    // Der Schlag darunter.
+    this.engine.tone({ freq: 150, dur: 0.5, type: 'sine', gain: 0.42, slide: 0.22, delay: 0.02, ignoreLimit: true });
+    this.engine.noise({ dur: 0.55, gain: 0.3, filter: 'lowpass', freq: 1600, sweep: 0.16, delay: 0.02, ignoreLimit: true });
+    this.engine.noise({ dur: 0.3, gain: 0.14, filter: 'highpass', freq: 900, sweep: 0.4, delay: 0.05, ignoreLimit: true });
+  }
+
+  /**
+   * Der Ruf beim Weltuntergang — zwei Silben, fallend, im Chor.
+   *
+   * Das Vorbild hat hier eine aufgenommene Stimme. Die ist fremdes Material und
+   * kommt nicht in Frage; die *Geste* dagegen — zwei fallende Silben, viele
+   * Stimmen leicht versetzt — gehoert niemandem. Gebaut wird sie aus zwei
+   * Saegezaehnen durch einen wandernden Tiefpass: Ein Tiefpass, der sich
+   * schliesst, klingt wie ein Mund, der sich schliesst. Fuenf Stimmen mit
+   * leicht verschiedener Tonhoehe und Verzoegerung machen daraus einen Chor
+   * statt eines Piepsers.
+   */
+  ohNo(): void {
+    for (let i = 0; i < 5; i++) {
+      const ton = 1 + (i - 2) * 0.045;
+      const spaeter = i * 0.035;
+      // Erste Silbe, offen und kurz.
+      this.engine.tone({
+        freq: 430 * ton, dur: 0.16, type: 'sawtooth', gain: 0.11,
+        filterHz: 1050 * ton, filterSweep: 0.75,
+        delay: spaeter, attack: 0.02, ignoreLimit: true,
+      });
+      // Zweite Silbe, tiefer und laenger — sie faellt weiter ab.
+      this.engine.tone({
+        freq: 350 * ton, dur: 0.34, type: 'sawtooth', gain: 0.12, slide: 0.72,
+        filterHz: 1400 * ton, filterSweep: 0.45,
+        delay: 0.2 + spaeter, attack: 0.03, ignoreLimit: true,
+      });
+    }
   }
 
   /**
@@ -144,6 +186,15 @@ export class Sfx {
   /** Tod: kurzer, tiefer Puls. Jeder Verlust soll spuerbar sein. */
   private died(cause?: DeathCause): void {
     if (cause === DeathCause.EXPLOSION) return; // Die Sprengung war laut genug.
+    if (cause === DeathCause.SPLAT) {
+      // Aufprall: ein nasser Klatscher. Tiefer Puls plus ein sehr kurzes,
+      // breitbandiges Rauschen — das ist der Unterschied zwischen "faellt um"
+      // und "schlaegt auf".
+      this.engine.noise({ dur: 0.06, gain: 0.24, filter: 'lowpass', freq: 900, sweep: 0.25 });
+      this.engine.tone({ freq: 130, dur: 0.18, type: 'sine', gain: 0.26, slide: 0.45 });
+      this.engine.noise({ dur: 0.12, gain: 0.08, filter: 'highpass', freq: 1600, sweep: 0.5, delay: 0.01 });
+      return;
+    }
     this.engine.tone({ freq: 190, dur: 0.22, type: 'sawtooth', gain: 0.2, slide: 0.35 });
     this.engine.noise({ dur: 0.14, gain: 0.1, filter: 'lowpass', freq: 700, sweep: 0.4 });
   }
