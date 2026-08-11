@@ -40,7 +40,13 @@ export class Music {
   private playing = false;
   private nextTime = 0;
   private step = 0;
+  private notes = 0;
   private pattern: Pattern = PATTERNS.grass;
+
+  /** Diagnose: laeuft die Schleife, und legt sie tatsaechlich Toene? */
+  get state(): { playing: boolean; notes: number } {
+    return { playing: this.playing, notes: this.notes };
+  }
 
   setTheme(theme: ThemeId): void {
     this.pattern = PATTERNS[theme] ?? PATTERNS.grass;
@@ -77,13 +83,31 @@ export class Music {
       const within = this.step & 3;
       const root = p.roots[bar];
 
+      const halbton = (h: number) => p.base * Math.pow(2, h / 12);
+
+      // Liegeton auf der Eins jedes Takts. Er schliesst die Luecken zwischen
+      // den kurzen Toenen — ohne ihn bleiben einzelne Blips uebrig, und die
+      // hoert man nicht als Musik.
+      if (within === 0) {
+        engine.tone({
+          freq: halbton(root + 12),
+          dur: stepDur * 3.6,
+          type: 'triangle',
+          gain: 0.1,
+          bus: 'music',
+          delay,
+          attack: 0.06,
+          ignoreLimit: true,
+        });
+      }
+
       // Basslinie auf der Eins und der Drei jedes Takts.
       if (within === 0 || within === 2) {
         engine.tone({
-          freq: p.base * Math.pow(2, root / 12),
-          dur: stepDur * 1.6,
+          freq: halbton(root),
+          dur: stepDur * 1.5,
           type: 'triangle',
-          gain: 0.16,
+          gain: 0.26,
           bus: 'music',
           delay,
           attack: 0.01,
@@ -91,18 +115,22 @@ export class Music {
         });
       }
 
-      // Dreiklangsbrechung eine Oktave darueber.
-      const semi = root + p.arp[(this.step + bar) % p.arp.length] + 12;
+      // Dreiklangsbrechung zwei Oktaven ueber dem Bass — also 440 bis 740 Hz.
+      // Das ist Absicht: Ein Handylautsprecher strahlt unter etwa 500 Hz kaum
+      // noch ab. Stuende die Melodie wie der Bass bei 110 Hz, waere von der
+      // Musik unterwegs genau nichts zu hoeren.
+      const semi = root + p.arp[(this.step + bar) % p.arp.length] + 24;
       engine.tone({
-        freq: p.base * Math.pow(2, semi / 12),
+        freq: halbton(semi),
         dur: stepDur * 0.8,
         type: p.wave,
-        gain: 0.06,
+        gain: 0.12,
         bus: 'music',
         delay,
         ignoreLimit: true,
       });
 
+      this.notes++;
       this.nextTime += stepDur;
       this.step = (this.step + 1) % STEPS;
     }

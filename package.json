@@ -13,7 +13,8 @@
     "build:single": "vite build && node scripts/build-single.mjs",
     "verify:single": "node scripts/verify-single.mjs",
     "atlas:template": "vite build && node scripts/make-atlas-template.mjs",
-    "modell:messen": "node scripts/measure-model.mjs"
+    "modell:messen": "node scripts/measure-model.mjs",
+    "atlas:backen": "node scripts/bake-atlas.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0",

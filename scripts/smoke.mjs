@@ -63,6 +63,36 @@ async function main() {
     isMobile: true,
     hasTouch: true,
   });
+  // Abgriff am Ausgang. Ohne ihn prüft man nur, ob Töne *geplant* werden —
+  // und genau das war einmal grün, während in Wirklichkeit nichts zu hören
+  // war, weil der Pegel 19 dB unter den Effekten lag.
+  await page.addInitScript(() => {
+    const orig = AudioNode.prototype.connect;
+    AudioNode.prototype.connect = function (dest, ...rest) {
+      if (dest?.constructor?.name === 'AudioDestinationNode') {
+        const ctx = dest.context;
+        if (!ctx.__tap) {
+          ctx.__tap = ctx.createAnalyser();
+          ctx.__tap.fftSize = 2048;
+          window.__tap = ctx.__tap;
+        }
+        try {
+          orig.call(this, ctx.__tap);
+        } catch {
+          /* schon verbunden */
+        }
+      }
+      return orig.call(this, dest, ...rest);
+    };
+    window.__peak = () => {
+      if (!window.__tap) return 0;
+      const d = new Float32Array(window.__tap.fftSize);
+      window.__tap.getFloatTimeDomainData(d);
+      let p = 0;
+      for (const v of d) p = Math.max(p, Math.abs(v));
+      return p;
+    };
+  });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`);
@@ -100,6 +130,22 @@ async function main() {
   // --- Ton: nach der ersten Geste muss der Klangkontext laufen (GDD §7) -----
   const audio = await page.evaluate(() => window.__wuselwerk.debugAudio());
   check('§7 Klangkontext nach Nutzergeste aktiv', audio?.ready === true, JSON.stringify(audio));
+  check(
+    '§7 Musikschleife legt Töne',
+    audio?.music?.playing === true && audio.music.notes > 4,
+    `${audio?.music?.notes} Schritte geplant`,
+  );
+
+  // Der eigentliche Beweis: Kommt am Ausgang genug an, um es zu hören?
+  // 0,03 Spitze ist rund −30 dBFS — darunter geht Musik auf einem Handy
+  // gegen die Effekte unter.
+  let pegel = 0;
+  for (let i = 0; i < 16; i++) {
+    pegel = Math.max(pegel, await page.evaluate(() => window.__peak()));
+    if (pegel >= 0.06) break;
+    await sleep(150);
+  }
+  check('§7 Musik kommt hörbar am Ausgang an', pegel > 0.03, `Spitze ${pegel.toFixed(3)}`);
   const mutedNow = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   const mutedBack = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   check('§7 Stummschaltung schaltet um', mutedNow === true && mutedBack === false);

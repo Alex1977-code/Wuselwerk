@@ -56,11 +56,17 @@ export class GameAudio {
   }
 
   /** Diagnose für die automatisierte Sichtprobe. */
-  debugState(): { ready: boolean; muted: boolean; haptics: boolean } {
+  debugState(): {
+    ready: boolean;
+    muted: boolean;
+    haptics: boolean;
+    music: { playing: boolean; notes: number };
+  } {
     return {
       ready: this.engine.ready,
       muted: this.engine.muted,
       haptics: this.haptics.supported,
+      music: this.music.state,
     };
   }
 

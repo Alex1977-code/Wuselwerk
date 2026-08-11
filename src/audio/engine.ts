@@ -47,11 +47,24 @@ export class AudioEngine {
       }
       this.master = this.ctx.createGain();
       this.master.gain.value = this.muted ? 0 : 0.9;
-      this.master.connect(this.ctx.destination);
+
+      // Weiche Bremse vor dem Ausgang. Sie ist nicht Klanggestaltung, sondern
+      // Schutz: Musik laeuft ohne Stimmenbegrenzung, und wenn gleichzeitig
+      // sechs Effekte anschlagen, koennte die Summe ueber die Vollaussteuerung
+      // gehen und knacken. Erst mit dieser Bremse darf die Musik so laut
+      // stehen, dass man sie auf einem Handy ueberhaupt hoert.
+      const komp = this.ctx.createDynamicsCompressor();
+      komp.threshold.value = -8;
+      komp.knee.value = 12;
+      komp.ratio.value = 4;
+      komp.attack.value = 0.004;
+      komp.release.value = 0.18;
+      this.master.connect(komp);
+      komp.connect(this.ctx.destination);
 
       for (const bus of ['sfx', 'music'] as Bus[]) {
         const g = this.ctx.createGain();
-        g.gain.value = bus === 'music' ? 0.32 : 0.85;
+        g.gain.value = bus === 'music' ? 0.5 : 0.85;
         g.connect(this.master);
         this.busGain[bus] = g;
       }
