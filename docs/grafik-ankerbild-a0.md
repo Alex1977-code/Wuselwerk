@@ -325,7 +325,32 @@ Rumpf ebenfalls zwei. Übrig bliebe eine rote Masse auf einem türkisen Strich. 
 zeigt die Figur Gesicht und Rumpfbreite. Die Laufrichtung bleibt eindeutig, und die
 Spiegelung im Renderer ergibt sauber die andere Dreiviertelansicht.
 
-### 7.3 Die Regel, die beim Graben herauskam
+### 7.3 Die Zotteln
+
+Das Haar des Modells hängt am Kopfgelenk und ist damit starr: Es kippt mit dem Kopf, aber es
+schwingt nicht. Bei 12 Pixeln ist genau dieses Nachschwingen das Erkennungszeichen der
+Figur — eine Masse, die sich nie bewegt, liest als Mütze, egal wie zackig ihr Rand ist.
+
+Deshalb bekommt jede Figur im Backweg einen festen Satz von fünf Strähnen, angehängt an das
+Kopfgelenk und als vierseitige Spitzen gebaut. Sie gehören zur **Art**, nicht zur Pose, und
+stehen deshalb im Backweg und nicht in den Posendateien.
+
+Drei Zahlen, ohne die sie nicht funktionieren:
+
+- **Das Kopfgelenk sitzt 6,1 logische Pixel über der Sohle, die Mähne reicht bis gut 11
+  darüber hinaus.** Eine Strähne muss also länger als 11 sein, sonst steckt sie in der Masse
+  und man sieht nichts von ihr. Der erste Versuch mit 4 Pixeln war unsichtbar, der zweite
+  mit 9,5 sah aus wie Flammen; 7 bis 8 sitzt.
+- **Jede Strähne hat ihre eigene Phase.** Ohne sie schlagen alle im Gleichtakt aus, und das
+  sieht aus wie ein Kamm, nicht wie Haar.
+- **Nur eine Strähne trägt den Glanzton.** Zwei helle Spitzen lesen als eigene Gegenstände
+  neben dem Kopf, nicht als Teil der Mähne.
+
+Wie stark geschwungen wird, kann eine Pose über `_haar` (−1 bis 1) bestimmen. Steht dort
+nichts, schwingt es sanft über den Zyklus — auch ein stehender Blocker soll nicht erstarrt
+wirken.
+
+### 7.4 Die Regel, die beim Graben herauskam
 
 **Der Rumpf beugt sich nur wenig — die Bewegung tragen die Arme.** Der Kopf ist fast die
 halbe Figur, und daran hängt die Mähne. Bei 22 Grad Vorbeugung deckt sie den ganzen Körper
@@ -333,7 +358,7 @@ zu, und übrig bleibt ein roter Fleck über einem gelben Werkzeug. Bei 9 Grad li
 Das ist keine Geschmacksfrage, sondern folgt direkt aus dem Kopfanteil dieser Figur, und
 gilt für jede Pose.
 
-### 7.4 Was der Backweg nicht kann
+### 7.5 Was der Backweg nicht kann
 
 - **Kein Ausblenden.** Das Blatt kennt nur Pixel. `saving` und `dying` müssen ihre
   Auflösung über Haltung und Versatz erzählen, nicht über Durchsichtigkeit.

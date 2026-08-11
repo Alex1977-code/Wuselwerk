@@ -98,7 +98,36 @@ const TEILFARBEN = {
   werkzeug: { marker: [255, 0, 255], farbe: '#ffd23f' },
   dunkel: { marker: [0, 255, 0], farbe: '#0c1119' },
   signal: { marker: [0, 128, 255], farbe: '#ff7a45' },
+  haar: { marker: [255, 255, 0], farbe: '#e5372c' },
+  haarglanz: { marker: [0, 255, 255], farbe: '#ff8f5e' },
 };
+
+/**
+ * Die Zotteln — einzelne Haarsträhnen, die über die Mähne hinausstehen.
+ *
+ * Warum sie hier stehen und nicht im Modell: Das Haar des Modells ist an das
+ * Kopfgelenk gebunden und damit starr. Es kippt mit dem Kopf, aber es schwingt
+ * nicht. Bei 12 Pixeln Figurenhöhe ist genau dieses Nachschwingen aber das
+ * Erkennungszeichen der Figur — eine Masse, die sich nie bewegt, liest als
+ * Mütze, egal wie zackig ihr Rand ist.
+ *
+ * Also bekommt jede Figur einen festen Satz Strähnen, angehängt an den Kopf.
+ * Sie gehören zur Art, nicht zur Pose, und stehen deshalb im Backweg und nicht
+ * in den Posendateien. Lage in logischen Pixeln vom Kopfgelenk aus,
+ * [vorn, hoch, seitlich]. `phase` verschiebt den Nachlauf: Ohne sie schlügen
+ * alle Strähnen im Gleichtakt, und das sieht aus wie ein Kamm.
+ */
+// Das Kopfgelenk sitzt 6,1 logische Pixel über der Sohle, die Mähne reicht bis
+// gut 11 darüber hinaus. Eine Strähne muss also länger als 11 sein, sonst
+// steckt sie in der Masse und man sieht nichts von ihr. `pos` ist ihr Ansatz,
+// `mass[1]` ihre Länge nach aussen.
+const ZOTTELN = [
+  { pos: [-1.0, 3.8, 0.2], mass: [1.7, 7.6, 1.7], dreh: [34, 0, 0], phase: 0.0, farbe: 'haarglanz' },
+  { pos: [-2.2, 3.0, 1.2], mass: [1.6, 7.8, 1.6], dreh: [64, 0, 12], phase: 0.35, farbe: 'haar' },
+  { pos: [-2.8, 1.6, -1.3], mass: [1.5, 7.2, 1.5], dreh: [92, 0, -10], phase: 0.7, farbe: 'haar' },
+  { pos: [0.6, 3.6, -1.1], mass: [1.5, 6.4, 1.5], dreh: [6, 0, -10], phase: 0.2, farbe: 'haar' },
+  { pos: [-1.8, 3.4, -1.8], mass: [1.5, 7.4, 1.5], dreh: [50, 0, -18], phase: 0.55, farbe: 'haar' },
+];
 
 // --- Posen einsammeln -------------------------------------------------------
 const posen = {};
@@ -123,6 +152,22 @@ for (const c of CLIPS) {
     const dreh = { ...roh };
     delete dreh._versatz;
     const teile = mod?.teile ? mod.teile(i, i / c.frames) : [];
+
+    // Nachschwingen der Strähnen. Steht nichts in der Pose, schwingt es sanft
+    // über den Zyklus — auch ein stehender Blocker soll nicht erstarrt wirken.
+    const schwung = roh._haar ?? Math.sin((i / c.frames) * Math.PI * 2) * 0.5;
+    delete dreh._haar;
+    for (const z of ZOTTELN) {
+      const w = Math.sin(((i / c.frames) + z.phase) * Math.PI * 2) * schwung;
+      teile.push({
+        an: 'Head',
+        form: 'spitz',
+        pos: z.pos,
+        mass: z.mass,
+        dreh: [z.dreh[0] + w * 19, z.dreh[1], z.dreh[2] + w * 8],
+        farbe: z.farbe,
+      });
+    }
     auftrag.push({ clip: c.name, row: c.row, frame: i, dreh, versatz, teile, gestellt: Boolean(mod) });
   }
 }
@@ -343,8 +388,21 @@ window.__ready = (async () => {
       const bone = knochen[t.an];
       if (!bone) { window.__fehlend = (window.__fehlend ?? []).concat(t.an); continue; }
       const [mv, mh, ms] = t.mass;
+      // Zwei Formen: Kasten für Werkzeuge (harte Ecken, Katalog §2.4) und
+      // Spitze für Haarsträhnen. Vier Seiten genügen — bei dieser Grösse ist
+      // jede weitere Kante ein Pixel, das es nicht gibt.
+      const geom = t.form === 'spitz'
+        ? new THREE.ConeGeometry((ms / 2) * einheit, mh * einheit, 4)
+        : new THREE.BoxGeometry(ms * einheit, mh * einheit, mv * einheit);
+      if (t.form === 'spitz') {
+        if (mv !== ms) geom.scale(1, 1, mv / ms);
+        // Die Spitze wächst aus ihrem Ansatz heraus, statt um ihn zu stehen:
+        // So ist pos der Punkt am Kopf und mass[1] die Länge nach aussen —
+        // sonst müsste man beim Verlängern jedes Mal auch die Lage nachziehen.
+        geom.translate(0, (mh / 2) * einheit, 0);
+      }
       const box = new THREE.Mesh(
-        new THREE.BoxGeometry(ms * einheit, mh * einheit, mv * einheit),
+        geom,
         teilStoffe[t.farbe ?? 'werkzeug'] ?? teilStoffe.werkzeug,
       );
       bone.getWorldPosition(_v);
@@ -505,7 +563,16 @@ window.__ready = (async () => {
     return { png: klein.toDataURL('image/png'), belegt };
   };
 
-  window.__masse = { höhe, einheit, minY, mitteZ, knochen: Object.keys(knochen).length };
+  // Gelenkhöhen in logischen Pixeln über der Sohle — ohne sie rät man beim
+  // Anhängen von Werkzeugen und Strähnen.
+  const _t = new THREE.Vector3();
+  const höhen = {};
+  for (const n of ['Head', 'Spine02', 'Pelvis', 'R_Hand', 'R_Foot']) {
+    if (!knochen[n]) continue;
+    knochen[n].getWorldPosition(_t);
+    höhen[n] = Math.round(((_t.y - minY) / einheit) * 10) / 10;
+  }
+  window.__masse = { höhe, einheit, minY, mitteZ, höhen, knochen: Object.keys(knochen).length };
   return true;
 })();
 </script>`;
@@ -612,6 +679,7 @@ if (!nurClip) {
 // --- Bericht ----------------------------------------------------------------
 const leer = bilder.filter((b) => b.belegt < 12);
 console.log(`Modell    Körperhöhe ${masse.höhe.toFixed(3)}, ${masse.knochen} Knochen`);
+console.log(`Gelenke   ${Object.entries(masse.höhen).map(([k, v]) => `${k} ${v}`).join(', ')} (logische Pixel über der Sohle)`);
 console.log(`Zelle     ${CELL_W} × ${CELL_H}, Fusspunkt (${ANCHOR_X}, ${ANCHOR_Y})`);
 console.log(`Blatt     ${CELL_W * SPALTEN} × ${CELL_H * CLIPS.length}, ${bilder.length} Bilder, ${Math.round(png.length / 1024)} kB`);
 console.log(`Deckung   ${Math.min(...bilder.map((b) => b.belegt))} bis ${Math.max(...bilder.map((b) => b.belegt))} Pixel je Bild`);
