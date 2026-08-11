@@ -84,6 +84,22 @@ const PALETTE = {
 };
 const UMRISS = '#0c1119';
 
+/**
+ * Anbauteile — Werkzeuge, Helm, Schirm, Bombe.
+ *
+ * Das Modell hat keines davon, und ohne sie ist kein Beruf ablesbar (GDD §6).
+ * Sie entstehen deshalb als einfache Kästen im Backweg. Gerendert werden sie
+ * unbeleuchtet in einer Markerfarbe, die am Körper nirgends vorkommt, und erst
+ * beim Einrasten in ihre echte Farbe übersetzt. Der Umweg ist nötig, weil
+ * Werkzeuggelb im Kanalverhältnis wie Haut aussieht und sonst im Gesicht
+ * landen würde.
+ */
+const TEILFARBEN = {
+  werkzeug: { marker: [255, 0, 255], farbe: '#ffd23f' },
+  dunkel: { marker: [0, 255, 0], farbe: '#0c1119' },
+  signal: { marker: [0, 128, 255], farbe: '#ff7a45' },
+};
+
 // --- Posen einsammeln -------------------------------------------------------
 const posen = {};
 if (existsSync(POSEN)) {
@@ -106,7 +122,8 @@ for (const c of CLIPS) {
     const versatz = roh._versatz ?? [0, 0];
     const dreh = { ...roh };
     delete dreh._versatz;
-    auftrag.push({ clip: c.name, row: c.row, frame: i, dreh, versatz, gestellt: Boolean(mod) });
+    const teile = mod?.teile ? mod.teile(i, i / c.frames) : [];
+    auftrag.push({ clip: c.name, row: c.row, frame: i, dreh, versatz, teile, gestellt: Boolean(mod) });
   }
 }
 const ohnePose = CLIPS.filter((c) => !posen[c.name]).map((c) => c.name);
@@ -129,6 +146,7 @@ const SS = ${SS};
 const BLICK = ${BLICK} * Math.PI / 180;
 const PALETTE = ${JSON.stringify(PALETTE)};
 const UMRISS = '${UMRISS}';
+const TEILFARBEN = ${JSON.stringify(TEILFARBEN)};
 
 const hex = (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
 const RAMPEN = Object.fromEntries(Object.entries(PALETTE).map(([k,v]) => [k, v.map(hex)]));
@@ -242,6 +260,16 @@ window.__ready = (async () => {
   const tiefe = (b) => { let n = 0, o = b; while (o) { n++; o = o.parent; } return n; };
 
   // --- Farbe einrasten ------------------------------------------------------
+  // Anbauteile werden in Markerfarben gerendert, unbeleuchtet und weit weg von
+  // allem, was am Körper vorkommt. Sie werden zuerst geprüft: Werkzeuggelb
+  // würde sonst als Haut durchgehen (Kanalverhältnis 0,82 zu 0,25).
+  const MARKER = Object.entries(TEILFARBEN).map(([k, v]) => [k, v.marker]);
+  const marke = (r, g, b) => {
+    for (const [k, m] of MARKER) {
+      if (Math.abs(r-m[0]) < 60 && Math.abs(g-m[1]) < 60 && Math.abs(b-m[2]) < 60) return k;
+    }
+    return null;
+  };
   const familie = (r, g, b) => {
     if (r < 40 && g < 40 && b < 40) return null;
     if (g > r + 12) return 'anzug';
@@ -263,6 +291,49 @@ window.__ready = (async () => {
     return l >= s[0] ? 0 : l >= s[1] ? 1 : 2;
   };
 
+  // --- Anbauteile ----------------------------------------------------------
+  const teileGruppe = new THREE.Group();
+  scene.add(teileGruppe);
+  const teilStoffe = Object.fromEntries(
+    Object.entries(TEILFARBEN).map(([k, v]) => [
+      k,
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(v.marker[0]/255, v.marker[1]/255, v.marker[2]/255),
+        toneMapped: false,
+      }),
+    ]),
+  );
+  const _v = new THREE.Vector3();
+  /**
+   * Setzt die Anbauteile dieses Bildes.
+   *
+   * Lage und Mass stehen in logischen Pixeln und in Figurenachsen:
+   * [vorn, hoch, seitlich] in Figurenachsen. Das ist dieselbe Sprache wie bei
+   * den Winkeln — wer eine Pose schreiben kann, kann auch ein Werkzeug
+   * anhängen, ohne die Achsen eines Knochens zu kennen.
+   */
+  const anbauen = (teile) => {
+    while (teileGruppe.children.length) {
+      const k = teileGruppe.children.pop();
+      k.geometry.dispose();
+    }
+    for (const t of teile) {
+      const bone = knochen[t.an];
+      if (!bone) { window.__fehlend = (window.__fehlend ?? []).concat(t.an); continue; }
+      const [mv, mh, ms] = t.mass;
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(ms * einheit, mh * einheit, mv * einheit),
+        teilStoffe[t.farbe ?? 'werkzeug'] ?? teilStoffe.werkzeug,
+      );
+      bone.getWorldPosition(_v);
+      const [pv, ph, ps] = t.pos ?? [0, 0, 0];
+      box.position.set(_v.x + ps * einheit, _v.y + ph * einheit, _v.z + pv * einheit);
+      const [rx, ry, rz] = t.dreh ?? [0, 0, 0];
+      box.rotation.set(rx*Math.PI/180, ry*Math.PI/180, rz*Math.PI/180);
+      teileGruppe.add(box);
+    }
+  };
+
   window.__bake = (auftrag) => {
     const out = document.createElement('canvas');
     out.width = CELL_W * SS; out.height = CELL_H * SS;
@@ -274,6 +345,7 @@ window.__ready = (async () => {
     const [vx, vy] = auftrag.versatz;
     root.position.set(heim.x, heim.y + vy * einheit, heim.z + vx * einheit);
     root.updateMatrixWorld(true);
+    anbauen(auftrag.teile ?? []);
 
     const R = 10;
     cam.position.set(-Math.cos(BLICK) * R, kamY, mitteZ + Math.sin(BLICK) * R);
@@ -295,6 +367,14 @@ window.__ready = (async () => {
             const o = (((cy*SS + sy) * out.width) + (cx*SS + sx)) * 4;
             if (d[o+3] < 128) continue;
             deckung++;
+            const m = marke(d[o], d[o+1], d[o+2]);
+            if (m) {
+              // Anbauteile zaehlen doppelt: Ein Werkzeug ist duenn und wuerde
+              // im Mehrheitsentscheid gegen den Koerper dahinter verlieren --
+              // dabei ist genau es das, was den Beruf lesbar macht.
+              zähler.set('T' + m, (zähler.get('T' + m) ?? 0) + 2);
+              continue;
+            }
             const fam = familie(d[o], d[o+1], d[o+2]);
             if (!fam) continue;
             const k = fam + stufe(d[o], d[o+1], d[o+2], fam);
@@ -331,8 +411,12 @@ window.__ready = (async () => {
     for (let i = 0; i < CELL_W * CELL_H; i++) {
       let rgb = null;
       if (zelle[i]) {
-        const fam = zelle[i].slice(0, -1);
-        rgb = RAMPEN[fam][Number(zelle[i].slice(-1))];
+        if (zelle[i][0] === 'T') {
+          rgb = hex(TEILFARBEN[zelle[i].slice(1)].farbe);
+        } else {
+          const fam = zelle[i].slice(0, -1);
+          rgb = RAMPEN[fam][Number(zelle[i].slice(-1))];
+        }
         belegt++;
       } else if (umriss.has(i)) {
         rgb = UMRISS_RGB;
