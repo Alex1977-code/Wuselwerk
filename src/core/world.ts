@@ -458,6 +458,12 @@ export class World {
 
     w.y++;
     w.fallDist++;
+    // Genau der Bildpunkt, an dem der Schirm aufgeht — eine Zeile weiter oben
+    // schaltet `floating` um. Das Ereignis traegt keinen Zustand, es meldet nur
+    // den Umschlag an Ton und Bild.
+    if (w.hasFloater && w.fallDist === C.FLOAT_DEPLOY) {
+      this.emit({ type: 'float', x: w.x, y: w.y });
+    }
     if (w.y - C.WUSEL_H > this.terrain.height) {
       this.die(w, DeathCause.ABYSS);
     }
@@ -482,6 +488,10 @@ export class World {
     }
     if (this.terrain.solid(w.x + w.dir, headY - 1)) {
       w.y--;
+      // Nicht jeder Bildpunkt: Ein Saugnapfgeraeusch je Pixel waere ein
+      // Schnarren. Jeder dritte ergibt den Schlurfschritt, den man erwartet —
+      // und die Hoehe entscheidet, nicht ein Zaehler, damit kein Feld dazukommt.
+      if (w.y % 3 === 0) this.emit({ type: 'climb', x: w.x, y: w.y });
       return;
     }
     // Oberkante erreicht: hochziehen.

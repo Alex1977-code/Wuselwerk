@@ -1,4 +1,14 @@
-import { FOCUS_DEN, FOCUS_NUM, MS_PER_TICK, RATE_MAX, RATE_MIN, TICK_HZ, WUSEL_H } from './core/constants';
+import {
+  BOMB_FUSE_TICKS,
+  FOCUS_DEN,
+  FOCUS_NUM,
+  MS_PER_TICK,
+  RATE_MAX,
+  RATE_MIN,
+  TICK_HZ,
+  WUSEL_H,
+} from './core/constants';
+import { isActive } from './core/skills';
 import { State, type SkillId, type Wusel } from './core/types';
 import type { World } from './core/world';
 import { LEVELS } from './levels';
@@ -88,6 +98,8 @@ export class Game {
   private buttons: Button[] = [];
   private simAcc = 0;
   private anim = 0;
+  /** Zuletzt hoerbar gemachte Raste des Reglers; -1 heisst "noch keine". */
+  private rateStufe = -1;
   private lastMs = 0;
 
   constructor(private canvas: HTMLCanvasElement) {
@@ -196,6 +208,17 @@ export class Game {
           ex.y < v.oy + v.box.h / v.scale,
       );
 
+      // Die Schritte haengen an keinem Ereignis, sondern an der Anzahl: Das Ohr
+      // trennt keine sechzig Fusspaare, es hoert eine Menge. Warum das die
+      // bessere Loesung ist als ein Ereignis je Figur, steht bei `Sfx.schritte`.
+      let laufende = 0;
+      if (this.phase === 'running') {
+        for (const w of this.world.wusels) {
+          if (isActive(w) && w.state === State.WALKING) laufende++;
+        }
+      }
+      this.audio.schritte(laufende, now);
+
       const grenze = this.level.timeLimitSec * TICK_HZ;
       const rest = this.world.timeLeftTicks;
       this.audio.update({
@@ -236,8 +259,15 @@ export class Game {
   private finish(): void {
     this.audio.stopMusic();
     this.conditions = starConditions(this.level, this.world);
+    // Der Stand *vor* diesem Versuch, denn `recordResult` schreibt ihn gleich
+    // fort. Danach waere jeder Durchgang ein neuer Bestwert.
+    const vorher = this.progress[this.level.id];
     recordResult(this.level, this.world);
     this.progress = loadProgress();
+    const gewonnen = this.world.saved >= this.world.needed;
+    const alle = gewonnen && this.world.saved === this.level.total;
+    const bestwert = gewonnen && this.conditions.filter(Boolean).length > (vorher?.stars ?? 0);
+    this.audio.levelEnde(gewonnen, alle, bestwert);
     this.phase = 'result';
     this.clearAim();
   }
@@ -338,6 +368,7 @@ export class Game {
 
     if (inBox(L.pauseBtn, x, y)) {
       this.phase = 'paused';
+      this.audio.pauseKlang(true);
       this.audio.stopMusic();
       this.clearAim();
       return;
@@ -351,6 +382,10 @@ export class Game {
       // Der Ruf gehoert zum Knopf, nicht zu einem Weltereignis: Er faellt
       // einmal, wenn der Spieler alles aufgibt — nicht je Figur.
       this.audio.ohNo();
+      // Der Countdown laeuft ueber die Zuendschnur der ersten Figur. Danach
+      // uebernehmen die Explosionen selbst; ein Countdown ueber die ganze
+      // gestaffelte Kette waere ein Ticken ohne Ziel.
+      this.audio.selbstzerstoerung(BOMB_FUSE_TICKS / TICK_HZ);
       return;
     }
     if (!this.camera.follow && inBox(L.recenterBtn, x, y)) {
@@ -367,6 +402,12 @@ export class Game {
       if (inBox(b, x, y)) {
         if (this.world.skills[b.id] > 0) {
           this.selected = this.selected === b.id ? null : b.id;
+          // Beim Abwaehlen der Knopfklang, beim Waehlen der Werkzeugton: Der
+          // eine sagt "verstanden", der andere sagt zusaetzlich, *was*.
+          if (this.selected) this.audio.werkzeugGewaehlt(b.id);
+          else this.audio.knopf();
+        } else {
+          this.audio.werkzeugFehlt();
         }
         this.pointers.set(e.pointerId, {
           id: e.pointerId,
@@ -517,14 +558,27 @@ export class Game {
     const bottom = b.y + b.h - 20;
     const t = 1 - (y - top) / (bottom - top);
     this.world.setReleaseRate(RATE_MIN + t * (RATE_MAX - RATE_MIN));
+    // Ein Klang je Raste, nicht je Bildpunkt — sonst schnarrt der Regler beim
+    // Ziehen. Der erste Aufruf setzt nur den Stand: Das blosse Antippen des
+    // Reglers ist noch keine Aenderung.
+    const stufe = this.world.releaseRate;
+    if (stufe !== this.rateStufe) {
+      if (this.rateStufe >= 0) this.audio.tempo(stufe > this.rateStufe);
+      this.rateStufe = stufe;
+    }
   }
 
   private onOverlayButton(id: string): void {
+    // Jeder Knopf einer Einblendung bestaetigt sich selbst. Ausnahme ist
+    // `resume`: Dort sagt der Filter-Sweep schon, was passiert, und beides
+    // uebereinander waere doppelt gemoppelt.
+    if (id !== 'resume') this.audio.knopf();
     switch (id) {
       case 'start':
       case 'resume':
         this.phase = 'running';
         this.lastMs = performance.now();
+        if (id === 'resume') this.audio.pauseKlang(false);
         this.audio.startMusic();
         break;
       case 'restart':

@@ -53,12 +53,17 @@ export class AudioEngine {
     const g = this.busGain.music;
     if (!g || !this.ctx) return;
     const jetzt = this.ctx.currentTime;
-    if (jetzt < this.duckBis) return;
-    this.duckBis = jetzt + sekunden;
+    // Das laengste angemeldete Ducken gewinnt, unabhaengig von der Reihenfolge
+    // der Aufrufe. Wer zuerst kommt, hat sonst recht — und dann hebt sich die
+    // Musik mitten in einer noch laufenden Fanfare wieder an, nur weil deren
+    // Ducken frueher angemeldet wurde als das des Stingers darueber.
+    const bis = jetzt + sekunden;
+    if (bis <= this.duckBis) return;
+    this.duckBis = bis;
     const voll = 0.5;
     g.gain.cancelScheduledValues(jetzt);
     g.gain.setTargetAtTime(voll * 0.84, jetzt, 0.02);
-    g.gain.setTargetAtTime(voll, jetzt + sekunden, 0.12);
+    g.gain.setTargetAtTime(voll, bis, 0.12);
   }
 
   /**

@@ -165,6 +165,15 @@ async function main() {
     await sleep(150);
   }
   check('§7 Musik kommt hörbar am Ausgang an', pegel > 0.03, `Spitze ${pegel.toFixed(3)}`);
+  // Das Umgebungsbett plant seine Boeen und Rufe einzeln in die Zukunft. Es
+  // laeuft also genau dann, wenn der Zaehler waechst — ein "playing: true"
+  // allein wuerde auch eine haengende Planungsschleife gruen melden.
+  const bett = await page.evaluate(() => window.__wuselwerk.debugAudio());
+  check(
+    '§7 Umgebungsbett plant Klänge',
+    bett?.ambiente?.playing === true && bett.ambiente.events > 0,
+    `${bett?.ambiente?.events} Einsätze im Bett "${bett?.ambiente?.bett}"`,
+  );
   const mutedNow = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   const mutedBack = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
   check('§7 Stummschaltung schaltet um', mutedNow === true && mutedBack === false);
@@ -302,11 +311,21 @@ async function main() {
   }
 
   // --- Bis zum Ende laufen lassen ------------------------------------------
+  //
+  // Dabei wird zugleich die Fanfare gemessen: Sie faellt genau in dem Bild, in
+  // dem die Ergebnisphase beginnt, und wer danach erst hinschaut, hat sie
+  // verpasst. Deshalb wird waehrend des Wartens durchgehend der Spitzenpegel
+  // mitgeschrieben und nach dem Umschlag noch eine Sekunde weiter.
   let end = null;
-  for (let i = 0; i < 90; i++) {
-    await sleep(500);
+  let stingerPegel = 0;
+  for (let i = 0; i < 180; i++) {
+    await sleep(250);
     end = await page.evaluate(() => window.__wuselwerk.debugStats());
     if (end.phase === 'result') break;
+  }
+  for (let i = 0; i < 8; i++) {
+    stingerPegel = Math.max(stingerPegel, await page.evaluate(() => window.__peak()));
+    await sleep(120);
   }
   await page.screenshot({ path: `${OUT}/07-ergebnis.png` });
   const wonIt = end?.phase === 'result' && end.saved >= 8;
@@ -315,6 +334,15 @@ async function main() {
     wonIt,
     `gerettet ${end?.saved}, verloren ${end?.dead}, Berufe ${end?.skillsUsed}` +
       (wonIt ? '' : shaftPlaced ? ' — Schacht sass richtig, echter Fehler' : ' — Zuweisung verfehlt, kein Spielfehler'),
+  );
+  // Der Stinger ist der lauteste Moment des Spiels und darf nicht ausfallen —
+  // er kommt aus einem Bild, in dem gerade zehn Rettungen gleichzeitig laufen,
+  // also genau dort, wo die Stimmenbremse greift. Sie tut es nicht, weil alle
+  // Stimmen des Stingers `ignoreLimit` tragen; diese Zeile prueft das.
+  check(
+    '§7 Schluss-Stinger kommt hörbar am Ausgang an',
+    stingerPegel > 0.08,
+    `Spitze ${stingerPegel.toFixed(3)}`,
   );
 
   // --- §3.3 Auswahl-Fächer: eigener Durchlauf mit voller Freisetzungsrate ---
