@@ -6,3 +6,6 @@ shots/
 
 # Aus dem Ankermodell gerechnete Ansichten — entstehen mit `npm run modell:messen`
 art-src/ansichten/
+
+# Kontrollbilder einzelner Zustände — entstehen mit `bake-atlas.mjs --clip <name>`
+art-src/proben/
