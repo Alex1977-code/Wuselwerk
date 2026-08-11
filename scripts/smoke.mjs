@@ -94,9 +94,23 @@ async function main() {
           ctx.__tap = ctx.createAnalyser();
           ctx.__tap.fftSize = 2048;
           window.__tap = ctx.__tap;
+          // Zweiter Abgriff, diesmal je Kanal getrennt. Der Analysator oben
+          // legt Stereo zu Mono zusammen — genau richtig, um zu messen, was
+          // ein Handylautsprecher hört, aber damit blind für die Frage, ob es
+          // überhaupt Stereo *gibt*. Dafür braucht es die beiden Kanäle einzeln.
+          ctx.__split = ctx.createChannelSplitter(2);
+          ctx.__tapL = ctx.createAnalyser();
+          ctx.__tapR = ctx.createAnalyser();
+          ctx.__tapL.fftSize = 2048;
+          ctx.__tapR.fftSize = 2048;
+          ctx.__split.connect(ctx.__tapL, 0);
+          ctx.__split.connect(ctx.__tapR, 1);
+          window.__tapL = ctx.__tapL;
+          window.__tapR = ctx.__tapR;
         }
         try {
           orig.call(this, ctx.__tap);
+          orig.call(this, ctx.__split);
         } catch {
           /* schon verbunden */
         }
@@ -149,6 +163,38 @@ async function main() {
       }
       return alles > 0 ? band / alles : 0;
     };
+    // Mitte und Seite.
+    //
+    // Jedes Stereosignal lässt sich in zwei Anteile zerlegen: die Mitte
+    // (L+R)/2 — das, was beim Zusammenlegen zu Mono übrig bleibt — und die
+    // Seite (L−R)/2, also genau das, was dabei verschwindet. Aus dem
+    // Verhältnis der beiden liest man beides ab, was hier zu prüfen ist:
+    //
+    // - Seite bei null heisst: Es ist Mono, die Breite ist nicht angekommen.
+    // - Seite grösser als die Mitte heisst: Da wurde mit Phasen oder
+    //   Verzögerungen gearbeitet, und auf einem Handylautsprecher fällt der
+    //   halbe Mix weg. Genau der Fehler, den man am Schreibtisch nicht hört.
+    //
+    // Reine Pegelverteilung — der einzige Weg, den die Klangwerkstatt
+    // überhaupt anbietet — kann den zweiten Fall bauartbedingt nicht erzeugen.
+    // Diese Prüfung hält das fest, damit es so bleibt.
+    window.__stereo = () => {
+      if (!window.__tapL || !window.__tapR) return { mitte: 0, seite: 0 };
+      const n = window.__tapL.fftSize;
+      const l = new Float32Array(n);
+      const r = new Float32Array(n);
+      window.__tapL.getFloatTimeDomainData(l);
+      window.__tapR.getFloatTimeDomainData(r);
+      let m = 0;
+      let s = 0;
+      for (let i = 0; i < n; i++) {
+        const mid = (l[i] + r[i]) / 2;
+        const side = (l[i] - r[i]) / 2;
+        m += mid * mid;
+        s += side * side;
+      }
+      return { mitte: Math.sqrt(m / n), seite: Math.sqrt(s / n) };
+    };
   });
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -159,7 +205,14 @@ async function main() {
   await sleep(400);
   await page.screenshot({ path: `${OUT}/01-menu.png` });
 
-  await page.mouse.click(195, 147); // Level 1
+  // Die Karte fragen, wo Level 1 liegt, statt eine Bildschirmstelle zu raten.
+  // Genau daran ist diese Pruefung einmal gescheitert: Die Levelliste wich der
+  // Uebersichtskarte, die feste Koordinate zeigte ins Leere, und acht Pruefungen
+  // meldeten Stille — ohne dass eine davon den wahren Grund nennen konnte.
+  const kp = await page.evaluate(() => window.__wuselwerk.debugKartePunkt('w1-01'));
+  check('Karte zeigt Level 1 als offen', !!kp && kp.offen === true, JSON.stringify(kp));
+  await page.screenshot({ path: `${OUT}/00-karte.png` });
+  if (kp) await page.mouse.click(kp.x, kp.y);
   await sleep(300);
   await page.screenshot({ path: `${OUT}/02-intro.png` });
 
@@ -201,15 +254,26 @@ async function main() {
   let bassSumme = 0;
   let melodieSumme = 0;
   let proben = 0;
+  let seiteSumme = 0;
+  let mitteSumme = 0;
+  let stereoProben = 0;
   for (let i = 0; i < 20; i++) {
-    const [p, r, b, m] = await page.evaluate(() => [
+    const [p, r, b, m, st] = await page.evaluate(() => [
       window.__peak(),
       window.__rms(),
       window.__bandAnteil(120, 320),
       window.__bandAnteil(800, 3000),
+      window.__stereo(),
     ]);
     pegel = Math.max(pegel, p);
     effektiv = Math.max(effektiv, r);
+    // Nur Proben mitzählen, in denen überhaupt etwas klingt — in einer Lücke
+    // ist das Verhältnis von Seite zu Mitte reines Rauschen.
+    if (st.mitte > 0.01) {
+      mitteSumme += st.mitte;
+      seiteSumme += st.seite;
+      stereoProben++;
+    }
     // Die Bandanteile werden gemittelt, nicht maximiert: Ein einzelner
     // Kickschlag trifft sonst zufaellig das kurze Messfenster und meldet Bass,
     // den es zwischen den Schlaegen gar nicht gibt.
@@ -258,6 +322,19 @@ async function main() {
     '§7 Die Melodie behält ihr Fenster',
     melodieAnteil > 0.03,
     `${(melodieAnteil * 100).toFixed(1)} % der Energie zwischen 800 Hz und 3 kHz`,
+  );
+  // Breite — und der Preis dafür.
+  //
+  // Zwei Fehler auf einmal, und beide fallen sonst niemandem auf: Ein Mix ohne
+  // jede Seite ist Mono und verschenkt Kopfhörer; einer, dessen Seite die
+  // Mitte überholt, klingt am Schreibtisch grossartig und fällt auf einem
+  // Handylautsprecher zur Hälfte weg. Die Untergrenze prüft das eine, die
+  // Obergrenze das andere.
+  const seitenAnteil = stereoProben > 0 ? seiteSumme / mitteSumme : 0;
+  check(
+    '§7 Stereo — vorhanden, aber monokompatibel',
+    seitenAnteil > 0.02 && seitenAnteil < 0.7,
+    `Seite ist ${(seitenAnteil * 100).toFixed(1)} % der Mitte (${stereoProben} Proben)`,
   );
   // Das Umgebungsbett plant seine Boeen und Rufe einzeln in die Zukunft. Es
   // laeuft also genau dann, wenn der Zaehler waechst — ein "playing: true"

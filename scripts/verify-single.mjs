@@ -77,7 +77,14 @@ async function check(label, viewport, shot) {
     await page.mouse.click(rect.x + b.x + b.w / 2, rect.y + b.y + b.h / 2);
     return true;
   };
-  const opened = await clickButton('w1-01');
+  // Level 1 liegt jetzt auf der Uebersichtskarte, nicht mehr in einer Liste
+  // aus Knoepfen. Der Punkt wird deshalb bei der Karte erfragt — dieselbe
+  // Regel wie oben: nicht eintippen, sondern das Spiel fragen.
+  const kp = await page.evaluate(
+    () => window.__wuselwerk?.debugKartePunkt('w1-01') ?? null,
+  );
+  const opened = !!kp && kp.offen;
+  if (kp) await page.mouse.click(rect.x + kp.x, rect.y + kp.y);
   await sleep(250);
   const started = await clickButton('start');
   console.log(

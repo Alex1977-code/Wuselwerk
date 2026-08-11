@@ -26,7 +26,7 @@ import { Camera, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './rend
 import { COL, drawControls, drawRecenter, drawTopBar } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
-import { drawIntro, drawMenu, drawPause, drawResult, type Button } from './render/overlays';
+import { drawIntro, drawPause, drawResult, type Button } from './render/overlays';
 import { drawMinimap, minimapBox, minimapToLogical } from './render/minimap';
 import { drawOffscreenMarkers } from './render/offscreen';
 import { DEFAULT_MANIFEST, SpriteAtlas, loadImage } from './render/atlas';
@@ -35,7 +35,20 @@ import { findAtlasSource } from './art';
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
 import { loadProgress, recordResult, starConditions, type Progress } from './storage';
+import type { KartenPunkt } from './levels/welten';
+import { wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
+import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
 import { GameAudio } from './audio';
+
+/**
+ * Wie weit ein Finger auf der Karte wandern darf, damit es noch ein Antippen
+ * ist. Grosszuegiger als im Spielfeld, weil hier nichts Schlimmes passiert,
+ * wenn man daneben trifft — ausser dass ein Level startet, das man nicht
+ * wollte. Genau deshalb ist die Grenze nicht noch grosszuegiger.
+ */
+const KARTE_TIPP = 14;
+/** Stationen je Sekunde bei der Wanderung. */
+const KARTE_TEMPO = 1.6;
 
 type Screen = 'menu' | 'play';
 type Phase = 'intro' | 'running' | 'paused' | 'result';
@@ -96,6 +109,25 @@ export class Game {
   private pinchZoom = 1;
 
   private buttons: Button[] = [];
+  // --- Übersichtskarte ------------------------------------------------------
+  /** Linke Kante des Kartenausschnitts, in Bildschirmbreiten. */
+  private karteX = 0;
+  /** Wohin die Karte gleiten soll. Sie folgt weich, statt zu springen. */
+  private karteZiel = 0;
+  private karteTreffer: KarteTreffer[] = [];
+  /**
+   * Die laufende Wanderung der Figur.
+   *
+   * Sie ist der Grund, warum der Kartenbildschirm einen eigenen Zustand
+   * braucht: Nach einem gewonnenen Level soll man **sehen**, dass es
+   * weitergeht — die Figur läuft zum nächsten Punkt, Laternen gehen an, ein Tor
+   * öffnet sich. Ein Kartenbild, das nach dem Sieg einfach anders aussieht,
+   * verschenkt genau diesen Moment.
+   */
+  private wanderWeg: KartenPunkt[] = [];
+  private wanderT = 0;
+  /** Stand vor dem letzten Levelende — Ausgangspunkt der Wanderung. */
+  private standVorher: Progress = {};
   private simAcc = 0;
   private anim = 0;
   /** Zuletzt hoerbar gemachte Raste des Reglers; -1 heisst "noch keine". */
@@ -154,7 +186,15 @@ export class Game {
   }
 
   loadLevel(level: LevelDef): void {
-    this.level = level;
+    // Die Belohnungen wirken **beim Laden**, nicht in der Simulation. Das ist
+    // die Trennung, an der der Determinismus haengt: Die Welt bekommt fertige
+    // Zahlen und weiss nichts von Fortschritt.
+    this.level = {
+      ...level,
+      skills: werkzeugeFuer(level, this.progress),
+      timeLimitSec: zeitlimitFuer(level, this.progress),
+    };
+    level = this.level;
     this.world = createWorld(level);
     this.terrainView = new TerrainView(this.world.terrain, level.theme);
     this.scene = new Scene(level, this.terrainView);
@@ -169,11 +209,100 @@ export class Game {
     this.clearAim();
   }
 
-  private toMenu(): void {
+  /**
+   * Zur Übersichtskarte.
+   *
+   * Sie ist an die Stelle der alten Levelliste getreten. Der Ausschnitt springt
+   * dabei nicht: Er wird auf die Figur gesetzt, wenn man von aussen kommt, und
+   * bleibt stehen, wenn man schon dort war und nur zurückblättert.
+   */
+  private toMenu(zentrieren = true): void {
     this.audio.stopMusic();
     this.progress = loadProgress();
     this.screen = 'menu';
+    if (zentrieren) {
+      this.karteZiel = this.karteMitte();
+      this.karteX = this.karteZiel;
+    }
     this.clearAim();
+  }
+
+  /** Der Ausschnitt, in dem die Figur mittig steht — beschnitten aufs Band. */
+  private karteMitte(): number {
+    const k = weltkarte(this.progress);
+    const ziel = k.figur ? k.figur.pos.x - 0.5 : 0;
+    return this.karteGrenzen(ziel);
+  }
+
+  /** Hält den Ausschnitt auf dem Band. Rechts ist bei Bandbreite minus eins Schluss. */
+  private karteGrenzen(x: number): number {
+    const k = weltkarte(this.progress);
+    return Math.max(0, Math.min(Math.max(0, k.bandBreite - 1), x));
+  }
+
+  /**
+   * Ein Bild der Karte weiterdrehen.
+   *
+   * Zwei Dinge bewegen sich: die Figur auf ihrem Weg und der Ausschnitt, der
+   * ihr folgt. Der Ausschnitt folgt **weich und nur, wenn er muss** — er zieht
+   * erst nach, wenn die Figur aus der Mitte läuft. Eine Kamera, die dauernd
+   * mitzieht, nimmt der Bewegung genau das Gefühl von Vorankommen, das sie
+   * erzeugen soll.
+   */
+  private stepKarte(dt: number): void {
+    if (this.wanderWeg.length >= 2) {
+      this.wanderT += dt * KARTE_TEMPO;
+      if (this.wanderT >= this.wanderWeg.length - 1) {
+        this.wanderT = this.wanderWeg.length - 1;
+        this.wanderWeg = [];
+      }
+      const f = this.figurAufDemWeg();
+      if (f) {
+        // Nachziehen erst ausserhalb des mittleren Drittels.
+        const rel = f.x - this.karteX;
+        if (rel > 0.66) this.karteZiel = this.karteGrenzen(f.x - 0.66);
+        else if (rel < 0.34) this.karteZiel = this.karteGrenzen(f.x - 0.34);
+      }
+    }
+    // Weich folgen. Der Faktor ist zeitbezogen, damit die Karte bei jedem
+    // Bildtakt gleich schnell ankommt.
+    const k = 1 - Math.pow(0.001, dt);
+    this.karteX += (this.karteZiel - this.karteX) * k;
+  }
+
+  /** Wo die Figur gerade steht — auf dem Weg, sonst auf ihrem Punkt. */
+  private figurAufDemWeg(): KartenPunkt | null {
+    if (this.wanderWeg.length >= 2) {
+      const i = Math.min(this.wanderWeg.length - 2, Math.floor(this.wanderT));
+      const t = this.wanderT - i;
+      const a = this.wanderWeg[i];
+      const b = this.wanderWeg[i + 1];
+      // Ein Bogen statt einer Geraden: Die Figur hüpft von Punkt zu Punkt,
+      // statt zu gleiten. Das ist derselbe Grund wie bei allem anderen hier —
+      // eine gerade Bewegung liest sich als Diagramm.
+      const hoch = Math.sin(t * Math.PI) * 0.055;
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t - hoch };
+    }
+    const k = weltkarte(this.progress);
+    return k.figur ? k.figur.pos : null;
+  }
+
+  /**
+   * Die Wanderung starten, wenn sich durch das letzte Level etwas bewegt hat.
+   *
+   * Zwei Fälle sind ausdrücklich kein Anlass: ein verlorenes Level und ein
+   * wiederholtes, das nichts Neues freischaltet. In beiden steht die Figur
+   * schon dort, wo sie hingehört, und ein Weg von einem Punkt zu sich selbst
+   * wäre eine Bewegung ohne Aussage.
+   */
+  private starteWanderung(): void {
+    const w = wanderung(this.standVorher, this.progress);
+    if (w.weg.length < 2) {
+      this.wanderWeg = [];
+      return;
+    }
+    this.wanderWeg = w.weg;
+    this.wanderT = 0;
   }
 
   // --- Schleife ------------------------------------------------------------
@@ -190,6 +319,8 @@ export class Game {
       this.camera.update(dt, this.world);
       this.terrainView.sync();
       this.refreshTarget();
+    } else {
+      this.stepKarte(dt);
     }
     // Die Musik reagiert auf die Lage — knappe Zeit, alles gerettet, Pause.
     // Sie steht deshalb hier und nicht in der Tonschicht: Nur das Spiel weiss,
@@ -262,6 +393,9 @@ export class Game {
     // Der Stand *vor* diesem Versuch, denn `recordResult` schreibt ihn gleich
     // fort. Danach waere jeder Durchgang ein neuer Bestwert.
     const vorher = this.progress[this.level.id];
+    // Derselbe Stand als Ganzes — daraus errechnet die Karte, welchen Weg die
+    // Figur zurueckzulegen hat und welche Tore dabei aufgehen.
+    this.standVorher = JSON.parse(JSON.stringify(this.progress)) as Progress;
     recordResult(this.level, this.world);
     this.progress = loadProgress();
     const gewonnen = this.world.saved >= this.world.needed;
@@ -350,11 +484,18 @@ export class Game {
     const { x, y } = this.pos(e);
 
     if (this.screen === 'menu') {
-      const hit = this.buttons.find((b) => inBox(b, x, y));
-      if (hit) {
-        const lv = LEVELS.find((l) => l.id === hit.id);
-        if (lv) this.loadLevel(lv);
-      }
+      // Auf der Karte ist jede Berührung erst einmal ein Schub. Ob daraus ein
+      // Antippen wird, entscheidet sich beim Loslassen — genauso wie im Spiel
+      // beim Schwenken. Wer eine Liste antippen will, darf dabei nicht schon
+      // versehentlich gescrollt haben.
+      this.pointers.set(e.pointerId, {
+        id: e.pointerId,
+        x,
+        y,
+        startX: x,
+        startY: y,
+        role: 'pan',
+      });
       return;
     }
 
@@ -466,6 +607,14 @@ export class Game {
     ps.x = x;
     ps.y = y;
 
+    if (this.screen === 'menu') {
+      // Eins zu eins: Der Punkt unter dem Finger bleibt unter dem Finger. Jede
+      // andere Übersetzung fühlt sich nach Gummiband an.
+      this.karteZiel = this.karteGrenzen(this.karteZiel - (x - prevX) / this.layout.cssW);
+      this.karteX = this.karteZiel;
+      return;
+    }
+
     if (ps.role === 'rate') {
       this.applyRate(y);
       return;
@@ -545,6 +694,26 @@ export class Game {
     const ps = this.pointers.get(e.pointerId);
     this.pointers.delete(e.pointerId);
     if (!ps) return;
+
+    if (this.screen === 'menu') {
+      // Erst hier entscheidet sich, ob es ein Antippen war. Wer mehr als eine
+      // Fingerbreite gezogen hat, wollte scrollen — und ein Level, das man
+      // beim Scrollen aus Versehen startet, ist der schlimmste Fehlgriff, den
+      // ein Kartenbildschirm machen kann.
+      const strecke = Math.hypot(ps.x - ps.startX, ps.y - ps.startY);
+      if (strecke <= KARTE_TIPP) {
+        const hit = this.karteTreffer.find((t) => t.offen && inBox(t, ps.x, ps.y));
+        if (hit) {
+          const lv = LEVELS.find((l) => l.id === hit.id);
+          if (lv) {
+            this.audio.knopf();
+            this.loadLevel(lv);
+          }
+        }
+      }
+      return;
+    }
+
     if (ps.role === 'aim' && this.aim && this.aim.id === ps.id) this.commitAim();
     if (ps.role === 'pinch') {
       const rest = [...this.pointers.values()].filter((p) => p.role === 'pinch');
@@ -598,7 +767,14 @@ export class Game {
         break;
       }
       case 'menu':
-        this.toMenu();
+        // Auf die Karte zurueck heisst: den Weg sehen, den man gerade gemacht
+        // hat. Der Ausschnitt wird deshalb auf den *alten* Stand gesetzt und
+        // die Figur laeuft von dort los — nicht umgekehrt.
+        this.toMenu(false);
+        this.karteX = this.karteZiel = this.karteGrenzen(
+          (wanderung(this.standVorher, this.progress).von?.pos.x ?? this.karteMitte() + 0.5) - 0.5,
+        );
+        this.starteWanderung();
         break;
     }
   }
@@ -612,7 +788,25 @@ export class Game {
     ctx.fillRect(0, 0, this.layout.cssW, this.layout.cssH);
 
     if (this.screen === 'menu') {
-      this.buttons = drawMenu(ctx, this.layout, LEVELS, this.progress);
+      const laeuft = this.wanderWeg.length >= 2;
+      const stand = this.figurAufDemWeg();
+      // Blickrichtung: dorthin, wo es weitergeht. Beim Stehen nach rechts —
+      // das ist die Richtung, in die das Band verläuft.
+      let richtung: 1 | -1 = 1;
+      if (laeuft) {
+        const i = Math.min(this.wanderWeg.length - 2, Math.floor(this.wanderT));
+        richtung = this.wanderWeg[i + 1].x >= this.wanderWeg[i].x ? 1 : -1;
+      }
+      this.karteTreffer = drawWeltkarte(ctx, this.layout, {
+        karte: weltkarte(this.progress),
+        kamera: this.karteX,
+        figur: stand,
+        laeuft,
+        richtung,
+        anim: this.anim,
+        atlas: this.atlas,
+      });
+      this.buttons = [];
       return;
     }
 
@@ -783,6 +977,19 @@ export class Game {
 
   debugButtons(): Button[] {
     return this.buttons.map((b) => ({ ...b }));
+  }
+
+  /**
+   * Der Kartenpunkt eines Levels, so wie er gerade auf dem Bildschirm liegt.
+   *
+   * Für die Sichtprobe. Sie hat vorher feste Bildschirmkoordinaten angetippt —
+   * das ging genau so lange gut, bis die Levelliste einer Karte gewichen ist,
+   * und dann startete kein Level mehr, ohne dass eine Prüfung sagen konnte,
+   * warum. Wer den Punkt wissen will, fragt das Spiel danach.
+   */
+  debugKartePunkt(id: string): { x: number; y: number; offen: boolean } | null {
+    const t = this.karteTreffer.find((k) => k.id === id);
+    return t ? { x: t.x + t.w / 2, y: t.y + t.h / 2, offen: t.offen } : null;
   }
 
   debugCamera(): { follow: boolean; cx: number; cy: number } {

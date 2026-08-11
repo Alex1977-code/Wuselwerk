@@ -163,6 +163,52 @@ export class SpriteAtlas {
   }
 
   /**
+   * Ein Bild aus dem Blatt an eine Bildschirmstelle zeichnen.
+   *
+   * Der Weg für alles ausserhalb des Spielfelds — die Übersichtskarte zeigt
+   * dieselbe Figur, kennt aber weder `View` noch `Wusel`. Ohne diesen Zugang
+   * müsste sie sich eine Simulationsfigur erfinden, nur um an ein Bild zu
+   * kommen, und das wäre eine Lüge im Typsystem.
+   *
+   * @param x Fusspunkt auf dem Bildschirm, nicht die obere linke Ecke.
+   * @param s Bildpunkte je logischem Pixel der Zelle.
+   */
+  drawClip(
+    ctx: CanvasRenderingContext2D,
+    name: string,
+    frame: number,
+    x: number,
+    y: number,
+    s: number,
+    spiegeln = false,
+  ): boolean {
+    const clip = this.manifest.clips[name];
+    if (!clip) return false;
+    const cw = this.manifest.cell.w;
+    const ch = this.manifest.cell.h;
+    const ppl = this.manifest.ppl ?? 1;
+    const f = ((frame % clip.holds.length) + clip.holds.length) % clip.holds.length;
+
+    ctx.save();
+    ctx.imageSmoothingEnabled = ppl > 1;
+    ctx.translate(Math.round(x), Math.round(y));
+    if (spiegeln) ctx.scale(-1, 1);
+    ctx.drawImage(
+      this.image,
+      f * cw * ppl,
+      clip.row * ch * ppl,
+      cw * ppl,
+      ch * ppl,
+      -this.manifest.anchor.x * s,
+      -this.manifest.anchor.y * s,
+      cw * s,
+      ch * s,
+    );
+    ctx.restore();
+    return true;
+  }
+
+  /**
    * Zeichnet eine Figur. Gespiegelt wird um den Fusspunkt: Weil der Anker auf
    * halber Zellbreite sitzt, genügt dafür `scale(-1, 1)` ohne Versatzausgleich.
    */
