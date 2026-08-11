@@ -9,8 +9,28 @@ export interface Palette {
   /** Fusston je Hügelschicht. Der Verlauf dorthin gibt den Schichten Luft. */
   hillsDeep: string[];
   earth: number;
+  /**
+   * Der Ton tief unten. Erde ist nicht eine Farbe mit Helligkeitsverlauf,
+   * sondern **zwei Farben**: Oben, wo Luft und Wurzeln sind, ist sie warm und
+   * hell; unten, wo sie verdichtet und feucht ist, kühler und satter. Nur die
+   * Helligkeit zu senken macht daraus eine angestrichene Wand.
+   */
+  earthDeep: number;
+  /** Kiesel und Steine in der Erde. Grauer als sie — sonst sieht man sie nicht. */
+  pebble: number;
   /** Unberührte Oberfläche — Grasnarbe. */
   crust: number;
+  /**
+   * Der dunkle Saum direkt unter der Narbe.
+   *
+   * Er ist der Grund, warum eine Wiese von der Seite nach Wiese aussieht: Unter
+   * dem Grün liegt kein Braun, sondern erst eine dunkle Schicht aus Wurzelwerk.
+   * Ohne sie stossen zwei Flächen stumpf aneinander, und das Auge liest die
+   * Grasnarbe als aufgemalten Streifen.
+   */
+  crustDark: number;
+  /** Dicke der Narbe in Bildpunkten. Eine Höhle hat keinen Rasen. */
+  crustThickness: number;
   rock: number;
   steel: number;
   brick: number;
@@ -39,8 +59,12 @@ const GRASS: Palette = {
   hills: ['#a5cbdd', '#7aa8bd', '#4a7f69'],
   hillsDeep: ['#8fbbd0', '#5e8ea6', '#33604e'],
   earth: 0x7a5230,
+  earthDeep: 0x452c19,
+  pebble: 0x93867a,
   /** Unberührte Oberfläche — Grasnarbe. */
   crust: 0x63b23f,
+  crustDark: 0x35601f,
+  crustThickness: 3,
   rock: 0x6b7480,
   steel: 0x9aa5b5,
   brick: 0xc98246,
@@ -57,7 +81,14 @@ const CRYSTAL: Palette = {
   hills: ['#7d92c9', '#5d72ab', '#44548a'],
   hillsDeep: ['#6a7fb8', '#4a5d93', '#33406e'],
   earth: 0x4a5788,
+  earthDeep: 0x232c52,
+  pebble: 0x7c86ab,
+  // In der Höhle ist die „Narbe" kein Rasen, sondern die angeleuchtete Kante
+  // des Gesteins. Deshalb nur ein Bildpunkt dick: Ein drei Punkte breiter
+  // heller Streifen sähe aus wie Moos, und Moos wächst nicht unter Tage.
   crust: 0x8aa5e8,
+  crustDark: 0x2f3a66,
+  crustThickness: 1,
   rock: 0x3d4a6f,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
