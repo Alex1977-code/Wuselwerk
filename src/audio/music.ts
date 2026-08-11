@@ -1,102 +1,104 @@
 import type { ThemeId } from '../levels/types';
 import type { AudioEngine } from './engine';
+import { bass, chip, glocke, kalimba, marimba, panfloete, shaker, tick, ukulele, woodblock } from './instrumente';
 
 /**
  * Begleitmusik, zur Laufzeit erzeugt.
  *
  * ## Woher die Melodien kommen — und woher nicht
  *
- * Das Vorbild von 1991 hat **gemeinfreie Volksmelodien arrangiert**. Genau
- * dieser Weg steht offen: Eine Melodie aus dem 18. oder 19. Jahrhundert ist
- * frei, jeder darf sie setzen. Was *nicht* offensteht, ist das fremde
- * Arrangement — also die konkrete Stimmführung, Instrumentierung und Begleitung
- * jener Fassung. Beides wird hier sauber getrennt: Die Melodie ist zitiert, der
- * Satz darum ist eigener.
+ * Das Vorbild von 1991 hat gemeinfreie Volkslieder und Klassik **neu
+ * arrangiert**. Das ist das Rezept, nicht das Ergebnis: Eine Melodie aus dem
+ * 18. Jahrhundert ist frei, das fremde Arrangement nicht, und die eigenen
+ * Melodien jenes Spiels erst recht nicht. Hier stehen deshalb **eigene
+ * Melodien im gleichen Geist** — kurze, singbare Achttakter mit Volksliedbau.
  *
- * Für die Kristallhöhle gibt es kein passendes Volkslied, deshalb steht dort
- * eine eigene Melodie in Moll.
+ * ## Was den Wiedererkennungswert traegt
  *
- * ## Warum überhaupt eine Melodie und nicht eine Schleife aus Akkorden
+ * Nicht die Melodie, sondern Instrumentierung, Groove und Klangtextur. Deshalb
+ * liegt das Gewicht hier auf den Klangfarben (`instrumente.ts`), auf dem
+ * huepfenden Zweiertakt und auf dem gemeinsamen Federhall, durch den Musik und
+ * Geraeusche gehen.
  *
- * Vorher lief hier eine Dreiklangsbrechung über vier Grundtöne. Das ist eine
- * Begleitung ohne das, was sie begleiten soll — man hört, dass etwas läuft,
- * aber man erkennt nichts wieder und summt es nicht mit. Genau deshalb wirkte
- * es „als ob keine Musik da wäre", obwohl Töne kamen.
+ * ## Die Ebenen
  *
- * ## Aufbau
+ * Ein Stueck besteht aus fuenf Spuren, die einzeln zu- und abgeschaltet werden:
+ * Perkussion, Bass, Harmonie, Melodie, Glitzer. Das ist der Unterschied zu
+ * 1991 — dort lief ein Band, hier reagiert die Musik auf die Lage:
  *
- * Eine Melodiestimme, ein Bass auf den Akkordgrundtönen und ein Liegeton je
- * Takt. Geplant wird mit Vorlauf: Jedes Bild schaut ein Stück in die Zukunft
- * und legt fällige Töne fest. Das hält den Takt stabil, auch wenn die Bildrate
- * schwankt.
+ * | Lage | was passiert |
+ * |---|---|
+ * | Normal | alle Spuren |
+ * | Restzeit unter 30 % | Schuettelrohr doppelt, Uhrentick dazu, Melodie raus, alles einen Halbton hoeher |
+ * | Letzte zehn Sekunden | nur noch Bass und Tick |
+ * | Pause | Tiefpass auf 400 Hz statt Stille — die Musik rueckt weg, statt abzureissen |
+ * | Alle gerettet, Level laeuft noch | Glitzer verdoppelt, Glockenspiel-Girlande darueber |
  */
 
 /** Ein Ton: Halbtöne über dem Grundton (null = Pause) und Länge in Achteln. */
 type Note = readonly [number | null, number];
 
 interface Stueck {
-  /** Melodie, der Reihe nach. */
   melodie: readonly Note[];
-  /** Akkordgrundton je Takt, in Halbtönen. Wiederholt sich mit der Melodie. */
+  /** Akkordgrundton je Takt, in Halbtönen. */
   akkorde: readonly number[];
+  /** Zusätzliche Töne des Akkords für die Harmoniespur. */
+  farbe: readonly number[];
   bpm: number;
-  /** Frequenz des Grundtons der Melodie. */
+  /** Frequenz des Grundtons. */
   grund: number;
-  wave: OscillatorType;
-  /** Woher die Melodie stammt — steht hier, damit die Frage nie offen ist. */
-  quelle: string;
+  /** Wer spielt die Melodie, wer die Offbeats. */
+  melodieStimme: 'marimba' | 'kalimba' | 'panfloete';
+  harmonieStimme: 'ukulele' | 'kalimba';
 }
 
-/** Achtel je Takt. Alles hier steht im Viervierteltakt. */
 const TAKT = 8;
 
 const STUECKE: Record<ThemeId, Stueck> = {
-  // „Alle meine Entchen" — deutsches Volkslied, gemeinfrei. Die Melodie ist
-  // zitiert, der Satz darum (Bass, Liegeton, Klangfarben) ist eigener.
+  // Welt 1 — Wiese. Sonnig, Dur mit lydischer Farbe (die 6 im fünften Takt ist
+  // die übermässige Quarte), Ukulele auf den Nachschlägen.
   grass: {
-    quelle: 'Alle meine Entchen (Volkslied, gemeinfrei)',
     melodie: [
-      [0, 2], [2, 2], [4, 2], [5, 2],
-      [7, 4], [7, 4],
-      [9, 2], [9, 2], [9, 2], [9, 2],
-      [7, 8],
-      [9, 2], [9, 2], [9, 2], [9, 2],
-      [7, 8],
-      [5, 2], [5, 2], [5, 2], [5, 2],
-      [4, 4], [4, 4],
-      [2, 2], [2, 2], [2, 2], [2, 2],
-      [0, 6], [null, 2],
+      [7, 2], [9, 2], [7, 2], [4, 2],
+      [5, 4], [4, 2], [2, 2],
+      [0, 2], [4, 2], [7, 2], [9, 2],
+      [11, 4], [7, 4],
+      [12, 2], [9, 2], [7, 2], [5, 2],
+      [6, 4], [4, 4],
+      [2, 2], [4, 2], [5, 2], [7, 2],
+      [4, 6], [null, 2],
     ],
-    akkorde: [0, 0, 5, 0, 5, 0, 5, 0, 7, 0],
-    bpm: 112,
+    akkorde: [0, 5, 0, 7, 0, 5, 7, 0],
+    farbe: [4, 7],
+    bpm: 126,
     grund: 261.63,
-    wave: 'square',
+    melodieStimme: 'marimba',
+    harmonieStimme: 'ukulele',
   },
-  // Eigene Melodie. Für eine Höhle passt kein Kinderlied, und ein Volkslied in
-  // Moll, das jeder kennt, gibt es kaum — also selbst gesetzt: pentatonisch in
-  // a-Moll, damit nichts schief klingen kann.
+  // Welt 2 — Höhle. Dorisch (die grosse Sexte im fünften Takt), Kalimba statt
+  // Marimba, langsamer, weniger Perkussion.
   crystal: {
-    quelle: 'eigene Melodie',
     melodie: [
-      [0, 4], [3, 2], [5, 2],
-      [7, 4], [5, 2], [3, 2],
       [0, 4], [3, 4],
+      [5, 2], [7, 2], [5, 4],
+      [3, 4], [0, 4],
       [2, 6], [null, 2],
-      [7, 4], [10, 2], [7, 2],
+      [7, 4], [9, 2], [7, 2],
       [5, 4], [3, 4],
-      [0, 4], [3, 2], [2, 2],
+      [0, 2], [3, 2], [5, 2], [3, 2],
       [0, 6], [null, 2],
     ],
-    akkorde: [0, 5, 0, 7, 3, 5, 0, 7],
-    bpm: 84,
+    akkorde: [0, 10, 0, 5, 7, 10, 5, 0],
+    farbe: [3, 7],
+    bpm: 112,
     grund: 220,
-    wave: 'triangle',
+    melodieStimme: 'kalimba',
+    harmonieStimme: 'kalimba',
   },
 };
 
 const LOOKAHEAD = 0.35;
 
-/** Melodie auf Schrittraster: je Achtel entweder ein Tonanfang oder nichts. */
 function aufRaster(m: readonly Note[]): (Note | null)[] {
   const raster: (Note | null)[] = [];
   for (const n of m) {
@@ -111,20 +113,49 @@ const RASTER: Record<ThemeId, (Note | null)[]> = {
   crystal: aufRaster(STUECKE.crystal.melodie),
 };
 
+/** Was die Musik über die Spiellage wissen muss. */
+export interface Lage {
+  /** Verbleibende Zeit als Anteil, 1 am Anfang. */
+  restAnteil: number;
+  /** Verbleibende Zeit in Sekunden. */
+  restSekunden: number;
+  /** Alle Figuren gerettet, das Level läuft aber noch. */
+  alleGerettet: boolean;
+  pausiert: boolean;
+}
+
 export class Music {
   private playing = false;
   private nextTime = 0;
   private step = 0;
   private notes = 0;
   private theme: ThemeId = 'grass';
+  private lage: Lage = { restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false };
+  private gefiltert = false;
 
-  /** Diagnose: laeuft die Schleife, und legt sie tatsaechlich Toene? */
-  get state(): { playing: boolean; notes: number; quelle: string } {
-    return { playing: this.playing, notes: this.notes, quelle: STUECKE[this.theme].quelle };
+  get state(): { playing: boolean; notes: number; lage: string } {
+    return {
+      playing: this.playing,
+      notes: this.notes,
+      lage: this.lage.pausiert
+        ? 'pausiert'
+        : this.lage.restSekunden <= 10
+          ? 'endspurt'
+          : this.lage.restAnteil < 0.3
+            ? 'knapp'
+            : this.lage.alleGerettet
+              ? 'alle gerettet'
+              : 'normal',
+    };
   }
 
   setTheme(theme: ThemeId): void {
     this.theme = theme in STUECKE ? theme : 'grass';
+  }
+
+  /** Jedes Bild aus dem Spiel heraus setzen. */
+  setLage(l: Lage): void {
+    this.lage = l;
   }
 
   start(engine: AudioEngine): void {
@@ -142,68 +173,78 @@ export class Music {
     return this.playing;
   }
 
-  /** Jedes Bild aufrufen. Plant alle Toene, die im Vorlauffenster faellig sind. */
   update(engine: AudioEngine): void {
+    // Pause macht die Musik nicht aus, sondern zu. Ein harter Schnitt fuehlt
+    // sich nach Absturz an; ein Tiefpass fuehlt sich an, als traete man einen
+    // Schritt zurueck.
+    const zu = this.lage.pausiert;
+    if (zu !== this.gefiltert) {
+      engine.musikFilter(zu ? 400 : 18000);
+      this.gefiltert = zu;
+    }
+
     if (!this.playing || !engine.ready || engine.muted) return;
+
     const p = STUECKE[this.theme];
     const raster = RASTER[this.theme];
     const stepDur = 60 / p.bpm / 2;
     const horizon = engine.time + LOOKAHEAD;
-    // Nach einer Pause nicht die verpasste Zeit nachholen.
     if (this.nextTime < engine.time) this.nextTime = engine.time + 0.02;
+
+    const endspurt = this.lage.restSekunden <= 10;
+    const knapp = endspurt || this.lage.restAnteil < 0.3;
+    // Einen Halbton hoch, sobald es knapp wird. Dieselbe Musik, aber der Koerper
+    // merkt den Wechsel sofort — das ist der aelteste Trick der Filmmusik.
+    const schiebung = knapp ? 1 : 0;
 
     let guard = 0;
     while (this.nextTime < horizon && guard++ < 32) {
       const delay = this.nextTime - engine.time;
       const i = this.step % raster.length;
       const takt = Math.floor(i / TAKT) % p.akkorde.length;
-      const wurzel = p.akkorde[takt];
-      const halbton = (h: number, oktave = 0) => p.grund * Math.pow(2, h / 12 + oktave);
+      const wurzel = p.akkorde[takt] + schiebung;
+      const f = (h: number, oktave = 0) => p.grund * Math.pow(2, h / 12 + oktave);
+      const g = { delay, bus: 'music' as const, fest: true };
 
-      // --- Melodie ---------------------------------------------------------
+      // --- Perkussion -------------------------------------------------------
+      if (!endspurt) {
+        if (i % 4 === 0) woodblock(engine, { freq: i % 8 === 0 ? 900 : 1250, gain: 0.075, ...g });
+        // Bei knapper Zeit laeuft das Schuettelrohr auf doppelter Zeit.
+        if (knapp ? true : i % 2 === 1) shaker(engine, { freq: 0, gain: 0.04, ...g });
+      }
+      if (knapp && i % 2 === 0) tick(engine, { freq: 0, gain: 0.09, ...g });
+
+      // --- Bass -------------------------------------------------------------
+      // Zweiertakt: Grundton auf die Eins, Quinte auf die Drei. Das ist der
+      // huepfende Gang, den das Vorbild von der Blasmusik geerbt hat.
+      if (i % TAKT === 0) bass(engine, { freq: f(wurzel, -1), dur: stepDur * 1.5, ...g });
+      else if (i % TAKT === 4) bass(engine, { freq: f(wurzel + 7, -1), dur: stepDur * 1.3, gain: 0.19, ...g });
+
+      // --- Harmonie auf den Nachschlaegen ----------------------------------
+      if (!endspurt && i % 4 === 2) {
+        const stimme = p.harmonieStimme === 'ukulele' ? ukulele : kalimba;
+        for (const ton of [0, ...p.farbe]) {
+          stimme(engine, { freq: f(wurzel + ton), gain: 0.055, dur: stepDur * 1.4, ...g });
+        }
+      }
+
+      // --- Melodie ----------------------------------------------------------
       const note = raster[i];
-      if (note && note[0] !== null) {
-        engine.tone({
-          freq: halbton(note[0], 1),
-          dur: stepDur * note[1] * 0.92,
-          type: p.wave,
-          gain: 0.13,
-          bus: 'music',
-          delay,
-          attack: 0.012,
-          ignoreLimit: true,
-        });
+      if (!knapp && note && note[0] !== null) {
+        const halbton = note[0] + schiebung;
+        const stimme =
+          p.melodieStimme === 'marimba' ? marimba : p.melodieStimme === 'kalimba' ? kalimba : panfloete;
+        stimme(engine, { freq: f(halbton, 1), dur: stepDur * note[1] * 0.95, gain: 0.145, ...g });
+        // Die Achtbit-Ebene verdoppelt nur — nie Hauptstimme.
+        chip(engine, { freq: f(halbton, 1), dur: stepDur * note[1] * 0.5, gain: 0.03, ...g });
         this.notes++;
       }
 
-      // --- Bass auf Eins und Drei -----------------------------------------
-      if (i % 4 === 0) {
-        engine.tone({
-          freq: halbton(wurzel, -1),
-          dur: stepDur * 1.6,
-          type: 'triangle',
-          gain: 0.24,
-          bus: 'music',
-          delay,
-          attack: 0.01,
-          ignoreLimit: true,
-        });
-      }
-
-      // --- Liegeton je Takt ------------------------------------------------
-      // Er schliesst die Luecken zwischen den kurzen Toenen; ohne ihn bleiben
-      // einzelne Blips uebrig, und die hoert man nicht als Musik.
-      if (i % TAKT === 0) {
-        engine.tone({
-          freq: halbton(wurzel),
-          dur: stepDur * (TAKT - 0.5),
-          type: 'triangle',
-          gain: 0.075,
-          bus: 'music',
-          delay,
-          attack: 0.08,
-          ignoreLimit: true,
-        });
+      // --- Glitzer ----------------------------------------------------------
+      // Wenn alle gerettet sind, das Level aber noch laeuft: doppelt so dicht.
+      const glitzerTakt = this.lage.alleGerettet ? 4 : 16;
+      if (!endspurt && i % glitzerTakt === 12 % glitzerTakt) {
+        glocke(engine, { freq: f(wurzel + 12), gain: this.lage.alleGerettet ? 0.075 : 0.045, ...g });
       }
 
       this.nextTime += stepDur;

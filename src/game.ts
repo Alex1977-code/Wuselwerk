@@ -1,4 +1,4 @@
-import { FOCUS_DEN, FOCUS_NUM, MS_PER_TICK, RATE_MAX, RATE_MIN, WUSEL_H } from './core/constants';
+import { FOCUS_DEN, FOCUS_NUM, MS_PER_TICK, RATE_MAX, RATE_MIN, TICK_HZ, WUSEL_H } from './core/constants';
 import { State, type SkillId, type Wusel } from './core/types';
 import type { World } from './core/world';
 import { LEVELS } from './levels';
@@ -179,7 +179,21 @@ export class Game {
       this.terrainView.sync();
       this.refreshTarget();
     }
-    this.audio.update();
+    // Die Musik reagiert auf die Lage — knappe Zeit, alles gerettet, Pause.
+    // Sie steht deshalb hier und nicht in der Tonschicht: Nur das Spiel weiss,
+    // wie es gerade steht.
+    if (this.screen === 'play') {
+      const grenze = this.level.timeLimitSec * TICK_HZ;
+      const rest = this.world.timeLeftTicks;
+      this.audio.update({
+        restAnteil: grenze > 0 && isFinite(rest) ? rest / grenze : 1,
+        restSekunden: isFinite(rest) ? rest / TICK_HZ : 999,
+        alleGerettet: this.world.saved >= this.world.total && this.phase === 'running',
+        pausiert: this.phase === 'paused',
+      });
+    } else {
+      this.audio.update();
+    }
     this.render();
   }
 

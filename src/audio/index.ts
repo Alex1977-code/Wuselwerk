@@ -2,7 +2,7 @@ import type { WorldEvent } from '../core/types';
 import type { ThemeId } from '../levels/types';
 import { AudioEngine } from './engine';
 import { Haptics } from './haptics';
-import { Music } from './music';
+import { Music, type Lage } from './music';
 import { Sfx } from './sfx';
 
 /** Ein Zugang fuer alles Hoer- und Fuehlbare. */
@@ -56,7 +56,8 @@ export class GameAudio {
   }
 
   /** Einmal pro Bild, nachdem die Ereignisse verteilt sind. */
-  update(): void {
+  update(lage?: Lage): void {
+    if (lage) this.music.setLage(lage);
     this.music.update(this.engine);
   }
 
@@ -65,7 +66,7 @@ export class GameAudio {
     ready: boolean;
     muted: boolean;
     haptics: boolean;
-    music: { playing: boolean; notes: number; quelle: string };
+    music: { playing: boolean; notes: number; lage: string };
   } {
     return {
       ready: this.engine.ready,

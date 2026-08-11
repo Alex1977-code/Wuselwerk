@@ -19,6 +19,56 @@ export class AudioEngine {
   private busGain: Record<Bus, GainNode | null> = { sfx: null, music: null };
   private noiseBuffer: AudioBuffer | null = null;
   private stille: HTMLAudioElement | null = null;
+  private hall: ConvolverNode | null = null;
+  private duckBis = 0;
+  private musikLp: BiquadFilterNode | null = null;
+
+  /**
+   * Kurzer, heller Nachhall aus abklingendem Rauschen.
+   *
+   * Kein echter Federhall, aber dieselbe Aufgabe: ein gemeinsamer Raum. Die
+   * Kurve faellt schnell (Exponent 3,2), sonst verschmiert bei sechzig
+   * grabenden Figuren alles zu Matsch.
+   */
+  private federhall(sek: number): AudioBuffer {
+    const ctx = this.ctx!;
+    const n = Math.floor(ctx.sampleRate * sek);
+    const buf = ctx.createBuffer(2, n, ctx.sampleRate);
+    for (let k = 0; k < 2; k++) {
+      const d = buf.getChannelData(k);
+      for (let i = 0; i < n; i++) {
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2);
+      }
+    }
+    return buf;
+  }
+
+  /**
+   * Musik kurz zuruecknehmen, damit ein Ereignis durchkommt.
+   *
+   * Anderthalb Dezibel, nicht mehr — genug, damit der Ton Platz hat, zu wenig,
+   * als dass man das Ducken selbst bemerkt. Mehr klingt nach Radiowerbung.
+   */
+  duck(sekunden = 0.35): void {
+    const g = this.busGain.music;
+    if (!g || !this.ctx) return;
+    const jetzt = this.ctx.currentTime;
+    if (jetzt < this.duckBis) return;
+    this.duckBis = jetzt + sekunden;
+    const voll = 0.5;
+    g.gain.cancelScheduledValues(jetzt);
+    g.gain.setTargetAtTime(voll * 0.84, jetzt, 0.02);
+    g.gain.setTargetAtTime(voll, jetzt + sekunden, 0.12);
+  }
+
+  /**
+   * Tiefpass auf die Musik. Fuer die Pause: Die Musik rueckt weg, statt
+   * abzureissen. Ein harter Schnitt fuehlt sich nach Absturz an.
+   */
+  musikFilter(hz: number): void {
+    if (!this.ctx || !this.musikLp) return;
+    this.musikLp.frequency.setTargetAtTime(hz, this.ctx.currentTime, 0.06);
+  }
 
   /** Begrenzt die Stimmen pro Bild — 60 grabende Figuren duerfen nicht knallen. */
   private voicesThisFrame = 0;
@@ -105,14 +155,50 @@ export class AudioEngine {
       komp.ratio.value = 4;
       komp.attack.value = 0.004;
       komp.release.value = 0.18;
-      this.master.connect(komp);
+
+      // Hochpass vor dem Ausgang.
+      //
+      // Ein Handylautsprecher gibt unter etwa 60 Hz nichts wieder — die
+      // Energie dort ist trotzdem da und frisst Aussteuerungsreserve, die
+      // oben fehlt. Weg damit: Das Fundament liegt bei 150 bis 250 Hz.
+      const hoch = this.ctx.createBiquadFilter();
+      hoch.type = 'highpass';
+      hoch.frequency.value = 85;
+      hoch.Q.value = 0.7;
+
+      this.master.connect(hoch);
+      hoch.connect(komp);
       komp.connect(this.ctx.destination);
+
+      // Federhall. Er ist der Leim zwischen Musik und Geraeuschen: Beide gehen
+      // durch denselben Raum, und dadurch klingen sie wie am selben Ort
+      // aufgenommen statt wie zwei getrennte Zuspieler.
+      this.hall = this.ctx.createConvolver();
+      this.hall.buffer = this.federhall(0.34);
+      const hallPegel = this.ctx.createGain();
+      hallPegel.gain.value = 0.5;
+      this.hall.connect(hallPegel);
+      hallPegel.connect(this.master);
 
       for (const bus of ['sfx', 'music'] as Bus[]) {
         const g = this.ctx.createGain();
         g.gain.value = bus === 'music' ? 0.5 : 0.85;
-        g.connect(this.master);
         this.busGain[bus] = g;
+
+        if (bus === 'music') {
+          this.musikLp = this.ctx.createBiquadFilter();
+          this.musikLp.type = 'lowpass';
+          this.musikLp.frequency.value = 18000;
+          g.connect(this.musikLp);
+          this.musikLp.connect(this.master);
+        } else {
+          g.connect(this.master);
+        }
+
+        const send = this.ctx.createGain();
+        send.gain.value = bus === 'music' ? 0.1 : 0.14;
+        g.connect(send);
+        send.connect(this.hall);
       }
 
       // Rauschen einmal erzeugen und wiederverwenden.
