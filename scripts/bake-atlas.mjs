@@ -216,12 +216,19 @@ const ZOTTELN = (() => {
     [-86, -15, 6.4, 1.1, -9, -2.7, 1.4, -1.3],
     [-10, 1, 6.6, 1.1, -14, 2.4, 3.3, 0.2],
   ];
+  // Duenner und kuerzer als der erste Wurf. Die Straehnen waren so lang, dass
+  // die Frisur die Figur ueberwog, und so dick, dass sie sich bei Spielgroesse
+  // wieder zu einer Flaeche schlossen. Beides um knapp ein Drittel zurueck:
+  // Jetzt bleibt zwischen zwei Straehnen Hintergrund stehen, und genau daran
+  // erkennt man sie einzeln.
+  const KUERZER = 0.7;
+  const DUENNER = 0.68;
   return F.map(([x, z, l, d, b, pv, ph, ps], i) => ({
     form: 'strang',
     glieder: 3,
     biegung: b,
     pos: [pv, ph, ps],
-    mass: [d, l, d],
+    mass: [d * DUENNER, l * KUERZER, d * DUENNER],
     dreh: [x, 0, z],
     phase: (i * 0.37) % 1,
     // Nur jede vierte trägt den Glanzton — sonst leuchtet die ganze Frisur.
