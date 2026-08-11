@@ -1,5 +1,18 @@
 # Wuselwerk — Prompt-Bibliothek für Bild- und 3D-Generatoren
 
+> **⚠️ Hinweis zur Gültigkeit — Stand August 2026**
+>
+> Die **Stilrichtung** dieser Datei ist durch [`grafik-katalog.md`](./grafik-katalog.md)
+> abgelöst. Das betrifft insbesondere den Wusel-Kanon (die Figur ist nicht mehr kahl,
+> sondern trägt beerenrosa Haar `#ff70b8` als Signaturmerkmal), die Körperproportionen,
+> die Stilblöcke A und B, den Palettenblock und die Konturstärke. Wo diese Datei und der
+> Katalog sich widersprechen, gilt der Katalog.
+>
+> **Gültig und unverändert bleiben die Motivlisten** — welche Grafiken das Spiel braucht,
+> ist hier vollständig erfasst und dient dem Katalog als Vollständigkeitsprüfung. Ebenso
+> gültig bleiben der rechtliche Warnhinweis, die Einordnung „was die Generatoren können",
+> der 3D-Arbeitsablauf in §10 und die Aufwandsschätzungen in §11.
+
 Stand: Prototyp-Palette und -Maße aus `src/render/palette.ts`, `src/render/sprites.ts`,
 `src/core/constants.ts`, `src/core/types.ts`, `src/levels/index.ts`.
 Kunstrichtung nach GDD §6, Pflichtinhalte nach GDD §5, Rechtsrahmen nach GDD §12.
