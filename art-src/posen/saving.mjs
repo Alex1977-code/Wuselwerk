@@ -1,94 +1,103 @@
 /**
  * Rettung — sechs Bilder, einmalig.
  *
- * Der einzige fröhliche Zustand im Spiel. Die Figur hat es geschafft und steigt
- * in den Ausgang: Arme jubelnd hoch, Kopf zurück, Beine baumeln. Der Ablauf
- * friert auf Bild 5 ein (`once` in `src/render/atlas.ts`), dieses Bild muss
- * also für sich allein stehen können.
+ * Der einzige fröhliche Zustand des Spiels: Die Figur hat es geschafft und
+ * steigt in den Ausgang. Der Ablauf friert auf Bild 5 ein (`once` in
+ * `src/render/atlas.ts`); dieses Bild bleibt stehen und muss für sich allein
+ * lesbar sein.
  *
- * **Der Versatz ist der Vorgang.** Vom Boden (Bild 0) bis sechs Pixel darüber
- * (Bild 5), in fünf gleichen Schritten von 1,2 — bei zwölf Pixeln Figurenhöhe
- * eine halbe Figurenlänge. Nichts anderes im Bild kann „steigt auf" sagen; der
- * Ausgang selbst wird nie gezeichnet. Zugleich ist das die Grenze nach oben:
- * Die längste Haarsträhne steht knapp zehn Pixel über dem Kopfgelenk, das
- * Kopfgelenk 6,1 über der Sohle, und die Zelle hat über dem Fusspunkt 22
- * Zeilen. Mehr als sechs Pixel Hub schneidet die Mähne oben ab.
+ * **Der Versatz ist der Vorgang.** Von der Fusspunktlinie (Bild 0) bis sechs
+ * Pixel darüber (Bild 5), in fünf gleichen Schritten von 1,2 — bei zwölf Pixeln
+ * Figurenhöhe eine halbe Figur. Der Ausgang selbst wird nie gezeichnet, das
+ * Steigen ist also der ganze Vorgang.
  *
- * **Was ein erhobener Arm hier kann und was nicht.** Vom Schultergelenk bis zur
- * Fäustlingsspitze misst der Arm drei Pixel, die Mähne steht acht über dem
- * Kopfgelenk und hängt bis auf die Schultern herab. Ein senkrecht erhobener Arm
- * endet mitten im Haar und ist im Bild nicht vorhanden — in `hoisting.mjs`
- * schon einmal probiert und verworfen. Frei ist allein die Richtung **nach vorn
- * und schräg hoch**: Dort steht nur das Gesicht, und die Kamera bildet ein Mass
- * nach vorn mit cos 30° ≈ 0,87 ab, ein Mass zur Seite nur mit sin 30° = 0,5.
- * Die Arme greifen deshalb dem Ausgang entgegen, statt senkrecht zu jubeln.
+ * Sechs Pixel sind zugleich das Höchstmass. Die längste Haarsträhne steht knapp
+ * zehn Pixel über dem Kopfgelenk, das Kopfgelenk 6,1 über der Sohle, und über
+ * dem Fusspunkt hat die Zelle 22 Zeilen. Bei sechs Pixeln Hub liegt die
+ * Haarspitze auf Zeile 1 und ihr Umriss auf Zeile 0 — genau aufgebraucht.
  *
- * Die beiden Arme dürfen dabei nicht dasselbe tun, sonst liegen sie aus 30° zum
- * Profil übereinander und sind im Bild ein Balken. Der **ferne** Arm (L) geht
- * weit zur Seite: Die Figurenlinke zeigt zur Kamera hin nach rechts, seitliches
- * Ausbreiten schiebt ihn also *aus* dem Kopf heraus. Der **nahe** Arm (R) bleibt
- * schmal am Körper und greift höher. So stehen zwei Hände übereinander vor der
- * Stirn statt einer Fläche daneben.
+ * **Warum die Arme nicht jubeln können.** Am Modell gemessen: Ein erhobener Arm
+ * hebt die Faust nur rund anderthalb Pixel über die Schulter, die Mähne steht
+ * acht über dem Kopfgelenk und reicht bis auf die Schultern herab. Sechs
+ * Armstellungen von senkrecht hoch bis waagerecht nach hinten wurden gebacken
+ * und verglichen: Bis auf eine sind sie im Bild überhaupt nicht vorhanden, die
+ * Mähne schluckt sie. Dasselbe steht in `hoisting.mjs` und `floating.mjs`.
  *
- * **Der Kopf legt sich weit zurück.** Das ist die zweite Hälfte derselben
- * Rechnung: Die Haarmasse des Modells hängt am Kopf, und zurückgelegt räumt sie
- * die Fläche vor dem Gesicht — genau die, in der die Hände stehen. Der Rumpf
- * lehnt nur wenig mit; über 12° deckt die Mähne den Körper zu und übrig bleibt
- * ein roter Fleck.
+ * Sichtbar bleibt allein die Richtung **nach vorn**, und zwar aus zwei Gründen:
+ * Vor dem Gesicht steht kein Haar, und die Kamera bildet ein Mass nach vorn mit
+ * cos 30° ≈ 0,87 ab, eines zur Seite nur mit sin 30° = 0,5. Ein Arm, der 30°
+ * über die Waagerechte nach vorn greift, setzt einen Hautfleck genau auf die
+ * vordere Umrisskante — ein Pixel, das über die Schulterlinie hinausragt. Mehr
+ * Jubel gibt diese Figur nicht her, und darum tragen ihn die drei Formen, die
+ * gross genug sind:
  *
- * **Die Beine sagen „hebt ab".** Bild 0 steht mit flachen Sohlen auf der
- * Fusspunktlinie (Schenkel und Wade heben sich gegenseitig auf, die Summe der
- * Kette am Fuss ist null). Ab Bild 2 hängen sie gestreckt, spreizen sich in der
- * Tiefe — übereinander gelegt wären sie im Bild ein einziger Strich — und die
- * Füsse spitzen sich nach unten. Zwei Pixel Fuss sind wenig, aber es ist der
- * einzige Unterschied zwischen „steht" und „schwebt", den diese Figur hergibt.
+ *   **Mähne** — sie ist die grösste Fläche der Figur. Der Kopf legt sich weit
+ *   zurück, das Haar kippt mit ihm nach hinten und unten und zieht als Schweif
+ *   hinter der steigenden Figur her. Zusätzlich wächst der Strähnenschlag
+ *   (`_haar`) mit dem Aufstieg: Die Mähne fächert auf, statt als Klotz zu
+ *   stehen.
+ *   **Rumpf** — zurückgelehnt, Brust voran, Blick nach oben zum Ausgang. Nur
+ *   zehn Grad; nach vorn wären schon zwölf zu viel, weil die Mähne dann den
+ *   ganzen Körper zudeckt, nach hinten räumt sie das Gesicht frei.
+ *   **Beine** — Bild 0 steht mit flachen Sohlen auf der Linie, ab Bild 2 hängen
+ *   sie gestreckt nach hinten und die Füsse spitzen sich nach unten. Zwei Pixel
+ *   Fuss sind wenig, aber es ist der einzige Unterschied zwischen „steht" und
+ *   „schwebt", den diese Figur hergibt.
+ *
+ * Zusammen ist das eine nach hinten gebogene Figur mit Schweif, deren Sohlen
+ * über der Bodenlinie stehen — im ganzen Blatt gibt es das sonst nicht.
  */
 
 /**
  * Bildweise Schlüsselwerte. Sechs Bilder sind zu wenig für eine Formel, und
  * jedes hat seine eigene Aufgabe:
  *
- *   0 stehen, Arme zurück · 1 Absprung · 2 abheben · 3 steigen · 4 steigen
- *   · 5 schweben (dieses Bild bleibt stehen und muss ruhig wirken)
+ *   0 stehen, Arme hinten · 1 Absprung · 2 abheben · 3 steigen · 4 steigen
+ *   · 5 schweben (dieses Bild bleibt stehen)
  */
 const K = {
   //          0     1     2     3     4     5
   hoch: [0, 1.2, 2.4, 3.6, 4.8, 6.0],
 
-  // Rumpf: ein Hauch nach vorn im Absprung, danach zurückgelehnt. Klein
-  // halten — die Bewegung tragen die Arme, nicht der Rumpf.
-  spine01: [4, 1, -4, -7, -9, -9],
-  spine02: [1, 0, -2, -3, -3, -3],
-  // Kopfneigung gegen den Rumpf, negativ heisst zurück. Im Bild ankommen tut
-  // die Summe der Kette: 7, -5, -22, -32, -37, -38.
-  kopf: [2, -6, -16, -22, -25, -26],
+  // Rumpf: ein Hauch nach vorn im Absprung, danach zurückgelehnt.
+  spine01: [3, 0, -5, -8, -10, -10],
+  spine02: [1, 0, -2, -3, -4, -4],
+  // Kopfneigung gegen den Rumpf, negativ heisst zurück. Im Bild ankommt die
+  // Summe der Kette: 6, -6, -25, -37, -44, -44.
+  kopf: [2, -6, -18, -26, -30, -30],
 
   /**
    * Arme. Z klappt sie aus dem T heraus: ∓90 stellt sie senkrecht nach oben,
-   * der Betrag darunter ist die seitliche Spreizung nach aussen. X kippt sie
-   * danach aus der Senkrechten nach vorn — 0 ist senkrecht hoch, 90 waagerecht
-   * nach vorn, über 90 hinunter, 152 nach hinten unten.
+   * der Betrag darunter ist die seitliche Spreizung. X kippt sie danach aus der
+   * Senkrechten nach vorn — 0 senkrecht hoch, 60 schräg hoch nach vorn, 90
+   * waagerecht, 150 nach hinten unten.
+   *
+   * Die beiden Arme dürfen nicht dasselbe tun: Aus 30° zum Profil lägen sie
+   * sonst übereinander. Der ferne Arm (L) spreizt weit zur Seite — die
+   * Figurenlinke zeigt im Bild nach rechts, seitliches Ausbreiten schiebt ihn
+   * also aus dem Körper heraus —, der nahe (R) greift schmal und höher.
    */
-  vornV: [152, 96, 44, 30, 26, 24],
-  vornH: [162, 112, 62, 50, 46, 44],
+  vornV: [150, 100, 46, 30, 24, 22],
+  vornH: [160, 114, 84, 74, 68, 66],
   seitV: [4, 6, 8, 10, 10, 10],
-  seitH: [8, 16, 26, 34, 36, 36],
+  seitH: [10, 18, 28, 34, 36, 36],
   // Ellbogen leicht gebeugt — ein völlig gerader Arm liest als Stock.
-  unterarmV: [10, 18, 10, 6, 4, 2],
-  unterarmH: [8, 14, 8, 2, 0, -2],
+  unterarmV: [10, 18, 10, 4, 0, -2],
+  unterarmH: [8, 14, 8, 4, 2, 0],
 
   // Beine. Die Summe Schenkel + Wade + Fuss ist der Winkel der Sohle: null
-  // heisst flach auf dem Boden, positiv heisst Fussspitze nach unten.
-  schenkelV: [-14, -20, -4, 8, 12, 14],
+  // heisst flach auf dem Boden, positiv heisst Fussspitze nach unten. Bild 0
+  // steht deshalb auf beiden Sohlen, ohne dass ein Bein gestreckt sein müsste.
+  schenkelV: [-14, -20, -2, 12, 18, 20],
   wadeV: [14, 22, 6, 0, 0, 0],
-  fussV: [0, -2, 12, 18, 18, 18],
-  schenkelH: [10, 14, 2, -8, -12, -14],
-  wadeH: [0, 0, 4, 8, 10, 10],
-  fussH: [-10, -14, 16, 26, 30, 32],
+  fussV: [0, -2, 14, 16, 12, 10],
+  schenkelH: [10, 16, 6, -4, -8, -10],
+  wadeH: [0, 0, 6, 10, 12, 12],
+  fussH: [-10, -16, 14, 22, 26, 28],
 
-  // Haarschwung. Er wächst mit dem Aufstieg — die Mähne ist die grösste Fläche
-  // der Figur, und ihr Auffächern ist der Jubel.
-  haar: [0.3, 0.6, 1.0, 1.2, 1.1, 1.0],
+  // Strähnenschlag. Er wächst mit dem Aufstieg — die Mähne ist die grösste
+  // Fläche der Figur, und ihr Auffächern ist der Jubel.
+  haar: [0.25, 0.6, 1.0, 1.25, 1.15, 1.0],
 };
 
 export default {
@@ -106,8 +115,10 @@ export default {
       R_Forearm: [K.unterarmV[i], 0, 0],
       L_Forearm: [K.unterarmH[i], 0, 0],
 
-      R_Thigh: [K.schenkelV[i], 0, 4],
-      L_Thigh: [K.schenkelH[i], 0, -4],
+      // Die Beine stehen in der Tiefe auseinander: übereinander gelegt wären
+      // sie im Bild ein einziger Strich, und die Figur hätte nur ein Bein.
+      R_Thigh: [K.schenkelV[i], 0, 5],
+      L_Thigh: [K.schenkelH[i], 0, -5],
       R_Calf: [K.wadeV[i], 0, 0],
       L_Calf: [K.wadeH[i], 0, 0],
       R_Foot: [K.fussV[i], 0, 0],

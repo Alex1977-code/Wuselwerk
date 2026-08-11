@@ -30,6 +30,15 @@ import { GameAudio } from './audio';
 type Screen = 'menu' | 'play';
 type Phase = 'intro' | 'running' | 'paused' | 'result';
 
+/**
+ * Ab wie vielen Bildschirmpixeln ein Ziehen als Schwenken zählt.
+ *
+ * Klein gehalten: Wer schieben will, merkt sofort, dass es geht. Wer zielt,
+ * hat ohnehin eine Figur unter dem Finger und ist von dieser Grenze gar nicht
+ * betroffen — sie greift nur über leerem Grund.
+ */
+const PAN_SCHWELLE = 10;
+
 interface PointerState {
   id: number;
   x: number;
@@ -408,15 +417,35 @@ export class Game {
       return;
     }
     if (ps.role === 'aim') {
-      // Ohne gewählten Beruf gibt es nichts zu vergeben — dann wird aus dem
-      // Ziehen ein Schwenken. Ein Finger genügt, wie §3.5 es verlangt.
-      if (!this.selected && Math.hypot(x - ps.startX, y - ps.startY) > 14) {
+      this.refreshTarget();
+
+      /**
+       * Aus dem Zielen wird ein Schwenken, sobald der Finger weit gezogen hat
+       * und dabei **niemanden unter sich hat**.
+       *
+       * Vorher hing das am gewählten Beruf: Mit Beruf blieb jedes Ziehen ein
+       * Zielversuch, und Schieben ging nur noch über die Übersichtskarte oder
+       * mit zwei Fingern. Das ist genau der Zustand, in dem man die meiste
+       * Zeit spielt — der Beruf ist ja gewählt, weil man ihn gleich vergeben
+       * will. Schieben war damit praktisch nicht erreichbar.
+       *
+       * Die Frage ist nicht "ist ein Beruf gewählt", sondern "meint der Finger
+       * jemanden". Liegt eine Figur unter ihm, will man zuweisen; liegt dort
+       * nichts, will man das Bild bewegen. Der Auswahl-Fächer ist davon
+       * ausgenommen: Dort zeigt der Finger absichtlich ins Leere, weil er auf
+       * einen aufgefächerten Kandidaten deutet.
+       */
+      const weit = Math.hypot(x - ps.startX, y - ps.startY) > PAN_SCHWELLE;
+      if (weit && !this.fan && !this.target) {
         ps.role = 'pan';
         this.aim = null;
         this.target = null;
-        return;
+        // Die bereits zurückgelegte Strecke nachholen, statt sie zu
+        // verschlucken: Sonst bleibt das Bild die ersten Millimeter stehen und
+        // springt dann — das ist das, was sich wie "schiebt schlecht" anfühlt.
+        const scale = this.camera.scaleFor(this.layout.play);
+        this.camera.panBy((x - ps.startX) / scale, (y - ps.startY) / scale);
       }
-      this.refreshTarget();
     }
   }
 

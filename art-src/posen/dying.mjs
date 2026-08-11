@@ -61,46 +61,57 @@
  */
 const K = {
   //           0     1     2     3     4     5     6     7
-  // Erst hoch auf die Zehen, dann hinunter bis knapp über die Abschneidegrenze.
-  hoch: [0.3, 0.7, 0.5, -0.6, -1.5, -2.2, -2.6, -2.8],
-  // Nur ein Hauch nach vorn: Der Fusspunkt der Zelle muss die Figur halten.
-  vorn: [0.0, 0.0, 0.0, 0.05, 0.15, 0.25, 0.35, 0.4],
+  // Sohle auf der Fusspunktlinie, nur Bild 1 hebt sich um einen halben Pixel —
+  // der Schreck als kurzer Ruck. Danach hinunter, aber nicht tiefer als bis zur
+  // Linie: Ein Häufchen unter dem eigenen Fusspunkt sähe eingegraben aus.
+  hoch: [0.0, 0.5, 0.2, -0.6, -1.5, -2.1, -2.4, -2.5],
+  // Nach *hinten*, und das ist Absicht. Der Sturz aus `hip` trägt Kopf und
+  // Mähne — die schwerste Fläche der Figur — gut drei Pixel nach vorn; ohne
+  // Gegenzug stünde das Häufchen am rechten Zellrand statt über seinem
+  // Fusspunkt. Der Versatz holt es zurück auf die Mitte.
+  vorn: [0.0, 0.0, 0.0, -0.1, -0.4, -0.8, -1.1, -1.3],
 
-  // `Hip` sitzt über Becken *und* Beinen — als einziges Gelenk kippt es die
-  // ganze Figur. Beim Erschrecken lehnt sie damit als Stück zurück, die Beine
-  // rutschen dabei nach vorn; das ist der Rückstoss.
-  hip: [-5, -11, -9, -3, 0, 2, 3, 3],
+  // **Das Hauptgelenk dieses Ablaufs.** `Hip` sitzt über Becken *und* Beinen und
+  // ist damit das einzige, das die ganze Figur kippt. Beim Erschrecken lehnt sie
+  // als Stück zurück (Rückstoss), am Ende kippt sie über ihr eigenes Becken nach
+  // vorn — und *nur* so kommt das Kopfgelenk von 6,1 Pixeln über der Sohle
+  // hinunter auf gut 1,5. Ohne diesen Sturz bliebe die Mähne oben stehen: Sie
+  // ist eine Kugel, und eine Kugel wird durch Drehen nicht flacher.
+  hip: [-5, -11, -9, -2, 8, 30, 52, 65],
 
-  // Rumpf: erst ins Hohlkreuz, dann sanft nach vorn. Nie über 11°.
+  // Rücken zusätzlich, aber sparsam. Nie über 10° — was die Figur flach macht,
+  // ist der Sturz aus `hip`, nicht ein krummer Rücken.
   spine01: [-5, -9, -7, -1, 4, 8, 10, 10],
   spine02: [-3, -5, -4, 0, 3, 5, 6, 6],
-  // Hals und Kopf tragen den Löwenanteil der Neigung, nicht der Rücken. Im Bild
-  // ankommt die Summe der ganzen Kette: −22, −40, −33, −6, +25, +50, +72, +86.
-  // Bild 1 schaut senkrecht nach oben, Bild 7 senkrecht nach unten — und weil
-  // die Mähne am Kopf hängt, legt sie sich dabei aus der Senkrechten in die
-  // Waagerechte. Das ist die eigentliche Flachlegung der Figur.
-  nacken: [-4, -6, -5, -1, 7, 14, 21, 27],
-  kopf: [-5, -9, -8, -1, 11, 21, 32, 40],
+  // Hals und Kopf legen nur noch nach. Im Bild ankommt die Summe der ganzen
+  // Kette: −22, −40, −33, −5, +27, +51, +72, +85. Bild 1 schaut senkrecht nach
+  // oben, Bild 7 mit dem Gesicht in den Boden.
+  nacken: [-4, -6, -5, 0, 4, 4, 4, 5],
+  kopf: [-5, -9, -8, -2, 8, 8, 8, 9],
 
   // Arme: Z klappt sie aus dem T herunter, X schwingt sie dann nach vorn-oben.
-  // −160 ist über dem Kopf, −50 ist waagerecht nach vorn.
-  oberarm: [-115, -162, -152, -110, -72, -58, -50, -46],
-  unterarm: [26, 6, 12, 34, 44, 30, 14, 4],
+  // −160 ist über dem Kopf, −20 hängt aus der gekippten Brust nach vorn-unten.
+  oberarm: [-115, -162, -152, -110, -80, -50, -30, -22],
+  unterarm: [26, 6, 12, 34, 48, 34, 16, 6],
 
-  // Vorderes Bein (R): stemmt sich erst, streckt sich dann flach nach vorn aus.
-  // −88 ist mit dem Rückstoss aus `hip` zusammen genau die Waagerechte.
-  schenkelV: [2, 6, 5, -20, -46, -66, -80, -88],
-  wadeV: [2, 0, 3, 25, 55, 50, 26, 8],
-  fussV: [10, 26, 20, 4, -6, -10, -10, -8],
+  // Die Beine stehen hier in **Weltwinkeln**, nicht gegen `hip` — sonst müsste
+  // man beim Ändern des Sturzes jeden Beinwert nachziehen. Abgezogen wird erst
+  // in `pose()`. 0 ist senkrecht, positiv nach hinten.
+  //
+  // Ablauf: stehen · Knie knicken nach vorn weg · die Figur kippt über die Knie
+  // hinweg nach vorn · die Beine schleifen flach nach hinten hinaus.
+  weltSchenkelV: [2, 3, 5, -20, -44, -10, 45, 78],
+  weltSchenkelH: [-2, -1, 0, -8, -28, 15, 60, 88],
+  wadeV: [2, 0, 3, 30, 72, 70, 34, 14],
+  wadeH: [2, 0, 2, 20, 55, 50, 24, 8],
+  fussV: [10, 26, 20, 4, -14, -22, -26, -30],
+  fussH: [10, 26, 20, 8, -10, -18, -24, -28],
 
-  // Hinteres Bein (L): schleift nach hinten weg.
-  schenkelH: [-2, 2, 0, 16, 40, 58, 70, 77],
-  wadeH: [2, 0, 2, 12, 24, 24, 16, 10],
-  fussH: [10, 26, 20, 8, -4, -10, -14, -16],
-
-  // Seitliche Spreizung. Beim Erschrecken fast null — schmal und starr —, zum
-  // Ende hin weit: Die liegende Figur soll breit sein.
-  spreiz: [2, 1, 2, 4, 7, 10, 13, 14],
+  // Seitliche Spreizung — nur damit die beiden Beine im Bild nicht zu einem
+  // Strich zusammenfallen. Breite holt sie keine: Aus 30° zum Profil sieht die
+  // Kamera von einer seitlichen Spreizung fast nichts. Was die Figur breit
+  // macht, ist die Staffelung nach vorn und hinten in den Weltwinkeln oben.
+  spreiz: [2, 1, 2, 4, 6, 8, 9, 10],
 
   // Ausschlag der Haarsträhnen. Beim Aufbäumen fliegen sie, im letzten Bild
   // liegen sie still: Ein weiterschwingendes Haar nähme dem Ende die Ruhe.
@@ -126,8 +137,10 @@ export default {
       R_Forearm: [K.unterarm[i], 0, 0],
       L_Forearm: [K.unterarm[i] - 8, 0, 0],
 
-      R_Thigh: [K.schenkelV[i], 0, K.spreiz[i]],
-      L_Thigh: [K.schenkelH[i], 0, -K.spreiz[i]],
+      // Der Sturz aus `hip` steckt in den Beinen schon drin und wird deshalb
+      // wieder abgezogen — übrig bleibt der Weltwinkel aus der Tabelle.
+      R_Thigh: [K.weltSchenkelV[i] - K.hip[i], 0, K.spreiz[i]],
+      L_Thigh: [K.weltSchenkelH[i] - K.hip[i], 0, -K.spreiz[i]],
       R_Calf: [K.wadeV[i], 0, 0],
       L_Calf: [K.wadeH[i], 0, 0],
       R_Foot: [K.fussV[i], 0, 0],

@@ -216,8 +216,11 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
   ctx.textBaseline = 'bottom';
   ctx.font = '500 11px system-ui, sans-serif';
   ctx.fillStyle = COL.dim;
+  // Mit gewähltem Beruf steht hier der Hinweis aufs Schieben: Dass Ziehen auf
+  // freier Fläche das Bild bewegt, sieht man dem Spielfeld nicht an — und
+  // gerade in diesem Zustand braucht man es am häufigsten.
   const text = s.selected
-    ? 'Halten zum Zielen — loslassen setzt den Beruf'
+    ? 'Auf einer Figur halten und loslassen — auf freier Fläche ziehen schiebt'
     : 'Erst Beruf wählen, dann Figur antippen';
   ctx.fillText(text, c.w / 2, hintY);
 }

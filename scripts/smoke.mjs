@@ -210,6 +210,30 @@ async function main() {
   check('Beruf lässt sich wählen und bleibt aktiv', sel === 'digger', `gewählt: ${sel}`);
   await page.screenshot({ path: `${OUT}/04-graeber-gewaehlt.png` });
 
+  // --- §3.5 mit gewähltem Beruf: der eigentliche Spielzustand --------------
+  // Vorher hing das Schwenken daran, dass *kein* Beruf gewählt war — also
+  // genau am Gegenteil dessen, was man beim Spielen tut. Gezogen wird über
+  // leerem Himmel, wo keine Figur unter dem Finger liegt.
+  const camA = await page.evaluate(() => window.__wuselwerk.debugCamera());
+  await page.mouse.move(260, 200);
+  await page.mouse.down();
+  await page.mouse.move(150, 200, { steps: 8 });
+  await page.mouse.up();
+  const camB = await page.evaluate(() => window.__wuselwerk.debugCamera());
+  check(
+    '§3.5 Schwenken geht auch mit gewähltem Beruf',
+    Math.abs(camB.cx - camA.cx) > 10,
+    `cx ${camA.cx.toFixed(0)} -> ${camB.cx.toFixed(0)}`,
+  );
+  const nachDrag = await page.evaluate(() => window.__wuselwerk.debugStats());
+  check(
+    'Das Schwenken vergibt dabei keinen Beruf',
+    nachDrag.skillsUsed === 0,
+    `skillsUsed=${nachDrag.skillsUsed}`,
+  );
+  await page.evaluate(() => window.__wuselwerk.debugRecenter());
+  await sleep(200);
+
   // --- §3.2/§3.3: über der Ausgangstür zielen und zuweisen ------------------
   let pos = null;
   for (let i = 0; i < 120 && !pos; i++) {
