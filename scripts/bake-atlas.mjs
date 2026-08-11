@@ -370,6 +370,49 @@ window.__ready = (async () => {
     return r > 90 && g < r * 0.92 && b < r * 0.8 && g > b;
   };
 
+  // --- Haar umfaerben -------------------------------------------------------
+  // Die Maehne kommt aus der Textur, und die ist rot gemalt. Sie einfarbig zu
+  // uebermalen wuerde die gemalte Straehnenzeichnung wegwerfen - das ist genau
+  // das, was die Maehne bei Spielgroesse noch als Haar lesen laesst.
+  //
+  // Stattdessen wird jeder Haarpixel auf die neue Rampe *umgesetzt*: Seine
+  // Helligkeit innerhalb des vorhandenen Rotbereichs bestimmt, wo er auf der
+  // violetten Rampe landet. Hell bleibt hell, Furche bleibt Furche - nur der
+  // Farbton wandert.
+  {
+    const rampe = ${JSON.stringify(PALETTE.haar)}.map(
+      (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)],
+    );
+    const lum = (r, g, b) => 0.2126*r + 0.7152*g + 0.0722*b;
+    const rot = (r, g, b) => r > 70 && g < r * 0.55 && b < r * 0.55;
+    let lo = 255, hi = 0;
+    for (let i = 0; i < td.length; i += 4) {
+      if (!rot(td[i], td[i+1], td[i+2])) continue;
+      const l = lum(td[i], td[i+1], td[i+2]);
+      if (l < lo) lo = l;
+      if (l > hi) hi = l;
+    }
+    const spanne = Math.max(1, hi - lo);
+    for (let i = 0; i < td.length; i += 4) {
+      if (!rot(td[i], td[i+1], td[i+2])) continue;
+      const t = Math.min(1, Math.max(0, (lum(td[i], td[i+1], td[i+2]) - lo) / spanne));
+      // Zwei Abschnitte: Schatten zu Grundton, Grundton zu Glanz.
+      const [a, b2, f] = t < 0.5
+        ? [rampe[2], rampe[1], t * 2]
+        : [rampe[1], rampe[0], (t - 0.5) * 2];
+      for (let k = 0; k < 3; k++) td[i+k] = Math.round(a[k] + (b2[k] - a[k]) * f);
+    }
+    tctx.putImageData(new ImageData(td, tc.width, tc.height), 0, 0);
+    window.__haarSpanne = [Math.round(lo), Math.round(hi)];
+  }
+
+  const gefaerbt = new THREE.CanvasTexture(tc);
+  gefaerbt.flipY = mesh.material.map.flipY;
+  gefaerbt.colorSpace = mesh.material.map.colorSpace;
+  gefaerbt.wrapS = mesh.material.map.wrapS;
+  gefaerbt.wrapT = mesh.material.map.wrapT;
+  gefaerbt.needsUpdate = true;
+
   const GRUPPEN = ['haar', 'haut', 'oberteil', 'hose', 'schuhe'];
   const eimer = { haar: [], haut: [], oberteil: [], hose: [], schuhe: [] };
   for (let t = 0, d = 0; t < idx.length; t += 3, d++) {
@@ -399,7 +442,7 @@ window.__ready = (async () => {
   // Haar und Haut behalten die gemalte Textur - dort steckt das Gesicht. Die
   // Kleidungsteile bekommen glatte Farben; ihre Textur war ohnehin einfarbig.
   const mitTextur = () => new THREE.MeshStandardMaterial({
-    map: mesh.material.map, roughness: 0.78, metalness: 0,
+    map: gefaerbt, roughness: 0.78, metalness: 0,
   });
   const einfarbig = (hex) => new THREE.MeshStandardMaterial({
     color: new THREE.Color(hex), roughness: 0.78, metalness: 0,

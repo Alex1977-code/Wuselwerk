@@ -383,6 +383,13 @@ getragen allein vom Helligkeitssprung, und das genau dort, wo die Figur die meis
 läuft. Violett steht 113 Grad entfernt. Nebenbei löst es die engste Paarung der ganzen
 Palette: Haar und Gefahrenrot lagen 4 Farbtongrade auseinander, jetzt sind es 275.
 
+Umgesetzt wird das **in der Textur, nicht mit einer Deckfarbe**: Jeder rote Bildpunkt der
+Modelltextur wandert nach seiner Helligkeit auf die violette Rampe — hell bleibt hell, Furche
+bleibt Furche, nur der Farbton wechselt. Eine einfarbige Übermalung hätte die gemalte
+Strähnenzeichnung weggeworfen, und genau die lässt die Mähne bei Spielgrösse noch als Haar
+lesen. (Erster Anlauf: nur die angebauten Zotteln waren violett, die Mähne aus der Textur
+blieb rot — die Figur hatte rotes Haar mit einer violetten Strähne obenauf.)
+
 **Die Mähne ist ausgedünnt.** Das Modell trägt eine dichte, geschlossene
 Haarkugel; bei Spielgrösse liest sie als Fläche, und einzelne Strähnen gehen
 darin unter. Die Masse wird deshalb zum Kopf hin geschrumpft — waagerecht auf
