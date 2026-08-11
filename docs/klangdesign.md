@@ -111,10 +111,26 @@ Lautsprecher und sie bleibt. Alles andere wird gespreizt: die zwei verstimmten
 Stimmen der Fläche nach links und rechts, die Sechzehntelfigur wechselseitig,
 die Kiesel gestreut, die zwei Stimmen der Melodie um ±0,15 auseinander.
 
-Die Spreizung ist **ausschließlich Pegelverteilung** — keine Verzögerung,
-keine Phasendrehung. Zusammengelegt zu Mono ergibt sie exakt denselben Klang.
-Das ist die einzige Art von Breite, die auf einem Handylautsprecher nichts
-kostet.
+Die Spreizung ist **ausschließlich Pegelverteilung** — keine Verzögerung, keine
+Phasendrehung. Nichts löscht sich beim Zusammenlegen zu Mono aus. Das ist die
+einzige Art von Breite, die man einem Gerät mit genau einem Lautsprecher
+zumuten darf.
+
+Sie ist trotzdem nicht ganz umsonst, und das ist wichtig genug, um es
+hinzuschreiben: Ein Panoramaknoten verteilt nach dem Gesetz gleicher
+**Leistung**. Auf zwei Lautsprechern kommt dadurch immer dasselbe heraus, beim
+Zusammenlegen zu Mono aber nicht — dort fehlen einer mittigen Stimme drei und
+einer ganz aussen sechs Dezibel. Zwei Folgerungen daraus:
+
+1. Die Schienenpegel müssen um diesen Betrag hoch (0,56 → 0,70 und 0,85 →
+   0,90). Sonst ist die neue Fassung schlicht leiser als die alte, und das war
+   nicht das Ziel.
+2. Das Ergebnis ist eine Mischung, die sich **von selbst an das Wiedergabegerät
+   anpasst**: Auf dem Handylautsprecher rücken die gespreizten Stimmen nach
+   hinten und lassen Melodie, Bass und Schlag vorne allein; auf Kopfhörern
+   steht alles da. Niemand schaltet etwas um. Das ist kein Nebeneffekt, den man
+   in Kauf nimmt, sondern der Grund, warum die Aufteilung „Fundament in die
+   Mitte, Schmuck nach aussen" hier genau richtig herum ist.
 
 *Heute nicht eingelöst:* Es gibt keinen einzigen Panoramaknoten im ganzen
 Verzeichnis.
@@ -298,7 +314,32 @@ Welt, die nur eine neue Melodie mitbringt, ist keine neue Welt.
 
 ---
 
-## 7. Woran das gemessen wird
+## 7. Was ich gebraucht hätte und nicht einbauen durfte
+
+`src/audio/index.ts` gehört mir nicht. Drei Dinge wären dort nötig, und alle
+drei sind Verbesserungen, keine Reparaturen — nichts davon fehlt heute
+schmerzhaft:
+
+1. **Die Welt an die Geräusche durchreichen.** `GameAudio.setTheme` ruft
+   `music.setTheme(theme)` und danach `sfx.reset()` — ohne die Welt. Die
+   Tonart der Geräusche läuft deshalb über einen Modulzustand in `music.ts`
+   (`tonart()`), den `Music.setTheme` setzt. Das funktioniert und ist
+   verteidigbar (es gibt im ganzen Spiel genau ein laufendes Stück), aber
+   `sfx.setTheme(theme)` wäre ehrlicher. Nötig wäre eine Zeile.
+2. **Die Bildschirmstelle eines Ereignisses.** Geräusche werden im Panorama
+   verteilt, aber **gewürfelt** — die Tonschicht kennt keine Koordinaten. Wenn
+   `handle()` zu jedem Ereignis ein `x` relativ zum Sichtfenster mitgäbe (−1
+   links bis +1 rechts), würde aus Breite **Ortung**: Man hörte, auf welcher
+   Seite gegraben wird. Das ist der grösste einzelne Gewinn, der hier noch
+   liegt, und er kostet ein Feld in `WorldEvent`.
+3. **Die Klanguhr für die Trippelschritte.** `schritte(laufende, nowMs)`
+   bekommt `performance.now()`. Die Musik läuft aber auf der Klanguhr des
+   Browsers. Die Schritte sind deshalb *ratengleich* mit dem Achtelraster und
+   werden auf die nächste Achtel geschoben (`bisNaechsteAchtel`) — sie liegen
+   damit im Takt, aber die Phase wird über einen Modulzustand geholt statt
+   übergeben. Sauberer wäre, `GameAudio` reichte `engine.time` mit durch.
+
+## 8. Woran das gemessen wird
 
 Die sechs bestehenden Prüfungen in `scripts/smoke.mjs` gelten unverändert; die
 wichtigste bleibt „Die Melodie behält ihr Fenster", weil eine treibende
@@ -319,3 +360,45 @@ Behauptungen aufstellt:
    dieser Welt selbst benutzt. Das ist die Prüfung, die verhindert, dass Welt 3
    mit einer Fünftonleiter ausgeliefert wird, die neben ihrem eigenen Stück
    steht.
+
+Dazu kommt eine neue Testdatei, `tests/klangschicht.test.ts`, die etwas prüft,
+was bisher **überhaupt niemand** geprüft hat: die Höhle. Die Browserprobe spielt
+Level 1 durch, und Level 1 ist eine Wiese — alles, was nur im zweiten Stück
+vorkommt (anderes Tempo, andere Tonart, andere Melodiestimme, anderer Raum),
+lief nie. Ein Aufschreiber anstelle der Klangwerkstatt lässt beide Stücke zwei
+volle Durchläufe planen und hält fest, dass kein Einsatz in der Vergangenheit
+landet, dass Bass und Schlag in der Mitte bleiben, dass überhaupt etwas
+gespreizt wird, dass nur die Melodie ins Echo geht und dass die Höhle einen
+längeren und dunkleren Raum bekommt als die Wiese.
+
+### Gemessen
+
+Drei Durchläufe, weil das Messfenster jedes Mal an einer anderen Stelle der
+Schleife liegt und eine einzelne Zahl deshalb mehr Genauigkeit vortäuscht, als
+da ist:
+
+| Prüfung | Grenze | vorher | jetzt (3 Läufe) |
+|---|---|---|---|
+| Musik kommt hörbar an | Spitze > 0,03 | 0,661 | **0,43 – 0,49** |
+| Nichts übersteuert | Spitze < 0,99 | 0,661 | **0,43 – 0,49** |
+| Melodie trägt, statt zu piepen | Effektivwert > 0,02 | 0,155 | **0,162 – 0,191** |
+| Fundament im hörbaren Bassband | 12 % – 80 % | 32,7 % | **32,0 – 35,4 %** |
+| Melodie behält ihr Fenster | > 3 % | 20,0 % | **31,6 – 34,3 %** |
+| Schluss-Stinger kommt an | Spitze > 0,08 | 0,359 | **0,44 – 0,59** |
+| *neu:* Stereo, monokompatibel | 2 % – 70 % | — | **21,0 – 22,5 %** |
+
+Zwei Zahlen sind die eigentliche Aussage dieses Umbaus:
+
+- **Das Melodiefenster geht von 20 auf 34 Prozent.** Das ist keine
+  Lautstärkeänderung — es ist ein Anteil. Die Melodie besetzt ihr Band jetzt
+  fast doppelt so stark, ohne dass irgendetwas lauter gedreht wurde. Drei
+  Ursachen: die Okarina stellt das Band nicht mehr mit einem Sägezahnkamm zu
+  wie das Akkordeon, die Achtbit-Ebene ist weg, und das Echo hält die Melodie
+  nach dem Notenende dort oben präsent.
+- **Der Effektivwert steigt bei gleichzeitig gesunkener Spitze.** Der
+  Scheitelfaktor fällt von 4,3 auf rund 2,5: Die Mischung ist dichter geworden,
+  nicht spitzer. Genau das heisst „mehr Volumen" — mehr Energie zwischen den
+  Anschlägen, nicht höhere Anschläge. Die Aussteuerungsreserve wächst dabei von
+  3,6 auf gut 6 dB. Die Ursachen sind der weichere Ansatz des Erdschlags (8
+  statt 3 ms), die gehaltene Okarina und die beiden Nachhallwege, die die Lücken
+  zwischen den Tönen füllen.

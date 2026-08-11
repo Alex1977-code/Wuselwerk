@@ -546,5 +546,5 @@ export function neuerBestwert(e: AudioEngine, ab = 0): void {
   }
   // Schlusston eine Oktave ueber dem Grundton — er faengt den Triller auf,
   // sonst bricht der Stinger mitten in der Bewegung ab.
-  glocke(e, { freq: hz(24), dur: 0.85, gain: 0.09, ...fuerStimme(ab), delay: ab + 1.1, echo: 0.35 });
+  glocke(e, { freq: hz(24), dur: 0.85, gain: 0.09, ...fuerStimme(ab + 1.1), echo: 0.35 });
 }

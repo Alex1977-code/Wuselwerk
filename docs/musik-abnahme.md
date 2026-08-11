@@ -26,7 +26,13 @@ Abgesichert durch: `tests/musik.test.ts`.
 
 ## 2. Welt 1 — Wiese
 
-C-Dur mit lydischer Farbe, 126 BPM, Grundton 261,63 Hz.
+C-Dur mit lydischer Farbe, Grundton 261,63 Hz.
+
+Das Tempo steht hier bewusst **nicht** mehr: Es ist laut Tabelle oben nicht mit
+abgenommen, und es hat sich seither geändert (126 → 120, siehe
+`docs/klangdesign.md` §4). Eine Zahl, die in zwei Dokumenten steht und nur in
+einem gepflegt wird, ist schlimmer als keine. Der geltende Wert steht in
+`STUECKE`.
 Halbtöne über dem Grundton; die Zahl in Klammern ist die Länge in Achteln.
 
 | Takt | Melodie | Akkord |
@@ -58,7 +64,7 @@ Schlusston zur Ruhe kommt, fängt nicht wieder an.
 
 ## 3. Welt 2 — Höhle
 
-A-dorisch, 112 BPM, Grundton 220 Hz.
+A-dorisch, Grundton 220 Hz. Zum Tempo siehe die Anmerkung bei Welt 1.
 
 | Takt | Melodie | Akkord |
 |---|---|---|
@@ -111,3 +117,21 @@ erst recht nicht.
 
 Die Tests sichern den **Bau**, nicht die Schönheit. Ob eine Melodie schön ist,
 kann kein Test sagen — dafür steht oben die Abnahme.
+
+---
+
+## 6. Was sich seit der Abnahme geändert hat
+
+Nichts an den Melodien. Alles andere ist neu gemacht worden; der Entwurf dazu
+steht in `docs/klangdesign.md`. Die Punkte, die man am ehesten für eine
+Änderung an der Abnahme halten könnte, und warum sie keine sind:
+
+| geändert | war das abgenommen? |
+|---|---|
+| Wiese: Akkordeon → Okarina | Nein — „welche Stimme sie spielt" steht ausdrücklich in der rechten Spalte. |
+| Tempo 126 → 120 und 112 → 100 | Nein — „Tempo, Lautstärke, Klangfarbe". |
+| Kick auf jede Viertel → Puls 3-3-2 | Nein — „Begleitfiguren, Perkussion, Bass". |
+| Achtbit-Ebene entfernt | Nein — sie ist Instrumentierung, keine Melodie. |
+
+Die Tonfolgen und die Akkordfolge in `STUECKE` sind Note für Note dieselben wie
+am Tag der Abnahme.

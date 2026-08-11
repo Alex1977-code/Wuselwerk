@@ -102,6 +102,17 @@ function ohneEcho(t: TonOpts) {
  * Der Kern ist der Oberton bei Faktor 4 (zwei Oktaven ueber dem Grundton): Ein
  * Holzstab schwingt so, und ohne diesen Ton klingt jedes Stabspiel wie eine
  * Floete. Der Anschlag ist ein sehr kurzes Rauschen — das ist der Schlaegel.
+ *
+ * **Wird gerade von niemandem gerufen**, und das ist Absicht statt Rest. Ihre
+ * Aufgabe in der Musik hat der `pling` uebernommen, der derselbe Holzstab mit
+ * einer Glaskante ist. Stehen bleibt sie aus zwei Gruenden: Sie ist die reine
+ * Form, an der die Begruendung fuer den Faktor 4 haengt (der `pling` verweist
+ * darauf), und fuer die Uebersichtskarte ist eine Fassung ohne Glasanteil
+ * vorgesehen — dort soll es weich sein und nicht funkeln.
+ *
+ * Diese Datei ist eine **Farbpalette**, kein Aufrufgraph. Eine Stimme, die
+ * bereitliegt, kostet nichts; eine, die im falschen Moment fehlt, kostet einen
+ * Umbau.
  */
 export function marimba(e: E, t: TonOpts): void {
   const g = t.gain ?? 0.14;
