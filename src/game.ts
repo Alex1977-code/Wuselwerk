@@ -20,6 +20,7 @@ import { drawIntro, drawMenu, drawPause, drawResult, type Button } from './rende
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
 import { loadProgress, recordResult, starConditions, type Progress } from './storage';
+import { GameAudio } from './audio';
 
 type Screen = 'menu' | 'play';
 type Phase = 'intro' | 'running' | 'paused' | 'result';
@@ -48,6 +49,7 @@ export class Game {
   private scene!: Scene;
   private camera!: Camera;
 
+  private audio = new GameAudio();
   private selected: SkillId | null = null;
   private conditions: boolean[] = [false, false, false];
 
@@ -106,6 +108,8 @@ export class Game {
     this.terrainView = new TerrainView(this.world.terrain, level.theme);
     this.scene = new Scene(level, this.terrainView);
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
+    this.audio.setTheme(level.theme);
+    this.audio.stopMusic();
     this.selected = null;
     this.screen = 'play';
     this.phase = 'intro';
@@ -114,6 +118,7 @@ export class Game {
   }
 
   private toMenu(): void {
+    this.audio.stopMusic();
     this.progress = loadProgress();
     this.screen = 'menu';
     this.clearAim();
@@ -125,6 +130,7 @@ export class Game {
     const dt = Math.min(0.05, (now - this.lastMs) / 1000);
     this.lastMs = now;
     this.anim += dt * 60;
+    this.audio.beginFrame();
 
     if (this.screen === 'play') {
       if (this.phase === 'running') this.stepSim(dt);
@@ -133,6 +139,7 @@ export class Game {
       this.terrainView.sync();
       this.refreshTarget();
     }
+    this.audio.update();
     this.render();
   }
 
@@ -147,11 +154,20 @@ export class Game {
       this.simAcc -= MS_PER_TICK;
       guard++;
     }
-    this.scene.spawnFromEvents(this.world.drainEvents());
+    this.dispatchEvents();
     if (this.world.phase !== 'running') this.finish();
   }
 
+  /** Verteilt die Weltereignisse an Partikel, Ton und Haptik. */
+  private dispatchEvents(): void {
+    const events = this.world.drainEvents();
+    if (events.length === 0) return;
+    this.scene.spawnFromEvents(events);
+    this.audio.handle(events, performance.now());
+  }
+
   private finish(): void {
+    this.audio.stopMusic();
     this.conditions = starConditions(this.level, this.world);
     recordResult(this.level, this.world);
     this.progress = loadProgress();
@@ -213,7 +229,7 @@ export class Game {
   private commitAim(): void {
     if (this.target && this.selected) {
       this.world.assign(this.target.id, this.selected);
-      this.scene.spawnFromEvents(this.world.drainEvents());
+      this.dispatchEvents();
     }
     this.aim = null;
     this.fan = null;
@@ -229,6 +245,8 @@ export class Game {
 
   private onDown(e: PointerEvent): void {
     e.preventDefault();
+    // Browser lassen Ton erst nach einer Nutzergeste zu.
+    this.audio.unlock();
     this.canvas.setPointerCapture?.(e.pointerId);
     const { x, y } = this.pos(e);
 
@@ -251,7 +269,12 @@ export class Game {
 
     if (inBox(L.pauseBtn, x, y)) {
       this.phase = 'paused';
+      this.audio.stopMusic();
       this.clearAim();
+      return;
+    }
+    if (inBox(L.soundBtn, x, y)) {
+      this.audio.toggleMute();
       return;
     }
     if (inBox(L.nukeBtn, x, y)) {
@@ -358,20 +381,16 @@ export class Game {
   private onOverlayButton(id: string): void {
     switch (id) {
       case 'start':
-        this.phase = 'running';
-        this.lastMs = performance.now();
-        break;
       case 'resume':
         this.phase = 'running';
         this.lastMs = performance.now();
+        this.audio.startMusic();
         break;
       case 'restart':
-        this.loadLevel(this.level);
-        this.phase = 'running';
-        break;
       case 'retry':
         this.loadLevel(this.level);
         this.phase = 'running';
+        this.audio.startMusic();
         break;
       case 'next': {
         const i = LEVELS.findIndex((l) => l.id === this.level.id);
@@ -456,6 +475,7 @@ export class Game {
       selected: this.selected,
       showPar: this.progress[this.level.id]?.won ?? false,
       cameraFollow: this.camera.follow,
+      muted: this.audio.muted,
     };
   }
 
@@ -484,6 +504,14 @@ export class Game {
     );
     if (!w) return null;
     return { x: sx(v, w.x), y: sy(v, w.y - WUSEL_H / 2) };
+  }
+
+  debugAudio() {
+    return this.audio.debugState();
+  }
+
+  debugToggleSound(): boolean {
+    return this.audio.toggleMute();
   }
 
   debugTicks(): number {

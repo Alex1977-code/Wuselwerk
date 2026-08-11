@@ -562,7 +562,7 @@ export class World {
     }
 
     const removed = this.terrain.clearRect(sx, sy, C.BASH_DEPTH, sh);
-    if (removed > 0) this.emit({ type: 'dig', x: w.x + w.dir * 2, y: w.y - 5 });
+    if (removed > 0) this.emit({ type: 'dig', x: w.x + w.dir * 2, y: w.y - 5, skill: 'basher' });
 
     const nx = w.x + w.dir * C.BASH_DEPTH;
     if (nx < 0 || nx >= this.terrain.width) {
@@ -600,7 +600,7 @@ export class World {
     }
 
     this.terrain.clearRect(sx, sy, C.MINE_REACH, sh);
-    this.emit({ type: 'dig', x: w.x + w.dir * 2, y: w.y - 3 });
+    this.emit({ type: 'dig', x: w.x + w.dir * 2, y: w.y - 3, skill: 'miner' });
 
     const nx = w.x + w.dir * C.MINE_DX;
     const ny = w.y + C.MINE_DY;
@@ -630,7 +630,7 @@ export class World {
     }
 
     this.terrain.clearRect(sx, row, sw, 1);
-    this.emit({ type: 'dig', x: w.x, y: row });
+    this.emit({ type: 'dig', x: w.x, y: row, skill: 'digger' });
     w.y = row;
 
     if (w.y - C.WUSEL_H > this.terrain.height) {

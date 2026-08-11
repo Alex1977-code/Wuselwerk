@@ -22,6 +22,7 @@ export interface HudState {
   selected: SkillId | null;
   showPar: boolean;
   cameraFollow: boolean;
+  muted: boolean;
 }
 
 export function roundRect(
@@ -82,6 +83,7 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.font = '600 15px system-ui, sans-serif';
   ctx.fillText(`${w.saved}/${w.needed}`, midX, 20);
 
+  drawIconButton(ctx, L.soundBtn, s.muted ? '🔇' : '🔊', false);
   drawIconButton(ctx, L.nukeBtn, '☢', false);
   drawIconButton(ctx, L.pauseBtn, '❚❚', false);
 

@@ -21,6 +21,7 @@ export interface Layout {
   skillButtons: SkillButton[];
   pauseBtn: Box;
   nukeBtn: Box;
+  soundBtn: Box;
   recenterBtn: Box;
 }
 
@@ -71,6 +72,7 @@ export function computeLayout(cssW: number, cssH: number): Layout {
   const btn = 38;
   const pauseBtn: Box = { x: cssW - pad - btn, y: 8, w: btn, h: btn };
   const nukeBtn: Box = { x: cssW - pad - btn * 2 - 6, y: 8, w: btn, h: btn };
+  const soundBtn: Box = { x: cssW - pad - btn * 3 - 12, y: 8, w: btn, h: btn };
   const recenterBtn: Box = {
     x: cssW - pad - btn,
     y: play.y + play.h - btn - 8,
@@ -88,6 +90,7 @@ export function computeLayout(cssW: number, cssH: number): Layout {
     skillButtons,
     pauseBtn,
     nukeBtn,
+    soundBtn,
     recenterBtn,
   };
 }

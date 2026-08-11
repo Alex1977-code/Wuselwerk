@@ -97,6 +97,13 @@ async function main() {
     `${normal} Ticks/s normal, ${focused} Ticks/s beim Halten`,
   );
 
+  // --- Ton: nach der ersten Geste muss der Klangkontext laufen (GDD §7) -----
+  const audio = await page.evaluate(() => window.__wuselwerk.debugAudio());
+  check('§7 Klangkontext nach Nutzergeste aktiv', audio?.ready === true, JSON.stringify(audio));
+  const mutedNow = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
+  const mutedBack = await page.evaluate(() => window.__wuselwerk.debugToggleSound());
+  check('§7 Stummschaltung schaltet um', mutedNow === true && mutedBack === false);
+
   // --- Gräber wählen -------------------------------------------------------
   const btn = await page.evaluate(() => {
     const w = window.innerWidth;

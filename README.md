@@ -39,6 +39,7 @@ node scripts/smoke.mjs   # spielt Level 1 im echten Browser durch, legt Screensh
 | §4 Berufe | Alle acht Klassiker plus Freisetzungsrate und Selbstzerstörung. |
 | §5 Aus den 90ern | Pixelgenau zerstörbares Terrain, Stahl, Falltür, leuchtende Ausgangstür, Rettungsquote-Balken, sture Läufer ohne Wegfindung, sichtbares Sterben. |
 | §6 Grafik | Terrainmaske in logischer Auflösung, frisch gegrabenes Material heller als altes, Grasnarbe nur auf unberührter Oberfläche, Partikel, Parallax, Bildschirmschütteln nur bei Sprengungen, Berufe an der Silhouette erkennbar. |
+| §7 Sound & Haptik | Alles zur Laufzeit synthetisiert, keine Tondateien. Eigenes Arbeitsgeräusch je Beruf, Sprengcountdown als lautester Ton, gestapelter Rettungsjingle, tiefer Puls bei jedem Verlust. Vibration bei Vergabe, Tod und Sprengung. |
 | §8 Level | Fünf Testlevel, ein neues Konzept pro Level, drei Sterne, Par erst nach dem ersten Sieg sichtbar, Fortschritt lokal gespeichert. |
 | §11 Technik | Deterministische Simulation, feste Tickrate 60 Hz, Ganzzahlpositionen, Terrain als Materialmaske, Kollision direkt auf der Maske, Renderauflösung von der Simulation entkoppelt. |
 
@@ -71,8 +72,33 @@ Figurenzustand schon vollständig serialisierbar sind.
 
 ## Noch nicht gebaut (nach MVP-Reihenfolge §13, Schritt 6–7)
 
-Zeitrücklauf (§3.4), Sound und Haptik (§7), Magnetiker/Springer (§4, ab Welt 4),
-Fallen (§5), weitere Welten (§6), Leveleditor und Tagesrätsel (§9).
+Zeitrücklauf (§3.4), Magnetiker/Springer (§4, ab Welt 4), Fallen (§5),
+weitere Welten (§6), Leveleditor und Tagesrätsel (§9).
+
+### Zum Ton im Einzelnen
+
+Alle Geräusche entstehen zur Laufzeit über die Web Audio API. Das ist keine
+Sparmassnahme, sondern Bedingung: Der Prototyp lässt sich nur deshalb in eine
+einzige HTML-Datei packen, weil er nichts nachlädt.
+
+Zwei bewusste Abweichungen vom Dokument:
+
+- **Statt Dauertönen pro Beruf klingt jeder Arbeitsschritt einzeln.** Auf einem
+  Handylautsprecher verschmieren übereinandergelegte Dauertöne zu Matsch,
+  während die Dichte der Schläge sofort verrät, wie viele Figuren arbeiten —
+  dieselbe Information, nur lesbarer.
+- **Die Musik ist eine eigene schlichte Schleife, kein Arrangement.** §7
+  schlägt gemeinfreie Volksmelodien vor; das ist eine Kompositionsaufgabe und
+  gehört in eine eigene Runde. Die jetzige Schleife trägt die Stimmung und
+  hält den Prototyp frei von fremdem Material.
+
+Der Rettungsjingle nutzt eine Fünftonleiter: Gestapelte Töne klingen dadurch
+immer zusammen, egal in welcher Reihenfolge gerettet wird. So entsteht bei
+einer Massenrettung von selbst eine Melodie.
+
+**Haptik nur unter Android.** Die Vibrations-Schnittstelle des Browsers gibt es
+in Safari auf dem iPhone nicht — dort bleibt das Spiel still. Diese Rückmeldung
+wäre erst in einer nativen Fassung möglich.
 
 ## Fragen für den Spieltest
 
