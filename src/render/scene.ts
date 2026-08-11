@@ -151,17 +151,21 @@ export class Scene {
     this.drawSky(ctx, v);
     this.drawHills(ctx, v);
 
+    // Die Glättung nur für dieses eine Bild abschalten und den Zustand danach
+    // zurückgeben. Vorher stand hier ein hartes Wiedereinschalten — das wäre
+    // jedem künftigen Sprite-drawImage in die Quere gekommen, weil Sprites
+    // scharf bleiben müssen, die heruntergerechnete Übersichtskarte dagegen
+    // nicht.
+    ctx.save();
     ctx.imageSmoothingEnabled = false;
-    const dx = sx(v, 0);
-    const dy = sy(v, 0);
     ctx.drawImage(
       this.terrainView.canvas,
-      dx,
-      dy,
+      sx(v, 0),
+      sy(v, 0),
       this.level.width * v.scale,
       this.level.height * v.scale,
     );
-    ctx.imageSmoothingEnabled = true;
+    ctx.restore();
 
     this.drawExit(ctx, v, world, tick);
     this.drawHatch(ctx, v, world);
