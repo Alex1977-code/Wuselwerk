@@ -17,16 +17,24 @@ Haltedauer je Bild hängen an den Taktraten der Simulation. Die verbindlichen
 Werte stehen in `docs/grafik-integration.md`, als Vorgabewert ausformuliert in
 `src/render/atlas.ts` (`DEFAULT_MANIFEST`).
 
-## Vorlage zum Übermalen erzeugen
+## Woher das Blatt kommt
+
+Zwei Wege schreiben hierher, beide dieselben zwei Dateinamen. Wer zuletzt
+läuft, gewinnt.
 
 ```bash
-npm run atlas:template
+npm run atlas:backen     # aus dem 3D-Ankermodell — der übliche Weg
+npm run atlas:template   # prozedurale Malvorlage — der Notweg
 ```
 
-Das schreibt `wusel.png` und `wusel.atlas.json` in diesen Ordner — gezeichnet
-mit dem prozeduralen Code, also im richtigen Zellraster mit richtigem
-Fusspunkt. Diese Datei ist die Malvorlage: Zelle für Zelle übermalen, Raster
-und Fusspunkt beibehalten, Dateinamen lassen.
+**`atlas:backen`** stellt das Ankermodell (`art-src/wuselwerker-v4.glb`) in die
+Posen aus `art-src/posen/` und rendert daraus die 60 Bilder. Das ist der Weg,
+über den die Grafik entsteht; beschrieben in `docs/grafik-ankerbild-a0.md` §7.
+
+**`atlas:template`** zeichnet dasselbe Raster mit dem prozeduralen Code. Es ist
+eine Malvorlage für Handarbeit und zugleich die Notlösung, falls am Modell
+etwas nicht stimmt — Zellraster und Fusspunkt sind garantiert richtig, weil
+derselbe Code sie auch im Spiel benutzt.
 
 ## Rückfallebene
 

@@ -246,14 +246,10 @@ Haltedauern, Andockpunkte, Atlasformat, Auslieferung in 1×.
 
 ## §6 Offene Punkte, benannt statt übergangen
 
-1. **Ohne Animationen keine Sprite-Bilder aus dem Modell.** Das Skelett ist da und
-   standardbenannt, Bewegungsabläufe sind es nicht. Drei Wege, in der Reihenfolge, in der
-   ich sie empfehlen würde:
-   - aus Tripo je Zustand einen animierten Export ziehen und die Bilder daraus backen —
-     wenig Arbeit, sofort einsetzbar;
-   - die Posen im Repo selbst setzen (die Gelenknamen tragen das), also 60 Bilder aus
-     Gelenkwinkeln — aufwendig, aber vollständig unter Kontrolle und wiederholbar;
-   - das Modell nur als Vorlage nehmen und die 60 Bilder von Hand malen.
+1. ~~Ohne Animationen keine Sprite-Bilder aus dem Modell.~~ **Erledigt: Die Posen stehen
+   im Repo.** Das Skelett ist da und standardbenannt, Bewegungsabläufe waren es nicht — die
+   Bewegung entsteht deshalb als Zahlen unter `art-src/posen/`, je Zustand eine Datei, und
+   `npm run atlas:backen` macht daraus das Blatt. Der Weg ist in §7 beschrieben.
 2. **Das prozedurale Rückfallbild ist ein Platzhalter, keine Umsetzung von A0.** Es hat
    die Mähne, die Farben und die Kopflastigkeit; es hat keine Arme, kein Gesicht ausser
    einem Auge und keine Trolldetails. Es soll die Figur wiedererkennbar machen, solange
@@ -263,3 +259,59 @@ Haltedauern, Andockpunkte, Atlasformat, Auslieferung in 1×.
    Zeile und ist deshalb bewusst nicht nebenbei mitgemacht worden.
 4. **Die 2D-Erzeugung liegt nicht im Repo.** Nur das Modell und die daraus gerechneten
    Ansichten. Wer das Ursprungsbild ablegen will: `art-src/wuselwerker-v4.png`.
+
+---
+
+## §7 Vom Modell zum Sprite-Blatt
+
+```bash
+npm run atlas:backen          # alle 60 Bilder → src/art/wusel.png
+node scripts/bake-atlas.mjs --clip walking    # nur ein Zustand, plus Kontrollbild in 10×
+```
+
+### 7.1 Der Weg
+
+Modell laden → in jede Pose aus `art-src/posen/` stellen → Anbauteile setzen →
+orthografisch rendern → auf Zellgrösse verkleinern → auf die Palette einrasten → Umriss
+ziehen → alle Bilder zum Blatt setzen.
+
+### 7.2 Die vier Entscheidungen, die das Ergebnis tragen
+
+**Die Winkel gelten in Weltachsen, nicht in Knochenachsen.** Ein Rig benennt seine lokalen
+Achsen beliebig; `rotation.x` bedeutet an der Schulter etwas anderes als an der Hüfte. Der
+Backweg rechnet jede angegebene Drehung um: `q' = Rp⁻¹ · Q · Rp · qBind`, wobei `Rp` die
+Weltdrehung des Elternknochens ist — deshalb muss von der Wurzel zu den Spitzen gearbeitet
+werden. Damit heisst „−34 um X" am Oberschenkel dasselbe wie am Oberarm: nach vorn.
+
+**Der Massstab kommt aus dem Modell.** Sohle bis Scheitel ohne Haar ist im Spiel
+`WUSEL_H = 12`. Der Backweg misst diese Strecke an der Geometrie und stellt die Kamera
+danach. Ein anderes Modell braucht deshalb keine Handarbeit.
+
+**Verkleinert wird mit Mehrheitsentscheid, nicht mit Mittelwert.** Bei 6 × 6 Bildpunkten je
+Zelle erzeugt ein Mittelwert Zwischentöne, die es in der Palette nicht gibt; die Mehrheit
+erhält Flächen und harte Kanten. Anbauteile zählen dabei doppelt — ein Werkzeug ist dünn und
+würde sonst gegen den Körper dahinter verlieren, obwohl gerade es den Beruf lesbar macht.
+
+**Die Kamera steht 30 Grad aus dem Profil.** Das ist eine Abkehr vom alten Kanon
+(„strict orthographic side view") und hat einen gemessenen Grund: Im strengen Profil ist der
+Hinterkopf dieser Figur vollständig Haar, das sichtbare Gesicht zwei Pixel breit und der
+Rumpf ebenfalls zwei. Übrig bliebe eine rote Masse auf einem türkisen Strich. Leicht gedreht
+zeigt die Figur Gesicht und Rumpfbreite. Die Laufrichtung bleibt eindeutig, und die
+Spiegelung im Renderer ergibt sauber die andere Dreiviertelansicht.
+
+### 7.3 Die Regel, die beim Graben herauskam
+
+**Der Rumpf beugt sich nur wenig — die Bewegung tragen die Arme.** Der Kopf ist fast die
+halbe Figur, und daran hängt die Mähne. Bei 22 Grad Vorbeugung deckt sie den ganzen Körper
+zu, und übrig bleibt ein roter Fleck über einem gelben Werkzeug. Bei 9 Grad liest die Figur.
+Das ist keine Geschmacksfrage, sondern folgt direkt aus dem Kopfanteil dieser Figur, und
+gilt für jede Pose.
+
+### 7.4 Was der Backweg nicht kann
+
+- **Kein Ausblenden.** Das Blatt kennt nur Pixel. `saving` und `dying` müssen ihre
+  Auflösung über Haltung und Versatz erzählen, nicht über Durchsichtigkeit.
+- **Keine Verformung.** Squash und Stretch gäbe es nur über Knochen; das Modell hat dafür
+  keine.
+- **Nur eine Blickrichtung.** Nach links spiegelt der Renderer. Ein Merkmal, das nur auf
+  einer Seite sitzt, wechselt dabei die Seite.
