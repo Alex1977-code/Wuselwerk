@@ -27,9 +27,12 @@ const safeJs = js.replace(/<\/script/gi, '<\\/script');
  * Fassung um das Spielfeld. Farben und Schrift stammen aus dem HUD des Spiels
  * (src/render/hud.ts), damit Rahmen und Spiel dieselbe Sprache sprechen.
  *
- * Bewusst einthemig dunkel: Das Spiel ist eine Nachtszene und lässt sich nicht
- * umfärben — eine helle Fassung würde dagegen schlagen. Alle Farben sind
- * deshalb ausdrücklich gesetzt, damit die Seite auf jedem Untergrund hält.
+ * Bewusst einthemig dunkel — aber nicht mehr aus dem ursprünglichen Grund. Das
+ * Spiel war einmal eine Nachtszene; seit der Aufhellung der Palette spielt es
+ * bei Tag. Der dunkle Rahmen bleibt trotzdem, und zwar jetzt als Gegensatz:
+ * Ein heller Rahmen um ein helles Spielfeld lässt die Ränder ineinanderlaufen,
+ * ein dunkler fasst das Bild ein. Alle Farben sind ausdrücklich gesetzt, damit
+ * die Seite auf jedem Untergrund hält.
  */
 const wrapperCss = `
 :root {

@@ -8,7 +8,7 @@ es muss kein Code angefasst werden.
 Je Atlas ein Paar mit gleichem Namensstamm:
 
 ```
-wusel.png          das Blatt
+wusel.webp         das Blatt
 wusel.atlas.json   die Aufteilung
 ```
 

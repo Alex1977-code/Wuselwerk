@@ -1,9 +1,77 @@
 import type { SkillId } from '../core/types';
 
 /**
- * Berufssymbole. Bewusst grob und kantig — sie muessen auf 36 Punkt Breite
- * eindeutig sein und dieselbe Silhouettenlogik tragen wie die Figuren.
+ * Berufssymbole.
+ *
+ * ## Warum sie gefuellt sind und nicht gestrichelt
+ *
+ * Die erste Fassung waren Strichzeichnungen. Auf dem Entwurfsbildschirm sehen
+ * die gut aus, auf einem Knopf von 36 Punkten Breite zerfallen sie: Ein Strich
+ * von anderthalb Punkten ist auf einem Handy je nach Bildpunktdichte mal zwei
+ * und mal ein Punkt breit, und wo er auf einen Nachbarstrich trifft, wird
+ * daraus ein Fleck. Eine **gefuellte Flaeche** hat dieses Problem nicht — sie
+ * ist bei jeder Groesse dieselbe Form.
+ *
+ * Der zweite Grund wiegt schwerer: Ein Symbol wird nicht gelesen, sondern
+ * **wiedererkannt**, und wiedererkannt wird eine Silhouette. Ein Umriss hat
+ * keine; er hat nur eine Kontur, und die muss das Auge erst zu einer Form
+ * zusammensetzen.
+ *
+ * ## Die Familienlogik
+ *
+ * Drei der acht Berufe tun dasselbe in verschiedene Richtungen: Graeber nach
+ * unten, Schraegbagger schraeg, Rammer waagerecht. Diese drei teilen sich
+ * deshalb **eine Form** — ein Pfeil, der auf eine Wand trifft — und
+ * unterscheiden sich nur im Winkel. Wer einen davon verstanden hat, versteht
+ * alle drei, und im Eifer des Gefechts greift man nicht daneben.
+ *
+ * Die uebrigen fuenf sind Einzelgaenger und bekommen jeder eine eigene, klar
+ * andere Silhouette: Leiter, Schirm, Bombe, Sperre, Treppe.
  */
+
+/** Zeichnet einen Streckenzug als gefuellte Flaeche. */
+function form(ctx: CanvasRenderingContext2D, pts: number[][]): void {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * Der Pfeil, den sich Graeber, Schraegbagger und Rammer teilen.
+ *
+ * @param winkel Richtung in Radiant. 0 ist nach rechts.
+ *
+ * Gezeichnet wird immer nach rechts und dann gedreht — so ist garantiert, dass
+ * die drei Symbole exakt dieselbe Form haben und sich wirklich nur im Winkel
+ * unterscheiden. Zwei getrennt gezeichnete Pfeile waeren nie ganz gleich, und
+ * genau diese kleinen Unterschiede zerstoeren die Wiedererkennung.
+ */
+function pfeilAufWand(ctx: CanvasRenderingContext2D, u: number, winkel: number): void {
+  ctx.save();
+  ctx.rotate(winkel);
+  // Schaft
+  form(ctx, [
+    [-u * 0.95, -u * 0.2],
+    [-u * 0.05, -u * 0.2],
+    [-u * 0.05, u * 0.2],
+    [-u * 0.95, u * 0.2],
+  ]);
+  // Spitze
+  form(ctx, [
+    [-u * 0.12, -u * 0.58],
+    [u * 0.42, 0],
+    [-u * 0.12, u * 0.58],
+  ]);
+  // Die Wand, auf die er trifft — aufgebrochen in drei Broecken, damit sie als
+  // Material liest und nicht als Balken.
+  for (let i = -1; i <= 1; i++) {
+    ctx.fillRect(u * 0.6, i * u * 0.46 - u * 0.19, u * 0.34, u * 0.38);
+  }
+  ctx.restore();
+}
+
 export function drawSkillIcon(
   ctx: CanvasRenderingContext2D,
   id: SkillId,
@@ -14,121 +82,101 @@ export function drawSkillIcon(
 ): void {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.lineWidth = Math.max(1.6, s * 0.13);
+  ctx.strokeStyle = color;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   const u = s / 2;
 
   switch (id) {
-    case 'climber':
-      // Leiter mit Figur daneben
-      ctx.beginPath();
-      ctx.moveTo(-u * 0.2, u);
-      ctx.lineTo(-u * 0.2, -u);
-      ctx.moveTo(u * 0.7, u);
-      ctx.lineTo(u * 0.7, -u);
-      for (let i = -2; i <= 2; i++) {
-        ctx.moveTo(-u * 0.2, (i * u) / 2.4);
-        ctx.lineTo(u * 0.7, (i * u) / 2.4);
+    case 'digger':
+      pfeilAufWand(ctx, u, Math.PI / 2);
+      break;
+    case 'miner':
+      pfeilAufWand(ctx, u, Math.PI / 4);
+      break;
+    case 'basher':
+      pfeilAufWand(ctx, u, 0);
+      break;
+
+    case 'climber': {
+      // Leiter: zwei Holme, vier Sprossen. Alles als Rechtecke, damit die
+      // Sprossen bei jeder Groesse gleich dick bleiben.
+      const holm = u * 0.2;
+      ctx.fillRect(-u * 0.62, -u, holm, u * 2);
+      ctx.fillRect(u * 0.42, -u, holm, u * 2);
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(-u * 0.62, -u * 0.72 + i * u * 0.52, u * 1.24, u * 0.17);
       }
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-u * 0.95, u * 0.2);
-      ctx.lineTo(-u * 0.95, -u * 0.9);
-      ctx.stroke();
       break;
+    }
 
-    case 'floater':
+    case 'floater': {
+      // Schirm: gefuellte Kuppel mit gezacktem Saum. Der Zackensaum ist der
+      // Unterschied zwischen einem Schirm und einem halben Kreis.
+      const r = u * 0.92;
       ctx.beginPath();
-      ctx.arc(0, u * 0.1, u * 0.9, Math.PI, 0);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, u * 0.1);
-      ctx.lineTo(0, u * 0.95);
-      ctx.stroke();
-      break;
-
-    case 'bomber':
-      ctx.beginPath();
-      ctx.arc(0, u * 0.25, u * 0.66, 0, Math.PI * 2);
+      ctx.arc(0, u * 0.12, r, Math.PI, 0);
+      for (let i = 0; i < 3; i++) {
+        const x0 = r - (i * 2 * r) / 3;
+        ctx.lineTo(x0 - r / 3 + r / 6, u * 0.12 + r * 0.26);
+        ctx.lineTo(x0 - (2 * r) / 3, u * 0.12);
+      }
+      ctx.closePath();
       ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(u * 0.3, -u * 0.3);
-      ctx.quadraticCurveTo(u * 0.85, -u * 0.75, u * 0.55, -u * 1.0);
-      ctx.stroke();
+      // Leine und Last darunter.
+      ctx.fillRect(-u * 0.09, u * 0.12, u * 0.18, u * 0.62);
+      ctx.fillRect(-u * 0.3, u * 0.72, u * 0.6, u * 0.28);
       break;
+    }
+
+    case 'bomber': {
+      // Bombe: Kugel, Zuender, Funke. Der Funke ist das, was sie von einem
+      // Punkt unterscheidet.
+      ctx.beginPath();
+      ctx.arc(0, u * 0.28, u * 0.66, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = u * 0.17;
+      ctx.beginPath();
+      ctx.moveTo(u * 0.2, -u * 0.3);
+      ctx.quadraticCurveTo(u * 0.62, -u * 0.62, u * 0.5, -u * 0.95);
+      ctx.stroke();
+      // Vier Strahlen als Funke.
+      for (let i = 0; i < 4; i++) {
+        const a = (i * Math.PI) / 2 + Math.PI / 4;
+        ctx.save();
+        ctx.translate(u * 0.5, -u * 0.95);
+        ctx.rotate(a);
+        ctx.fillRect(-u * 0.06, -u * 0.34, u * 0.12, u * 0.28);
+        ctx.restore();
+      }
+      break;
+    }
 
     case 'blocker':
-      ctx.beginPath();
-      ctx.moveTo(-u, -u * 0.25);
-      ctx.lineTo(u, -u * 0.25);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, -u * 0.25);
-      ctx.lineTo(0, u * 0.9);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(0, -u * 0.72, u * 0.28, 0, Math.PI * 2);
-      ctx.fill();
+      // Sperre: breiter Fuss, schmaler Koerper, zwei ausgestreckte Arme. Das
+      // ist die Haltung, die die Figur im Spiel einnimmt — das Symbol zeigt
+      // dieselbe Silhouette wie das, was danach auf dem Feld steht.
+      ctx.fillRect(-u * 0.22, -u * 0.95, u * 0.44, u * 1.6);
+      ctx.fillRect(-u * 0.95, -u * 0.42, u * 1.9, u * 0.26);
+      ctx.fillRect(-u * 0.62, u * 0.68, u * 1.24, u * 0.3);
       break;
 
     case 'builder':
-      ctx.beginPath();
-      ctx.moveTo(-u, u * 0.85);
-      ctx.lineTo(-u * 0.3, u * 0.85);
-      ctx.lineTo(-u * 0.3, u * 0.15);
-      ctx.lineTo(u * 0.35, u * 0.15);
-      ctx.lineTo(u * 0.35, -u * 0.55);
-      ctx.lineTo(u, -u * 0.55);
-      ctx.stroke();
-      break;
-
-    case 'basher':
-      ctx.beginPath();
-      ctx.moveTo(u * 0.75, -u);
-      ctx.lineTo(u * 0.75, u);
-      ctx.stroke();
-      arrow(ctx, -u * 0.9, 0, u * 0.45, 0, u * 0.34);
-      break;
-
-    case 'miner':
-      ctx.beginPath();
-      ctx.moveTo(-u, u * 0.9);
-      ctx.lineTo(u, u * 0.9);
-      ctx.stroke();
-      arrow(ctx, -u * 0.7, -u * 0.75, u * 0.45, u * 0.3, u * 0.34);
-      break;
-
-    case 'digger':
-      ctx.beginPath();
-      ctx.moveTo(-u, -u * 0.85);
-      ctx.lineTo(u, -u * 0.85);
-      ctx.stroke();
-      arrow(ctx, 0, -u * 0.45, 0, u * 0.75, u * 0.34);
+      // Treppe: drei Stufen nach oben rechts, als eine Flaeche. Ein Umriss
+      // haette hier fuenf Ecken zu wenig, um noch als Treppe zu lesen.
+      form(ctx, [
+        [-u, u],
+        [-u, u * 0.3],
+        [-u * 0.32, u * 0.3],
+        [-u * 0.32, -u * 0.25],
+        [u * 0.34, -u * 0.25],
+        [u * 0.34, -u * 0.8],
+        [u, -u * 0.8],
+        [u, u],
+      ]);
       break;
   }
-  ctx.restore();
-}
 
-function arrow(
-  ctx: CanvasRenderingContext2D,
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  head: number,
-): void {
-  ctx.beginPath();
-  ctx.moveTo(x0, y0);
-  ctx.lineTo(x1, y1);
-  ctx.stroke();
-  const a = Math.atan2(y1 - y0, x1 - x0);
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x1 - head * Math.cos(a - 0.45), y1 - head * Math.sin(a - 0.45));
-  ctx.lineTo(x1 - head * Math.cos(a + 0.45), y1 - head * Math.sin(a + 0.45));
-  ctx.closePath();
-  ctx.fill();
+  ctx.restore();
 }

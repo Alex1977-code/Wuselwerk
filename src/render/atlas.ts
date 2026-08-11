@@ -4,9 +4,10 @@ import { sx, sy, type View } from './camera';
 /**
  * Sprite-Atlas für die Figuren.
  *
- * Aufteilung und Zahlen stammen unverändert aus `docs/grafik-integration.md`:
- * Zelle 32 × 28 logisch, Fusspunkt (16, 22), Bildzahl je Zustand aus der
- * Taktrate der Simulation. Zwei Eigenheiten sind dort hergeleitet und hier
+ * Zelle **28 × 28** logisch, Fusspunkt **(14, 22)** — hergeleitet und gemessen
+ * in `docs/grafik-ankerbild-a0.md` §4, die dem älteren `grafik-integration.md`
+ * an dieser Stelle vorgeht. Die Bildzahl je Zustand stammt weiterhin aus
+ * `grafik-integration.md` §2.3. Zwei Eigenheiten sind dort hergeleitet und hier
  * bindend umgesetzt:
  *
  * - **Haltedauer je Bild, nicht je Blatt.** `DIG_INTERVAL` ist 7 und damit
