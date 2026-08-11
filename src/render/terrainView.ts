@@ -81,12 +81,17 @@ export class TerrainView {
             // Unberührte Oberkante trägt Gras, aufgegrabene nicht — so sieht
             // man jederzeit, wo schon gearbeitet wurde.
             base = openAbove && !isFresh ? p.crust : p.earth;
-            // Nach unten hin gleichmässig dunkler — ohne Stufen.
-            if (!openAbove && !isFresh) shade -= (y / this.terrain.height) * 20;
+            // Nach unten hin gleichmässig dunkler — ohne Stufen. Deutlicher als
+            // vorher: Eine Erdfläche über den halben Bildschirm braucht ein
+            // Gefälle, sonst liest sie als angestrichene Wand. Und die
+            // Verdunklung nach unten ist zugleich die Tiefeninformation, die
+            // das Spiel sonst nirgends gibt.
+            if (!openAbove && !isFresh) shade -= 6 + (y / this.terrain.height) * 46;
             break;
           case MAT.ROCK:
             base = p.rock;
             if (openAbove) shade += 16;
+            shade -= (y / this.terrain.height) * 22;
             break;
           case MAT.STEEL:
             base = p.steel;

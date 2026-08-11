@@ -5,15 +5,24 @@ import type { LevelDef } from '../levels/types';
 import { drawSkillIcon } from './icons';
 import type { Box, Layout } from './layout';
 
+/**
+ * Farben der Bedienoberfläche.
+ *
+ * Die Leiste bleibt dunkler als das Spielfeld, aber nicht mehr fast schwarz.
+ * Ein heller Himmel über einem schwarzen Balken sieht aus wie ein Loch; ein
+ * tiefes Schiefer rahmt ihn. Text und Akzent sind gleichzeitig kräftiger
+ * geworden — sie standen vorher gegen einen sehr dunklen Grund und wirken auf
+ * dem helleren zu schwach, wenn man sie lässt, wie sie waren.
+ */
 export const COL = {
-  panel: '#0e131c',
-  panelHi: '#18202e',
-  line: '#27334a',
-  text: '#dce6f5',
-  dim: '#7b8ba3',
-  accent: '#ffd23f',
-  good: '#4fd18b',
-  bad: '#e05a4a',
+  panel: '#1b2536',
+  panelHi: '#27354b',
+  line: '#3a4a66',
+  text: '#eaf2ff',
+  dim: '#95a7c0',
+  accent: '#ffc93c',
+  good: '#5ce09a',
+  bad: '#f26a55',
 };
 
 export interface HudState {
@@ -94,7 +103,7 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
 
   // Rettungsquote-Balken (GDD §5)
   const bar: Box = { x: 0, y: b.h - 5, w: b.w, h: 5 };
-  ctx.fillStyle = '#050810';
+  ctx.fillStyle = '#0d1420';
   ctx.fillRect(bar.x, bar.y, bar.w, bar.h);
   const per = bar.w / w.total;
   ctx.fillStyle = COL.good;
@@ -106,7 +115,7 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
 }
 
 function drawSoundButton(ctx: CanvasRenderingContext2D, b: Box, muted: boolean): void {
-  ctx.fillStyle = '#161d29';
+  ctx.fillStyle = '#243044';
   roundRect(ctx, b.x, b.y, b.w, b.h, 9);
   ctx.fill();
   ctx.strokeStyle = COL.line;
@@ -156,7 +165,7 @@ function drawIconButton(
   glyph: string,
   active: boolean,
 ): void {
-  ctx.fillStyle = active ? COL.panelHi : '#161d29';
+  ctx.fillStyle = active ? COL.panelHi : '#243044';
   roundRect(ctx, b.x, b.y, b.w, b.h, 9);
   ctx.fill();
   ctx.strokeStyle = COL.line;
@@ -215,7 +224,7 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       g.addColorStop(1, '#22456b');
       ctx.fillStyle = g;
     } else {
-      ctx.fillStyle = usable ? '#1a2331' : '#12161f';
+      ctx.fillStyle = usable ? '#28354c' : '#1e2739';
     }
     roundRect(ctx, b.x, b.y, b.w, b.h, 12);
     ctx.fill();
@@ -245,7 +254,7 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
     }
 
     // --- Symbol ------------------------------------------------------------
-    const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#39424f';
+    const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
     const symbolY = b.y + b.h * (weit ? 0.4 : 0.46);
     drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY, Math.min(b.w * 0.6, 30), symbolFarbe);
 
@@ -277,7 +286,7 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
     const ph = 16;
     const px = b.x + b.w - pw - 4;
     const py = b.y + 4;
-    ctx.fillStyle = selected ? COL.accent : usable ? '#0d131d' : 'transparent';
+    ctx.fillStyle = selected ? COL.accent : usable ? '#141c2a' : 'transparent';
     if (usable || selected) {
       roundRect(ctx, px, py, pw, ph, 8);
       ctx.fill();
@@ -347,7 +356,7 @@ function drawRateSlider(ctx: CanvasRenderingContext2D, L: Layout, w: World): voi
   const minT = (w.minReleaseRate - RATE_MIN) / (RATE_MAX - RATE_MIN);
   const bw = 8;
 
-  ctx.fillStyle = '#0a0e16';
+  ctx.fillStyle = '#131b28';
   roundRect(ctx, cx - bw / 2, trackTop, bw, th, bw / 2);
   ctx.fill();
 

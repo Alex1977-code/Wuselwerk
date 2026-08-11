@@ -20,37 +20,49 @@ export interface Palette {
 }
 
 const GRASS: Palette = {
-  skyTop: '#0d1730',
-  skyMid: '#22375c',
-  skyBottom: '#4a6f8c',
-  hills: ['#213950', '#2b4b68', '#37607f'],
-  hillsDeep: ['#16273a', '#1d3348', '#24405a'],
-  earth: 0x6b4a2e,
-  crust: 0x4f8f3c,
-  rock: 0x565d6b,
-  steel: 0x8b96a6,
-  brick: 0xb5713f,
+  // Heller Tag statt Nacht. Die Helligkeit sitzt im Himmel und in den fernen
+  // Hügeln, nicht in der Erde: Die Figur läuft auf der Erde, und ihr violettes
+  // Haar (L* 49) braucht dort den Helligkeitsabstand nach unten. Eine
+  // aufgehellte Erde hätte die Figur genau da verschluckt, wo sie am längsten
+  // steht — deshalb wird die Erde wärmer und satter, aber nicht heller.
+  skyTop: '#2f74b8',
+  skyMid: '#69aadd',
+  skyBottom: '#c6e6f2',
+  // Luftperspektive: Was weit weg ist, ist heller und blasser, nicht dunkler.
+  // Vorher war es umgekehrt, und die Ferne lag als dunkler Wall hinter dem
+  // Spielfeld.
+  // Die nächste Schicht ist deutlich dunkler als die fernen. Nicht nur wegen
+  // der Luftperspektive: Die Figuren laufen direkt davor, und ihr violettes
+  // Haar (L* 49) braucht dort einen Untergrund, der nicht auf derselben
+  // Helligkeit liegt. Ein sattes Mittelgrün wäre hübsch und würde die Figur
+  // verschlucken.
+  hills: ['#a5cbdd', '#7aa8bd', '#4a7f69'],
+  hillsDeep: ['#8fbbd0', '#5e8ea6', '#33604e'],
+  earth: 0x7a5230,
+  /** Unberührte Oberfläche — Grasnarbe. */
+  crust: 0x63b23f,
+  rock: 0x6b7480,
+  steel: 0x9aa5b5,
+  brick: 0xc98246,
+  /** Frisch freigelegtes Material ist heller (GDD §6). */
   freshBoost: 30,
-  glow: '#ffd98a',
+  glow: '#ffe6a8',
 };
 
 const CRYSTAL: Palette = {
-  skyTop: '#080d1f',
-  skyMid: '#141d3d',
-  skyBottom: '#28386a',
-  hills: ['#161f3c', '#1f2c50', '#2b3a68'],
-  hillsDeep: ['#0e1428', '#141c38', '#1b2648'],
-  earth: 0x3e4a72,
-  crust: 0x6f8ad6,
-  rock: 0x35405f,
-  steel: 0x8b96a6,
-  // Bernstein statt Violett. Die gebauten Stufen lagen früher bei 0xa06be0 und
-  // damit im selben Farbton wie das Haar der Figuren — in der Kristallwelt hätte
-  // eine Brücke ausgesehen wie eine Reihe Köpfe. Warm gegen die kalte Höhle ist
-  // ausserdem das bessere Signal für "von Hand gebaut".
+  // Die Höhle bleibt kühl, aber sie war schwarz. Jetzt leuchtet sie von innen.
+  skyTop: '#1b2450',
+  skyMid: '#38508f',
+  skyBottom: '#6f8ecd',
+  hills: ['#7d92c9', '#5d72ab', '#44548a'],
+  hillsDeep: ['#6a7fb8', '#4a5d93', '#33406e'],
+  earth: 0x4a5788,
+  crust: 0x8aa5e8,
+  rock: 0x3d4a6f,
+  steel: 0x9aa5b5,
   brick: 0xd59a4a,
   freshBoost: 34,
-  glow: '#9fd8ff',
+  glow: '#bfe6ff',
 };
 
 export function paletteFor(theme: ThemeId): Palette {

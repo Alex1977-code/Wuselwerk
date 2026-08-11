@@ -54,9 +54,9 @@ export class Scene {
     const rnd = mulberry32(this.level.seed ^ 0x5f3a);
     const base = this.level.height * 0.58;
     const specs = [
-      { factor: 0.25, amp: 46, off: -70 },
-      { factor: 0.45, amp: 34, off: -30 },
-      { factor: 0.68, amp: 24, off: 10 },
+      { factor: 0.25, amp: 46, off: -86 },
+      { factor: 0.45, amp: 34, off: -46 },
+      { factor: 0.68, amp: 24, off: 2 },
     ];
     this.hills = specs.map((s, li) => {
       const step = 28;
@@ -208,9 +208,19 @@ export class Scene {
    * zum Horizont hin wird es schnell hell. Das ist, was ein Abendhimmel tut.
    */
   private drawSky(ctx: CanvasRenderingContext2D, v: View): void {
-    const g = ctx.createLinearGradient(0, v.box.y, 0, v.box.y + v.box.h);
+    // Der Verlauf hängt an der *Welt*, nicht am Bildschirm.
+    //
+    // Vorher lief er über die Höhe des Spielfensters: Egal wie hoch die Kamera
+    // stand, oben war dunkel und unten hell — der Himmel sah überall gleich
+    // aus und wirkte wie eine gestrichene Wand. Jetzt liegt er zwischen dem
+    // Dach der Welt und dem Boden, also schwenkt man beim Hochziehen wirklich
+    // in die Höhe. Bei engem Ausschnitt sieht man davon nur einen Streifen —
+    // genau das gibt ihm Tiefe.
+    const oben = sy(v, 0);
+    const unten = sy(v, this.level.height * 0.66);
+    const g = ctx.createLinearGradient(0, oben, 0, Math.max(unten, oben + 1));
     g.addColorStop(0, this.palette.skyTop);
-    g.addColorStop(0.62, this.palette.skyMid);
+    g.addColorStop(0.6, this.palette.skyMid);
     g.addColorStop(1, this.palette.skyBottom);
     ctx.fillStyle = g;
     ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
@@ -229,9 +239,19 @@ export class Scene {
    * der Verlauf macht daraus Luft zwischen den Schichten.
    */
   private drawHills(ctx: CanvasRenderingContext2D, v: View): void {
+    // Bezugspunkt der Parallaxe: die Mitte der Welt, nicht ihr Ursprung.
+    //
+    // Vorher stand dort schlicht `v.ox * factor`. Das verschiebt eine Schicht
+    // proportional zur *absoluten* Kameraposition — bei einem Ausschnitt von
+    // 300 logischen Pixeln fiel das kaum auf, bei 180 sind die Hügel dadurch
+    // unter den Bildrand gewandert und waren schlicht weg. Mit Bezugspunkt
+    // bleibt jede Schicht dort, wo sie hingehört, und bewegt sich nur *relativ
+    // dazu* langsamer als der Vordergrund.
+    const refX = this.level.width / 2;
+    const refY = this.level.height * 0.42;
     for (const layer of this.hills) {
-      const ox = v.ox * layer.factor;
-      const oy = v.oy * layer.factor;
+      const ox = v.ox * layer.factor + refX * (1 - layer.factor);
+      const oy = v.oy * layer.factor + refY * (1 - layer.factor);
 
       const pts: { x: number; y: number }[] = [];
       for (let i = 0; i < layer.pts.length; i++) {
