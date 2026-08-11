@@ -74,14 +74,15 @@ body {
 }
 .fusszeile { display: none; }
 
-/* Auf breiten Schirmen im Hochformat zeigen — so ist das Spiel entworfen:
-   sechs Zoll, einhändig. Breitziehen würde die Gestaltungsvorgabe verfälschen. */
+/* Auf breiten Schirmen in Gerätegrösse zeigen statt breitziehen. Quer, weil
+   das Spiel dorthin geht; das Hochformat funktioniert weiter, sobald das
+   Fenster höher als breit ist. */
 @media (min-width: 560px) {
   body { padding: 24px; box-sizing: border-box; }
   .rahmen {
-    width: auto;
-    aspect-ratio: 390 / 844;
-    height: min(844px, calc(100dvh - 108px));
+    width: min(844px, calc(100vw - 48px));
+    aspect-ratio: 844 / 390;
+    height: auto;
     border: 1px solid var(--linie);
     border-radius: 20px;
     overflow: hidden;

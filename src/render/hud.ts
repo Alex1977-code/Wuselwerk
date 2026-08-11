@@ -65,23 +65,28 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
 
   const w = s.world;
   ctx.textAlign = 'right';
+  // Rechter Rand ergibt sich aus den Knöpfen, nicht aus einem festen Abstand —
+  // quer sind sie schmaler und rücken zusammen.
+  const timeRight = L.soundBtn.x - 12;
   const timeLeft = w.timeLeftTicks;
   const urgent = timeLeft < 15 * TICK_HZ;
   ctx.fillStyle = urgent ? COL.bad : COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
-  ctx.fillText(fmtTime(timeLeft), b.w - 96, 20);
-  ctx.fillStyle = COL.dim;
-  ctx.font = '600 10px system-ui, sans-serif';
-  ctx.fillText('ZEIT', b.w - 96, 7);
+  ctx.fillText(fmtTime(timeLeft), timeRight, b.h > 48 ? 20 : 14);
+  if (b.h > 48) {
+    ctx.fillStyle = COL.dim;
+    ctx.font = '600 10px system-ui, sans-serif';
+    ctx.fillText('ZEIT', timeRight, 7);
+  }
 
   ctx.textAlign = 'center';
-  const midX = b.w * 0.52;
+  const midX = Math.min(b.w * 0.52, timeRight - 70);
   ctx.fillStyle = COL.dim;
   ctx.font = '600 10px system-ui, sans-serif';
-  ctx.fillText('GERETTET', midX, 7);
+  if (b.h > 48) ctx.fillText('GERETTET', midX, 7);
   ctx.fillStyle = w.saved >= w.needed ? COL.good : COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
-  ctx.fillText(`${w.saved}/${w.needed}`, midX, 20);
+  ctx.fillText(`${w.saved}/${w.needed}`, midX, b.h > 48 ? 20 : 14);
 
   drawSoundButton(ctx, L.soundBtn, s.muted);
   drawIconButton(ctx, L.nukeBtn, '☢', false);
@@ -202,8 +207,11 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
     ctx.fillText(SKILL_SHORT[b.id], b.x + b.w / 2, b.y + b.h - 17);
   }
 
-  // Hinweiszeile unter dem Bogen
-  const hintY = c.y + c.h - 12;
+  // Hinweiszeile nur, wenn unter dem Bogen wirklich Platz ist. Quer ist die
+  // Steuerung flach — dort liefe der Text mitten durch die Knöpfe.
+  const lowestBtn = L.skillButtons.reduce((m, b) => Math.max(m, b.y + b.h), 0);
+  const hintY = c.y + c.h - 8;
+  if (hintY - 12 < lowestBtn + 2) return;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
   ctx.font = '500 11px system-ui, sans-serif';

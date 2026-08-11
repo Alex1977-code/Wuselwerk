@@ -622,6 +622,11 @@ export class Game {
     };
   }
 
+  /** Die aktuell gezeichneten Knopfflächen — für lageunabhängige Prüfungen. */
+  debugButtons(): Button[] {
+    return this.buttons.map((b) => ({ ...b }));
+  }
+
   debugCamera(): { follow: boolean; cx: number; cy: number } {
     return { follow: this.camera.follow, cx: this.camera.cx, cy: this.camera.cy };
   }

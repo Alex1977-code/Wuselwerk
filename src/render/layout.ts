@@ -29,14 +29,26 @@ export function inBox(b: Box, x: number, y: number): boolean {
   return x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
 }
 
-const TOP_H = 54;
-
 /**
- * Daumen-Layout (GDD §3.5): untere rund 25 % gehoeren der Steuerung, die acht
- * Berufe liegen im Bogen, die Freisetzungsrate als senkrechter Schieber links.
+ * Daumen-Layout (GDD §3.5): die Steuerung liegt unten, die acht Berufe im
+ * Bogen, die Freisetzungsrate als senkrechter Schieber links.
+ *
+ * Das Dokument legt Hochformat fest. Das Querformat kommt hinzu, weil ein
+ * Seitenscroller davon sichtbar profitiert — es kostet aber die einhändige
+ * Bedienung, weil man das Gerät quer mit beiden Händen hält. Deshalb sind
+ * beide Lagen gebaut und nicht eine gegen die andere getauscht: Die
+ * Entscheidung gehört an den Daumen, nicht an den Schreibtisch.
+ *
+ * Quer ist die Höhe knapp. Kopfzeile und Steuerung schrumpfen deshalb, und
+ * der Bogen wird flacher — über die ganze Breite gespannt sähe eine Kuppel
+ * albern aus.
  */
 export function computeLayout(cssW: number, cssH: number): Layout {
-  const controlsH = Math.max(148, Math.min(214, Math.round(cssH * 0.26)));
+  const landscape = cssW > cssH;
+  const TOP_H = landscape ? 42 : 54;
+  const controlsH = landscape
+    ? Math.max(84, Math.min(128, Math.round(cssH * 0.26)))
+    : Math.max(148, Math.min(214, Math.round(cssH * 0.26)));
   const topBar: Box = { x: 0, y: 0, w: cssW, h: TOP_H };
   const controls: Box = { x: 0, y: cssH - controlsH, w: cssW, h: controlsH };
   const play: Box = { x: 0, y: TOP_H, w: cssW, h: cssH - TOP_H - controlsH };
@@ -54,8 +66,8 @@ export function computeLayout(cssW: number, cssH: number): Layout {
   const areaW = cssW - areaX - pad;
   const gap = 4;
   const btnW = (areaW - gap * (SKILLS.length - 1)) / SKILLS.length;
-  const btnH = Math.min(72, controls.h - 44);
-  const arc = 13;
+  const btnH = Math.min(72, controls.h - (landscape ? 30 : 44));
+  const arc = landscape ? 5 : 13;
 
   const skillButtons: SkillButton[] = SKILLS.map((id, i) => {
     const t = (i - (SKILLS.length - 1) / 2) / ((SKILLS.length - 1) / 2);
@@ -69,10 +81,11 @@ export function computeLayout(cssW: number, cssH: number): Layout {
     };
   });
 
-  const btn = 38;
-  const pauseBtn: Box = { x: cssW - pad - btn, y: 8, w: btn, h: btn };
-  const nukeBtn: Box = { x: cssW - pad - btn * 2 - 6, y: 8, w: btn, h: btn };
-  const soundBtn: Box = { x: cssW - pad - btn * 3 - 12, y: 8, w: btn, h: btn };
+  const btn = landscape ? 34 : 38;
+  const btnY = Math.round((TOP_H - btn) / 2);
+  const pauseBtn: Box = { x: cssW - pad - btn, y: btnY, w: btn, h: btn };
+  const nukeBtn: Box = { x: cssW - pad - btn * 2 - 6, y: btnY, w: btn, h: btn };
+  const soundBtn: Box = { x: cssW - pad - btn * 3 - 12, y: btnY, w: btn, h: btn };
   // Unten links: unten rechts sitzt die Übersichtskarte.
   const recenterBtn: Box = {
     x: pad,

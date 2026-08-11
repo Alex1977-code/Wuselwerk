@@ -62,14 +62,28 @@ async function check(label, viewport, shot) {
   console.log(`${ok ? '  ok  ' : ' FAIL '} ${label} — Spielfeld ${box.w}x${box.h} CSS-Pixel`);
   if (!ok) problems.push(`${label}: Spielfeld hat keine brauchbare Grösse`);
 
-  // Level 1 starten und ein paar Sekunden laufen lassen
-  const centre = await page.evaluate(() => {
+  // Level 1 starten — über die tatsächlich gezeichneten Knopfflächen, nicht
+  // über eingetippte Koordinaten. Sonst prüft man nur eine Bildschirmlage.
+  const rect = await page.evaluate(() => {
     const r = document.getElementById('spielfeld').getBoundingClientRect();
-    return { x: r.left, y: r.top, w: r.width, h: r.height };
+    return { x: r.left, y: r.top };
   });
-  await page.mouse.click(centre.x + centre.w / 2, centre.y + 147 * (centre.h / 844));
+  const clickButton = async (id) => {
+    const b = await page.evaluate(
+      (want) => (window.__wuselwerk?.debugButtons() ?? []).find((x) => x.id === want) ?? null,
+      id,
+    );
+    if (!b) return false;
+    await page.mouse.click(rect.x + b.x + b.w / 2, rect.y + b.y + b.h / 2);
+    return true;
+  };
+  const opened = await clickButton('w1-01');
   await sleep(250);
-  await page.mouse.click(centre.x + centre.w / 2, centre.y + 507 * (centre.h / 844));
+  const started = await clickButton('start');
+  console.log(
+    `${opened && started ? '  ok  ' : ' FAIL '} ${label} — Menü und Startknopf erreichbar`,
+  );
+  if (!opened || !started) problems.push(`${label}: Menü oder Startknopf nicht erreichbar`);
   await sleep(2500);
   await page.screenshot({ path: `${OUT}/${shot}` });
 
@@ -95,7 +109,7 @@ async function check(label, viewport, shot) {
 
 await waitForServer();
 await check('Handy 390x844', { width: 390, height: 844 }, '10-einzeldatei-handy.png');
-await check('Schreibtisch 1280x900', { width: 1280, height: 900 }, '11-einzeldatei-desktop.png');
+await check('Handy quer 844x390', { width: 844, height: 390 }, '11-einzeldatei-quer.png');
 
 stop();
 if (problems.length) {

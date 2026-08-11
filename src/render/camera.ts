@@ -3,8 +3,17 @@ import { State } from '../core/types';
 import type { World } from '../core/world';
 import type { Box } from './layout';
 
-/** Logische Pixel, die bei Zoom 1 quer auf den Bildschirm passen. */
+/**
+ * Sichtfenster bei Zoom 1, getrennt nach beiden Richtungen.
+ *
+ * Der Massstab ergibt sich aus der *engeren* der beiden Vorgaben. Im
+ * Hochformat begrenzt die Breite, im Querformat die Höhe — und weil beide
+ * Werte dasselbe Verhältnis ergeben, bleibt die Figur in jeder Lage rund
+ * sechzehn Bildschirmpixel gross. Ohne diese Kopplung würde sie im Querformat
+ * entweder winzig oder riesig.
+ */
 export const VIEW_LOGICAL_W = 300;
+export const VIEW_LOGICAL_H = 200;
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 3;
 
@@ -49,7 +58,7 @@ export class Camera {
   }
 
   scaleFor(box: Box): number {
-    return (box.w * this.zoom) / VIEW_LOGICAL_W;
+    return Math.min(box.w / VIEW_LOGICAL_W, box.h / VIEW_LOGICAL_H) * this.zoom;
   }
 
   view(box: Box): View {

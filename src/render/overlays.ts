@@ -12,6 +12,8 @@ function panel(ctx: CanvasRenderingContext2D, L: Layout, h: number): Box {
   ctx.fillStyle = 'rgba(5, 8, 14, 0.72)';
   ctx.fillRect(0, 0, L.cssW, L.cssH);
   const w = Math.min(340, L.cssW - 32);
+  // Quer ist die Höhe knapp — die Tafel darf nie über den Rand hinauswachsen.
+  h = Math.min(h, L.cssH - 16);
   const b: Box = { x: (L.cssW - w) / 2, y: (L.cssH - h) / 2, w, h };
   ctx.fillStyle = COL.panel;
   roundRect(ctx, b.x, b.y, b.w, b.h, 16);
@@ -204,21 +206,29 @@ export function drawMenu(
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
+  const wide = L.cssW > L.cssH;
   ctx.fillStyle = COL.accent;
-  ctx.font = '800 30px system-ui, sans-serif';
-  ctx.fillText('WUSELWERK', L.cssW / 2, 46);
+  ctx.font = `800 ${wide ? 24 : 30}px system-ui, sans-serif`;
+  ctx.fillText('WUSELWERK', L.cssW / 2, wide ? 22 : 46);
   ctx.fillStyle = COL.dim;
   ctx.font = '500 12px system-ui, sans-serif';
-  ctx.fillText('Welt 1 — Grasland · MVP-Prototyp', L.cssW / 2, 82);
+  ctx.fillText('Welt 1 — Grasland · MVP-Prototyp', L.cssW / 2, wide ? 52 : 82);
 
-  const cardW = Math.min(340, L.cssW - 32);
-  const cardH = 62;
-  const x = (L.cssW - cardW) / 2;
-  const top = 116;
+  // Quer stehen die Karten in zwei Spalten: fünf untereinander bräuchten mehr
+  // Höhe, als ein quer gehaltenes Handy überhaupt hat.
+  const landscape = L.cssW > L.cssH;
+  const cols = landscape ? 2 : 1;
+  const gap = 10;
+  const cardH = landscape ? 56 : 62;
+  const cardW = Math.min(340, (L.cssW - 32 - (cols - 1) * gap) / cols);
+  const blockW = cardW * cols + gap * (cols - 1);
+  const left = (L.cssW - blockW) / 2;
+  const top = landscape ? 84 : 116;
 
   const out: Button[] = [];
   levels.forEach((lv, i) => {
-    const y = top + i * (cardH + 10);
+    const x = left + (i % cols) * (cardW + gap);
+    const y = top + Math.floor(i / cols) * (cardH + gap);
     const r: Button = { id: lv.id, x, y, w: cardW, h: cardH };
     const res = progress[lv.id];
     ctx.fillStyle = res?.won ? '#152233' : '#141a24';
@@ -249,7 +259,7 @@ export function drawMenu(
   ctx.fillText(
     'Finger halten = Fokuszeit (25 %). Erst Beruf, dann Figur.',
     L.cssW / 2,
-    top + levels.length * (cardH + 10) + 14,
+    top + Math.ceil(levels.length / cols) * (cardH + gap) + 12,
   );
   return out;
 }
