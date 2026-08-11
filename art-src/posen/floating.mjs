@@ -3,7 +3,7 @@
  *
  * Vier Bilder, Zyklus. Das Erkennungszeichen ist nicht die Haltung, sondern
  * die Silhouette: **oben am breitesten.** Das Dach misst im Bild 17 Pixel, die
- * Mähne 10 — nur dieser Abstand unterscheidet den Zustand von `falling`, denn
+ * Mähne 9 — nur dieser Abstand unterscheidet den Zustand von `falling`, denn
  * an der Figur selbst ist bei zwölf Pixeln Höhe nichts zu sehen, was ein
  * Fallschirm wäre.
  *
