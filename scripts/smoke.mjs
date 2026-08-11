@@ -211,19 +211,11 @@ async function main() {
   await page.evaluate(() => window.__wuselwerk.debugRecenter());
 
   // --- Gräber wählen -------------------------------------------------------
-  const btn = await page.evaluate(() => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const controlsH = Math.max(148, Math.min(214, Math.round(h * 0.26)));
-    const areaX = 8 + 44 + 10;
-    const bw = (w - areaX - 8 - 4 * 7) / 8;
-    const i = 7;
-    const t = (i - 3.5) / 3.5;
-    return {
-      x: areaX + i * (bw + 4) + bw / 2,
-      y: h - controlsH + 16 + (13 - (1 - t * t) * 13) + 24,
-    };
-  });
+  // Die Lage kommt aus dem Spiel, nicht aus einer nachgebauten Formel: Die
+  // Kopie stimmte nach dem ersten Umbau der Leiste nicht mehr und tippte ins
+  // Leere.
+  const btnBox = await page.evaluate(() => window.__wuselwerk.debugSkillButton('digger'));
+  const btn = { x: btnBox.x + btnBox.w / 2, y: btnBox.y + btnBox.h / 2 };
   await page.mouse.click(btn.x, btn.y);
   const sel = await page.evaluate(() => window.__wuselwerk.debugStats().selected);
   check('Beruf lässt sich wählen und bleibt aktiv', sel === 'digger', `gewählt: ${sel}`);

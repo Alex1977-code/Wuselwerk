@@ -684,6 +684,19 @@ export class Game {
   }
 
   /** Die aktuell gezeichneten Knopfflächen — für lageunabhängige Prüfungen. */
+  /**
+   * Die Fläche eines Berufsknopfs.
+   *
+   * Damit niemand die Layoutformel nachbaut: Die Rauchprobe hat die Lage der
+   * Knöpfe zweimal selbst ausgerechnet, und beim ersten Umbau der Leiste
+   * stimmte die Kopie nicht mehr — sie tippte ins Leere und meldete einen
+   * Fehler, der keiner war.
+   */
+  debugSkillButton(id: SkillId): { x: number; y: number; w: number; h: number } | null {
+    const b = this.layout.skillButtons.find((s) => s.id === id);
+    return b ? { x: b.x, y: b.y, w: b.w, h: b.h } : null;
+  }
+
   debugButtons(): Button[] {
     return this.buttons.map((b) => ({ ...b }));
   }

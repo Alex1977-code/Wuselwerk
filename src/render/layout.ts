@@ -46,28 +46,36 @@ export function inBox(b: Box, x: number, y: number): boolean {
 export function computeLayout(cssW: number, cssH: number): Layout {
   const landscape = cssW > cssH;
   const TOP_H = landscape ? 42 : 54;
-  const controlsH = landscape
-    ? Math.max(84, Math.min(128, Math.round(cssH * 0.26)))
-    : Math.max(148, Math.min(214, Math.round(cssH * 0.26)));
+
+  /**
+   * Die Leiste ist so hoch wie ihr Inhalt, nicht so hoch wie ein Anteil des
+   * Bildschirms.
+   *
+   * Vorher waren es 26 Prozent der Höhe — ein Mass aus der Zeit, als unter
+   * jedem Symbol noch eine Zeile Kürzel stand. Ohne sie blieb hoch ein
+   * handbreiter leerer Streifen zwischen den Knöpfen und der Hinweiszeile
+   * stehen. Jetzt ergibt sich die Höhe aus Knopfhöhe, Rand und der
+   * Hinweiszeile, die es nur im Hochformat gibt.
+   */
+  const hintH = landscape ? 0 : 26;
+  const btnH = Math.min(landscape ? 78 : 66, Math.round(cssH * 0.22));
+  const controlsH = btnH + 12 + hintH + 10;
   const topBar: Box = { x: 0, y: 0, w: cssW, h: TOP_H };
   const controls: Box = { x: 0, y: cssH - controlsH, w: cssW, h: controlsH };
   const play: Box = { x: 0, y: TOP_H, w: cssW, h: cssH - TOP_H - controlsH };
 
-  const pad = 8;
-  const rateW = 44;
-  const rateSlider: Box = {
-    x: pad,
-    y: controls.y + 12,
-    w: rateW,
-    h: controls.h - 24,
-  };
-
-  const areaX = rateSlider.x + rateW + 10;
+  const pad = 10;
+  const rateW = 38;
+  const areaX = pad + rateW + 12;
   const areaW = cssW - areaX - pad;
-  const gap = 4;
+  const gap = 6;
   const btnW = (areaW - gap * (SKILLS.length - 1)) / SKILLS.length;
-  const btnH = Math.min(72, controls.h - (landscape ? 30 : 44));
-  const arc = landscape ? 5 : 13;
+  // Höher als vorher. Die Fläche ist das, was ein Daumen trifft; 72 Punkte
+  // waren eine Obergrenze aus der Zeit, als unter den Knöpfen noch eine Zeile
+  // Kürzel stand.
+  // Flacher Bogen. Er soll dem Daumen entgegenkommen, aber die Reihe muss als
+  // Reihe lesen — bei dreizehn Punkten Hub sah sie aus wie eine Girlande.
+  const arc = landscape ? 3 : 8;
 
   const skillButtons: SkillButton[] = SKILLS.map((id, i) => {
     const t = (i - (SKILLS.length - 1) / 2) / ((SKILLS.length - 1) / 2);
@@ -75,11 +83,21 @@ export function computeLayout(cssW: number, cssH: number): Layout {
     return {
       id,
       x: areaX + i * (btnW + gap),
-      y: controls.y + 16 + (arc - lift),
+      y: controls.y + 12 + (arc - lift),
       w: btnW,
       h: btnH,
     };
   });
+
+  // Der Schieber steht auf derselben Linie wie die Knöpfe und ist genauso hoch.
+  // Vorher lief er über die ganze Leistenhöhe und hatte oben und unten je eine
+  // Beschriftung — drei Elemente für eine Zahl.
+  const rateSlider: Box = {
+    x: pad,
+    y: skillButtons[0].y,
+    w: rateW,
+    h: btnH,
+  };
 
   const btn = landscape ? 34 : 38;
   const btnY = Math.round((TOP_H - btn) / 2);

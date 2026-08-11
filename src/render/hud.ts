@@ -1,5 +1,5 @@
 import { RATE_MAX, RATE_MIN, TICK_HZ } from '../core/constants';
-import { SKILL_SHORT, type SkillId } from '../core/types';
+import { SKILL_LABEL, type SkillId } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
 import { drawSkillIcon } from './icons';
@@ -169,15 +169,35 @@ function drawIconButton(
   ctx.fillText(glyph, b.x + b.w / 2, b.y + b.h / 2 + 1);
 }
 
+/**
+ * Bedienleiste.
+ *
+ * Drei Entscheidungen, die den Unterschied zum vorigen Stand ausmachen:
+ *
+ * 1. **Keine Kürzel mehr.** Unter jedem Symbol stand „KLE", „SBG", „BRÜ" —
+ *    acht Wörter, die niemand kennt, in acht Punkt Schriftgrösse. Sie kosteten
+ *    eine Zeile Höhe und haben nichts erklärt. Der Name steht jetzt dort, wo er
+ *    hilft: einmal, ausgeschrieben, für den *gewählten* Beruf. Wo die Knöpfe
+ *    breit genug sind (quer), steht er zusätzlich auf jedem.
+ * 2. **Drei klar getrennte Zustände.** Vorher unterschieden sich „wählbar",
+ *    „gewählt" und „aufgebraucht" nur in Randfarbe und Füllung um ein paar
+ *    Stufen. Jetzt trägt der gewählte Knopf eine helle Fläche und einen Balken
+ *    an der Unterkante, der aufgebrauchte hat weder Rand noch Symbolkontrast.
+ * 3. **Die Zahl ist eine Plakette, kein Text.** Sie sitzt oben rechts in der
+ *    Ecke, wie an einem Vorrat — und sie ist das Einzige, was sich während des
+ *    Spiels ändert, also darf sie sich abheben.
+ */
 export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudState): void {
   const c = L.controls;
   ctx.fillStyle = COL.panel;
   ctx.fillRect(c.x, c.y, c.w, c.h);
-  ctx.strokeStyle = COL.line;
-  ctx.beginPath();
-  ctx.moveTo(0, c.y + 0.5);
-  ctx.lineTo(c.w, c.y + 0.5);
-  ctx.stroke();
+  // Eine helle Haarlinie an der Oberkante statt eines Rahmens. Sie trennt
+  // Leiste und Spielfeld, ohne einen Strich zu ziehen.
+  const kante = ctx.createLinearGradient(0, c.y, 0, c.y + 3);
+  kante.addColorStop(0, 'rgba(255,255,255,0.09)');
+  kante.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = kante;
+  ctx.fillRect(0, c.y, c.w, 3);
 
   drawRateSlider(ctx, L, s.world);
 
@@ -185,84 +205,173 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
     const count = s.world.skills[b.id];
     const selected = s.selected === b.id;
     const usable = count > 0;
+    // Ab dieser Breite passt der Name unter das Symbol, ohne zu brechen.
+    const weit = b.w >= 66;
 
-    ctx.fillStyle = selected ? '#24405c' : usable ? '#18202e' : '#12161f';
-    roundRect(ctx, b.x, b.y, b.w, b.h, 10);
+    // --- Fläche ------------------------------------------------------------
+    if (selected) {
+      const g = ctx.createLinearGradient(0, b.y, 0, b.y + b.h);
+      g.addColorStop(0, '#3c6ea0');
+      g.addColorStop(1, '#22456b');
+      ctx.fillStyle = g;
+    } else {
+      ctx.fillStyle = usable ? '#1a2331' : '#12161f';
+    }
+    roundRect(ctx, b.x, b.y, b.w, b.h, 12);
     ctx.fill();
-    ctx.strokeStyle = selected ? COL.accent : COL.line;
-    ctx.lineWidth = selected ? 2 : 1;
-    ctx.stroke();
 
-    const col = usable ? (selected ? '#ffffff' : COL.text) : '#3f4a5c';
-    drawSkillIcon(ctx, b.id, b.x + b.w / 2, b.y + b.h * 0.4, Math.min(b.w * 0.62, 26), col);
+    if (!selected && usable) {
+      // Schmale Aufhellung an der Oberkante — das ist, was eine Fläche
+      // gedrückt oder erhaben aussehen lässt, nicht ein Rahmen.
+      ctx.save();
+      ctx.clip();
+      const gl = ctx.createLinearGradient(0, b.y, 0, b.y + b.h * 0.45);
+      gl.addColorStop(0, 'rgba(255,255,255,0.07)');
+      gl.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gl;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.restore();
+    }
 
+    if (selected) {
+      // Balken an der Unterkante. Er liegt innerhalb der Rundung und liest
+      // auch aus dem Augenwinkel als „dieser hier".
+      ctx.save();
+      roundRect(ctx, b.x, b.y, b.w, b.h, 12);
+      ctx.clip();
+      ctx.fillStyle = COL.accent;
+      ctx.fillRect(b.x, b.y + b.h - 4, b.w, 4);
+      ctx.restore();
+    }
+
+    // --- Symbol ------------------------------------------------------------
+    const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#39424f';
+    const symbolY = b.y + b.h * (weit ? 0.4 : 0.46);
+    drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY, Math.min(b.w * 0.6, 30), symbolFarbe);
+
+    // --- Name, nur wo Platz ist -------------------------------------------
+    //
+    // Die Namen sind unterschiedlich lang: „Blocker" hat sieben Zeichen,
+    // „Schirmspringer" vierzehn. Bei fester Schriftgrösse liefen die langen in
+    // den Nachbarn hinein. Deshalb wird sie so weit heruntergesetzt, bis der
+    // Name in seinen Knopf passt — und wenn selbst neun Punkt nicht reichen,
+    // bleibt der Name weg. Lieber kein Name als einer, der zum Nachbarn gehört.
+    if (weit) {
+      const platz = b.w - 8;
+      let fs = 11;
+      ctx.font = `600 ${fs}px system-ui, sans-serif`;
+      while (fs > 8 && ctx.measureText(SKILL_LABEL[b.id]).width > platz) {
+        fs -= 0.5;
+        ctx.font = `600 ${fs}px system-ui, sans-serif`;
+      }
+      if (ctx.measureText(SKILL_LABEL[b.id]).width <= platz) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillStyle = selected ? '#dbe9ff' : usable ? COL.dim : '#333c4c';
+        ctx.fillText(SKILL_LABEL[b.id], b.x + b.w / 2, b.y + b.h - 10);
+      }
+    }
+
+    // --- Plakette mit dem Vorrat ------------------------------------------
+    const pw = Math.min(24, b.w * 0.62);
+    const ph = 16;
+    const px = b.x + b.w - pw - 4;
+    const py = b.y + 4;
+    ctx.fillStyle = selected ? COL.accent : usable ? '#0d131d' : 'transparent';
+    if (usable || selected) {
+      roundRect(ctx, px, py, pw, ph, 8);
+      ctx.fill();
+    }
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = usable ? COL.text : '#3f4a5c';
-    ctx.font = '700 13px system-ui, sans-serif';
-    ctx.fillText(String(count), b.x + b.w / 2, b.y + b.h - 4);
-
-    ctx.fillStyle = usable ? COL.dim : '#333c4c';
-    ctx.font = '600 8px system-ui, sans-serif';
-    ctx.fillText(SKILL_SHORT[b.id], b.x + b.w / 2, b.y + b.h - 17);
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = selected ? '#1b2431' : usable ? COL.text : '#39424f';
+    ctx.font = '700 12px system-ui, sans-serif';
+    ctx.fillText(String(count), px + pw / 2, py + ph / 2 + 0.5);
   }
 
   // Hinweiszeile nur, wenn unter dem Bogen wirklich Platz ist. Quer ist die
   // Steuerung flach — dort liefe der Text mitten durch die Knöpfe.
   const lowestBtn = L.skillButtons.reduce((m, b) => Math.max(m, b.y + b.h), 0);
   const hintY = c.y + c.h - 8;
-  if (hintY - 12 < lowestBtn + 2) return;
+  if (hintY - 13 < lowestBtn + 2) return;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.font = '500 11px system-ui, sans-serif';
-  ctx.fillStyle = COL.dim;
-  // Mit gewähltem Beruf steht hier der Hinweis aufs Schieben: Dass Ziehen auf
-  // freier Fläche das Bild bewegt, sieht man dem Spielfeld nicht an — und
-  // gerade in diesem Zustand braucht man es am häufigsten.
-  const text = s.selected
-    ? 'Auf einer Figur halten und loslassen — auf freier Fläche ziehen schiebt'
-    : 'Erst Beruf wählen, dann Figur antippen';
-  ctx.fillText(text, c.w / 2, hintY);
+  ctx.textAlign = 'center';
+
+  // Der Name des gewählten Berufs steht hier — einmal, ausgeschrieben. Das
+  // ersetzt acht Kürzel auf den Knöpfen und sagt zugleich, was als Nächstes
+  // zu tun ist.
+  if (s.selected) {
+    const name = SKILL_LABEL[s.selected];
+    ctx.font = '700 12px system-ui, sans-serif';
+    const nw = ctx.measureText(name).width;
+    const rest = 'auf einer Figur halten · frei ziehen schiebt';
+    ctx.font = '500 11px system-ui, sans-serif';
+    const rw = ctx.measureText(rest).width;
+    const ganz = nw + 10 + rw;
+    let x = c.w / 2 - ganz / 2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = COL.accent;
+    ctx.font = '700 12px system-ui, sans-serif';
+    ctx.fillText(name, x, hintY);
+    x += nw + 10;
+    ctx.fillStyle = COL.dim;
+    ctx.font = '500 11px system-ui, sans-serif';
+    ctx.fillText(rest, x, hintY);
+  } else {
+    ctx.font = '500 11px system-ui, sans-serif';
+    ctx.fillStyle = COL.dim;
+    ctx.fillText('Erst Beruf wählen, dann Figur antippen', c.w / 2, hintY);
+  }
 }
 
+/**
+ * Freisetzungsrate.
+ *
+ * Auf einer Linie mit den Knöpfen und genauso hoch — vorher lief sie über die
+ * ganze Leistenhöhe und trug oben wie unten eine Beschriftung, also drei
+ * Elemente für eine Zahl. Jetzt steht die Zahl **im Griff**: Sie ist genau das,
+ * was man verschiebt, und muss nicht daneben noch einmal stehen.
+ *
+ * Der gefüllte Teil unterhalb des Griffs zeigt den Wert auch dann, wenn der
+ * Daumen den Griff verdeckt. Das ist der Grund für die Füllung, nicht die Zier.
+ */
 function drawRateSlider(ctx: CanvasRenderingContext2D, L: Layout, w: World): void {
   const b = L.rateSlider;
-  ctx.fillStyle = '#141b26';
-  roundRect(ctx, b.x, b.y, b.w, b.h, 10);
-  ctx.fill();
-  ctx.strokeStyle = COL.line;
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
-  const trackTop = b.y + 22;
-  const trackBottom = b.y + b.h - 20;
+  const cx = b.x + b.w / 2;
+  const griffH = 20;
+  const trackTop = b.y + griffH / 2;
+  const trackBottom = b.y + b.h - griffH / 2;
   const th = trackBottom - trackTop;
   const t = (w.releaseRate - RATE_MIN) / (RATE_MAX - RATE_MIN);
   const minT = (w.minReleaseRate - RATE_MIN) / (RATE_MAX - RATE_MIN);
+  const bw = 8;
 
   ctx.fillStyle = '#0a0e16';
-  roundRect(ctx, b.x + b.w / 2 - 4, trackTop, 8, th, 4);
+  roundRect(ctx, cx - bw / 2, trackTop, bw, th, bw / 2);
   ctx.fill();
 
-  // Gesperrter Bereich unterhalb der Mindestrate
-  ctx.fillStyle = '#2a2027';
-  roundRect(ctx, b.x + b.w / 2 - 4, trackBottom - minT * th, 8, minT * th, 4);
-  ctx.fill();
+  // Gesperrter Bereich unterhalb der Mindestrate — dorthin lässt sich der
+  // Griff nicht ziehen, und das muss man sehen, bevor man es versucht.
+  if (minT > 0) {
+    ctx.fillStyle = '#3a2530';
+    roundRect(ctx, cx - bw / 2, trackBottom - minT * th, bw, minT * th, bw / 2);
+    ctx.fill();
+  }
 
   const ky = trackBottom - t * th;
-  ctx.fillStyle = COL.accent;
-  roundRect(ctx, b.x + 5, ky - 7, b.w - 10, 14, 6);
+  ctx.fillStyle = '#7a5c18';
+  roundRect(ctx, cx - bw / 2, ky, bw, trackBottom - ky, bw / 2);
   ctx.fill();
 
+  ctx.fillStyle = COL.accent;
+  roundRect(ctx, b.x + 1, ky - griffH / 2, b.w - 2, griffH, griffH / 2);
+  ctx.fill();
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = COL.dim;
-  ctx.font = '600 8px system-ui, sans-serif';
-  ctx.fillText('RATE', b.x + b.w / 2, b.y + 6);
-  ctx.textBaseline = 'bottom';
-  ctx.fillStyle = COL.text;
-  ctx.font = '700 11px system-ui, sans-serif';
-  ctx.fillText(String(w.releaseRate), b.x + b.w / 2, b.y + b.h - 4);
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#1b2431';
+  ctx.font = '700 12px system-ui, sans-serif';
+  ctx.fillText(String(w.releaseRate), cx, ky + 0.5);
 }
 
 /** `earned` als Anzahl (Menü) oder als drei Einzelbedingungen (Ergebnis). */
