@@ -123,26 +123,31 @@ Spiegelung ohne Korrekturversatz funktioniert.
 
 ### 2.1 Herleitung der Zellgröße
 
-Die Zelle muss die äußersten Punkte aufnehmen, die `sprites.ts` heute überhaupt erreicht:
+**Diese Herleitung ist überholt.** Sie stand, solange die Figur kahl war; seit der
+Ankerfigur A0 bestimmt nicht mehr der Körper das Zellmaß, sondern die Mähne. Maßgeblich ist
+`grafik-ankerbild-a0.md` §4. Der Vollständigkeit halber die alte Rechnung — die äußersten
+Punkte, die `sprites.ts` am Körper erreicht:
 
 | Richtung | Extremwert im Code | Quelle |
 |---|---|---|
 | nach oben | `y − 18` (Schirmdach-Oberkante), `y − 18` (Rettungsaufstieg) | Zeile 81, 58 |
 | nach unten | `y + 2` (Schaufelunterkante) | Zeile 117 |
-| nach links/rechts | `± 6` (Blockerarme), `+ 8` (Bauplanke) | Zeile 96, 102 |
+| nach links/rechts | `± 7` (Blockerarme), `+ 8` (Bauplanke) | Zeile 96, 102 |
 
-Daraus: 20 Zeilen über dem Fußpunkt, 4 darunter, 12 Spalten je Seite — mit jeweils
-2 px Reserve für das, was die bessere Grafik zusätzlich braucht (Squash, Staub,
-Werkzeugnachschwung).
+Daraus kämen 20 Zeilen über dem Fußpunkt, 4 darunter, 12 Spalten je Seite. Die Mähne
+verlangt am Modell gemessen 5,4 über dem Scheitel und 7,5 neben der Mitte, mit Zugabe für
+Bewegung also 22 Zeilen und 14 Spalten — sie ist in beiden Richtungen die größere Zahl und
+gibt damit das Maß vor.
 
 | Größe | Logisch | Master (8×) | Ausgeliefert (1×) |
 |---|---|---|---|
-| Zelle | 24 × 24 | 192 × 192 | 24 × 24 |
-| Fußpunkt in der Zelle | (12, 20) | (96, 160) | (12, 20) |
-| Figurenhöhe | 12 (Silhouette 13) | 96 (104) | 12 (13) |
+| Zelle | 28 × 28 | 224 × 224 | 28 × 28 |
+| Fußpunkt in der Zelle | (14, 22) | (112, 176) | (14, 22) |
+| Figurenhöhe ohne Haar | 12 (Silhouette 13) | 96 (104) | 12 (13) |
+| Haarüberstand oben / seitlich | bis 8 / bis 11 | 64 / 88 | bis 8 / bis 11 |
 
 **Warum der Anker genau auf halber Zellbreite sitzt:** Weil die Spiegelachse des Codes eine
-Pixelkante ist und `anchorX = 12 = cellWidth/2`, genügt beim Richtungswechsel ein
+Pixelkante ist und `anchorX = 14 = cellWidth/2`, genügt beim Richtungswechsel ein
 `ctx.scale(-1, 1)` um den Ankerpunkt — **ohne jeden Versatzausgleich**. Jeder andere
 Ankerwert erzwingt eine Korrekturrechnung, die bei nicht ganzzahligem `v.scale` (die
 Kameraskala ist `box.w * zoom / 300`, praktisch nie ganzzahlig) zu Wackeln um einen Pixel
@@ -155,13 +160,13 @@ Der Renderer rundet heute jedes Rechteck auf ganze **Bildschirmpixel** (`sprites
 brächte ein zweites Pixelraster ins Bild, das mit dem des Terrains nicht deckungsgleich
 ist — sichtbar als Kantenflimmern beim Zoomen (Zoom 1 bis 3, `camera.ts`). Deshalb:
 
-- **Arbeitsdatei: 8× Master** (192 × 192 je Zelle), wie die ganze Bibliothek.
-- **Auslieferung: 1×** (24 × 24 je Zelle), nearest-neighbour heruntergerechnet und von Hand
+- **Arbeitsdatei: 8× Master** (224 × 224 je Zelle), wie die ganze Bibliothek.
+- **Auslieferung: 1×** (28 × 28 je Zelle), nearest-neighbour heruntergerechnet und von Hand
   nachgezogen.
 - Hochskaliert wird ausschließlich im Renderer, mit `imageSmoothingEnabled = false`.
 
 Nebeneffekt, der praktisch wichtig ist: Bei 1× ist der komplette Figurenatlas (60 Bilder à
-24 × 24) etwa 5 kB PNG. Das passt in den Einzeldatei-Build (`scripts/build-single.mjs`) —
+28 × 28) etwa 7 kB PNG. Das passt in den Einzeldatei-Build (`scripts/build-single.mjs`) —
 siehe §6.6.
 
 ### 2.3 Taktraten und die daraus folgende Bildanzahl
@@ -271,7 +276,7 @@ backdrop, no dust and no particles unless the frame description explicitly
 asks for them — particles are separate assets composited by the engine.
 
 Readability rule, non-negotiable: the silhouette must remain unmistakable
-when the cell is downscaled to 24 by 24 pixels and the figure is therefore
+when the cell is downscaled to 28 by 28 pixels and the figure is therefore
 12 pixels tall. Silhouette carries all information.
 ```
 
@@ -1427,8 +1432,8 @@ Ein JSON je Atlas. Die Felder sind genau die, die der Renderer braucht, und kein
 ```json
 {
   "version": 1,
-  "cell": { "w": 24, "h": 24 },
-  "anchor": { "x": 12, "y": 20 },
+  "cell": { "w": 28, "h": 28 },
+  "anchor": { "x": 14, "y": 22 },
   "facing": "right",
   "clips": {
     "walking":  { "row": 0,  "holds": [3,3,3,3,3,3,3,3],     "loop": true  },
@@ -1616,8 +1621,8 @@ build: {
 }
 ```
 
-Größenrechnung, damit klar ist, dass das trägt: Der Figurenatlas mit 60 Bildern à 24 × 24
-und rund 20 Farben liegt bei etwa 5 kB PNG, die fünf Terrainkacheln zusammen bei etwa 12 kB,
+Größenrechnung, damit klar ist, dass das trägt: Der Figurenatlas mit 60 Bildern à 28 × 28
+und rund 20 Farben liegt bei etwa 7 kB PNG, die fünf Terrainkacheln zusammen bei etwa 12 kB,
 die Anbauteile bei etwa 2 kB. Base64 bläht um ein Drittel auf — zusammen also gut 25 kB im
 Bündel. Das ist die Rechtfertigung dafür, in 1× auszuliefern statt in 2× oder 4× (§2.2):
 Bei 4× wären es rund 400 kB, und die Einzeldatei würde unhandlich.

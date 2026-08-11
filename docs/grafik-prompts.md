@@ -4,9 +4,11 @@
 >
 > Die **Stilrichtung** dieser Datei ist durch [`grafik-katalog.md`](./grafik-katalog.md)
 > abgelöst. Das betrifft insbesondere den Wusel-Kanon (die Figur ist nicht mehr kahl,
-> sondern trägt beerenrosa Haar `#ff70b8` als Signaturmerkmal), die Körperproportionen,
+> sondern ist ein Troll mit roter Mähne `#e5372c` als Signaturmerkmal), die Körperproportionen,
 > die Stilblöcke A und B, den Palettenblock und die Konturstärke. Wo diese Datei und der
-> Katalog sich widersprechen, gilt der Katalog.
+> Katalog sich widersprechen, gilt der Katalog — und wo der Katalog und
+> [`grafik-ankerbild-a0.md`](./grafik-ankerbild-a0.md) sich widersprechen, gilt die
+> Ankerdatei.
 >
 > **Gültig und unverändert bleiben die Motivlisten** — welche Grafiken das Spiel braucht,
 > ist hier vollständig erfasst und dient dem Katalog als Vollständigkeitsprüfung. Ebenso

@@ -3,3 +3,6 @@ dist/
 *.log
 debug-scratch.ts
 shots/
+
+# Aus dem Ankermodell gerechnete Ansichten — entstehen mit `npm run modell:messen`
+art-src/ansichten/

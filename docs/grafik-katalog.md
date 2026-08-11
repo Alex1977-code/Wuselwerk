@@ -12,15 +12,16 @@ Codeblock, jeder Prompt für sich einsetzbar und ohne auszufüllende Lücken.
 
 | Datei | Status ab jetzt |
 |---|---|
-| **`grafik-katalog.md`** (diese Datei) | **Verbindlich für Stil, Figurenkanon, Haar, Palette, Prompts.** |
+| **`grafik-ankerbild-a0.md`** | **Steht über allem.** Die Ankerfigur, ihr Prompt, ihr Modell, das daraus gemessene Zellmaß. Bei Widerspruch gilt sie. |
+| **`grafik-katalog.md`** (diese Datei) | **Verbindlich für Stil, Figurenkanon, Haar, Palette, Prompts** — im Rahmen der Ankerdatei. |
 | `grafik-prompts.md` | **Stilrichtung abgelöst.** Die Motivlisten bleiben gültig und sind hier die Vollständigkeitsprüfung. Der 3D-Weg aus §10 dort gilt unverändert. |
-| `grafik-integration.md` | **Geometrie, Bildzahlen und Haltedauern bleiben bindend.** Nur die Bildbeschreibungen in §3 dort sind durch §7 hier ersetzt, weil der Figurenkanon sich geändert hat. |
+| `grafik-integration.md` | **Bildzahlen und Haltedauern bleiben bindend.** Die Zellgeometrie in §2.1 dort ist durch die Ankerdatei ersetzt, die Bildbeschreibungen in §3 dort durch §7 hier. |
 
 Konkret bleibt aus `grafik-integration.md` unverändert bindend und wird hier **nicht
 wiederholt**:
 
-- Zelle 24 × 24 logisch, Master 192 × 192 (§2.1 dort)
-- Fußpunkt in der Zelle (12, 20), Ankerpunkt auf halber Zellbreite (§2.1 dort)
+- Zelle **28 × 28** logisch, Master 224 × 224 (§2.1 dort, hergeleitet in `grafik-ankerbild-a0.md` §4)
+- Fußpunkt in der Zelle **(14, 22)**, Ankerpunkt auf halber Zellbreite (§2.1 dort)
 - Bildzahlen und Haltedauern je Zustand (§2.3 dort) — die Tabelle ist die Grundlage der
   Haaranimation in §3.3 hier
 - Auslieferung in 1×, Master in 8× (§2.2 dort)
@@ -32,6 +33,12 @@ wiederholt**:
 Haar. Der Satz „completely bald, no hair" aus dem alten Kanon gilt nicht mehr; überall dort,
 wo er in `grafik-prompts.md` und `grafik-integration.md` steht, ist er durch die
 Haarbeschreibung aus §3 hier ersetzt.
+
+**Und eine zweite, die dieser Datei vorgeht:** Seit der Ankerfigur ist der Wusel ein
+**Troll mit roter Mähne**, die Zelle misst **28 × 28** und gestaltet wird für den **quer
+gehaltenen** Bildschirm. Verbindlich dafür ist `grafik-ankerbild-a0.md`; die betroffenen
+Stellen dieser Datei sind dort in §5 einzeln aufgeführt und hier nachgezogen. Wo doch etwas
+stehen geblieben ist — Beerenrosa, kahler Kopf, Zelle 24 × 24 —, gilt die Ankerdatei.
 
 **Rechtsrahmen unverändert (GDD §12).** In keinem Prompt, keinem Dateinamen, keinem
 Referenzbild: kein Markenname, keine Umschreibung einer Vorlage, und **niemals grünes Haar
@@ -61,24 +68,24 @@ ginge. `von Hand` heißt: Der Prompt ist eine Formvorlage, das Asset entsteht in
 | 4 | Haarstellungsblatt | Die 8 kanonischen Haarlagen, Malvorlage | 2D-Blatt, 8 Zellen | 8 × 192 Master | GPT Image 2 | §6.4 |
 | 5 | Ausdrucksblatt | 9 Gesichter, Malvorlage | 2D-Blatt, 3 × 3 | 3 × 3 × 192 Master | GPT Image 2 | §6.5 |
 
-### 1.2 Figur — Zustandsblätter (Zelle 24 × 24, Fußpunkt (12, 20))
+### 1.2 Figur — Zustandsblätter (Zelle 28 × 28, Fußpunkt (14, 22))
 
 Bildzahl und Haltedauer stehen in `grafik-integration.md` §2.3 und sind nicht verhandelbar.
 
 | Nr | Bezeichnung | Verwendungszweck | Zielformat | Größe | Werkzeug | Prompt |
 |---|---|---|---|---|---|---|
-| 6 | `walking` | Laufen — über 90 % aller Figurenbilder | 2D-Blatt, 8 Bilder | 192 × 24 | GPT Image 2 → von Hand | §7.1 |
-| 7 | `falling` | Freier Fall | 2D-Blatt, 4 Bilder | 96 × 24 | GPT Image 2 → von Hand | §7.2 |
-| 8 | `floating` | Sinkflug am Schirm | 2D-Blatt, 4 Bilder | 96 × 24 | GPT Image 2 → von Hand | §7.3 |
-| 9 | `climbing` | Wandaufstieg | 2D-Blatt, 4 Bilder | 96 × 24 | GPT Image 2 → von Hand | §7.4 |
-| 10 | `hoisting` | Über die Kante ziehen, einmalig | 2D-Blatt, 6 Bilder | 144 × 24 | Tripo | §7.5 |
-| 11 | `building` | Brückenstufe legen | 2D-Blatt, 8 Bilder | 192 × 24 | Tripo | §7.6 |
-| 12 | `bashing` | Waagerecht graben | 2D-Blatt, 3 Bilder | 72 × 24 | GPT Image 2 → von Hand | §7.7 |
-| 13 | `mining` | Diagonal graben | 2D-Blatt, 4 Bilder | 96 × 24 | GPT Image 2 → von Hand | §7.8 |
-| 14 | `digging` | Senkrecht graben | 2D-Blatt, 3 Bilder | 72 × 24 | GPT Image 2 → von Hand | §7.9 |
-| 15 | `blocking` | Blockerhaltung | 2D-Blatt, 2 Bilder | 48 × 24 | GPT Image 2 | §7.10 |
-| 16 | `saving` | Rettung, einmalig | 2D-Blatt, 6 Bilder | 144 × 24 | Tripo | §7.11 |
-| 17 | `dying` | Allgemeiner Zusammenbruch, einmalig | 2D-Blatt, 8 Bilder | 192 × 24 | Tripo | §7.12 |
+| 6 | `walking` | Laufen — über 90 % aller Figurenbilder | 2D-Blatt, 8 Bilder | 224 × 28 | GPT Image 2 → von Hand | §7.1 |
+| 7 | `falling` | Freier Fall | 2D-Blatt, 4 Bilder | 112 × 28 | GPT Image 2 → von Hand | §7.2 |
+| 8 | `floating` | Sinkflug am Schirm | 2D-Blatt, 4 Bilder | 112 × 28 | GPT Image 2 → von Hand | §7.3 |
+| 9 | `climbing` | Wandaufstieg | 2D-Blatt, 4 Bilder | 112 × 28 | GPT Image 2 → von Hand | §7.4 |
+| 10 | `hoisting` | Über die Kante ziehen, einmalig | 2D-Blatt, 6 Bilder | 168 × 28 | Tripo | §7.5 |
+| 11 | `building` | Brückenstufe legen | 2D-Blatt, 8 Bilder | 224 × 28 | Tripo | §7.6 |
+| 12 | `bashing` | Waagerecht graben | 2D-Blatt, 3 Bilder | 84 × 28 | GPT Image 2 → von Hand | §7.7 |
+| 13 | `mining` | Diagonal graben | 2D-Blatt, 4 Bilder | 112 × 28 | GPT Image 2 → von Hand | §7.8 |
+| 14 | `digging` | Senkrecht graben | 2D-Blatt, 3 Bilder | 84 × 28 | GPT Image 2 → von Hand | §7.9 |
+| 15 | `blocking` | Blockerhaltung | 2D-Blatt, 2 Bilder | 56 × 28 | GPT Image 2 | §7.10 |
+| 16 | `saving` | Rettung, einmalig | 2D-Blatt, 6 Bilder | 168 × 28 | Tripo | §7.11 |
+| 17 | `dying` | Allgemeiner Zusammenbruch, einmalig | 2D-Blatt, 8 Bilder | 224 × 28 | Tripo | §7.12 |
 
 ### 1.3 Anbauteile
 
@@ -114,12 +121,12 @@ Haarlage. Vorlage für die Zustandsblätter und für die Symbole.
 
 | Nr | Bezeichnung | `DeathCause` | Zielformat | Größe | Werkzeug | Prompt |
 |---|---|---|---|---|---|---|
-| 32 | Sturz — Aufprall | `SPLAT` | 2D-Blatt, 8 Bilder | 192 × 24 | Tripo | §10.1 |
-| 33 | Ertrinken | (Wasserfalle) | 2D-Blatt, 8 Bilder | 192 × 24 | GPT Image 2 | §10.2 |
-| 34 | Feuer | (Feuerstrahl) | 2D-Blatt, 8 Bilder | 192 × 24 | GPT Image 2 | §10.3 |
-| 35 | Zerquetschen | `CRUSHED` | 2D-Blatt, 8 Bilder | 192 × 24 | Tripo | §10.4 |
-| 36 | Sprengung | `EXPLOSION`, `NUKE` | 2D-Blatt, 8 Bilder | 192 × 24 | GPT Image 2 | §10.5 |
-| (17) | Allgemeiner Zusammenbruch | Rückfall für alles | 2D-Blatt, 8 Bilder | 192 × 24 | Tripo | §7.12 |
+| 32 | Sturz — Aufprall | `SPLAT` | 2D-Blatt, 8 Bilder | 224 × 28 | Tripo | §10.1 |
+| 33 | Ertrinken | (Wasserfalle) | 2D-Blatt, 8 Bilder | 224 × 28 | GPT Image 2 | §10.2 |
+| 34 | Feuer | (Feuerstrahl) | 2D-Blatt, 8 Bilder | 224 × 28 | GPT Image 2 | §10.3 |
+| 35 | Zerquetschen | `CRUSHED` | 2D-Blatt, 8 Bilder | 224 × 28 | Tripo | §10.4 |
+| 36 | Sprengung | `EXPLOSION`, `NUKE` | 2D-Blatt, 8 Bilder | 224 × 28 | GPT Image 2 | §10.5 |
+| (17) | Allgemeiner Zusammenbruch | Rückfall für alles | 2D-Blatt, 8 Bilder | 224 × 28 | Tripo | §7.12 |
 
 ### 1.6 Terrainmaterialien
 
@@ -236,7 +243,7 @@ sie ausschließlich das **Verhältnis der Massen**. Deshalb ist die Aufteilung v
 
 | Körperteil | Zeilen (von 12) | Anteil | Breite | Bemerkung |
 |---|---|---|---|---|
-| Haar über dem Scheitel | +2 bis +3 **über** der Figur | — | 4–6 | zählt nicht zur Figurenhöhe, aber zur Silhouette |
+| Mähne | bis +8 **über** der Figur, bis 11 **neben** der Mitte | — | bis 22 | zählt nicht zur Figurenhöhe, aber zur Silhouette — und ist dort die größte Fläche |
 | Kopf | 5 | 42 % | 4 | obere zwei Ecken je 1 px abgeschrägt |
 | Rumpf | 5 | 42 % | 4 | obere zwei Ecken abgeschrägt = runde Schultern |
 | Stiefel | 2 | 16 % | 4 | in Standpose 1 px Zehenüberstand nach vorn |
@@ -252,12 +259,17 @@ Schaufelbalken des Gräbers auf `y…y+2`, die Diagonale des Schrägbaggers zwis
 `y+1`. Der Abstand zwischen den drei Balken bleibt bei mindestens 3 Pixeln — er trägt. Ein
 zweiter Rumpfpixel weniger würde ihn brechen. **Diese Grenze ist ausgereizt.**
 
-**Der Kopf wird nicht breiter als der Rumpf.** Bei 4 Pixeln Rumpfbreite wäre ein 5 Pixel
-breiter Kopf nicht mittig setzbar (die Spiegelachse liegt auf einer Pixelkante,
-`grafik-integration.md` §2.1) und die Figur würde beim Richtungswechsel zucken. Die
-Kopflastigkeit entsteht stattdessen über die **Höhe** des Kopfes und über das **Haar**, das
-1 bis 2 Pixel nach hinten übersteht. Die Silhouette ist damit oben breiter als unten —
-ohne dass der Kopf selbst breiter wird. Das ist der eigentliche Kniff dieses Entwurfs.
+**Der Kopf ist breiter als der Rumpf — aber nur in gerader Breite.** Der frühere Satz
+„der Kopf wird nicht breiter als der Rumpf" beruhte auf einem falsch benannten Grund. Die
+Bedingung ist nicht die *Größe*, sondern die *Parität*: Die Spiegelachse liegt auf einer
+Pixelkante (`grafik-integration.md` §2.1), deshalb ist jede **gerade** Breite mittig
+setzbar und jede ungerade nicht. 5 Pixel scheiden aus, 6 nicht. Die Ankerfigur hat einen
+Kopf von 10,6 Pixeln Breite bei 12 Pixeln Höhe gemessen (`grafik-ankerbild-a0.md` §4.3) —
+sie ist ausgesprochen kopflastig, und das ist die halbe Niedlichkeit.
+
+Die andere Hälfte ist die **Mähne**. Sie ist bei Spielgröße die größte zusammenhängende
+Fläche der Figur, größer als der Kopf und größer als der Rumpf. Die Silhouette ist damit
+oben deutlich breiter als unten — das ist der eigentliche Kniff dieses Entwurfs.
 
 ### 2.2 Augen
 
@@ -329,30 +341,34 @@ Die geprüften Werte des Kanons:
 
 | Fläche | Farbe | L\* |
 |---|---|---|
-| Haarglanz | `#ffb3d9` | 81,0 |
+| Haarglanz | `#ff8f5e` | 81,0 |
 | Haut | `#f4d7ac` | 87,4 |
 | Werkzeuggelb | `#ffd23f` | 85,9 |
 | Anzug | `#2fc9b8` | 73,4 |
-| **Haar Grundton** | **`#ff70b8`** | **66,8** |
+| **Haar Grundton** | **`#e5372c`** | **66,8** |
 | Stiefel | `#1d8f85` | 53,6 |
-| Haarschatten | `#c94a8a` | 50,9 |
+| Haarschatten | `#8f1d1c` | 50,9 |
 | Umriss | `#0c1119` | 5,0 |
 
 Geprüfte Nachbarschaften:
 
 | Grenze | ΔL\* | Urteil |
 |---|---|---|
-| Haar ↔ Haut | 20,6 | trägt |
+| Haar ↔ Haut | 36,1 | trägt |
 | Haut ↔ Anzug | 14,0 | knapp — deshalb sitzt dort der Kragen als 1 px dunkler Strich |
 | Anzug ↔ Stiefel | 19,8 | trägt |
-| Haarglanz ↔ Haarschatten | 30,2 | trägt |
-| **Haar ↔ Anzug** | **6,7** | **trägt nicht** |
+| Haarglanz ↔ Haarschatten | 39,3 | trägt |
+| **Haar ↔ Anzug** | **8,9** | **trägt nicht** |
 
 Der letzte Wert ist die wichtigste Einzelregel dieses Katalogs:
 
-> **Das Haar berührt den Anzug nie.** Es endet am Haaransatz und wird immer vom Kopf
-> (Haut, L\* 87) eingerahmt. Rosa auf Türkis ist bei diesen Werten ein Helligkeitsgleichstand
-> und verschmilzt bei 12 Pixeln zu einem Fleck.
+> **Das Haar berührt den Anzug nie.** Es endet auf Schulterhöhe und wird immer vom Kopf
+> (Haut, L\* 87) oder vom Hintergrund eingerahmt. Rot auf Türkis ist bei diesen Werten
+> nahezu ein Helligkeitsgleichstand und verschmilzt bei 12 Pixeln zu einem Fleck.
+>
+> Diese Regel ist der Grund, warum die hängende Mähne auf Schulterhöhe endet und warum sie
+> beim Blocker noch eine Zeile früher aufhört — dort liegen die orangen Arme (L\* 66,2),
+> und Rot auf Orange verschmilzt genauso.
 
 Zwei begründete Ausnahmen, beide unschädlich: `falling` (Haar steht senkrecht nach oben,
 weit weg vom Anzug) und `dying` Bild 4–8 (der Anzug entsättigt dort ohnehin zum Umrisston
@@ -438,9 +454,51 @@ entscheidet, nicht über die Sichtbarkeit.
 | Zyanweiß `#bfe9ff` | +79,7 | +51,1 | +55,7 | +2,7 | +4,3 | 154,7° | **fällt** — in Kristallhöhle, Eis und Wolkenwerft hellblau auf hellblau |
 | Lavendel `#b98cff` | +56,3 | +27,7 | +32,3 | −20,7 | −19,1 | 142,5° | **fällt** — ΔL\* nur 11,3 und ΔH nur 3,7° zum Kristallviolett `#a06be0` |
 | Magenta `#e8479a` | +45,7 | +17,1 | **+21,6** | −31,3 | −29,8 | 76,9° | **fällt** — zu dunkel für Erde und Fels, ΔL\* 0,6 zum Kristallviolett |
-| **Beerenrosa `#ff70b8`** | **+56,3** | **+27,8** | **+32,3** | **−20,6** | **−19,1** | **76,1°** | **bestanden** |
+| **Beerenrosa `#e5372c`** | **+56,3** | **+27,8** | **+32,3** | **−20,6** | **−19,1** | **76,1°** | **bestanden** |
 
-**Entscheidung: Beerenrosa `#ff70b8`.**
+> **Diese Prüfung ist von der Ankerfigur überholt.** Sie wurde geführt, als die Haarfarbe
+> noch offen war. Sie ist nicht gelöscht, weil sie die Sperrzonen des Farbkreises richtig
+> beschreibt und weil man wissen muss, was die getroffene Wahl kostet — aber entschieden
+> ist sie nicht mehr hier, sondern in `grafik-ankerbild-a0.md`.
+>
+> **Es gilt: Rot `#e5372c`.**
+
+Rot war in der Prüfung unten als *gesperrt* geführt, mit dem Argument „Rot ist Gefahrenrot
+und Lava". Dieses Argument war richtig und ist es weiterhin — es wiegt nur die Wahl nicht
+auf. Was es kostet, in Zahlen, nach denselben Maßstäben wie die Tabelle:
+
+| Haar `#e5372c` (L\* 51,3) gegen | ΔL\* | ΔH | Urteil |
+|---|---|---|---|
+| Nachthimmel oben `#101c33` | **+40,9** | groß | trägt |
+| Horizont `#3d5f7d` | +12,3 | groß | trägt knapp, der Umriss trägt mit |
+| Braune Erde `#6b4a2e` | +16,9 | 24° | **die kritische Paarung** — siehe unten |
+| Haut `#f4d7ac` | −36,1 | — | trägt |
+| Werkzeuggelb `#ffd23f` | −34,6 | 42° | trägt |
+| Blockerorange `#ff7a45` | −14,9 | 20° | trägt |
+| **Gefahrenrot `#ff4d4d`** | **−7,7** | **4°** | **kollidiert** |
+
+**Die beiden echten Kollisionen und was sie hält:**
+
+1. **Gefahrenrot.** Haar und Bombensignal liegen 4 Farbtongrade und 8 Helligkeitsstufen
+   auseinander — die engste Paarung der ganzen Palette. Was sie trotzdem trennt, ist, dass
+   das Bombensignal **keine Farbe** ist: Es ist ein *Blinken* im Sekundentakt plus eine
+   Ziffer über dem Kopf (§8.4). Haar blinkt nicht und trägt keine Ziffer. **Daraus folgt
+   bindend:** Der Sprengmeister wird nie über den Farbton allein ausgezeichnet, und die
+   Zündschnur-Blinkfläche bleibt der Rumpf, nie der Kopf.
+2. **Braune Erde.** +17 L\* bei nur 24° Farbtonabstand ist der schwächste Kontrast, den die
+   Figur im Spiel hat — und er tritt genau dort auf, wo sie sich am längsten aufhält.
+   Getragen wird er von zwei Dingen: dem geschlossenen fast schwarzen Umriss und dem
+   **Glanzband** `#ff8f5e` (L\* 70,7), das über Erde +36 gewinnt. Das Glanzband ist damit
+   kein Zierrat, sondern die tragende Zeile. **Daraus folgt bindend:** Die oberste Haarzeile
+   ist immer der Glanzton, in jedem Bild, in jedem Zustand.
+3. **Lavawelt.** Rote Figur vor roter Wand — der einzige Fall, den weder Umriss noch Glanz
+   allein retten. **Daraus folgt bindend:** In der Lavawelt liegt das Terrain hinter den
+   Figuren unter L\* 30; das Leuchten sitzt in der Lava selbst und im Vordergrund, nicht in
+   der Wand, auf der gelaufen wird.
+
+Die frühere Entscheidung, zum Nachlesen:
+
+**Entscheidung (überholt): Beerenrosa `#e5372c`.**
 
 Die Begründung in einem Satz: Beerenrosa ist der einzige geprüfte Ton, der auf beiden echten
 Hintergründen einen vollen Helligkeitsschritt gewinnt (+32 über Erde, +56 über Nachthimmel)
@@ -477,33 +535,47 @@ eigentliche Grund, warum die Entscheidung nicht beliebig ist:
 
 | Rolle | Farbe | L\* | bei 12 px sichtbar? |
 |---|---|---|---|
-| Glanz / Rim oben | `#ffb3d9` | 81,0 | ja, **1 Pixel** auf der obersten Haarzeile |
-| Grundton | `#ff70b8` | 66,8 | ja, die Hauptfläche |
-| Schatten unten und hinten | `#c94a8a` | 50,9 | ja, **1 Pixel** |
-| Tiefschatten am Ansatz | `#7d2a56` | 31,1 | **nein** — nur Master und Marketing |
+| Glanz / Rim oben | `#ff8f5e` | 70,7 | ja, **die tragende Zeile** — nie weglassen |
+| Grundton | `#e5372c` | 51,3 | ja, die Hauptfläche |
+| Schatten unten und hinten | `#8f1d1c` | 31,4 | ja, **1 Pixel** |
 
-Diese vier Werte gehören in `palette.ts` neben die bestehenden Figurenfarben. Sie sind
-weltunabhängig: Das Haar wird **nie** je Welt umgefärbt, sonst verliert es seine Funktion
-als Wiedererkennungsmerkmal.
+Drei Stufen, mehr nicht. Sie sind im Spiel als `HAIR_LIGHT`, `HAIR`, `HAIR_DARK` in
+`src/render/sprites.ts` gesetzt und weltunabhängig: Das Haar wird **nie** je Welt umgefärbt,
+sonst verliert es seine Funktion als Wiedererkennungsmerkmal.
+
+**Abweichung vom Ankerbild, mit Grund:** Dort ist das Glanzband `#ff8a75`. Bei einer Zeile
+Höhe entscheidet aber der Helligkeitssprung zum Untergrund, und `#ff8a75` gewinnt über
+brauner Erde zu wenig. `#ff8f5e` gewinnt dort einen vollen Schritt und bleibt innerhalb der
+roten Rampe. Weiter Richtung Orange darf es nicht — dann nähert es sich dem Werkzeuggelb.
 
 ### 3.3 Die Frisur
 
 Verbindlich, damit alle 85 Prompts dieselbe Figur beschreiben:
 
-- **Ein einzelner, nach hinten gerichteter Schopf** aus drei bis vier dicken Strähnen, die
-  am Scheitel entspringen und nach hinten-oben auslaufen. Keine Seitenscheitel, keine
-  Pony-Fransen ins Gesicht, keine Zöpfe, kein Pferdeschwanz mit Band.
-- **Ruhemaß: 2 Pixel über dem Scheitel, 2 Pixel hinter dem Hinterkopf.** In Bewegung bis
-  3 über und 3 hinter, in `falling` bis 4 über.
-- **Der Schopf ist eine geschlossene Masse, keine Einzelhaare.** Bei 12 Pixeln ist ein
+- **Eine aufrecht stehende Mähne aus vielen spitzen Strähnen unterschiedlicher Länge**, die
+  aus der ganzen Kopfhaut wächst, sich überkreuzen und eine zerzauste Kante bilden. Keine
+  Seitenscheitel, keine Pony-Fransen ins Gesicht, keine Zöpfe, kein Pferdeschwanz mit Band.
+  Es ist absichtlich viel zu viel Haar für so ein Wesen — dieses Zuviel *ist* die Figur.
+- **Ruhemaß: bis 6 Pixel über dem Scheitel, bis 8 neben der Körpermitte.** In Bewegung bis
+  8 über und 11 neben — das sind zugleich die Grenzen, die die Zelle 28 × 28 hergibt
+  (`grafik-ankerbild-a0.md` §4.3).
+- **Die Lage der Masse erzählt den Zustand.** Haar steht der Bewegung entgegen: Beim Laufen
+  weht es nach hinten, im Fall steht es senkrecht nach oben, beim Stehen und Arbeiten hängt
+  es. Das ist derselbe Gedanke wie beim Blockersignal — Lage statt Farbe. Verbindlich für
+  alle Zustandsblätter in §7.
+- **Die Mähne ist eine geschlossene Masse, keine Einzelhaare.** Bei 12 Pixeln ist ein
   Einzelhaar unsichtbar; die Silhouette muss aus einem Stück bestehen und den Umriss tragen.
+  Die Zerzaustheit entsteht am Rand der Masse, nicht durch Lücken darin.
 - **Die Stirn bleibt frei.** Das obere vordere Viertel der Kopfkuppel wird nicht von Haar
-  bedeckt — dort sitzt der Kletterhelm (§8.1). Der Schopf tritt hinter dem hinteren Helmrand
+  bedeckt — dort sitzt der Kletterhelm (§8.1). Die Mähne tritt hinter dem hinteren Helmrand
   wieder hervor; das ist die einzige Stelle, an der Haar und Helm sich begegnen, und sie ist
   so gebaut, dass beide sichtbar bleiben.
-- **Kein Seitenmerkmal.** Der Renderer spiegelt das Sprite. Eine Locke, die nur links liegt,
-  liegt nach dem Spiegeln rechts und sieht falsch aus. Der Schopf ist deshalb in reiner
-  Seitenansicht definiert und ansonsten symmetrisch gedacht.
+- **Ab der Scheitelzeile abwärts bleibt Haar hinter dem Kopf.** Das Gesicht ist die zweite
+  tragende Fläche der Figur und darf nicht zuwachsen — sonst liest die Figur als roter
+  Pilz. Über dem Scheitel darf die Masse nach vorn übergreifen, darunter nicht.
+- **Kein Seitenmerkmal.** Der Renderer spiegelt das Sprite. Eine Strähne, die nur links
+  liegt, liegt nach dem Spiegeln rechts und sieht falsch aus. Die Mähne ist deshalb in
+  reiner Seitenansicht definiert und ansonsten symmetrisch gedacht.
 - **Das Haar ist bei allen Figuren gleich.** Es unterscheidet keine Berufe (§3.4) und keine
   Individuen. Es ist das gemeinsame Erkennungszeichen der Art.
 
@@ -786,14 +858,14 @@ Body proportions, identical in every frame: head 40 pixels tall, torso 40
 pixels tall, boots 16 pixels tall, all 32 pixels wide, measured at this
 master scale. The head is the largest single mass of the figure.
 
-Hair, present in every frame: a single backward-swept tuft of three to four
-thick strands rising from the crown, in berry pink, base tone #ff70b8,
-highlight #ffb3d9 along the topmost edge, shadow #c94a8a underneath. At
-rest it reaches 16 pixels above the crown and 16 pixels behind the back of
-the head at this master scale; in motion up to 24, and never more than 32.
+Hair, present in every frame: a single upswept mane of many overlapping
+pointed strands of different lengths rising from the crown, in vivid red, base tone #e5372c,
+highlight #ff8f5e along the topmost edge, shadow #8f1d1c underneath. At
+rest it reaches 48 pixels above the crown and 64 pixels behind the back of
+the head at this master scale; in motion up to 56, and never more than 64.
 The hair is one closed mass carrying its own outline, never individual
 strands of hair. It never touches the suit, never reaches below shoulder
-height, and never extends more than 24 pixels left or right of the centre
+height, and never extends more than 88 pixels left or right of the centre
 line. The front upper quarter of the head dome stays clear of hair.
 
 Nothing may cross a cell border. Tools, limbs, hair and equipment stay
@@ -826,8 +898,8 @@ Erweitert den Block aus `grafik-prompts.md` §1.4 um die vier Haarwerte.
 ```
 PALETTE LOCK — WUSELWERK
 
-Character: hair berry pink #ff70b8, hair highlight #ffb3d9, hair shadow
-#c94a8a, hair deep shadow #7d2a56, skin warm sand #f4d7ac, suit teal
+Character: hair vivid red #e5372c, hair highlight #ff8f5e, hair shadow
+#8f1d1c, hair deep shadow #5c1210, skin warm sand #f4d7ac, suit teal
 #2fc9b8, deep suit teal #1d8f85, equipment amber #ffd23f, outline
 near-black #0c1119, blocker warning orange #ff7a45, danger red #ff4d4d.
 
@@ -891,70 +963,24 @@ composition, perspective distortion, three-quarter camera, isometric view
 
 ### 6.1 A0 — Figurenblatt
 
-Das erste Bild des Projekts. Ohne Referenz. Solange es nicht die vier Prüfungen aus §4.2
-bestanden hat, wird kein zweiter Prompt gestartet.
+**Erledigt.** Die Ankerfigur steht, und zwar zweifach: als durchgegangene Erzeugung und als
+daraus gebautes 3D-Modell `art-src/wuselwerker-v4.glb`.
 
-> **Referenz: keine (Ankerbild).**
+Der Prompt, der sie erzeugt hat, steht **wörtlich in `grafik-ankerbild-a0.md` §2** — dort
+und nur dort, damit es keine zweite, langsam abweichende Fassung gibt. Wer die Figur neu
+erzeugen muss, nimmt diesen Text.
 
-```
-[PREPEND STYLE BLOCK K]
-[APPEND PALETTE LOCK]
-[APPEND NEGATIVE PROMPT]
+Drei Dinge daraus, die für alle folgenden Prompts dieser Datei gelten:
 
-Character sheet for "Wusel", the player creature of a real-time rescue
-puzzle game about small workers digging through destructible terrain.
-Completely original design, not based on any existing character.
-
-Anatomy, cuddly by proportion: a small stocky worker creature, only two and
-a half of its own head-heights tall. The head is the largest single mass of
-the body and takes up a little over forty percent of the total height: a
-smooth, wide, softly rounded dome with warm sand skin #f4d7ac, the top
-corners generously rounded, no ears, no nose. In this strict side view
-exactly one eye is visible: a single large perfectly round solid black dot,
-set low on the face at the vertical middle of the head, and nothing else —
-no pupil highlight, no eyelid, no eyebrow, no lashes. A tiny neutral mouth
-line one step below the eye. The torso is a barrel-shaped one-piece teal
-work suit #2fc9b8 with softly rounded shoulders and a single thin darker
-collar line at the neck, exactly as tall as the head. Short stubby arms
-ending in simple mitten hands with no separate fingers. Very short legs
-ending in blunt rounded dark teal boots #1d8f85, together only about one
-sixth of the total height, with the toe of the front boot protruding one
-small step forward.
-
-Hair, the signature feature of this creature: a single backward-swept tuft
-of three or four thick soft strands rising from the crown and sweeping up
-and back, in berry pink base tone #ff70b8, with a bright highlight #ffb3d9
-along its topmost edge and a shadow #c94a8a on its underside. The tuft is
-one solid closed mass with its own outline, never separated into individual
-hairs. At rest it rises about one sixth of the figure's height above the
-crown and reaches the same distance behind the back of the head. The front
-upper quarter of the head dome stays completely clear of hair, and the hair
-never touches the suit and never reaches below the shoulders.
-
-Outline: one single hard near-black #0c1119 contour, closed all the way
-around the whole figure including the hair, of even thickness, thick enough
-to survive heavy downscaling.
-
-Pose: standing at rest, strict orthographic side view facing right, both
-boots flat on an invisible ground line, arms hanging slightly forward, head
-tilted a few degrees down and forward as if about to walk off a ledge
-without noticing. Cheerful, oblivious, harmless.
-
-Lighting: soft key from almost directly overhead with a very slight bias to
-the left, cool fill from below, one narrow bright rim along the top of the
-pink hair tuft. No cast shadow, no ground shadow.
-
-The silhouette must be instantly recognisable as this creature when the
-image is downscaled to 12 pixels tall: one big round head, a pink tuft
-above and behind it, a blocky torso, stubby legs, and no thin protruding
-detail anywhere that would vanish.
-
-Master scale: figure 96 pixels tall from boot underside to crown, not
-counting the hair, centred inside a 1024 by 1024 pixel canvas and rendered
-at that proportion so the whole creature including hair fills the central
-two thirds. Fully transparent background, no ground shadow, no backdrop, no
-text. Square aspect ratio 1:1.
-```
+1. **Keine Ausschlussliste.** Vier Anläufe wurden vom Filter abgewiesen; der wahrscheinliche
+   Auslöser war die Ausschlussliste selbst, nicht das Beschriebene. Der Negativprompt aus
+   §5.5 wird deshalb **nicht mehr angehängt** — alle Abgrenzungen werden positiv formuliert.
+   Die Herleitung steht in `grafik-ankerbild-a0.md` §2.1.
+2. **Die Figur heißt intern Wusel und ist ein Troll.** Gutmütig, kurz, stämmig, Kopf von
+   knapp halber Körperhöhe, weit auseinanderstehende Augen mit je einem Glanzpunkt, breites
+   geschlossenes Grinsen.
+3. **Der Overall ist beschrieben, nicht nur benannt:** Rollkragen, umgeschlagene
+   Ärmelaufschläge, schmaler Bundstreifen, Beinnaht, Stiefel mit umgeschlagenem Rand.
 
 ### 6.2 A1 — Turnaround, vier Ansichten
 
@@ -973,8 +999,8 @@ Four-view turnaround sheet of the Wusel creature: a small stocky worker,
 two and a half heads tall, oversized softly rounded head with warm sand
 skin #f4d7ac taking up over forty percent of the body height, large round
 solid black dot eyes set low and wide apart, tiny mouth line, a single
-backward-swept tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9
-and shadow #c94a8a rising from the crown, one-piece teal work suit #2fc9b8
+upswept mane of thick vivid red hair #e5372c with highlight #ff8f5e
+and shadow #8f1d1c rising from the crown, one-piece teal work suit #2fc9b8
 with rounded shoulders and a thin darker collar line, stubby mitten arms,
 blunt dark teal boots #1d8f85, hard near-black outline #0c1119.
 
@@ -986,10 +1012,10 @@ slightly away from the body so the torso outline stays readable.
 
 Consistency is critical: identical proportions, identical palette,
 identical eye size and placement, and above all an identical hair mass in
-every view. The tuft is symmetric about the creature's own centre plane —
-in the front view it appears as a wide pink cap rising behind the head, in
+every view. The mane is symmetric about the creature's own centre plane —
+in the front view it appears as a wide red cap rising behind the head, in
 the side view as a backward-swept wedge, in the rear view as the largest
-pink shape of the sheet covering the back of the skull, and in the three-
+red shape of the sheet covering the back of the skull, and in the three-
 quarter view as a combination of both. It must never look like a different
 hairstyle from one view to the next.
 
@@ -1094,10 +1120,10 @@ round solid black dot eye set low on the face, a tiny neutral mouth line,
 no ears, no nose, no neck, no body. Hard near-black outline #0c1119, 8
 pixels thick at this master scale.
 
-The hair: a single backward-swept tuft of three or four thick soft strands
+The hair: a single upswept mane of many overlapping pointed strands of different lengths
 rising from the crown, one solid closed mass with its own outline, never
-individual hairs. Berry pink base tone #ff70b8, bright highlight #ffb3d9
-along whichever edge currently faces upward, shadow #c94a8a on the
+individual hairs. Vivid red base tone #e5372c, bright highlight #ff8f5e
+along whichever edge currently faces upward, shadow #8f1d1c on the
 underside. The front upper quarter of the head dome stays clear of hair in
 every cell.
 
@@ -1107,23 +1133,23 @@ Canvas 1536 by 192 pixels, aspect ratio 8:1. The head is at the identical
 position and identical size in all eight cells, its crown 48 pixels below
 the top edge of the cell.
 
-Cell 1 — REST: the tuft swept back and slightly up, reaching 16 pixels
-above the crown and 16 pixels behind the skull. This is the neutral state.
-Cell 2 — TRAILING: the tuft dragged further back and flattened, as if the
+Cell 1 — REST: the mane swept back and slightly up, reaching 16 pixels
+above the crown and 64 pixels behind the skull. This is the neutral state.
+Cell 2 — TRAILING: the mane dragged further back and flattened, as if the
 creature has just started walking forward. Lower and longer than rest.
-Cell 3 — LIFTED: the tuft raised, fuller and rounder, its tip curling
+Cell 3 — LIFTED: the mane raised, fuller and rounder, its tip curling
 upward, as if the head has just dropped and the hair has not yet followed.
-Cell 4 — STREAMING UP: the tuft pulled almost vertically upward and
+Cell 4 — STREAMING UP: the mane pulled almost vertically upward and
 stretched thin, strands slightly fanned apart, the tallest cell of the
-sheet at 32 pixels above the crown.
-Cell 5 — OVER THE FACE: the tuft thrown forward across the top of the head,
+sheet at 64 pixels above the crown.
+Cell 5 — OVER THE FACE: the mane thrown forward across the top of the head,
 its tip hanging down in front of the brow but never covering the eye. The
 only cell where hair crosses to the front.
-Cell 6 — WHIPPED FORWARD AND DOWN: the tuft thrown forward and downward
+Cell 6 — WHIPPED FORWARD AND DOWN: the mane thrown forward and downward
 along the diagonal, tip pointing to the lower right, strands compressed.
-Cell 7 — FANNED FLAT: the tuft splayed sideways into a wide low fan barely
+Cell 7 — FANNED FLAT: the mane splayed sideways into a wide low fan barely
 above the crown, the widest and lowest cell of the sheet.
-Cell 8 — LIMP: the tuft hanging down and back with no lift at all, strands
+Cell 8 — LIMP: the mane hanging down and back with no lift at all, strands
 drooping together, completely lifeless.
 
 Lighting: soft key from almost directly overhead, cool fill from below, a
@@ -1157,8 +1183,8 @@ turned slightly to the right, identical framing in every cell.
 
 The creature: an oversized softly rounded head with warm sand skin #f4d7ac,
 two large round solid black dot eyes set low and wide apart, a tiny simple
-mouth, no nose, no ears, a single backward-swept tuft of thick berry pink
-hair #ff70b8 with highlight #ffb3d9 and shadow #c94a8a rising from the
+mouth, no nose, no ears, a single upswept mane of thick vivid red
+hair #e5372c with highlight #ff8f5e and shadow #8f1d1c rising from the
 crown, and the top of a one-piece teal work suit #2fc9b8 with a thin darker
 collar line at the bottom of each cell. Hard near-black outline #0c1119, 8
 pixels thick at this master scale.
@@ -1231,8 +1257,8 @@ Pixel ist der Unterschied zwischen „läuft" und „hüpft steif".
 
 Walk cycle of the Wusel creature: a small stocky worker, two and a half
 heads tall, oversized rounded head with warm sand skin #f4d7ac, one round
-black dot eye set low, tiny mouth line, a backward-swept tuft of thick
-berry pink hair #ff70b8 with highlight #ffb3d9 and shadow #c94a8a,
+black dot eye set low, tiny mouth line, a upswept mane of thick
+vivid red hair #e5372c with highlight #ff8f5e and shadow #8f1d1c,
 one-piece teal work suit #2fc9b8 with rounded shoulders, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119.
 
@@ -1257,11 +1283,11 @@ The head bobs by 16 pixels at this master scale between the lowest and the
 highest frame, and never looks where it is going: it stays tilted a few
 degrees down and forward throughout, cheerfully oblivious.
 
-The hair, and this is the most important part of the sheet: the tuft is
+The hair, and this is the most important part of the sheet: the mane is
 permanently dragged backward by the forward motion, sitting 16 pixels
 further back than at rest, and it lags one frame behind the head. When the
 body is at its lowest (frames 2 and 6) the hair is still at its highest and
-fullest, lifted 24 pixels above the crown. When the body is at its highest
+fullest, lifted 56 pixels above the crown. When the body is at its highest
 (frames 4 and 8) the hair has caught up and compressed down onto the crown,
 only 8 pixels above it and dragged 24 pixels back. Frames 1, 3, 5 and 7 sit
 between those two extremes. The hair therefore moves in opposition to the
@@ -1287,8 +1313,8 @@ sie ist.
 [APPEND NEGATIVE PROMPT]
 
 Free-fall loop of the Wusel creature (oversized rounded head with warm sand
-skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8 with highlight
-#ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8, dark teal boots
+skin #f4d7ac, backward-swept vivid red hair mane #e5372c with highlight
+#ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark teal boots
 #1d8f85, near-black outline #0c1119), falling without any equipment.
 
 Exactly 4 frames in one row. Canvas 768 by 192 pixels, aspect ratio 4:1.
@@ -1309,7 +1335,7 @@ into frame 1.
 
 The hair in this clip does not lag behind the body — the airflow holds it.
 It is dragged straight up by the rush of air in all four frames, stretched
-to its maximum of 32 pixels above the crown at this master scale and
+to its maximum of 64 pixels above the crown at this master scale and
 narrowed to a thin vertical plume. Between the frames only the fan of the
 strands changes: frame 1 the strands are pressed tightly together, frame 2
 fanned slightly apart, frame 3 fanned widest with one strand flicking
@@ -1339,7 +1365,7 @@ später**. Wer nur diesen einen Clip richtig macht, hat das Prinzip verstanden.
 
 Slow descent loop of the Wusel creature hanging beneath an open umbrella
 (oversized rounded head with warm sand skin #f4d7ac, backward-swept berry
-pink hair tuft #ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal
+red hair mane #e5372c with highlight #ff8f5e and shadow #8f1d1c, teal
 one-piece suit #2fc9b8, dark teal boots #1d8f85, near-black outline
 #0c1119).
 
@@ -1365,7 +1391,7 @@ air, body at the bottom of its swing.
 Frame 4 — canopy tipped a few degrees to the left, body swinging back.
 
 The hair follows the sway with exactly one frame of delay, and this delay
-is the point of the sheet. In frame 1 the tuft lies at rest, swept back. In
+is the point of the sheet. In frame 1 the mane lies at rest, swept back. In
 frame 2, while the canopy tips right, the hair has not moved yet and still
 lies where it was in frame 1. In frame 3 the hair swings right and lifts —
 reacting to the tilt that happened in the previous frame — while the canopy
@@ -1395,8 +1421,8 @@ auf der Rückseite ist bei 12 Pixeln eindeutig als Kletterer lesbar.
 [APPEND NEGATIVE PROMPT]
 
 Wall-climbing loop of the Wusel creature (oversized rounded head with warm
-sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8 with
-highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8, dark
+sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c with
+highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark
 teal boots #1d8f85, near-black outline #0c1119), climbing a vertical
 surface that is NOT drawn.
 
@@ -1418,9 +1444,9 @@ Frame 4 — the other hand releases and reaches, mirroring frame 2, leading
 back into frame 1.
 
 The hair hangs away from the implied wall, to the left, and pumps with the
-climb one frame behind it. On the two planting frames 1 and 3 the tuft is
-kicked upward by the pull, reaching 24 pixels above the crown. On the two
-reaching frames 2 and 4 it sags back down to 8 pixels above the crown and
+climb one frame behind it. On the two planting frames 1 and 3 the mane is
+kicked upward by the pull, reaching 56 pixels above the crown. On the two
+reaching frames 2 and 4 it sags back down to 40 pixels above the crown and
 droops further back. The hair must never appear between the body and the
 implied wall, and never above the raised hand.
 
@@ -1430,7 +1456,7 @@ Leave the front upper quarter of the head dome clear and unobstructed; the
 hair behind it stays.
 
 The silhouette at 12 pixels tall must read as "flat against a wall, one arm
-high, pink wedge on the back": narrower than a walker, with at least one
+high, red wedge on the back": narrower than a walker, with at least one
 arm above head height in every frame.
 ```
 
@@ -1449,8 +1475,8 @@ still sein — auch das Haar.
 [APPEND NEGATIVE PROMPT]
 
 One-shot pull-up sequence of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), hauling itself over
 the top edge of a wall that is NOT drawn.
 
@@ -1504,8 +1530,8 @@ hilft dabei: Es überschwingt in Bild 1 nach vorn und verdeckt damit den Sprung.
 [APPEND NEGATIVE PROMPT]
 
 Bridge-building work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), laying one plank step
 per cycle.
 
@@ -1565,8 +1591,8 @@ Bildgenerator irgendwo scheitert, dann hier — dieses Blatt gehört von Hand fe
 [APPEND NEGATIVE PROMPT]
 
 Horizontal digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), swinging a
 sledgehammer straight forward into a wall that is NOT drawn.
 
@@ -1580,7 +1606,7 @@ is thrust fully forward at belly height, its head clear of the body outline
 to the right, the haft level and horizontal. Torso rotated into the blow,
 rear foot dug in, front knee bent, head pushed forward, shoulders
 compressed into a small squash. The body has stopped dead and the hair has
-not: the tuft shoots forward over the top of the head, its tip past the
+not: the mane shoots forward over the top of the head, its tip past the
 brow, strands compressed together. This is the furthest forward the hair
 goes anywhere in the game.
 Frame 2 — recoil: the hammer rebounds up and back, the body straightening,
@@ -1618,8 +1644,8 @@ verstärkt.
 [APPEND NEGATIVE PROMPT]
 
 Diagonal digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), driving a pickaxe
 forward and downward into ground that is NOT drawn.
 
@@ -1672,8 +1698,8 @@ Bild 1 und 2, dort wo auch die Haltedauer wechselt.
 [APPEND NEGATIVE PROMPT]
 
 Vertical digging work cycle of the Wusel creature (oversized rounded head
-with warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8,
+with warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8,
 dark teal boots #1d8f85, near-black outline #0c1119), shovelling straight
 down into ground that is NOT drawn.
 
@@ -1728,8 +1754,8 @@ darf. Alles andere ist byte-identisch, damit der Blocker unverrückbar wirkt.
 [APPEND NEGATIVE PROMPT]
 
 Two-frame idle of the Wusel creature in its blocking stance (oversized
-rounded head with warm sand skin #f4d7ac, backward-swept berry pink hair
-tuft #ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+rounded head with warm sand skin #f4d7ac, backward-swept vivid red hair
+mane #e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119).
 
 Exactly 2 frames in one row. Canvas 384 by 192 pixels, aspect ratio 2:1.
@@ -1748,7 +1774,7 @@ conviction. The creature is a living road block and knows it.
 
 Frame 1 — the stance at rest, the hair in its exact neutral position.
 Frame 2 — byte-identical to frame 1 in every respect except the hair: the
-tips of the tuft lift by 8 pixels at this master scale, as if in a faint
+tips of the mane lift by 8 pixels at this master scale, as if in a faint
 breath of air, and the eye blinks half shut. Arm span, arm height, paddle
 position, boot position, torso and head outline are unchanged, pixel for
 pixel. The hair is the only thing in this clip that moves, and that is
@@ -1780,8 +1806,8 @@ die Haltungsänderung auf fester Grundlinie.
 [APPEND NEGATIVE PROMPT]
 
 One-shot rescue sequence of the Wusel creature (oversized rounded head with
-warm sand skin #f4d7ac, backward-swept berry pink hair tuft #ff70b8 with
-highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit #2fc9b8, dark
+warm sand skin #f4d7ac, backward-swept vivid red hair mane #e5372c with
+highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit #2fc9b8, dark
 teal boots #1d8f85, near-black outline #0c1119) being drawn into the exit
 and saved.
 
@@ -1812,7 +1838,7 @@ tipped back, eye closed in a happy arc. The hair is fully vertical and
 stretched.
 Frame 5 — the body slims into a narrower vertical shape as if being drawn
 upward, boots pointing straight down, arms pressed together above the head.
-The hair is stretched to its maximum of 32 pixels above the crown at this
+The hair is stretched to its maximum of 64 pixels above the crown at this
 master scale and gathered into a single fine plume.
 Frame 6 — the most stretched pose, body at its narrowest and tallest, arms
 fully extended up, unmistakably happy, the hair plume at full extension and
@@ -1822,7 +1848,7 @@ A warm rim light #ffd98a from above grows stronger across the six frames,
 strongest on the top of the hair and on the shoulders. This is the only
 place in the character set where a coloured light is baked in, because the
 exit glow is always the same warm tone. The warm light must not wash the
-pink of the hair out to white — keep the hair's own hue readable.
+red of the hair out to white — keep the hair's own hue readable.
 ```
 
 ### 7.12 `dying` — 8 Bilder, einmalig
@@ -1841,8 +1867,8 @@ Empathie aus GDD §2 geschenkt.
 [APPEND NEGATIVE PROMPT]
 
 One-shot generic collapse sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): the default
 death used when no cause-specific animation applies.
 
@@ -1867,13 +1893,13 @@ raised and then falling. The hair fan settles by a few pixels and comes to
 rest. From here on it does not move again.
 Frame 6 — motionless, the outline softening, the teal desaturating one step
 toward the outline tone. The hair is in exactly the same position as in
-frame 5, pixel for pixel, and its pink desaturates one step toward the
-shadow tone #c94a8a.
+frame 5, pixel for pixel, and its red desaturates one step toward the
+shadow tone #8f1d1c.
 Frame 7 — the shape reduced further, colours flattening toward a single
 dull tone, the dust ring drifting outward and thinning. The hair is
 unchanged in position and has desaturated another step.
 Frame 8 — a small motionless heap no taller than a quarter of the original
-figure, one recognisable boot shape, one last flat wisp of pink still
+figure, one recognisable boot shape, one last flat wisp of red still
 visible, and a last wisp of dust.
 
 The stillness is the point: the hair stops moving one frame before the body
@@ -1912,7 +1938,7 @@ ist nur eine Bedingung, die aus dem Haar folgt:
 
 Attachment asset: a climbing helmet for a small cartoon worker creature,
 drawn on its own so an engine can pin it onto a character sprite. The head
-it belongs on is a large smooth dome with a thick tuft of hair sweeping
+it belongs on is a large smooth dome with a thick mane of hair sweeping
 backward from the crown; the helmet must sit on the front and top of that
 dome like a shell, with its inner curve matching a dome of 32 pixels
 diameter at this master scale.
@@ -2036,9 +2062,9 @@ Cell 5 — the fuse is gone to a nub at the collar, the spark a small white
 flash, the whole sphere rim-lit in danger red #ff4d4d.
 
 The fuse curl rises on the side away from the viewer's reading direction
-and must stay narrow, because on the character it passes close to the pink
-hair tuft and the two must not merge into one shape. Keep the fuse thin and
-its spark small and white rather than pink or red in cells 1 to 3.
+and must stay narrow, because on the character it passes close to the red
+hair mane and the two must not merge into one shape. Keep the fuse thin and
+its spark small and white rather than red in cells 1 to 3.
 
 Strict side view facing right. The engine mirrors the sheet, so nothing may
 identify a left or a right side.
@@ -2135,8 +2161,8 @@ Diese Unterscheidung ist in jedem der drei Prompts ausdrücklich benannt.
 Key-pose sheet for the Climber, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, tiny mouth,
-a backward-swept tuft of thick berry pink hair #ff70b8 with highlight
-#ffb3d9 and shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten
+a upswept mane of thick vivid red hair #e5372c with highlight
+#ff8f5e and shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119, 8
 pixels thick at this master scale.
 
@@ -2153,7 +2179,7 @@ right, which is NOT drawn: chest and knees touching it, body as narrow as
 it ever gets, head tilted up. The upper mitten hand is planted high above
 head height, the lower hand at chest height. It wears an angular amber
 #ffd23f climbing helmet with a flat forward brim and a small centred lamp,
-open at the back so the pink hair tuft emerges behind it. The hair hangs
+open at the back so the red hair mane emerges behind it. The hair hangs
 away from the wall, to the left, lifted by the climb.
 
 Cell 2 — the identical pose rendered as a pure solid silhouette: every
@@ -2183,8 +2209,8 @@ wall, no props.
 Key-pose sheet for the Floater, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, tiny mouth,
-a backward-swept tuft of thick berry pink hair #ff70b8 with highlight
-#ffb3d9 and shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten
+a upswept mane of thick vivid red hair #e5372c with highlight
+#ff8f5e and shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten
 arms, blunt dark teal boots #1d8f85, hard near-black outline #0c1119, 8
 pixels thick at this master scale.
 
@@ -2233,8 +2259,8 @@ no props.
 Key-pose sheet for the Bomber, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and
-shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
+shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2282,8 +2308,8 @@ cast shadow, no ground, no props, no explosion.
 Key-pose sheet for the Blocker, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, round black dot eyes set low, a backward-swept
-tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and shadow
-#c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
+mane of thick vivid red hair #e5372c with highlight #ff8f5e and shadow
+#8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
 teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at this
 master scale.
 
@@ -2332,8 +2358,8 @@ cast shadow, no ground, no props.
 Key-pose sheet for the Builder, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and
-shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
+shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2381,8 +2407,8 @@ cast shadow, no ground, no terrain.
 Key-pose sheet for the Basher, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and
-shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
+shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2430,8 +2456,8 @@ cast shadow, no ground, no wall, no rubble, no sparks.
 Key-pose sheet for the Miner, one of ten job roles of the Wusel creature: a
 small stocky worker, two and a half heads tall, oversized rounded head with
 warm sand skin #f4d7ac, one round black dot eye set low, a backward-swept
-tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and shadow
-#c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
+mane of thick vivid red hair #e5372c with highlight #ff8f5e and shadow
+#8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt dark
 teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at this
 master scale.
 
@@ -2479,8 +2505,8 @@ cast shadow, no ground, no terrain, no debris.
 Key-pose sheet for the Digger, one of ten job roles of the Wusel creature:
 a small stocky worker, two and a half heads tall, oversized rounded head
 with warm sand skin #f4d7ac, one round black dot eye set low, a backward-
-swept tuft of thick berry pink hair #ff70b8 with highlight #ffb3d9 and
-shadow #c94a8a, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
+swept mane of thick vivid red hair #e5372c with highlight #ff8f5e and
+shadow #8f1d1c, one-piece teal work suit #2fc9b8, stubby mitten arms, blunt
 dark teal boots #1d8f85, hard near-black outline #0c1119, 8 pixels thick at
 this master scale.
 
@@ -2527,8 +2553,8 @@ cast shadow, no ground, no soil, no dust.
 Key-pose sheet for the Magnetiser, one of ten job roles of the Wusel
 creature, unlocked in the fourth world: a small stocky worker, two and a
 half heads tall, oversized rounded head with warm sand skin #f4d7ac, one
-round black dot eye set low, a backward-swept tuft of thick berry pink hair
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, one-piece teal work suit
+round black dot eye set low, a upswept mane of thick vivid red hair
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, one-piece teal work suit
 #2fc9b8, stubby mitten arms, blunt dark teal boots #1d8f85, hard near-black
 outline #0c1119, 8 pixels thick at this master scale.
 
@@ -2577,8 +2603,8 @@ cast shadow, no ground, no props.
 Key-pose sheet for the Jumper, one of ten job roles of the Wusel creature,
 unlocked in the fourth world: a small stocky worker, two and a half heads
 tall, oversized rounded head with warm sand skin #f4d7ac, one round black
-dot eye set low, a backward-swept tuft of thick berry pink hair #ff70b8
-with highlight #ffb3d9 and shadow #c94a8a, one-piece teal work suit
+dot eye set low, a upswept mane of thick vivid red hair #e5372c
+with highlight #ff8f5e and shadow #8f1d1c, one-piece teal work suit
 #2fc9b8, stubby mitten arms, blunt dark teal boots #1d8f85, hard near-black
 outline #0c1119, 8 pixels thick at this master scale.
 
@@ -2646,8 +2672,8 @@ Horrorpublikum, und das Spiel muss in jedem Store durchgehen.
 [APPEND NEGATIVE PROMPT]
 
 One-shot impact death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): hitting the
 ground after falling too far.
 
@@ -2662,7 +2688,7 @@ into the torso, the head still travelling down, the hair still straight up.
 Frame 3 — maximum squash: the whole creature flattened to about one third
 of its height and spread nearly twice its normal width, the head squeezed
 into a wide oval, arms shot out sideways. The hair is slammed flat outward
-into a low wide pink fan, wider than the body — the single widest hair
+into a low wide red fan, wider than the body — the single widest hair
 shape in the game.
 Frame 4 — the smallest rebound: the shape springs back up by a fifth of its
 height and narrows slightly, the hair lifting a little at the tips. This is
@@ -2671,13 +2697,13 @@ Frame 5 — settling down again, flatter than frame 4 but not as flat as
 frame 3, arms dropping, a thin ring of pale dust spreading outward around
 the base.
 Frame 6 — motionless. The teal desaturates one step toward the outline
-tone, the pink hair desaturates toward #c94a8a. The hair is in exactly the
+tone, the red hair desaturates toward #8f1d1c. The hair is in exactly the
 same position as in frame 5, pixel for pixel.
 Frame 7 — the shape reduced further, colours flattening toward a single
 dull tone, the dust ring drifting wider and thinning. Hair unchanged.
 Frame 8 — a small motionless flattened heap no taller than a quarter of the
 original figure, one recognisable boot shape at one end, one flat wisp of
-faded pink at the other, and a last thin trace of dust.
+faded red at the other, and a last thin trace of dust.
 
 The sequence must read as sudden, hard and heavy — everything happens in
 frames 2 and 3, and the remaining five frames are consequences. No blood,
@@ -2700,8 +2726,8 @@ Absacken trotzdem nicht als Bewegung, sondern als Haltung, weil die Grundlinie f
 [APPEND NEGATIVE PROMPT]
 
 One-shot drowning death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): sinking in
 deep water. The water itself is NOT drawn — it is a separate asset
 composited by the engine.
@@ -2726,12 +2752,12 @@ body drifting a few degrees off vertical. The hair fans slowly out above
 the head, weightless. This is the last frame in which anything moves.
 Frame 6 — motionless. The whole figure cools and darkens by one step, the
 teal shifting toward a colder tone and the skin losing warmth. The hair is
-in exactly the same position as in frame 5 and desaturates toward #c94a8a.
+in exactly the same position as in frame 5 and desaturates toward #8f1d1c.
 Frame 7 — darker again, the outline softening, the figure reading as
 further away below the surface, colours converging toward a single dull
 blue-grey. Hair unchanged in position.
 Frame 8 — a dark, almost monochrome limp silhouette with only a faint trace
-of pink left in the hair, the last thing still identifiable.
+of red left in the hair, the last thing still identifiable.
 
 Distinct from every other death in one respect the player must catch at 12
 pixels tall: this one keeps the creature's full height and shape and takes
@@ -2752,8 +2778,8 @@ No blood, no gore, no red fluid, no water surface, no splash, no ripples.
 [APPEND NEGATIVE PROMPT]
 
 One-shot burning death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): caught in a
 flame jet. The flame jet itself is NOT drawn — it is a separate asset.
 
@@ -2782,9 +2808,9 @@ unchanged, now dark.
 Frame 7 — the embers cooling to dull red, the shape settling one step
 lower, thin grey smoke rising in two thin columns.
 Frame 8 — a small motionless dark heap about a third of the original
-height, one last ember, one thin wisp of smoke, and no pink left anywhere.
+height, one last ember, one thin wisp of smoke, and no red left anywhere.
 
-The loss of the pink hair is the readable signal of this particular death:
+The loss of the red hair is the readable signal of this particular death:
 it is the only death in the game in which the creature's signature colour
 disappears completely, and at 12 pixels tall that is exactly what the
 player registers.
@@ -2806,8 +2832,8 @@ beyond the shout in frame 1.
 [APPEND NEGATIVE PROMPT]
 
 One-shot crushing death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): flattened
 from above by a descending press. The press itself is NOT drawn — it is a
 separate asset composited by the engine.
@@ -2828,7 +2854,7 @@ Frame 3 — compressed to three fifths, the head sinking into the shoulders,
 the torso bulging at the sides, arms splayed straight out horizontally.
 Frame 4 — compressed to two fifths, the head no longer distinguishable from
 the torso, the whole figure a wide bulging cushion, boots squeezed out to
-the sides. The hair is forced out into a wide flat pink fan on both sides,
+the sides. The hair is forced out into a wide flat red fan on both sides,
 level with the top of the shape.
 Frame 5 — maximum compression to about one sixth of the original height and
 two and a half times its width: a flat wide slab with a slight bulge at the
@@ -2836,12 +2862,12 @@ centre, boots and mitten hands still recognisable at the outer ends. This
 is the last frame in which anything moves. A thin ring of dust puffs out
 sideways along the ground.
 Frame 6 — motionless. The slab desaturates one step, teal toward the
-outline tone, pink toward #c94a8a. Position identical to frame 5, pixel for
+outline tone, red toward #8f1d1c. Position identical to frame 5, pixel for
 pixel.
 Frame 7 — the slab relaxes very slightly and flattens further, colours
 converging toward one dull tone, the dust drifting outward and thinning.
 Frame 8 — a flat motionless wide slab about one eighth of the original
-height, one boot shape at one end, one flat trace of faded pink at the
+height, one boot shape at one end, one flat trace of faded red at the
 other, and the last of the dust.
 
 The horror is entirely in the geometry: this is the only death in which the
@@ -2866,8 +2892,8 @@ komisch statt tragisch sein.
 [APPEND NEGATIVE PROMPT]
 
 One-shot explosion death sequence of the Wusel creature (oversized rounded
-head with warm sand skin #f4d7ac, backward-swept berry pink hair tuft
-#ff70b8 with highlight #ffb3d9 and shadow #c94a8a, teal one-piece suit
+head with warm sand skin #f4d7ac, backward-swept vivid red hair mane
+#e5372c with highlight #ff8f5e and shadow #8f1d1c, teal one-piece suit
 #2fc9b8, dark teal boots #1d8f85, near-black outline #0c1119): blown up by
 the bomb it was carrying.
 
@@ -2898,7 +2924,7 @@ boot lying on its side.
 Frame 7 — the smoke thinning and drifting upward and slightly to one side,
 the glow gone, the scorch and boot unchanged.
 Frame 8 — a last thin wisp of smoke, the scorch smudge, the boot, and one
-tiny surviving tuft of faded pink hair lying beside it. That tuft is the
+tiny surviving mane of faded red hair lying beside it. That mane is the
 punchline and must be clearly visible at 12 pixels.
 
 Hard-edged pixel clusters throughout — no soft airbrushed fire, no bloom,
@@ -3150,7 +3176,7 @@ Layout: the strip is 8 logical pixels tall, 64 pixels of this master
 texture, and reads strictly top to bottom as depth below the surface.
 
 Row band 1, the topmost 8 master pixels: the surface itself, fully opaque,
-lush grass green #4f8f3c, with a few individual blades and tufts breaking
+lush grass green #4f8f3c, with a few individual blades and manes breaking
 upward past the top edge of the strip in an irregular, hand-cut rhythm — a
 ragged line, never a straight one.
 Row band 2, the next 16 master pixels: dense root mat, still mostly opaque,
@@ -3167,7 +3193,7 @@ into the soil beneath rather than end at a visible line, because the engine
 places it at whatever depth the terrain surface happens to be.
 
 Tiling: perfectly seamless left to right, with no recognisable landmark
-tuft — the strip repeats many times across a level. No vertical tiling.
+mane — the strip repeats many times across a level. No vertical tiling.
 
 Value range: no channel below 32 or above 216.
 
@@ -4684,14 +4710,14 @@ the central two thirds of the icon, seen from slightly above. Design as
 established: oversized softly rounded head with warm sand skin #f4d7ac
 taking up over forty percent of the body height, two large round solid
 black dot eyes set low and wide apart, tiny open smile, a thick backward-
-swept tuft of berry pink hair #ff70b8 with a bright highlight #ffb3d9 and
-shadow #c94a8a rising from the crown and streaming back as if caught in a
+swept mane of vivid red hair #e5372c with a bright highlight #ff8f5e and
+shadow #8f1d1c rising from the crown and streaming back as if caught in a
 breeze, one-piece teal work suit #2fc9b8, dark teal boots #1d8f85, hard
 near-black outline #0c1119. It holds a broad amber #ffd23f shovel across
 its body and looks up at the viewer with cheerful, slightly clueless
 determination.
 
-The pink hair is the single most important element of this icon after the
+The red hair is the single most important element of this icon after the
 face: it must be large, bright and clearly silhouetted, because it is the
 one feature that distinguishes this game at thumbnail size in a store
 listing.
@@ -4740,11 +4766,11 @@ The centre of the image, and the only subject: a riveted steel hatch
 #8b96a6 hanging on two chains from the top of the frame, its underside
 doors open, with exactly three small creatures dropping out of it. Each has
 an oversized rounded head with warm sand skin #f4d7ac, two round black dot
-eyes, a thick backward-swept tuft of berry pink hair #ff70b8 streaming
+eyes, a thick upswept mane of vivid red hair #e5372c streaming
 straight upward in the rush of air, a one-piece teal work suit #2fc9b8,
 dark teal boots #1d8f85 and a hard near-black outline #0c1119. Arms above
 their heads, mouths open in small round shouts, cheerfully doomed. The
-three vertical pink hair plumes are the visual hook of the whole image.
+three vertical red hair plumes are the visual hook of the whole image.
 
 The lower third is a calm cross-section of brown soil #6b4a2e with a green
 crust #4f8f3c and one glowing exit door with a warm halo #ffd98a set into
@@ -4781,8 +4807,8 @@ a vertical pit, and one horizontal gallery blocked by a riveted steel plate
 
 Cast: about twenty small creatures at work throughout the cut-away. Every
 one of them has an oversized softly rounded head with warm sand skin
-#f4d7ac, two round black dot eyes set low, a thick backward-swept tuft of
-berry pink hair #ff70b8 with highlight #ffb3d9, a one-piece teal work suit
+#f4d7ac, two round black dot eyes set low, a thick upswept mane of
+vivid red hair #e5372c with highlight #ff8f5e, a one-piece teal work suit
 #2fc9b8, dark teal boots #1d8f85 and a hard near-black outline #0c1119.
 One swings a shovel at the bottom of the pit, one hammers sideways against
 the steel with sparks flying, one places brick steps #b5713f up a ledge,
@@ -4826,7 +4852,7 @@ Scene: a tall vertical cross-section of terrain, seen in strict
 orthographic side view, reading as a deep shaft from sky to depths. The top
 eighth is sky gradient #101c33 to #3d5f7d with a riveted steel hatch
 #8b96a6 on chains, doors open, three small creatures falling out of it with
-arms up and berry pink hair #ff70b8 streaming vertically, one already under
+arms up and vivid red hair #e5372c streaming vertically, one already under
 an amber #ffd23f umbrella with its hair floating calmly instead.
 
 Middle: layered terrain descending through green-crusted soil #6b4a2e, grey
@@ -4838,8 +4864,8 @@ orange #ff7a45 paddles.
 
 Every creature is identical in design: oversized softly rounded head with
 warm sand skin #f4d7ac, two round black dot eyes set low, a thick
-backward-swept berry pink hair tuft, a one-piece teal work suit #2fc9b8,
-dark teal boots #1d8f85, hard near-black outline #0c1119. The pink hair is
+backward-swept vivid red hair mane, a one-piece teal work suit #2fc9b8,
+dark teal boots #1d8f85, hard near-black outline #0c1119. The red hair is
 the only warm colour on the creatures and must read as a chain of bright
 accents leading the eye down the shaft.
 
@@ -4885,7 +4911,7 @@ with rounded hill layers #1b2f42, #24415a, #2f5570. The lower half is soil
 tunnel that runs the entire width of the image just below the surface.
 
 Left third: a riveted steel hatch #8b96a6 on chains with three small
-creatures dropping out of it, arms up, berry pink hair #ff70b8 streaming
+creatures dropping out of it, arms up, vivid red hair #e5372c streaming
 vertically, and two more already landed and marching right along the
 tunnel.
 
@@ -4899,7 +4925,7 @@ back toward the door.
 
 Every creature is identical in design: oversized softly rounded head with
 warm sand skin #f4d7ac, two round black dot eyes set low, a thick
-backward-swept berry pink hair tuft with highlight #ffb3d9, a one-piece
+backward-swept vivid red hair mane with highlight #ff8f5e, a one-piece
 teal work suit #2fc9b8, dark teal boots #1d8f85, hard near-black outline
 #0c1119.
 
@@ -4970,22 +4996,22 @@ rolled collar, exactly as tall as the head, with softly rounded shoulders.
 Short stubby arms ending in simple mitten hands with no separate fingers.
 Very short legs ending in blunt rounded boots.
 
-Hair: one single thick tuft of three or four fused strands rising from the
+Hair: one single thick mane of many fused pointed strands rising from the
 crown and sweeping backward and upward, modelled as one solid rounded volume
 attached to the skull, not as separate hairs and not as a hair card. It
-rises about one sixth of the body height above the crown and reaches the
+rises about half the body height above the crown and reaches the
 same distance behind the skull. The front upper quarter of the head is bare
-so a helmet can be fitted later. The tuft is symmetric about the centre
+so a helmet can be fitted later. The mane is symmetric about the centre
 plane of the head.
 
 Surface: clean flat colour blocking only — sand-coloured skin on the head
-and hands, pink on the hair tuft, teal on the torso and arms, dark teal on
+and hands, red on the hair mane, teal on the torso and arms, dark teal on
 the boots. Completely unlit, no baked shadows, no baked highlights, no
 ambient occlusion, no gloss, matte diffuse only.
 
 Geometry: simple rounded volumes, moderate polygon count, closed watertight
 mesh, no thin protruding parts, no loose accessories, no cloth, no cape. The
-hair tuft must be thick and solid enough to stay visible when the model is
+hair mane must be thick and solid enough to stay visible when the model is
 rendered only twelve pixels tall. Bold clear silhouette.
 ```
 
@@ -5006,7 +5032,7 @@ A set of stylised cartoon tool props for a small worker character,
 game-ready models, each as a separate simple object:
 
 an angular hard hat with a flat front brim and a round forehead lamp, open
-at the back with a clean rear edge and no neck guard, so that a hair tuft
+at the back with a clean rear edge and no neck guard, so that a hair mane
 can pass behind it;
 a small open umbrella with six ribs, a shallow dome canopy and a straight
 handle;
@@ -5051,12 +5077,12 @@ height, elbows locked, mitten hands turned so the palms face forward.
 Total arm span exactly twice the height of the head. Chin slightly raised,
 face set and determined, eyes narrowed.
 
-Hair: the same single thick backward-swept tuft rising from the crown as one
+Hair: the same single thick upswept mane rising from the crown as one
 solid rounded volume, here pressed back and down against the skull, staying
 well inside the arm span and never breaking the straight top line formed by
 the outstretched arms.
 
-Surface: flat colour blocking only, sand skin, pink hair tuft, teal
+Surface: flat colour blocking only, sand skin, red hair mane, teal
 one-piece suit, dark teal boots, an orange band across the chest and an
 orange rectangular paddle in each hand. Completely unlit, no baked shadows
 or highlights, matte diffuse only.
@@ -5218,7 +5244,7 @@ dazukommen.
 **Bildmodelle liefern zuverlässig „Pixelart-Look", nicht echtes Pixelart.** Typische Fehler:
 kein sauberes Pixelraster, Kantenglättung mitten in der Fläche, mehrere tausend statt
 24 Farben, Halbpixel, inkonsistente Pixelgröße innerhalb eines Bildes. Für ein Spiel, dessen
-Figur **12 logische Pixel** hoch ist und dessen Zelle **24 × 24** misst, ist das nicht direkt
+Figur **12 logische Pixel** hoch ist und dessen Zelle **28 × 28** misst, ist das nicht direkt
 verwertbar.
 
 **Der einzige Weg zu echtem Pixelart im Spiel führt über Nachbearbeitung von Hand** (Aseprite

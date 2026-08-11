@@ -5,7 +5,7 @@ import { sx, sy, type View } from './camera';
  * Sprite-Atlas für die Figuren.
  *
  * Aufteilung und Zahlen stammen unverändert aus `docs/grafik-integration.md`:
- * Zelle 24 × 24 logisch, Fusspunkt (12, 20), Bildzahl je Zustand aus der
+ * Zelle 32 × 28 logisch, Fusspunkt (16, 22), Bildzahl je Zustand aus der
  * Taktrate der Simulation. Zwei Eigenheiten sind dort hergeleitet und hier
  * bindend umgesetzt:
  *
@@ -20,10 +20,36 @@ import { sx, sy, type View } from './camera';
  * aus einem globalen Takt. Sonst schlagen alle Hämmer im Gleichschritt zu.
  */
 
-export const CELL_W = 24;
-export const CELL_H = 24;
-export const ANCHOR_X = 12;
-export const ANCHOR_Y = 20;
+/**
+ * Zellmass. Es folgt der Mähne, nicht dem Körper.
+ *
+ * Der Körper ist 12 logische Pixel hoch und 8 breit — dafür genügte die alte
+ * Zelle 24 × 24. Das Ankermodell (`art-src/wuselwerker-v4.glb`) hat die
+ * Haarmasse aber vom Zierrat zur Hauptsache gemacht. `npm run modell:messen`
+ * misst sie am Modell selbst und rechnet sie auf Figurenhöhe 12 um:
+ *
+ *     Haar über dem Scheitel   5,4
+ *     Haar neben der Mitte     7,5
+ *
+ * Daraus die Zelle, mit ausdrücklicher Zugabe für Bewegung, die das Modell in
+ * seiner Ruhepose nicht zeigen kann:
+ *
+ * - **Höhe:** im Fall steht das Haar senkrecht, also rund die Hälfte höher
+ *   → 8 über dem Scheitel, 20 über dem Fusspunkt, plus 1 Umriss und 1 Reserve
+ *   → **22 Zeilen**. Die 6 darunter tragen Staub und Squash.
+ * - **Breite:** im Lauf weht es nach hinten, ebenfalls rund die Hälfte weiter
+ *   → 11, plus 1 Umriss und 2 Reserve → **14 Spalten je Seite**.
+ *
+ * Das Messwerkzeug prüft diese Zelle gegen das Modell und schlägt Alarm, wenn
+ * ein neues Modell nicht mehr hineinpasst.
+ *
+ * Die Breite bleibt gerade und der Anker auf halber Zellbreite — sonst
+ * verliert die Spiegelung ihre Versatzfreiheit (siehe `drawWusel`).
+ */
+export const CELL_W = 28;
+export const CELL_H = 28;
+export const ANCHOR_X = 14;
+export const ANCHOR_Y = 22;
 
 export interface ClipDef {
   /** Zeile im Blatt. */

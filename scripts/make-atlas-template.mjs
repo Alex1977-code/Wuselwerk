@@ -62,5 +62,8 @@ const clips = Object.entries(out.manifest.clips);
 const frames = clips.reduce((n, [, c]) => n + c.holds.length, 0);
 console.log(`${OUT_DIR}/wusel.png          ${Math.round(png.length / 1024)} kB`);
 console.log(`${OUT_DIR}/wusel.atlas.json   ${clips.length} Clips, ${frames} Bilder`);
-console.log('Zelle 24x24, Fusspunkt (12, 20) — zum Übermalen bereit.');
+const { cell, anchor } = out.manifest;
+console.log(
+  `Zelle ${cell.w}x${cell.h}, Fusspunkt (${anchor.x}, ${anchor.y}) — zum Übermalen bereit.`,
+);
 process.exit(0);

@@ -1,0 +1,265 @@
+# Ankerfigur A0 — Wuselwerker V4
+
+**Status: verbindlich.** Diese Datei legt die Figur fest, auf die sich alle weiteren
+Grafiken beziehen. Wo sie dem `grafik-katalog.md` widerspricht, gilt sie — die Stellen sind
+in §5 einzeln aufgeführt.
+
+---
+
+## §1 Was der Anker ist
+
+Der Anker besteht aus zwei Dateien, die dasselbe Wesen zeigen.
+
+| | Datei | Rolle |
+|---|---|---|
+| **A0** | die durchgegangene GPT-Image-Erzeugung | Ursprung, Farbreferenz, Stimmung |
+| **A0-3D** | `art-src/wuselwerker-v4.glb` | **Massreferenz und Quelle aller Sprites** |
+
+Die 2D-Erzeugung ist der Ursprung, aber nicht mehr die Messlatte: Bild-zu-3D hat aus der
+gemalten Mähne ein Volumen gemacht, und die beiden sind messbar verschieden (§4). Für alles,
+was Geometrie ist — Zellmass, Silhouette, Überstand —, gilt **das Modell**.
+
+**Die Figur in einem Satz:** ein gutmütiger Troll, kurz und stämmig, mit einem Kopf von
+knapp halber Körperhöhe, weit auseinanderstehenden Augen, breitem geschlossenem Grinsen,
+türkisem einteiligem Overall mit Rollkragen, Bundstreifen, umgeschlagenen Ärmelaufschlägen
+und dunkleren Stiefeln — und einem riesigen, aufrecht stehenden roten Haarschopf, der höher
+ist als der Kopf selbst.
+
+### 1.1 Was im Modell steckt
+
+Ausgelesen mit `node scripts/measure-model.mjs`:
+
+| | |
+|---|---|
+| Erzeuger | Tripo |
+| Netz | 1 Mesh, 4848 Dreiecke, 3620 Punkte |
+| davon Haar | 2947 Dreiecke — **mehr als die halbe Figur** |
+| Material | 1, mit einer Basisfarbtextur (JPEG) |
+| Skelett | 1 Skin, **41 Gelenke**, benannt wie ein Standard-Humanoid (`Pelvis`, `Spine01/02`, `L_/R_Clavicle`, `Upperarm`, `Forearm`, `Hand`, `Thigh`, `Calf`, `Foot`, `ToeBase`, `Head`) |
+| Animationen | **keine** (`animations: 0`) |
+| Rohmass | 0,814 × 0,998 × 0,502 |
+
+**Geriggt heisst hier: Skelett ja, Bewegung nein.** Die Datei enthält die Bindepose mit
+einem vollständigen, sauber benannten Skelett, aber keinen einzigen Bewegungsablauf. Was das
+für die Sprite-Erzeugung bedeutet, steht in §6.
+
+### 1.2 Ansichten
+
+`npm run modell:messen` rendert vier orthografische Ansichten nach `art-src/ansichten/`,
+jeweils dreifach: ganz, nur Körper, nur Haar. Sie sind nicht eingecheckt — sie entstehen in
+einer halben Minute neu und wären sonst 1,3 MB totes Gewicht im Verlauf.
+
+---
+
+## §2 Der Prompt, der durchging
+
+Wörtlich, ohne Auslassung. Wer die Figur neu erzeugen muss, nimmt genau diesen Text.
+
+```
+A cheerful cartoon workman creature in a teal overall, mascot for a puzzle
+game about tiny workers who dig through earth and rescue each other.
+Completely original character design.
+
+STYLE: hand-painted character illustration with real volume — soft rounded
+forms with clear light and shade on every surface, a rich painterly finish
+with visible brush texture, soft edges and an outline that varies in weight
+and fades where the light hits. Painted like a children's book illustration.
+
+OUTFIT: a teal one-piece work overall #2fc9b8 with a high rolled collar, long
+sleeves finished with turned-back cuffs at the wrists, a narrow darker
+waistband at the middle, a small seam running down each leg, and blunt
+rounded boots in darker teal #1d8f85 with a turned-over top edge. Simple
+mitten hands with no separate fingers. The overall is slightly baggy and well
+worn, like proper work clothing.
+
+CHARACTER: a good-natured troll. A big round head with full rounded cheeks,
+taking up almost half the figure's height, slightly taller than it is wide,
+with a soft rounded chin. Sand-coloured face and hands #f4d7ac. Small rounded
+ears low on the head and a small round button nose.
+
+FACE: two large round dark eyes, each with a single bright catchlight, set low
+on the face and WIDE APART — the gap between them is about a quarter of the
+head width, so they stay two separate shapes even when the picture is made
+very small. Eyes glancing off to one side. One eyebrow raised higher than the
+other. A broad closed-mouth grin pushed up into the cheeks, mischievous and
+pleased with itself.
+
+HAIR, the signature feature and clearly hair rather than anything else: an
+enormous shock of vivid red hair standing straight up from the whole scalp and
+fanning out, taller than the head itself, built from many overlapping pointed
+tufts of clearly different lengths that cross one another and give a ragged
+wind-blown edge. It is far too much hair for such a creature, and that excess
+is the point. It rises about one and a quarter head heights above the crown,
+spreads up to about two head widths at its widest, sits symmetrically on both
+sides of the head, leaves the forehead clear and stops above the shoulders.
+Colour: warm red #e5372c, deep #8f1d1c in the gaps between the tufts, and one
+continuous bright #ff8a75 highlight running as an unbroken band along the
+whole upper edge of the shock.
+
+BUILD: short and stocky, bottom-heavy and rounded, with short thick arms held
+out from the body so a gap of empty background shows on each side, and short
+legs planted wide apart in a sturdy stance with a clear gap of background
+between them.
+
+POSE: standing, three-quarter front-right view, weight on one leg, head
+tilted, mid-motion as if it just stopped walking and turned to look.
+
+LIGHT: warm key from above front-left, soft cool bounce from below, one narrow
+bright rim along the top of the hair. Enough shading to read the volume of
+every form clearly, with clean open shadows and no cast shadow on the ground.
+
+LEGIBILITY: the design must stay recognisable when reduced to twelve pixels
+tall — one big head with two clearly separate eyes, a tall red mass above it,
+a rounded body and two separated legs, with every shape big and simple.
+
+Single figure, centred, fully transparent background, square 1:1, 1024 x 1024.
+```
+
+### 2.1 Warum dieser Prompt keine Ausschlussliste hat
+
+Vier Anläufe davor wurden vom Filter abgewiesen. Der Auslöser war mit hoher
+Wahrscheinlichkeit die **Ausschlussliste selbst** — nicht das, was beschrieben wurde:
+
+| Versuch | Ausschlussliste | Ergebnis |
+|---|---|---|
+| 1 | u. a. „a human child", „a nude figure", „bare skin", „a loincloth" | abgewiesen |
+| 2 | ohne diese Begriffe, aber weiter mit „blue robe, hood" | abgewiesen |
+| 3 | Bedeckung positiv umformuliert („sand colour only on face and hands, everything else covered") | abgewiesen |
+| 4 | wieder mit „blue robe, hood" | abgewiesen |
+| **5** | **keine Ausschlussliste, alle Abgrenzungen positiv formuliert** | **durchgegangen** |
+
+`blue robe, hood` steckt in drei der vier Ablehnungen und fehlt in der einzigen Fassung, die
+durchkam. Auch das Ansprechen von Bedeckung — selbst verneinend, selbst „safe" gemeint —
+schlug fehl. Die Lehre, die für jeden weiteren Prompt dieses Projekts gilt:
+
+> **Nur beschreiben, was auf dem Bild sein soll.** Was nicht darauf soll, bleibt unerwähnt.
+> Eine Ausschlussliste beschreibt dem Filter genau das, was man nicht will.
+
+Die Abgrenzung, für die die Liste einmal gedacht war, erledigt die Figur inzwischen selbst:
+Ein rothaariger Troll im türkisen Overall ist von nichts Geschütztem mehr in Reichweite.
+
+---
+
+## §3 Palette
+
+Aus dem Prompt und der Modelltextur, beides deckungsgleich.
+
+| Fläche | Farbe |
+|---|---|
+| Haar Grundton | `#e5372c` |
+| Haar Tiefe (zwischen den Strähnen) | `#8f1d1c` |
+| Haar Glanzband (obere Kante) | `#ff8a75` |
+| Haut (Gesicht, Hände) | `#f4d7ac` |
+| Overall | `#2fc9b8` |
+| Stiefel, Bund, Kragen | `#1d8f85` |
+| Umriss | `#0c1119` |
+
+Im Spiel steht statt `#ff8a75` das etwas dunklere `#ff8f5e` als Glanz (`src/render/sprites.ts`).
+Grund: Bei einer Zeile Höhe entscheidet der Helligkeitssprung zum Untergrund. `#ff8a75`
+liegt über brauner Erde `#6b4a2e` bei nur wenig Abstand; `#ff8f5e` gewinnt dort einen
+vollen Schritt, ohne die Rampe aus dem Rot herauszudrehen.
+
+**Ehrlich dazu:** Das Glanzband ist die einzige Stelle, an der Haar und Werkzeuggelb
+`#ffd23f` einander nahekommen. Unschädlich, weil es eine einzelne Zeile innerhalb einer
+grossen roten Masse ist und nie an ein Werkzeug grenzt — aber es ist der Grund, warum der
+Glanz **nicht** weiter Richtung Orange aufgehellt werden darf.
+
+---
+
+## §4 Die Vermessung und das daraus folgende Zellmass
+
+### 4.1 Warum überhaupt gemessen wird
+
+Das gemalte Bild und das daraus erzeugte Modell sind nicht dasselbe. Die gemalte Mähne weht
+etwa eine Körperhöhe nach hinten; das Modell hat daraus eine kompaktere, nach oben
+strebende Masse gemacht. Welche der beiden Zahlen das Zellmass bestimmt, darf nicht
+geschätzt werden — zu klein schneidet Haar ab, zu gross schleppt jedes der 60 Sprite-Bilder
+leere Ränder mit.
+
+### 4.2 Wie gemessen wird
+
+`scripts/measure-model.mjs` lädt das Modell in einen Browser und misst **am Bild**, nicht an
+der Geometrie. Zwei Kniffe machen das belastbar:
+
+1. **Haar und Körper werden vorher getrennt**, und zwar in der *Textur*, nicht im Render.
+   Im beleuchteten Bild ist der Glanz auf den Haarspitzen von Haut nicht zu unterscheiden —
+   in der unbeleuchteten Textur schon. Jedes Dreieck wird einmal an seinem Schwerpunkt
+   abgetastet und einsortiert; danach lassen sich beide Teile getrennt rendern.
+   (Fallstrick, der hier zuschlug: glTF zählt die Texturkoordinate V **von oben**. Wer
+   `1 − v` rechnet, tastet die falsche Zeile ab und bekommt eine Figur ohne Gesicht.)
+2. **Der Massstab kommt vom Körper ohne Haar** — Sohle bis Scheitel, umgerechnet auf
+   `WUSEL_H = 12`.
+
+Eine bekannte Ungenauigkeit: Der Hinterkopf ist im Modell vollständig Haargeometrie, die
+oberste Körperzeile ist also die Stirn und nicht der echte Scheitel. Die Bezugsstrecke fällt
+dadurch etwas zu kurz aus, der Massstab etwas zu gross, der ermittelte Überstand etwas zu
+gross. Das ist die unschädliche Richtung.
+
+### 4.3 Das Ergebnis
+
+Auf Figurenhöhe 12 umgerechnet, grösster Wert aus vier Ansichten:
+
+| | logische Pixel |
+|---|---|
+| Haar über dem Scheitel | 5,4 |
+| Haar neben der Körpermitte | 7,5 |
+| Haar reicht herab bis unter den Scheitel | 5,3 |
+| Kopfbreite von vorn | 10,6 |
+
+Daraus die Zelle, mit ausdrücklicher Zugabe für Bewegung, die eine Ruhepose nicht zeigen
+kann:
+
+| | Rechnung | Ergebnis |
+|---|---|---|
+| Zeilen über dem Fusspunkt | 12 Körper + 8 Haar (im Fall steht es senkrecht, rund die Hälfte höher) + 1 Umriss + 1 Reserve | **22** |
+| Spalten je Seite | 11 Haar (im Lauf weht es rund die Hälfte weiter) + 1 Umriss + 2 Reserve | **14** |
+| Zeilen unter dem Fusspunkt | Staub, Squash | **6** |
+
+> ### Verbindlich: Zelle **28 × 28**, Fusspunkt **(14, 22)**
+>
+> Das löst das alte Mass 24 × 24 mit Fusspunkt (12, 20) ab. Der Anker bleibt auf halber
+> Zellbreite — sonst verliert die Spiegelung im Renderer ihre Versatzfreiheit.
+> Blattgrösse damit **224 × 336** für 8 Spalten und 12 Zeilen.
+
+`npm run modell:messen` prüft diese Zelle bei jedem Lauf gegen das Modell und bricht ab,
+wenn ein künftiges Modell nicht mehr hineinpasst. Die Zahlen im Code stehen also nicht nur
+im Kommentar, sie werden nachgehalten.
+
+---
+
+## §5 Was das an den bestehenden Dateien ändert
+
+| Stelle | alt | neu |
+|---|---|---|
+| `grafik-integration.md` §2.1, `grafik-katalog.md` §0/§1.2 | Zelle 24 × 24, Fusspunkt (12, 20) | **28 × 28, (14, 22)** |
+| `grafik-katalog.md` §2.1 | „Haar über dem Scheitel +2 bis +3" | **bis 8**, und die Masse liegt ebenso weit *hinter* dem Kopf |
+| `grafik-katalog.md` §2.1 | „Der Kopf wird nicht breiter als der Rumpf" | Der Kopf **ist** breiter. Die Bedingung ist eine **gerade** Breite, nicht eine kleine |
+| `grafik-katalog.md` §3.1 | Haar Beerenrosa `#ff70b8` | **Rot `#e5372c`** |
+| `grafik-katalog.md` §6.1 | A0-Prompt mit rosa Haarschopf | der Prompt aus §2 hier |
+| überall | Figur „Wusel", kahl bzw. mit Schopf | **Troll mit Mähne** |
+| überall | Hochformat | **Querformat** (das Spiel läuft in beiden, gestaltet wird für quer) |
+
+Alles andere aus `grafik-integration.md` bleibt unverändert bindend: Bildzahlen,
+Haltedauern, Andockpunkte, Atlasformat, Auslieferung in 1×.
+
+---
+
+## §6 Offene Punkte, benannt statt übergangen
+
+1. **Ohne Animationen keine Sprite-Bilder aus dem Modell.** Das Skelett ist da und
+   standardbenannt, Bewegungsabläufe sind es nicht. Drei Wege, in der Reihenfolge, in der
+   ich sie empfehlen würde:
+   - aus Tripo je Zustand einen animierten Export ziehen und die Bilder daraus backen —
+     wenig Arbeit, sofort einsetzbar;
+   - die Posen im Repo selbst setzen (die Gelenknamen tragen das), also 60 Bilder aus
+     Gelenkwinkeln — aufwendig, aber vollständig unter Kontrolle und wiederholbar;
+   - das Modell nur als Vorlage nehmen und die 60 Bilder von Hand malen.
+2. **Das prozedurale Rückfallbild ist ein Platzhalter, keine Umsetzung von A0.** Es hat
+   die Mähne, die Farben und die Kopflastigkeit; es hat keine Arme, kein Gesicht ausser
+   einem Auge und keine Trolldetails. Es soll die Figur wiedererkennbar machen, solange
+   noch kein gemaltes Blatt da ist — mehr nicht.
+3. **Kopfanteil noch nicht nachgezogen.** `grafik-katalog.md` §2.1 verlangt Kopf 5 Zeilen /
+   Rumpf 5; im Prototyp stehen 4 / 6. Die Änderung verschiebt alle Berufsmerkmale um eine
+   Zeile und ist deshalb bewusst nicht nebenbei mitgemacht worden.
+4. **Die 2D-Erzeugung liegt nicht im Repo.** Nur das Modell und die daraus gerechneten
+   Ansichten. Wer das Ursprungsbild ablegen will: `art-src/wuselwerker-v4.png`.
