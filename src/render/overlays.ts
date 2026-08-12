@@ -75,8 +75,11 @@ export function drawIntro(
   ctx: CanvasRenderingContext2D,
   L: Layout,
   level: LevelDef,
+  parBekannt = false,
 ): Button[] {
-  const b = panel(ctx, L, 250);
+  // Der Meisterschlüssel (Belohnung von Welt 4) legt die Musterlösungszahl
+  // schon vor dem ersten Versuch offen — die Tafel wächst um eine Zeile.
+  const b = panel(ctx, L, parBekannt ? 272 : 250);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = COL.dim;
@@ -94,9 +97,37 @@ export function drawIntro(
     b.y + 78,
   );
 
+  let hintY = b.y + 108;
+  if (parBekannt) {
+    // Bewusst im Akzentton, aber kleiner als die Rettungszeile: eine
+    // Auskunft, kein Auftrag. Der Schlüssel davor sagt, woher sie kommt —
+    // gezeichnet statt als Schriftzeichen, weil ⚿ auf vielen Geräten fehlt.
+    ctx.fillStyle = COL.accent;
+    ctx.font = '600 12px system-ui, sans-serif';
+    const n = level.par;
+    const text = `Musterlösung: ${n} ${n === 1 ? 'Beruf' : 'Berufe'}`;
+    const tw = ctx.measureText(text).width;
+    const kx = b.x + b.w / 2 - tw / 2 - 7;
+    const ky = b.y + 106;
+    ctx.fillText(text, b.x + b.w / 2 + 6, b.y + 100);
+    ctx.save();
+    ctx.strokeStyle = COL.accent;
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(kx - 4, ky - 3, 2.6, 0, Math.PI * 2);
+    ctx.moveTo(kx - 1.6, ky - 1.4);
+    ctx.lineTo(kx + 5, ky + 3);
+    ctx.moveTo(kx + 2.4, ky + 1.3);
+    ctx.lineTo(kx + 1, ky + 3.4);
+    ctx.stroke();
+    ctx.restore();
+    hintY = b.y + 130;
+  }
+
   ctx.fillStyle = COL.dim;
   ctx.font = '400 13px system-ui, sans-serif';
-  wrap(ctx, level.hint, b.x + b.w / 2, b.y + 108, b.w - 44, 18);
+  wrap(ctx, level.hint, b.x + b.w / 2, hintY, b.w - 44, 18);
 
   const btn: Button = {
     id: 'start',

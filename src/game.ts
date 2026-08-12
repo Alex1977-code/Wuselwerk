@@ -36,7 +36,7 @@ import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
 import { gesteGesehen, gesteMerken, loadProgress, recordResult, starConditions, type Progress } from './storage';
 import type { KartenPunkt } from './levels/welten';
-import { wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
+import { hatKomfort, wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
 import { drawTitel } from './render/titel';
 import { GameAudio } from './audio';
@@ -1537,10 +1537,22 @@ export class Game {
       ctx.globalAlpha = auftritt;
       ctx.translate(0, (1 - auftritt) * 26);
     }
-    if (this.phase === 'intro') this.buttons = drawIntro(ctx, this.layout, this.level);
-    else if (this.phase === 'paused') this.buttons = drawPause(ctx, this.layout);
+    // Der Meisterschlüssel (Komfort-Belohnung von Welt 4) legt die
+    // Musterlösungszahl überall offen — sonst erst nach dem ersten Sieg.
+    const schluessel = hatKomfort(this.progress, 'meisterschluessel');
+    if (this.phase === 'intro') {
+      this.buttons = drawIntro(
+        ctx,
+        this.layout,
+        this.level,
+        schluessel || (this.progress[this.level.id]?.won ?? false),
+      );
+    } else if (this.phase === 'paused') this.buttons = drawPause(ctx, this.layout);
     else if (this.phase === 'result') {
-      const parKnown = (this.progress[this.level.id]?.won ?? false) || this.world.saved >= this.world.needed;
+      const parKnown =
+        schluessel ||
+        (this.progress[this.level.id]?.won ?? false) ||
+        this.world.saved >= this.world.needed;
       const i = LEVELS.findIndex((l) => l.id === this.level.id);
       this.buttons = drawResult(
         ctx,
@@ -1664,7 +1676,6 @@ export class Game {
       level: this.level,
       world: this.world,
       selected: this.selected,
-      showPar: this.progress[this.level.id]?.won ?? false,
       cameraFollow: this.camera.follow,
       muted: this.audio.muted,
       atlas: this.atlas,

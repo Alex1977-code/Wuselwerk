@@ -31,7 +31,6 @@ export interface HudState {
   level: LevelDef;
   world: World;
   selected: SkillId | null;
-  showPar: boolean;
   cameraFollow: boolean;
   muted: boolean;
   /** Das Figurenblatt — die Knoepfe zeigen die Figur bei der Arbeit. */
