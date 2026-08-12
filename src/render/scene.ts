@@ -494,7 +494,14 @@ export class Scene {
       if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
       // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, sicht.takt)) {
+      // Der Phasenversatz des Pulks: Jede Figur laeuft ihren Gangzyklus an
+      // einer anderen Stelle, gesaet aus der Figurennummer. Nur beim Gehen —
+      // die Arbeitsposen muessen auf Bild eins zuschlagen, wenn die Simulation
+      // zuschlaegt (Wirkungsbild), und duerfen keinen Versatz tragen. Acht
+      // Phasen auf 24 Ticks Zyklus: Aus der Marschkolonne wird ein Gewusel,
+      // ohne dass die Simulation davon weiss.
+      const takt = sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : sicht.takt;
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
