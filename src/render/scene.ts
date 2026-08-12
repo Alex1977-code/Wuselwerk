@@ -106,12 +106,36 @@ export class Scene {
   /** Liegt kein Blatt vor, zeichnet der prozedurale Weg weiter. */
   atlas: SpriteAtlas | null = null;
 
+  // --- Vorgebackene Kulissen-Malmittel --------------------------------------
+  //
+  // Alles Weiche an der Kulisse (Sonnenschein, Nebel, Korn, Vignette,
+  // Lichtbahnen) wird **einmal je Level** in Offscreen-Flaechen gemalt und je
+  // Bild nur noch mit `drawImage` gestempelt. Per-Frame-Gradients waeren fuer
+  // Himmel und Dunst vertretbar (zwei Stueck), aber `ctx.filter`/`shadowBlur`
+  // oder Pixelschleifen je Bild sind auf Mittelklasse-Handys unkalkulierbar.
+  /** Der Himmelskoerper mit Bloom — Sonne, Glutball oder Lichtschacht. */
+  private sonneSprite: HTMLCanvasElement | null = null;
+  /** Weltposition der Sonne; `null` heisst Lichtschacht am oberen Rand (Höhle). */
+  private sonnePos: { x: number; y: number } | null = null;
+  /** Eine weiche Nebelellipse, beim Zeichnen gestreckt und gestapelt. */
+  private nebelSprite: HTMLCanvasElement | null = null;
+  private nebelBaenke: { x: number; y: number; w: number; h: number; deckung: number }[] = [];
+  /** Feines Korn gegen Banding in den grossen Verlaeufen. */
+  private korn: CanvasPattern | null = null;
+  /** Die Buehnen-Vignette, auf Spielfenstergroesse gebacken. */
+  private vignette: HTMLCanvasElement | null = null;
+  private vignetteW = 0;
+  private vignetteH = 0;
+  /** Statische Lichtbahnen von der Sonne — nur dort, wo Luft und Licht sind. */
+  private raysSprite: HTMLCanvasElement | null = null;
+
   constructor(
     private level: LevelDef,
     private terrainView: TerrainView,
   ) {
     this.palette = paletteFor(level.theme);
     this.buildHills();
+    this.bakeKulisse();
     // Der gezeichnete Blick ist Ansichtszustand je Figurennummer. Ein neues
     // Level bringt neue Figuren mit denselben Nummern — ohne dieses Vergessen
     // erbten sie die Blickrichtung ihrer Vorgaenger.
@@ -218,6 +242,165 @@ export class Scene {
         r: 40 + wiese() * 80,
         tiefe: 0.05 + wiese() * 0.09,
       });
+    }
+  }
+
+  /**
+   * Die Offscreen-Malmittel der Kulisse backen — einmal je Level.
+   *
+   * ## Warum eine sichtbare Lichtquelle (Kritikpunkt „dreidimensionaler")
+   *
+   * Die Kulisse hatte Lichtsaeume auf den Kaemmen, Kontaktschatten unter den
+   * Figuren und eine `glow`-Farbe je Welt — aber keine Quelle, aus der das
+   * alles kommt. Ohne sie ist jede Beleuchtung Behauptung. Ein Himmelskoerper
+   * mit weichem Bloom erklaert sie alle auf einmal, und weil die Wolken **vor**
+   * ihm gezeichnet werden, ziehen sie vor der Sonne vorbei: Das ist Tiefe, die
+   * man nicht erklaeren muss.
+   *
+   * Je Welt sitzt er anders: Im Grasland hoch und warm, in der Frostklamm
+   * tief (Winterlicht), im Rostwerk und im Schlot als Glutball knapp ueber dem
+   * Horizont. Die Kristallhoehle hat keinen Himmelskoerper — dort faellt ein
+   * breiter Lichtschacht von oben ein, dieselbe Backform, nur gestreckt.
+   */
+  private bakeKulisse(): void {
+    const rgb = (hex: string): [number, number, number] => [
+      parseInt(hex.slice(1, 3), 16),
+      parseInt(hex.slice(3, 5), 16),
+      parseInt(hex.slice(5, 7), 16),
+    ];
+    const [gr, gg, gb] = rgb(this.palette.glow);
+
+    // Der Himmelskoerper: fast weisser Kern, in der Leuchtfarbe der Welt
+    // auslaufend. Gezeichnet wird er mit 'screen' — er hellt auf, statt zu
+    // decken, und bleibt damit auch vor hellen Himmeln ein Licht.
+    const sonne = document.createElement('canvas');
+    sonne.width = sonne.height = 256;
+    const sg = sonne.getContext('2d')!;
+    const grad = sg.createRadialGradient(128, 128, 0, 128, 128, 128);
+    grad.addColorStop(0, `rgba(255, 253, 245, 0.85)`);
+    grad.addColorStop(0.15, `rgba(${gr}, ${gg}, ${gb}, 0.65)`);
+    grad.addColorStop(0.3, `rgba(${gr}, ${gg}, ${gb}, 0.3)`);
+    grad.addColorStop(1, `rgba(${gr}, ${gg}, ${gb}, 0)`);
+    sg.fillStyle = grad;
+    sg.fillRect(0, 0, 256, 256);
+    this.sonneSprite = sonne;
+
+    const refY = this.level.height * 0.42;
+    const W = this.level.width;
+    switch (this.level.theme) {
+      case 'crystal':
+        this.sonnePos = null;
+        break;
+      case 'frost':
+        this.sonnePos = { x: W * 0.3, y: refY - 64 };
+        break;
+      case 'rust':
+        this.sonnePos = { x: W * 0.62, y: refY - 22 };
+        break;
+      case 'magma':
+        this.sonnePos = { x: W * 0.5, y: refY - 6 };
+        break;
+      default:
+        this.sonnePos = { x: W * 0.72, y: refY - 78 };
+    }
+
+    // Eine Nebelellipse, weich in alle Richtungen. Die Baenke am Hügelfuss
+    // sind gestreckte Stempel davon — Nebel, der den Fuss der Kulisse
+    // verschluckt, trennt sie schaerfer vom Spielfeld als der Dunst allein.
+    const [sr, sg2, sb] = rgb(this.palette.skyBottom);
+    const nebel = document.createElement('canvas');
+    nebel.width = 256;
+    nebel.height = 64;
+    const ng = nebel.getContext('2d')!;
+    ng.save();
+    ng.scale(4, 1);
+    const nGrad = ng.createRadialGradient(32, 32, 0, 32, 32, 32);
+    nGrad.addColorStop(0, `rgba(${sr}, ${sg2}, ${sb}, 0.9)`);
+    nGrad.addColorStop(0.6, `rgba(${sr}, ${sg2}, ${sb}, 0.5)`);
+    nGrad.addColorStop(1, `rgba(${sr}, ${sg2}, ${sb}, 0)`);
+    ng.fillStyle = nGrad;
+    ng.fillRect(0, 0, 64, 64);
+    ng.restore();
+    this.nebelSprite = nebel;
+
+    // Die Baenke liegen am Kamm der vordersten Schicht, aber auf einer
+    // **eigenen** Parallaxe-Ebene (0.85) zwischen Hügel (0.68) und Terrain
+    // (1.0) — genau diese Zwischenschicht fehlte der Staffelung.
+    const rnd = mulberry32(this.level.seed ^ 0x77e1);
+    const nah = this.hills[this.hills.length - 1];
+    this.nebelBaenke = [];
+    for (let i = 0; i < 3; i++) {
+      const xLog = rnd() * W;
+      const idx = Math.min(nah.pts.length - 2, Math.floor(xLog / nah.step));
+      const rest = xLog / nah.step - idx;
+      const yKamm = nah.pts[idx] + (nah.pts[idx + 1] - nah.pts[idx]) * rest;
+      this.nebelBaenke.push({
+        x: xLog,
+        y: yKamm + 4 + rnd() * 10,
+        w: 160 + rnd() * 140,
+        h: 22 + rnd() * 12,
+        deckung: 0.08 + rnd() * 0.06,
+      });
+    }
+
+    // Feines Korn: Auf Handy-Bildschirmen zerfallen grosse Verlaeufe in
+    // Streifen. Ein Hauch zufaelliges Hell-Dunkel-Korn (5–8/255) bricht die
+    // Streifen — und laesst den Himmel gemalt aussehen statt errechnet.
+    const kornC = document.createElement('canvas');
+    kornC.width = kornC.height = 160;
+    const kg = kornC.getContext('2d')!;
+    const bild = kg.createImageData(160, 160);
+    const kornRnd = mulberry32(this.level.seed ^ 0x1cf5);
+    for (let i = 0; i < bild.data.length; i += 4) {
+      const hell = kornRnd() < 0.5 ? 255 : 0;
+      bild.data[i] = bild.data[i + 1] = bild.data[i + 2] = hell;
+      bild.data[i + 3] = 5 + Math.floor(kornRnd() * 4);
+    }
+    kg.putImageData(bild, 0, 0);
+    this.korn = kg.createPattern(kornC, 'repeat');
+
+    // Lichtbahnen nur dort, wo offener Himmel und tiefstehende Sonne
+    // zusammenkommen: Grasland und Frostklamm. In der Hoehle gibt es keine
+    // Sonne, ueber Rost und Glut staende ein Strahlenkranz als Kitsch.
+    if (this.level.theme === 'grass' || this.level.theme === 'frost') {
+      const rays = document.createElement('canvas');
+      rays.width = rays.height = 512;
+      const rg = rays.getContext('2d')!;
+      rg.save();
+      rg.translate(256, -40);
+      rg.rotate(this.level.theme === 'frost' ? 0.5 : -0.42);
+      for (const [off, breit, kraft] of [
+        [-70, 52, 0.1],
+        [24, 30, 0.07],
+        [96, 64, 0.09],
+      ] as const) {
+        const bahn = rg.createLinearGradient(off, 0, off + breit, 0);
+        bahn.addColorStop(0, 'rgba(255, 255, 255, 0)');
+        bahn.addColorStop(0.5, `rgba(255, 255, 255, ${kraft})`);
+        bahn.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        rg.fillStyle = bahn;
+        rg.fillRect(off - 10, 0, breit + 20, 900);
+      }
+      rg.restore();
+      // Die Bahnen laufen weich aus statt an einer Kante zu enden — nach
+      // unten **und** zu den Seiten. Ohne den Seiten-Fade schnitte der Rand
+      // der Backflaeche die gedrehten Streifen hart ab, und aus Licht wuerde
+      // ein Keil mit Kante.
+      rg.globalCompositeOperation = 'destination-in';
+      const fade = rg.createLinearGradient(0, 0, 0, 512);
+      fade.addColorStop(0, 'rgba(0, 0, 0, 1)');
+      fade.addColorStop(0.75, 'rgba(0, 0, 0, 0.4)');
+      fade.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      rg.fillStyle = fade;
+      rg.fillRect(0, 0, 512, 512);
+      const seiten = rg.createLinearGradient(0, 0, 512, 0);
+      seiten.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      seiten.addColorStop(0.25, 'rgba(0, 0, 0, 1)');
+      seiten.addColorStop(0.75, 'rgba(0, 0, 0, 1)');
+      seiten.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      rg.fillStyle = seiten;
+      rg.fillRect(0, 0, 512, 512);
+      this.raysSprite = rays;
     }
   }
 
@@ -405,17 +588,47 @@ export class Scene {
     ctx.clip();
 
     this.drawSky(ctx, v);
-    this.drawHills(ctx, v);
+    this.drawHills(ctx, v, tick);
 
-    // Der Dunstschleier — die eine Zeile, die Kulisse und Spielflaeche trennt.
+    // Die Lichtbahnen liegen auf der Kulisse und **unter** Dunst und Terrain:
+    // So verkaufen sie die Luft als Volumen, ohne je eine Figur oder die
+    // Spielflaeche zu ueberstrahlen. Sie haengen an der Sonne und stehen
+    // still — flackernde Strahlen wuerden mit Warnschein und Zuendblitz
+    // konkurrieren, die Helligkeit als Bedeutung nutzen.
+    if (this.raysSprite && this.sonnePos) {
+      const f = 0.12;
+      const refX = this.level.width / 2;
+      const refY = this.level.height * 0.42;
+      const px = v.box.x + (this.sonnePos.x - (v.ox * f + refX * (1 - f))) * v.scale;
+      const py = v.box.y + (this.sonnePos.y - (v.oy * f + refY * (1 - f))) * v.scale;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      const rw = v.box.w * 1.25;
+      ctx.drawImage(this.raysSprite, px - rw / 2, py - rw * 0.12, rw, rw);
+      ctx.restore();
+    }
+
+    // Der Dunstschleier — die eine Schicht, die Kulisse und Spielflaeche
+    // trennt.
     //
     // Die Kritik unter G2: Der vorderste Huegel „sieht begehbarer aus als
     // mancher echte Boden." Die Antwort ist Luftperspektive, konsequent bis
     // zur vordersten Schicht: Ueber **alles**, was hinter dem Terrain liegt,
-    // legt sich ein hauchduenner Schleier in der Himmelsfarbe. Das Terrain
-    // und die Figuren werden danach in voller Saettigung darueber gezeichnet
-    // — was klar ist, ist nah und begehbar; was verdunstet, ist Kulisse.
-    ctx.fillStyle = this.palette.dunst;
+    // legt sich ein Schleier in der Himmelsfarbe. Das Terrain und die Figuren
+    // werden danach in voller Saettigung darueber gezeichnet — was klar ist,
+    // ist nah und begehbar; was verdunstet, ist Kulisse.
+    //
+    // Der Schleier ist ein **Hoehenverlauf**, keine Deckfarbe: Dunst sammelt
+    // sich zum Horizont, oben bleibt die Luft klar. Dieselbe Flaeche, aber
+    // das staerkste Tiefensignal, das sie hergeben kann — und der Himmel
+    // behaelt oben seine Saettigung.
+    const dunst = this.palette.dunst;
+    const dOben = sy(v, 0);
+    const dUnten = sy(v, this.level.height * 0.66);
+    const dg = ctx.createLinearGradient(0, dOben, 0, Math.max(dUnten, dOben + 1));
+    dg.addColorStop(0, `rgba(${dunst.rgb}, ${dunst.oben})`);
+    dg.addColorStop(1, `rgba(${dunst.rgb}, ${dunst.unten})`);
+    ctx.fillStyle = dg;
     ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
 
     // Das Terrain wird weich vergrössert, nicht hart.
@@ -516,6 +729,31 @@ export class Scene {
       ctx.restore();
     }
     this.drawParticles(ctx, v);
+
+    // Die Vignette zuletzt, ueber allem im Spielfenster: Dunklere Ecken
+    // machen aus dem Rechteck eine beleuchtete Buehne und ziehen den Blick
+    // zur Mitte, wo das Gewusel ist. In dunklem Blau statt Schwarz — sie
+    // soll rahmen, nicht trauern. Gebacken bei Groessenwechsel, gestempelt
+    // je Bild; ein Per-Frame-Radialverlauf ueber das ganze Fenster waere
+    // der teuerste Gradient des Spiels.
+    if (this.vignetteW !== v.box.w || this.vignetteH !== v.box.h) {
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(v.box.w));
+      c.height = Math.max(1, Math.round(v.box.h));
+      const g = c.getContext('2d')!;
+      g.translate(c.width / 2, c.height / 2);
+      g.scale(c.width / 2, c.height / 2);
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, 1.42);
+      grad.addColorStop(0, 'rgba(8, 12, 24, 0)');
+      grad.addColorStop(0.7, 'rgba(8, 12, 24, 0)');
+      grad.addColorStop(1, 'rgba(8, 12, 24, 0.14)');
+      g.fillStyle = grad;
+      g.fillRect(-1, -1, 2, 2);
+      this.vignette = c;
+      this.vignetteW = v.box.w;
+      this.vignetteH = v.box.h;
+    }
+    if (this.vignette) ctx.drawImage(this.vignette, v.box.x, v.box.y, v.box.w, v.box.h);
 
     ctx.restore();
   }
@@ -740,7 +978,49 @@ export class Scene {
     g.addColorStop(1, this.palette.skyBottom);
     ctx.fillStyle = g;
     ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
+
+    // Das Korn direkt auf den Verlauf. Es steht mit der Kamera still — bei
+    // fuenf bis acht von 255 Deckung merkt das Auge davon nichts, es sieht
+    // nur, dass die Streifen des Verlaufs weg sind.
+    if (this.korn) {
+      ctx.fillStyle = this.korn;
+      ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
+    }
+
+    // Der Himmelskoerper kommt **vor** den Wolken: Sie ziehen vor ihm vorbei,
+    // und genau dieses Davor-und-Dahinter macht den Himmel zum Raum.
+    this.drawSonne(ctx, v);
     this.drawWolken(ctx, v);
+  }
+
+  /**
+   * Sonne, Glutball oder Lichtschacht — die eine Lichtquelle der Welt.
+   *
+   * Weltverankert mit sehr traeger Parallaxe (0.06): Sie steht noch weiter
+   * hinten als die Wolken und bewegt sich beim Schwenken fast gar nicht.
+   * `'screen'` statt Deckung, damit sie auch vor hellem Himmel Licht bleibt.
+   */
+  private drawSonne(ctx: CanvasRenderingContext2D, v: View): void {
+    if (!this.sonneSprite) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    if (!this.sonnePos) {
+      // Die Hoehle: kein Ball, sondern ein breiter Schein von oben — Licht,
+      // das durch einen Schacht einfaellt. Dieselbe Backform, flach gestreckt
+      // und an den oberen Rand gelegt.
+      const w = v.box.w * 1.3;
+      const h = v.box.h * 0.55;
+      ctx.drawImage(this.sonneSprite, v.box.x + v.box.w / 2 - w / 2, v.box.y - h * 0.55, w, h);
+    } else {
+      const f = 0.06;
+      const refX = this.level.width / 2;
+      const refY = this.level.height * 0.42;
+      const px = v.box.x + (this.sonnePos.x - (v.ox * f + refX * (1 - f))) * v.scale;
+      const py = v.box.y + (this.sonnePos.y - (v.oy * f + refY * (1 - f))) * v.scale;
+      const d = v.box.w * 0.32;
+      ctx.drawImage(this.sonneSprite, px - d / 2, py - d / 2, d, d);
+    }
+    ctx.restore();
   }
 
   /**
@@ -814,7 +1094,7 @@ export class Scene {
    * dunkler. Eine Fläche in einem einzigen Ton liest als Papierschnitt; erst
    * der Verlauf macht daraus Luft zwischen den Schichten.
    */
-  private drawHills(ctx: CanvasRenderingContext2D, v: View): void {
+  private drawHills(ctx: CanvasRenderingContext2D, v: View, tick = 0): void {
     // Bezugspunkt der Parallaxe: die Mitte der Welt, nicht ihr Ursprung.
     //
     // Vorher stand dort schlicht `v.ox * factor`. Das verschiebt eine Schicht
@@ -903,6 +1183,34 @@ export class Scene {
       ctx.restore();
 
       if (layer === this.hills[this.hills.length - 1]) this.drawBewuchs(ctx, v, layer);
+    }
+
+    // Die Nebelbaenke nach allen Schichten: Sie verschlucken den Fuss des
+    // vordersten Huegels. Ihre Parallaxe (0.85) liegt zwischen Huegel (0.68)
+    // und Terrain (1.0) — die Zwischenschicht, die der Staffelung fehlte.
+    // Der Drift ist reine Ansicht (Sekundenmass aus dem Tick, kein
+    // Simulationszustand) und so langsam, dass man ihn nur beim Vergleichen
+    // zweier Standbilder saehe — Nebel schleicht.
+    if (this.nebelSprite) {
+      const f = 0.85;
+      const refX = this.level.width / 2;
+      const refY = this.level.height * 0.42;
+      const ox = v.ox * f + refX * (1 - f);
+      const oy = v.oy * f + refY * (1 - f);
+      const t = tick / 60;
+      ctx.save();
+      for (let i = 0; i < this.nebelBaenke.length; i++) {
+        const b = this.nebelBaenke[i];
+        const drift = Math.sin(t * 0.05 + i * 2.1) * 8;
+        const bx = v.box.x + (b.x + drift - ox) * v.scale;
+        const by = v.box.y + (b.y - oy) * v.scale;
+        const bw = b.w * v.scale;
+        const bh = b.h * v.scale;
+        if (bx + bw < v.box.x || bx - bw > v.box.x + v.box.w) continue;
+        ctx.globalAlpha = b.deckung;
+        ctx.drawImage(this.nebelSprite, bx - bw / 2, by - bh / 2, bw, bh);
+      }
+      ctx.restore();
     }
   }
 

@@ -38,13 +38,19 @@ export interface Palette {
   freshBoost: number;
   glow: string;
   /**
-   * Der Dunstschleier ueber der Kulisse — Luftperspektive als eine Farbe.
+   * Der Dunstschleier ueber der Kulisse — Luftperspektive als **Verlauf**.
    *
    * Er liegt ueber Himmel und Huegeln und **unter** Terrain und Figuren:
    * Was klar ist, ist nah und begehbar; was verdunstet, ist Hintergrund.
-   * Halbtransparent in der Himmelsfarbe der jeweiligen Welt.
+   *
+   * Frueher war er eine flache Deckfarbe. Aber Dunst sammelt sich zum
+   * Horizont hin — oben ist die Luft klar, unten steht sie dick. Ein
+   * Verlauf von duenn (Weltdach) nach dicht (Horizontband) ist das
+   * staerkste Tiefensignal, das eine einzige Flaeche hergibt; die flache
+   * Fuellung hat es verschenkt. Deshalb Farbe und Dichte getrennt:
+   * `rgb` als Tripel fuer den `rgba()`-Bau, `oben`/`unten` als Alphas.
    */
-  dunst: string;
+  dunst: { rgb: string; oben: number; unten: number };
 }
 
 const GRASS: Palette = {
@@ -79,7 +85,7 @@ const GRASS: Palette = {
   /** Frisch freigelegtes Material ist heller (GDD §6). */
   freshBoost: 30,
   glow: '#ffe6a8',
-  dunst: 'rgba(198, 230, 242, 0.16)',
+  dunst: { rgb: '198, 230, 242', oben: 0.03, unten: 0.24 },
 };
 
 const CRYSTAL: Palette = {
@@ -103,7 +109,7 @@ const CRYSTAL: Palette = {
   brick: 0xd59a4a,
   freshBoost: 34,
   glow: '#bfe6ff',
-  dunst: 'rgba(150, 190, 235, 0.15)',
+  dunst: { rgb: '150, 190, 235', oben: 0.04, unten: 0.22 },
 };
 
 const RUST: Palette = {
@@ -129,7 +135,7 @@ const RUST: Palette = {
   brick: 0xd59a4a,
   freshBoost: 30,
   glow: '#ffd9a0',
-  dunst: 'rgba(212, 190, 160, 0.16)',
+  dunst: { rgb: '212, 190, 160', oben: 0.04, unten: 0.25 },
 };
 
 const FROST: Palette = {
@@ -154,7 +160,7 @@ const FROST: Palette = {
   brick: 0xd59a4a,
   freshBoost: 26,
   glow: '#d8f0ff',
-  dunst: 'rgba(220, 238, 248, 0.2)',
+  dunst: { rgb: '220, 238, 248', oben: 0.05, unten: 0.3 },
 };
 
 const MAGMA: Palette = {
@@ -178,7 +184,7 @@ const MAGMA: Palette = {
   brick: 0xd59a4a,
   freshBoost: 34,
   glow: '#ffb35c',
-  dunst: 'rgba(200, 110, 70, 0.14)',
+  dunst: { rgb: '200, 110, 70', oben: 0.03, unten: 0.22 },
 };
 
 export function paletteFor(theme: ThemeId): Palette {
