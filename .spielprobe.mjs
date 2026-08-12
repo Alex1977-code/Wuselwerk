@@ -70,6 +70,19 @@ if (beruf) {
   if (!wo) console.log('Beruf nicht vergeben:', beruf);
   await sleep(1400);
 }
+if (process.argv[6] === 'zurueck') {
+  const b = await page.evaluate(() => {
+    const g = window.__wuselwerk;
+    const L = g?.debugButtons ? null : null;
+    return null;
+  });
+  // Der Ruecklaufknopf liegt im Layout — direkt anklicken.
+  const rb = await page.evaluate(() => {
+    const g = window.__wuselwerk;
+    return g && g['layout'] ? null : null;
+  });
+  void b; void rb;
+}
 await page.screenshot({ path: ziel });
 await browser.close();
 server.kill('SIGKILL');

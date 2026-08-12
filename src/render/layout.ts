@@ -21,6 +21,7 @@ export interface Layout {
   skillButtons: SkillButton[];
   pauseBtn: Box;
   nukeBtn: Box;
+  rewindBtn: Box;
   soundBtn: Box;
   recenterBtn: Box;
 }
@@ -111,6 +112,15 @@ export function computeLayout(cssW: number, cssH: number): Layout {
     w: btn,
     h: btn,
   };
+  // Darüber der Zeitrücklauf. Er wohnt bewusst am Spielfeldrand und nicht in
+  // der Kopfzeile: Er ist keine Verwaltung, er ist ein Spielzug — und er muss
+  // in dem Moment erreichbar sein, in dem der Daumen ohnehin unten ist.
+  const rewindBtn: Box = {
+    x: pad,
+    y: play.y + play.h - btn * 2 - 16,
+    w: btn,
+    h: btn,
+  };
 
   return {
     cssW,
@@ -122,6 +132,7 @@ export function computeLayout(cssW: number, cssH: number): Layout {
     skillButtons,
     pauseBtn,
     nukeBtn,
+    rewindBtn,
     soundBtn,
     recenterBtn,
   };

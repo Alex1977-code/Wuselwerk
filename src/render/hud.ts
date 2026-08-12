@@ -436,3 +436,24 @@ function star(
 export function drawRecenter(ctx: CanvasRenderingContext2D, L: Layout): void {
   drawIconButton(ctx, L.recenterBtn, '◎', true);
 }
+
+/**
+ * Der Zeitruecklauf-Knopf, mit Sekundenangabe.
+ *
+ * Die Zahl steht dran, weil der Knopf ein Versprechen ist: „↺ 10" heisst zehn
+ * Sekunden, und in den ersten Sekunden eines Levels ehrlich weniger. Ohne
+ * Schnappschuss ist er ausgegraut statt versteckt — ein Knopf, der mal da ist
+ * und mal nicht, wirkt wie ein Fehler.
+ */
+export function drawRewind(ctx: CanvasRenderingContext2D, L: Layout, weiteTicks: number): void {
+  const b = L.rewindBtn;
+  const sek = Math.round(weiteTicks / TICK_HZ);
+  drawIconButton(ctx, b, '↺', sek > 0);
+  if (sek > 0) {
+    ctx.fillStyle = COL.text;
+    ctx.font = '600 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(`${sek}s`, b.x + b.w / 2, b.y + b.h - 12);
+  }
+}

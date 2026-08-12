@@ -33,6 +33,32 @@ const MAX_EVENTS = 256;
  * Renderer (GDD §11). Derselbe Startzustand plus dieselbe Eingabefolge ergibt
  * immer denselben Verlauf; das ist die Voraussetzung fuer den Zeitruecklauf.
  */
+/** Alle Sekundenraster-Werte des Ruecklaufs, in Ticks. */
+export const RUECKLAUF_RASTER = C.TICK_HZ;
+export const RUECKLAUF_TIEFE = 13;
+/** Wie weit der Knopf springt. */
+export const RUECKLAUF_SPRUNG = 10 * C.TICK_HZ;
+
+/** Eine vollstaendige Kopie des Simulationszustands zu einem Tick. */
+interface Schnappschuss {
+  tick: number;
+  mat: Uint8Array;
+  fresh: Uint8Array;
+  wusels: Wusel[];
+  skills: SkillCounts;
+  released: number;
+  saved: number;
+  dead: number;
+  skillsUsed: number;
+  hatchOpen: boolean;
+  nuking: boolean;
+  releaseCountdown: number;
+  nukeCursor: number;
+  nukeTimer: number;
+  nextId: number;
+  releaseRate: number;
+}
+
 export class World {
   readonly terrain: Terrain;
   readonly entrance: { x: number; y: number };
@@ -62,6 +88,22 @@ export class World {
   private nukeCursor = 0;
   private nukeTimer = 0;
   private nextId = 1;
+
+  /**
+   * Der Ring der Schnappschuesse fuer den Zeitruecklauf.
+   *
+   * Jede Sekunde einer (`RUECKLAUF_RASTER`), hoechstens `RUECKLAUF_TIEFE`
+   * Stueck — aelter als gut zwoelf Sekunden muss keiner sein, der Knopf
+   * springt zehn. Ein Schnappschuss ist eine **vollstaendige** Kopie des
+   * Simulationszustands: beide Terrainmasken, alle Figuren, alle Zaehler.
+   * Bei 720 x 540 sind das gut 700 Kilobyte je Stueck; zwoelf davon sind
+   * acht Megabyte, und das ist auf einem Handy in Ordnung.
+   *
+   * Er haengt an der Welt und nicht am Spiel, weil er **Zustand der
+   * Simulation** ist: Nur hier ist sichergestellt, dass nichts vergessen
+   * wird — der Determinismus-Test unten prueft genau das, per Hash.
+   */
+  private schnappschuesse: Schnappschuss[] = [];
 
   constructor(cfg: WorldConfig) {
     this.terrain = cfg.terrain;
@@ -172,6 +214,10 @@ export class World {
 
   tick(): void {
     if (this.phase !== 'running') return;
+    // **Vor** dem Zaehlen und Arbeiten, damit der Schnappschuss den Zustand
+    // „Anfang von Tick n" traegt: Wiederherstellen und weiterlaufen ist dann
+    // bitgleich mit Nie-unterbrochen-worden-sein — das prueft ein Test.
+    if (this.tickCount % RUECKLAUF_RASTER === 0) this.merken();
     this.tickCount++;
 
     this.updateHatch();
@@ -180,6 +226,95 @@ export class World {
     for (const w of this.wusels) this.updateWusel(w);
 
     this.checkEnd();
+  }
+
+  private merken(): void {
+    this.schnappschuesse.push({
+      tick: this.tickCount,
+      mat: this.terrain.mat.slice(),
+      fresh: this.terrain.fresh.slice(),
+      wusels: this.wusels.map((w) => ({ ...w })),
+      skills: { ...this.skills },
+      released: this.released,
+      saved: this.saved,
+      dead: this.dead,
+      skillsUsed: this.skillsUsed,
+      hatchOpen: this.hatchOpen,
+      nuking: this.nuking,
+      releaseCountdown: this.releaseCountdown,
+      nukeCursor: this.nukeCursor,
+      nukeTimer: this.nukeTimer,
+      nextId: this.nextId,
+      releaseRate: this.releaseRate,
+    });
+    if (this.schnappschuesse.length > RUECKLAUF_TIEFE) this.schnappschuesse.shift();
+  }
+
+  /**
+   * Wie weit es zurueckgeht, wenn jetzt zurueckgespult wuerde — in Ticks.
+   *
+   * Null heisst: kein Schnappschuss, der Knopf ist tot. Der Zeichner braucht
+   * das fuer den ausgegrauten Zustand, und er soll dafuer nicht selbst in den
+   * Ring greifen.
+   */
+  get ruecklaufWeite(): number {
+    const s = this.zielSchnappschuss();
+    return s ? this.tickCount - s.tick : 0;
+  }
+
+  private zielSchnappschuss(): Schnappschuss | null {
+    if (this.schnappschuesse.length === 0) return null;
+    const zielTick = this.tickCount - RUECKLAUF_SPRUNG;
+    // Den juengsten, der alt genug ist — sonst den aeltesten, den es gibt.
+    for (let i = this.schnappschuesse.length - 1; i >= 0; i--) {
+      if (this.schnappschuesse[i].tick <= zielTick) return this.schnappschuesse[i];
+    }
+    const aeltester = this.schnappschuesse[0];
+    // Ein Sprung um nichts ist kein Sprung: Direkt nach einem Schnappschuss
+    // waere „zurueck" sonst ein Standbild.
+    return aeltester.tick < this.tickCount ? aeltester : null;
+  }
+
+  /**
+   * Zehn Sekunden zurueck — oder so weit, wie es Schnappschuesse gibt.
+   *
+   * ## Warum das vollstaendig ist
+   *
+   * Alles, was `stateHash()` kennt, steht im Schnappschuss, und der
+   * Determinismus-Test haelt beide aneinander fest: wiederherstellen und
+   * weiterlaufen muss denselben Hash ergeben wie durchlaufen. Ereignisse
+   * werden verworfen — sie sind Ausgabe, kein Zustand.
+   *
+   * Auch nach einer Niederlage erlaubt: Die Phase ist aus den Zaehlern
+   * abgeleitet und wird schlicht wieder `running`. Wer den Fehler **gesehen**
+   * hat, darf ihn zuruecknehmen — genau dafuer ist der Ruecklauf da.
+   */
+  zurueck(): boolean {
+    const s = this.zielSchnappschuss();
+    if (!s) return false;
+    this.terrain.mat.set(s.mat);
+    this.terrain.fresh.set(s.fresh);
+    this.terrain.markAllDirty();
+    this.wusels = s.wusels.map((w) => ({ ...w }));
+    this.skills = { ...s.skills };
+    this.tickCount = s.tick;
+    this.released = s.released;
+    this.saved = s.saved;
+    this.dead = s.dead;
+    this.skillsUsed = s.skillsUsed;
+    this.hatchOpen = s.hatchOpen;
+    this.nuking = s.nuking;
+    this.releaseCountdown = s.releaseCountdown;
+    this.nukeCursor = s.nukeCursor;
+    this.nukeTimer = s.nukeTimer;
+    this.nextId = s.nextId;
+    this.releaseRate = s.releaseRate;
+    this.phase = 'running';
+    this.events = [];
+    // Alles ab hier ist eine andere Zukunft: Schnappschuesse aus der alten
+    // verwerfen, sonst spraenge der naechste Ruecklauf **vorwaerts**.
+    this.schnappschuesse = this.schnappschuesse.filter((x) => x.tick < s.tick);
+    return true;
   }
 
   private updateHatch(): void {

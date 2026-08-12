@@ -926,6 +926,25 @@ export class Sfx {
    * Melodie: Es ist der Klang, den man beim Spielen am haeufigsten bewusst
    * ausloest, und deshalb der beste Ort fuer das Erkennungszeichen des Spiels.
    */
+  /**
+   * Der Zeitruecklauf: ein schnelles Zurueckschnurren, dann ein Ankerpunkt.
+   *
+   * Das Schnurren faehrt **aufwaerts** — die Tonbandmetapher: Rueckwaerts
+   * abgespielt steigt alles. Drei sehr kurze Toene in enger Folge lesen sich
+   * als Bewegung, nicht als Melodie; der Abschlusston sagt „hier stehst du
+   * jetzt". Bedienklang, zaehlt nicht gegen die Dichteregel.
+   */
+  zurueckgespult(): void {
+    const s = streuung(1);
+    for (let i = 0; i < 3; i++) {
+      this.engine.tone({
+        freq: (300 + i * 160) * s, dur: 0.05, type: 'triangle', gain: 0.09,
+        delay: i * 0.045, slide: 1.25, attack: 0.004, bus: 'sfx',
+      });
+    }
+    pling(this.engine, { freq: ton(7), dur: 0.16, gain: 0.08, bus: 'sfx', fest: false, delay: 0.16 });
+  }
+
   werkzeugGewaehlt(skill?: SkillId): void {
     const i = skill ? Math.max(0, SKILLS.indexOf(skill)) : 0;
     pling(this.engine, { freq: ton(i), dur: 0.24, gain: 0.12, bus: 'sfx', fest: false });

@@ -189,6 +189,18 @@ export class Scene {
   }
 
   /** Diagnose fuer die Sichtprobe — siehe `Game.debugPartikel`. */
+  /**
+   * Alles Fluechtige verwerfen — fuer den Zeitruecklauf.
+   *
+   * Partikel sind Vergangenheit eines Zeitstrangs, den es nicht mehr gibt.
+   * Eine Explosion, deren Funken nach dem Ruecklauf weiterfliegen, waere ein
+   * Gespenst: Sie ist jetzt naemlich noch gar nicht passiert.
+   */
+  klarstellen(): void {
+    this.particles = [];
+    ansichtVergessen();
+  }
+
   get partikelStand(): { anzahl: number; restMs: number } {
     let rest = 0;
     for (const p of this.particles) rest = Math.max(rest, p.life);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DeathCause, MAT, State } from '../src/core/types';
 import * as C from '../src/core/constants';
 import { place, run, testWorld } from './helpers';
+import { isActive } from '../src/core/skills';
 
 describe('Laufen und Fallen', () => {
   it('läuft mit 20 px/s stur geradeaus', () => {
@@ -495,5 +496,84 @@ describe('Rufe und Aufkommen', () => {
     w.drainEvents();
     w.assign(a.id, 'bomber');
     expect(w.drainEvents().some((e) => e.type === 'oh-no')).toBe(true);
+  });
+});
+
+/**
+ * Der Zeitrücklauf — Kritikpunkt F1, und sein prüfbares Soll.
+ *
+ * Ein Schnappschuss ist nur dann einer, wenn er **vollständig** ist: Fehlt ein
+ * einziges Feld, läuft die wiederhergestellte Welt anders weiter als die nie
+ * unterbrochene — und zwar still, denn im Bild sieht ein fast richtiger
+ * Zustand genau richtig aus. Deshalb hängt dieser Test beide an den Hash.
+ */
+describe('Zeitrücklauf', () => {
+  const aufbau = () => {
+    // Hoch genug, dass der Graeber innerhalb des Laufs nicht aus der Welt
+    // faellt, und ein Laeufer zwischen zwei Waenden, der sie am Leben haelt —
+    // eine beendete Welt tickt nicht mehr und macht keine Schnappschuesse.
+    const w = testWorld(400, 400, 160);
+    w.released = w.total;
+    w.terrain.fillRect(40, 100, 4, 60, MAT.ROCK);
+    w.terrain.fillRect(300, 100, 4, 60, MAT.ROCK);
+    // Feste Nummern: `place` zaehlt global weiter, und die Nummer steht im
+    // Hash — zwei Aufbauten waeren sonst nie gleich, Ruecklauf hin oder her.
+    const laeufer = place(w, 100, 159, State.WALKING, 1, { id: 71 });
+    const graeber = place(w, 200, 159, State.WALKING, 1, { id: 72 });
+    run(w, 30);
+    w.assign(graeber.id, 'digger');
+    expect(laeufer.state).toBe(State.WALKING);
+    return w;
+  };
+
+  it('läuft nach dem Rücklauf bitgleich weiter', () => {
+    // Der ununterbrochene Lauf.
+    const a = aufbau();
+    run(a, 1270);
+    const soll = a.stateHash();
+
+    // Derselbe Lauf, aber mit Sprung: vor bis 1300, zurück (~10 s), wieder vor.
+    const b = aufbau();
+    run(b, 1270);
+    const vorher = b.tickCount;
+    expect(b.zurueck()).toBe(true);
+    const zurueck = vorher - b.tickCount;
+    expect(zurueck).toBeGreaterThan(0);
+    run(b, zurueck);
+    expect(b.tickCount).toBe(a.tickCount);
+    expect(b.stateHash()).toBe(soll);
+  });
+
+  it('springt rund zehn Sekunden, nie vorwärts', () => {
+    const w = aufbau();
+    run(w, 1270);
+    const vorher = w.tickCount;
+    w.zurueck();
+    const weite = vorher - w.tickCount;
+    expect(weite).toBeGreaterThanOrEqual(600);
+    expect(weite).toBeLessThanOrEqual(660);
+  });
+
+  it('meldet am Anfang keine Rücklaufweite', () => {
+    const w = testWorld();
+    expect(w.ruecklaufWeite).toBe(0);
+    expect(w.zurueck()).toBe(false);
+  });
+
+  /**
+   * Auch die Niederlage ist rückholbar. Die Phase ist aus den Zählern
+   * abgeleitet — wer den Fehler **gesehen** hat, darf ihn zurücknehmen.
+   */
+  it('holt eine verlorene Welt zurück ins Laufen', () => {
+    const w = testWorld(400, 200, 160);
+    w.released = w.total;
+    const a = place(w, 60, 159);
+    run(w, 700);
+    w.assign(a.id, 'bomber');
+    run(w, C.BOMB_FUSE_TICKS + C.DYING_TICKS + 5);
+    expect(w.phase).toBe('lost');
+    expect(w.zurueck()).toBe(true);
+    expect(w.phase).toBe('running');
+    expect(w.wusels.some((x) => isActive(x))).toBe(true);
   });
 });

@@ -23,7 +23,7 @@ import {
   type Candidate,
 } from './input/targeting';
 import { Camera, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './render/camera';
-import { COL, drawControls, drawRecenter, drawTopBar } from './render/hud';
+import { COL, drawControls, drawRecenter, drawRewind, drawTopBar } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
 import { drawIntro, drawPause, drawResult, type Button } from './render/overlays';
@@ -259,6 +259,23 @@ export class Game {
    * dabei nicht: Er wird auf die Figur gesetzt, wenn man von aussen kommt, und
    * bleibt stehen, wenn man schon dort war und nur zurückblättert.
    */
+  /**
+   * Zehn Sekunden zurueck — der Spielzug gegen den Fehltipp.
+   *
+   * Die Simulation stellt sich selbst wieder her (`World.zurueck`); hier steht
+   * nur, was die **Darstellung** danach vergessen muss: die gemerkten Posen
+   * der Figuren (sonst zuckt jede beim Sprung in ihre Vergangenheit) und die
+   * Ereignisse des alten Zeitstrangs. Die Kamera bleibt, wo sie ist — wer
+   * zurueckspult, will genau die Stelle noch einmal sehen, die er ansieht.
+   */
+  private zeitZurueck(): void {
+    if (!this.world.zurueck()) return;
+    // `klarstellen` vergisst auch die gemerkten Posen (ansicht.ts) — sonst
+    // zuckt jede Figur beim Sprung in ihre eigene Vergangenheit.
+    this.scene.klarstellen();
+    this.audio.zurueckgespult();
+  }
+
   private toMenu(zentrieren = true): void {
     this.audio.stopMusic();
     this.progress = loadProgress();
@@ -601,6 +618,10 @@ export class Game {
       this.camera.recenter();
       return;
     }
+    if (inBox(L.rewindBtn, x, y)) {
+      this.zeitZurueck();
+      return;
+    }
     if (inBox(L.rateSlider, x, y)) {
       const ps: PointerState = { id: e.pointerId, x, y, startX: x, startY: y, role: 'rate' };
       this.pointers.set(e.pointerId, ps);
@@ -900,6 +921,7 @@ export class Game {
     drawTopBar(ctx, this.layout, this.hudState());
     drawControls(ctx, this.layout, this.hudState());
     if (!this.camera.follow) drawRecenter(ctx, this.layout);
+    drawRewind(ctx, this.layout, this.world.ruecklaufWeite);
 
     if (this.aim) {
       const c = magnifierCenter(this.aim.x, this.aim.y, this.layout.play);

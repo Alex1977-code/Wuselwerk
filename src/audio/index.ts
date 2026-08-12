@@ -109,6 +109,11 @@ export class GameAudio {
   // Sie haengen an keinem Weltereignis, sondern unmittelbar am Finger. Deshalb
   // reicht `GameAudio` sie einzeln durch, statt sie ueber `handle` zu fuehren.
 
+  /** Der Zeitruecklauf: kurzes Zurueckschnurren, dann ein heller Ankerpunkt. */
+  zurueckgespult(): void {
+    this.sfx.zurueckgespult();
+  }
+
   werkzeugGewaehlt(skill: SkillId): void {
     this.sfx.werkzeugGewaehlt(skill);
   }
