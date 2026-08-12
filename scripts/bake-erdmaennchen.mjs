@@ -57,11 +57,14 @@
  *
  * ## Was eine Pose ueber ihren Platz sagen darf
  *
- * Drei Angaben duerfen in der Posendatei stehen und gelten fuer die ganze Zeile:
- * `dreh` setzt den Blickwinkel (sonst gilt `DREHUNG_GRAD`), `boden` sucht die
- * Standlinie am ersten Bild, `mitte` legt den Umriss in die Zellmitte. Die
- * beiden letzten braucht jede Pose, die den Koerper aus der Senkrechten nimmt:
- * Die Eichung setzt die Sohle nur einmal, in der aufrechten Ruhelage.
+ * Vier Angaben duerfen in der Posendatei stehen und gelten fuer die ganze Zeile:
+ * `dreh` setzt den Blickwinkel (sonst gilt `DREHUNG_GRAD`), `boden` setzt die
+ * Sohle des tiefsten Bildes auf die Standlinie, `mitte` legt den Umriss in die
+ * Zellmitte, `lehne` ueberschreibt die Neigung im Zeichner. Die mittleren beiden
+ * braucht jede Pose, die den Koerper aus der Senkrechten nimmt: Die Eichung
+ * setzt die Sohle nur einmal, in der aufrechten Ruhelage.
+ *
+ * Die Uebersicht ueber alle zwoelf Posen steht in `docs/erdmaennchen-posen.md`.
  *
  * Aufruf: `node scripts/bake-erdmaennchen.mjs [--pose walking] [--probe] [--name x]`
  * Zum Ausprobieren: `--variante <datei.json>` ersetzt eine Zeile, `--weit 1.8`
@@ -236,6 +239,7 @@ const SS = ${SS};
 const SICHT = ${SICHT};
 const FUSS_PX = ${FUSS_PX};
 const FIGUR_EINHEITEN = ${FIGUR_EINHEITEN};
+const LOGISCH = ${LOGISCH};
 const GROESSE = ZELLE * SS;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -380,7 +384,10 @@ function stelle(richtungen, winkel) {
   }
   if (!richtungen) return;
   const eltern = new THREE.Quaternion();
+  const rueck = new THREE.Quaternion();
+  const dreh = new THREE.Quaternion();
   const ziel = new THREE.Vector3();
+  const ruheRichtung = new THREE.Vector3();
   for (const name of ordnung) {
     const soll = richtungen[name];
     if (!soll || !knochen[name] || !ruhe[name].hatKind) continue;
@@ -388,8 +395,25 @@ function stelle(richtungen, winkel) {
     b.parent.updateWorldMatrix(true, false);
     b.parent.getWorldQuaternion(eltern);
     // Zielrichtung vom Modellraum in den Raum des Elternteils.
-    ziel.set(soll[0], soll[1], soll[2]).normalize().applyQuaternion(eltern.clone().invert());
-    b.quaternion.setFromUnitVectors(ruhe[name].achse, ziel);
+    rueck.copy(eltern).invert();
+    ziel.set(soll[0], soll[1], soll[2]).normalize().applyQuaternion(rueck);
+    // Die Eigendrehung des Knochens **behalten** und nur die Achse umlegen.
+    //
+    // Vorher stand hier setFromUnitVectors(achse, ziel) — die Eigendrehung war
+    // damit weg, ersetzt durch die kuerzeste Drehung aus der Kinderrichtung. Die
+    // Achse stimmte danach, alles was quer daran haengt aber nicht: An Spine02
+    // sitzen die beiden Schluesselbeine seitlich ab, und die Ersatzdrehung
+    // verkippte sie gegeneinander. Gemessen stand die **linke Schulter 0,144
+    // Einheiten hoeher als die rechte**, in jeder Pose, und die linke Vorderpfote
+    // erreichte den Boden nie. Auf dem Blatt sah das nach einer schlecht
+    // getroffenen Pose aus.
+    //
+    // Jetzt wird von der **Ruherichtung** des Kindes auf das Ziel gedreht und
+    // die Drehung auf die Ruhelage gesetzt. Die Achse landet genauso, die
+    // Verdrehung des Knochens ueberlebt.
+    ruheRichtung.copy(ruhe[name].achse).applyQuaternion(ruhe[name].q);
+    dreh.setFromUnitVectors(ruheRichtung, ziel);
+    b.quaternion.copy(dreh).multiply(ruhe[name].q);
     b.updateWorldMatrix(false, true);
   }
   wurzel.updateMatrixWorld(true);
@@ -433,6 +457,9 @@ function kasten() {
   const px = new Uint8Array(GROESSE * GROESSE * 4);
   gl.readPixels(0, 0, GROESSE, GROESSE, gl.RGBA, gl.UNSIGNED_BYTE, px);
   let x0 = GROESSE, x1 = -1, y0 = GROESSE, y1 = -1;
+  // Je Bildzeile die Randpunkte merken — daraus faellt gleich die Standflaeche ab.
+  const zl = new Int32Array(GROESSE).fill(GROESSE);
+  const zr = new Int32Array(GROESSE).fill(-1);
   for (let gy = 0; gy < GROESSE; gy++) {
     // readPixels zaehlt von unten, das Bild von oben.
     const y = GROESSE - 1 - gy;
@@ -443,9 +470,26 @@ function kasten() {
       if (x > x1) x1 = x;
       if (y < y0) y0 = y;
       if (y > y1) y1 = y;
+      if (x < zl[y]) zl[y] = x;
+      if (x > zr[y]) zr[y] = x;
     }
   }
   if (x1 < 0) return null;
+  // Die Standflaeche: die Breite des Umrisses im untersten Streifen.
+  //
+  // Nicht die Breite der ganzen Figur. Ein aufrechtes Erdmaennchen ist mit
+  // Schwanz elf Pixel breit und steht auf dreien; sein Schatten gehoert unter
+  // die Fuesse und nicht unter den Schwanz. Zwei logische Pixel Streifen —
+  // hoch genug, dass beide Sohlen hineinfallen, flach genug, dass die Waden
+  // draussen bleiben.
+  const streifen = Math.round(2 * (GROESSE / LOGISCH));
+  let fl = GROESSE;
+  let fr = -1;
+  for (let y = Math.max(0, y1 - streifen); y <= y1; y++) {
+    if (zr[y] < 0) continue;
+    if (zl[y] < fl) fl = zl[y];
+    if (zr[y] > fr) fr = zr[y];
+  }
   // Ueber die **Kamera** in Zellkoordinaten und nicht ueber die Bildgroesse.
   // Beim Messen steht das Blickfeld weiter (siehe blick), und dann sind
   // Bildpunkt und Zellpunkt nicht mehr dasselbe.
@@ -453,7 +497,13 @@ function kasten() {
   const bh = camera.top - camera.bottom;
   const zx = (p) => ((camera.left + (p / GROESSE) * bw) / SICHT + 0.5) * ZELLE;
   const zy = (p) => ((oben - (camera.top - (p / GROESSE) * bh)) / SICHT) * ZELLE;
-  const k = { links: zx(x0), rechts: zx(x1 + 1), oben: zy(y0), unten: zy(y1 + 1) };
+  const k = {
+    links: zx(x0),
+    rechts: zx(x1 + 1),
+    oben: zy(y0),
+    unten: zy(y1 + 1),
+    fuss: fr < 0 ? 0 : zx(fr + 1) - zx(fl),
+  };
   k.randberuehrung = k.links < 0.5 || k.oben < 0.5 || k.rechts > ZELLE - 0.5 || k.unten > ZELLE - 0.5;
   return k;
 }
@@ -526,21 +576,25 @@ window.umriss = (bild, dreh) => {
 /**
  * Aus den Rohumrissen einer Pose: wie weit sie absacken und zur Seite ruecken muss.
  *
- * Die beiden Achsen werden **verschieden** gemessen, und das ist keine Willkuer.
+ * Beide Achsen nehmen **alle** Bilder, aber verschieden.
  *
- * Senkrecht zaehlt das erste Bild allein. Es ist das Aufsetzbild; dort steht die
- * Pfote, dort gilt der Boden. Naehme man stattdessen das tiefste aller Bilder,
- * zoege das tiefste die ganze Reihe mit sich und das Abheben der Pfoten waehrend
- * des Durchschwingens waere weggerechnet — der Gang klebte am Boden.
+ * Senkrecht zaehlt das **tiefste**. Zuerst stand hier das erste Bild — das
+ * Aufsetzbild, wo die Pfote steht —, und die Ueberlegung war, dass das tiefste
+ * Bild sonst die ganze Reihe mitzoege und das Abheben der Pfoten wegrechnete.
+ * Der Gang auf allen vieren hat das widerlegt: Dort setzen zwei Pfoten
+ * gleichzeitig auf, und nicht im ersten Bild am tiefsten — sieben Zehntel Pixel
+ * standen unter dem Boden. Ein Fuss im Boden ist der schlimmere Fehler, und die
+ * befuerchtete Nebenwirkung tritt nicht ein: Beim aufrechten Gang **ist** das
+ * erste Bild das tiefste, dort aendert sich nichts.
  *
  * Waagerecht zaehlen alle Bilder zusammen. Eine Seitwaertsverschiebung je Bild
  * gaebe es nicht: Sie waere ein Ruckeln der ganzen Figur. Also eine fuer die
  * Pose, und die muss den gesamten Umriss fassen.
  */
 window.platz = (umrisse) => {
-  const erste = umrisse[0];
-  if (!erste) return { grund: 0, seite: 0 };
-  const untenWelt = oben - (erste.unten / ZELLE) * SICHT;
+  if (!umrisse.length || !umrisse[0]) return { grund: 0, seite: 0 };
+  const tiefste = Math.max(...umrisse.map((k) => k.unten));
+  const untenWelt = oben - (tiefste / ZELLE) * SICHT;
   // Die Mitte des Umrisses auf die Zellmitte legen.
   //
   // Der Nullpunkt des Modells liegt nicht in der Mitte des Tieres, sondern dort,
@@ -554,6 +608,19 @@ window.platz = (umrisse) => {
   const rechts = Math.max(...umrisse.map((k) => k.rechts));
   const mitteWelt = (((links + rechts) / 2 / ZELLE) - 0.5) * SICHT;
   return { grund: -untenWelt / FIGUR_EINHEITEN, seite: -mitteWelt };
+};
+
+/** Weltstellen benannter Knochen nach dem letzten Zeichnen — nur zur Diagnose. */
+window.knochenOrt = (namen) => {
+  const aus = {};
+  for (const nm of namen) {
+    const b = knochen[nm];
+    if (!b) continue;
+    const p = new THREE.Vector3();
+    b.getWorldPosition(p);
+    aus[nm] = [Number(p.x.toFixed(4)), Number(p.y.toFixed(4)), Number(p.z.toFixed(4))];
+  }
+  return aus;
 };
 
 window.bild = (bild, dreh, grund, seite, weit) => {
@@ -676,6 +743,8 @@ const gesichter = [];
 const haende = [];
 /** Der gemessene Drehwinkel je Pose — die Variante darf ihn mitbringen. */
 const drehungen = {};
+/** Die gemessene Standflaeche je Pose, in logischen Pixeln. */
+const standflaechen = {};
 let anschnitte = 0;
 for (const z of zeilen) {
   const reihe = ZEILEN.findIndex((x) => x.name === z.name);
@@ -709,6 +778,17 @@ for (const z of zeilen) {
     gesichter.push({ pose: z.name, bild: i, punkt: r.gesicht });
     haende.push({ pose: z.name, bild: i, punkt: r.hand ?? r.gesicht });
     if (r.kasten) masse.push(r.kasten);
+    if (process.env.FUESSE) {
+      const o = await page.evaluate(
+        (nm) => window.knochenOrt(nm),
+        ['L_Upperarm', 'R_Upperarm', 'L_Forearm', 'R_Forearm', 'L_Hand', 'R_Hand'],
+      );
+      const sp = (a, b) => `${a[1].toFixed(3)}/${b[1].toFixed(3)}`;
+      console.log(
+        `    Bild ${i}: Schulter ${sp(o.L_Upperarm, o.R_Upperarm)}  ` +
+          `Ellbogen ${sp(o.L_Forearm, o.R_Forearm)}  Hand ${sp(o.L_Hand, o.R_Hand)}`,
+      );
+    }
     if (r.anschnitt > 0) {
       anschnitte++;
       console.log(`  ! ${z.name} Bild ${i} beruehrt den Zellrand`);
@@ -726,10 +806,18 @@ for (const z of zeilen) {
     const rechts = Math.max(...masse.map((k) => inPx(k.rechts) - mitte));
     const hoch = Math.max(...masse.map((k) => inPx(k.unten - k.oben)));
     const sohle = masse.map((k) => LOGISCH - FUSS_PX / PPL - inPx(k.unten));
+    // Zwei Diagnosen hinter Umgebungsvariablen. Beide sind aus je einem Fehler
+    // entstanden, den man dem Blatt nicht ansah: SOHLE=1 zeigt, welches Bild
+    // schwebt oder einsinkt; FUESSE=1 zeigt Weltstellen einzelner Knochen und
+    // hat die verkippten Schultern gefunden.
+    if (process.env.SOHLE) console.log('    Sohlen je Bild: ' + sohle.map((x) => x.toFixed(2)).join(' '));
+    standflaechen[z.name] = Number(
+      Math.max(...masse.map((m) => inPx(m.fuss))).toFixed(2),
+    );
     process.stdout.write(
       `  ${z.name} (${z.holds.length})${tabelle ? '' : ' — Ruhelage'}  ` +
-        `${drehGrad}gr  breit ${(links + rechts).toFixed(1)}px ` +
-        `(links ${links.toFixed(1)} / rechts ${rechts.toFixed(1)}), hoch ${hoch.toFixed(1)}px, ` +
+        `${drehGrad}gr  breit ${(links + rechts).toFixed(1)}px, hoch ${hoch.toFixed(1)}px, ` +
+        `Stand ${Math.max(...masse.map((m) => inPx(m.fuss))).toFixed(1)}px, ` +
         `Sohle ${Math.min(...sohle).toFixed(2)}..${Math.max(...sohle).toFixed(2)}px ueber Grund\n`,
     );
   }
@@ -810,6 +898,16 @@ if (probe) {
           holds: z.holds,
           ...(z.once ? { once: true } : {}),
           dreh: drehungen[z.name] ?? DREHUNG_GRAD[z.name] ?? 0,
+          // Die Standflaeche in logischen Pixeln — die Breite des Umrisses im
+          // untersten Streifen. Der Kontaktschatten haengt daran: Ein aufrecht
+          // stehendes Tier steht auf drei Pixeln, eines auf allen vieren auf
+          // zehn, und ein Schatten, der das nicht weiss, gehoert zur falschen
+          // Figur.
+          fuss: standflaechen[z.name] ?? 0,
+          // Wie weit der Zeichner das Bild zusaetzlich neigt. Steht sie in der
+          // Posendatei, gilt sie; sonst die Tabelle `LEHNE` im Zeichner. Eine
+          // Pose, die die Neigung schon im Koerper hat, braucht keine zweite.
+          ...(posen[z.name]?.lehne !== undefined ? { lehne: posen[z.name].lehne } : {}),
           // Der Gesichtspunkt je Einzelbild. Er tritt an die Stelle des
           // Schopfankers der Murmel: Dort haengt die Berufsfarbe daran, hier
           // die Augenmaske. Gemessen aus dem Rig, nicht von Hand gepflegt.

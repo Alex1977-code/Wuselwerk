@@ -7,7 +7,7 @@ import { standY, sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
-import type { SpriteAtlas } from './atlas';
+import { clipForWusel, type SpriteAtlas } from './atlas';
 import type { TerrainView } from './terrainView';
 import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
 
@@ -442,6 +442,17 @@ export class Scene {
     if (tiefe < 0) return;
 
     const hoehe = tiefe / SCHATTEN_REICHWEITE;
+    // Die Standflaeche kommt aus dem Blatt, nicht aus einer Zahl hier.
+    //
+    // Vorher stand hier ein fester Anteil der Figurenhoehe. Der passte fuer
+    // eine aufrecht stehende Figur und fuer sonst nichts: Der Rammer steht auf
+    // vier logischen Pixeln, der Graeber auf acht, und auf allen vieren sind es
+    // zehn. Ein Schatten, der das nicht weiss, ist beim einen ein Nebel und
+    // beim anderen ein Fleck neben den Pfoten. Der Backvorgang misst es je Pose
+    // und schreibt es ins Blatt; fehlt die Angabe, gilt der alte Wert.
+    const clipName = clipForWusel(w);
+    const gemessen = clipName ? this.atlas?.manifest.clips[clipName]?.fuss : undefined;
+    const stand = gemessen && gemessen > 0 ? gemessen : WUSEL_H * 0.5;
     // Je hoeher die Figur, desto breiter und blasser — so verhaelt sich ein
     // Schatten unter einer weichen Lichtquelle.
     // Enger und dunkler als der erste Versuch. Gemessen lag der bei gut acht
@@ -450,7 +461,7 @@ export class Scene {
     // Koerper, liest sich als Dunst; einer mit sechs Prozent liest sich gar
     // nicht. Ein stehendes Tier wirft einen Fleck von etwa seiner eigenen
     // Breite, und zwar einen deutlichen.
-    const breit = WUSEL_H * (0.24 + hoehe * 0.45) * v.scale;
+    const breit = (stand * 0.48 + WUSEL_H * hoehe * 0.45) * v.scale;
     const flach = breit * 0.34;
     const deckung = 0.62 * (1 - hoehe) ** 1.6;
     if (deckung < 0.02) return;

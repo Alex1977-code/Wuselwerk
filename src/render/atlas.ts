@@ -70,6 +70,24 @@ export interface ClipDef {
   /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
   hands?: [number, number][];
   /**
+   * Die **Standflaeche** dieser Pose in logischen Pixeln — die Breite des
+   * Umrisses im untersten Streifen, beim Backen gemessen.
+   *
+   * Nicht die Breite der Figur. Ein aufrecht stehendes Erdmaennchen ist mit
+   * Schwanz elf Pixel breit und steht auf sechs; auf allen vieren steht es auf
+   * zehn. Daran haengt der Kontaktschatten, und ohne diese Zahl muesste er eine
+   * feste annehmen — die dann fuer die Haelfte der Posen falsch waere.
+   */
+  fuss?: number;
+  /**
+   * Zusaetzliche Neigung des Bildes im Bogenmass, falls die Pose eine eigene
+   * mitbringt. Sonst gilt `LEHNE`.
+   *
+   * Eine Pose, die die Neigung schon im Koerper hat — der Gang auf allen vieren
+   * legt den Rumpf waagerecht —, darf keine zweite obendrauf bekommen.
+   */
+  lehne?: number;
+  /**
    * Wie weit diese Pose beim Backen aus der Kamera weggedreht wurde, in Grad.
    *
    * Der Renderer braucht sie nicht — die Ansicht steckt ja im Bild. Sie steht
@@ -360,7 +378,8 @@ export class SpriteAtlas {
     if (w.dir < 0) ctx.scale(-1, 1);
     // Erst spiegeln, dann neigen — dadurch ist „vorn" in beiden Blickrichtungen
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
-    if (LEHNE[name]) ctx.rotate(LEHNE[name]);
+    const lehne = clip.lehne ?? LEHNE[name] ?? 0;
+    if (lehne) ctx.rotate(lehne);
     ctx.drawImage(
       this.image,
       frame * cw * ppl,

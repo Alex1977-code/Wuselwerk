@@ -196,14 +196,43 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
    * verschmelzen, weil sie in der Textur sitzen und weit auseinander stehen.
    * Diese Figur hat also kein oberes Ende des Fensters, und sie steht bei 62.
    *
-   * Was hier geprüft wird, ist deshalb nicht mehr „viel gegen wenig", sondern
-   * das, was für beide gilt: **Wer läuft, ist deutlich weggedreht.**
+   * Die obere Schranke stand einmal bei 75, und das war eine Zahl über eine
+   * Figur, die aufrecht läuft: Wer sich zu weit wegdreht, verliert sein
+   * Gesicht. Das Erdmännchen läuft inzwischen **auf allen vieren** und steht
+   * bei 80. Für einen waagerechten Körper ist die Regel umgekehrt — er *liest*
+   * sich nur im Profil; von vorn ist er ein Klumpen. Geprüft wird deshalb, was
+   * für jede laufende Figur gilt, unabhängig von der Zahl der Beine: **Wer
+   * läuft, ist deutlich weggedreht, aber nie ganz.**
    */
   it('dreht jede laufende Figur deutlich weg', () => {
     for (const [figur, blatt] of Object.entries(BLAETTER)) {
       expect(blatt.clips.walking.dreh ?? 0, `${figur} läuft zu frontal`).toBeGreaterThanOrEqual(30);
-      expect(blatt.clips.walking.dreh ?? 0, `${figur} dreht sich weg`).toBeLessThanOrEqual(75);
+      expect(blatt.clips.walking.dreh ?? 0, `${figur} dreht sich weg`).toBeLessThan(90);
     }
+  });
+
+  /**
+   * Die Standfläche — und warum sie geprüft wird, obwohl sie nur ein Schatten ist.
+   *
+   * Der Kontaktschatten hat vorher einen festen Anteil der Figurenhöhe
+   * angenommen. Das passte für eine aufrecht stehende Figur und für sonst
+   * nichts: Der Rammer steht auf 4 logischen Pixeln, der Gräber auf 8, der
+   * Läufer auf allen vieren auf 10. Jetzt misst der Backvorgang es je Pose.
+   *
+   * Fehlt die Zahl, fällt der Zeichner still auf den alten Festwert zurück —
+   * der Schatten sieht dann nicht falsch aus, sondern nur wie vorher, und das
+   * merkt niemand. Genau deshalb steht die Prüfung hier.
+   */
+  it('misst für jede Pose eine Standfläche', () => {
+    const blatt = BLAETTER.erdmaennchen;
+    for (const [name, clip] of Object.entries(blatt.clips)) {
+      expect(clip.fuss, `${name} ohne Standfläche`).toBeDefined();
+      expect(clip.fuss!, `${name} steht auf nichts`).toBeGreaterThan(1);
+      expect(clip.fuss!, `${name} steht breiter als die Zelle`).toBeLessThan(blatt.cell.w);
+    }
+    // Auf allen vieren steht sie deutlich breiter als aufrecht. Wäre das nicht
+    // so, hätte die Messung die Pose nicht erfasst.
+    expect(blatt.clips.walking.fuss!).toBeGreaterThan(blatt.clips.blocking.fuss!);
   });
 
   it('hält die Rückfallebene auf dem Profil der Murmel', () => {
