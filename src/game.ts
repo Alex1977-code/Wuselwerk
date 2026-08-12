@@ -1208,6 +1208,7 @@ export class Game {
       showPar: this.progress[this.level.id]?.won ?? false,
       cameraFollow: this.camera.follow,
       muted: this.audio.muted,
+      atlas: this.atlas,
     };
   }
 

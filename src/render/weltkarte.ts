@@ -149,7 +149,39 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
       ctx.closePath();
       ctx.fill();
     };
+    // Wolken vor den Huegeln: weiche Ballen, je Welt an festen Stellen (die
+    // Form kommt aus dem Bandanfang). Ein Himmel ohne irgendetwas darin ist
+    // eine Farbflaeche — genau das nannte die Kritik „leerer Himmel".
+    for (let i = 0; i < 5; i++) {
+      const wt = w.bandStart * 7.3 + i * 1.37;
+      const wx = x0 + ((wt * 137.5) % 100) / 100 * breite;
+      const wy = L.cssH * (0.24 + (((wt * 61.8) % 100) / 100) * 0.3);
+      const wr = L.cssW * (0.05 + (((wt * 29.7) % 100) / 100) * 0.04);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+      ctx.arc(wx + wr * 0.9, wy + wr * 0.25, wr * 0.72, 0, Math.PI * 2);
+      ctx.arc(wx - wr * 0.85, wy + wr * 0.3, wr * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     kette(0, p.hills[1], 0.4);
+
+    // Die Falltuer-Maschine am Horizont — das Wahrzeichen dieser Welt, als
+    // Silhouette zwischen den Huegelzuegen. Sie erzaehlt, worum es hier geht:
+    // Irgendwo haengt so ein Ding, und aus ihm fallen die, die man rettet.
+    {
+      const mx = x0 + breite * 0.62;
+      const my = bandY(L, 0.72 + 0.17);
+      const mw = L.cssW * 0.075;
+      ctx.fillStyle = p.hills[2];
+      ctx.globalAlpha = 0.75;
+      ctx.fillRect(mx - mw * 0.06, my - mw * 1.4, mw * 0.12, mw * 1.1);
+      ctx.fillRect(mx + mw * 0.4 - mw * 0.06, my - mw * 1.4, mw * 0.12, mw * 1.1);
+      ctx.fillRect(mx - mw * 0.28, my - mw * 0.34, mw * 0.96, mw * 0.34);
+      ctx.globalAlpha = 1;
+    }
+
     kette(1, p.hills[2], 1.9);
 
     // Der Boden ganz unten schliesst das Bild ab.
@@ -225,6 +257,14 @@ function levelPunkt(
     ctx.strokeStyle = 'rgba(150, 170, 200, 0.3)';
     ctx.lineWidth = 2;
     ctx.stroke();
+    // Auch der gesperrte Punkt sagt, der wievielte er ist — „nummernlose
+    // graue Scheiben" stand in der Kritik, und ohne Nummer kann man nicht
+    // einmal sagen, worauf man sich freut.
+    ctx.fillStyle = 'rgba(180, 196, 220, 0.55)';
+    ctx.font = `700 ${Math.round(r * 0.7)}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(lv.nr), x, y + 1);
   } else {
     const fertig = lv.zustand === 'geschafft';
     // Ein Schlagschatten setzt den Punkt auf den Weg, statt ihn hineinzumalen.

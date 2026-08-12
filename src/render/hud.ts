@@ -3,6 +3,8 @@ import { SKILL_LABEL, type SkillId } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
 import { drawSkillIcon } from './icons';
+import { State, DeathCause, type Wusel } from '../core/types';
+import type { SpriteAtlas } from './atlas';
 import type { Box, Layout } from './layout';
 
 /**
@@ -32,6 +34,8 @@ export interface HudState {
   showPar: boolean;
   cameraFollow: boolean;
   muted: boolean;
+  /** Das Figurenblatt — die Knoepfe zeigen die Figur bei der Arbeit. */
+  atlas: SpriteAtlas | null;
 }
 
 export function roundRect(
@@ -209,6 +213,50 @@ function drawIconButton(
  *    Ecke, wie an einem Vorrat — und sie ist das Einzige, was sich während des
  *    Spiels ändert, also darf sie sich abheben.
  */
+/**
+ * Welches Bild ein Beruf auf seinem Knopf traegt: Pose und Zustand einer
+ * kleinen Vorfuehr-Figur, gezeichnet vom **echten** Zeichner mit Werkzeug und
+ * Signalband.
+ *
+ * Die Kritik (G7) verlangte „ein kleines Portraet der Figur bei der Arbeit,
+ * aus dem vorhandenen Figurenblatt zusammensetzbar" — und der Einwand aus dem
+ * Grafikbedarf, die Posen allein seien zu aehnlich (74 Prozent Ueberdeckung),
+ * loest sich hier von selbst: Der Zeichner setzt Keil, Spaten, Planke und
+ * Schirm dazu, und genau die tragen den Unterschied.
+ */
+const PORTRAET: Record<SkillId, { pose: string; state: State; extra?: Partial<Wusel> }> = {
+  climber: { pose: 'climbing', state: State.CLIMBING, extra: { hasClimber: true } },
+  floater: { pose: 'floating', state: State.FALLING, extra: { hasFloater: true, fallDist: 30 } },
+  bomber: { pose: 'walking', state: State.WALKING, extra: { fuse: 200 } },
+  blocker: { pose: 'blocking', state: State.BLOCKING, extra: { isBlocker: true } },
+  builder: { pose: 'building', state: State.BUILDING },
+  basher: { pose: 'bashing', state: State.BASHING },
+  miner: { pose: 'mining', state: State.MINING },
+  digger: { pose: 'digging', state: State.DIGGING },
+};
+
+function portraetWusel(id: SkillId): Wusel {
+  return {
+    id: 9000,
+    x: 0,
+    y: 0,
+    dir: 1,
+    state: PORTRAET[id].state,
+    timer: 0,
+    fallDist: 0,
+    bricks: 6,
+    hoist: 0,
+    hasClimber: false,
+    hasFloater: false,
+    isBlocker: false,
+    fuse: 0,
+    vormerk: null,
+    cause: DeathCause.NONE,
+    bornTick: 0,
+    ...PORTRAET[id].extra,
+  };
+}
+
 export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudState): void {
   const c = L.controls;
   ctx.fillStyle = COL.panel;
@@ -266,10 +314,32 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       ctx.restore();
     }
 
-    // --- Symbol ------------------------------------------------------------
-    const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
+    // --- Bild: die Figur bei der Arbeit ------------------------------------
+    //
+    // Vom echten Zeichner, mit Werkzeug und Band — der Knopf lehrt damit
+    // nebenbei, wie der Beruf im Spielfeld aussieht. Der gewaehlte Knopf
+    // drueckt sichtbar ein: Das Bild rutscht anderthalb Punkte nach unten.
+    // Ohne Blatt bleibt das alte Strichsymbol — das Spiel bleibt bedienbar.
     const symbolY = b.y + b.h * (weit ? 0.4 : 0.46);
-    drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY, Math.min(b.w * 0.6, 30), symbolFarbe);
+    const druck = selected ? 1.5 : 0;
+    if (s.atlas) {
+      const wz = portraetWusel(b.id);
+      const gross = Math.min(b.h * (weit ? 0.62 : 0.72), b.w * 0.92);
+      const massstab = gross / 15;
+      ctx.save();
+      if (!usable) ctx.globalAlpha = 0.38;
+      const van = {
+        ox: 0,
+        oy: 0,
+        scale: massstab,
+        box: { x: b.x + b.w / 2, y: symbolY + gross * 0.44 + druck - massstab, w: b.w, h: b.h },
+      };
+      s.atlas.drawWusel(ctx, van, wz, 1, Infinity, PORTRAET[b.id].pose, 0);
+      ctx.restore();
+    } else {
+      const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
+      drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.6, 30), symbolFarbe);
+    }
 
     // --- Name, nur wo Platz ist -------------------------------------------
     //
