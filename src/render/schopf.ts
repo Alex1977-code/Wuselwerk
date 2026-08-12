@@ -241,10 +241,13 @@ export function drawZuendUhr(
   // Umspringen, gegen 0 kurz davor.
   const rest = (fuse - (sek - 1) * TICK_HZ) / TICK_HZ;
   // Ueber dem Scheitel, mit Luft — beim Wuselwerker ragt das Haar gut einen
-  // Pixel ueber die Koerperhoehe hinaus.
+  // Pixel ueber die Koerperhoehe hinaus. Die Uhr ist bewusst gross: gut halbe
+  // Koerperhoehe im Durchmesser. Die erste Fassung mass zwei logische Pixel im
+  // Radius und war damit kleiner als ein Kopf — „den erkennt man nicht", und
+  // eine Uhr, die man suchen muss, warnt nicht.
   const mx = x;
-  const my = y - (koerperH + 4.2) * s;
-  const r = 2.1 * s;
+  const my = y - (koerperH + 7.4) * s;
+  const r = 3.4 * s;
 
   ctx.save();
   // Die letzte Sekunde wechselt von Signalorange auf Weissglut — dieselben
@@ -254,25 +257,25 @@ export function drawZuendUhr(
 
   // Dunkler Teller, damit die Ziffer auf jedem Untergrund steht. Leicht
   // durchscheinend: Die Uhr gehoert zur Szene, nicht zur Bedienoberflaeche.
-  ctx.fillStyle = 'rgba(20, 22, 28, 0.72)';
+  ctx.fillStyle = 'rgba(20, 22, 28, 0.78)';
   ctx.beginPath();
   ctx.arc(mx, my, r, 0, Math.PI * 2);
   ctx.fill();
 
   // Der Ring: beginnt oben und leert sich im Uhrzeigersinn.
   ctx.strokeStyle = farbe;
-  ctx.lineWidth = Math.max(1, 0.42 * s);
+  ctx.lineWidth = Math.max(1.4, 0.62 * s);
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.arc(mx, my, r, -Math.PI / 2, -Math.PI / 2 + rest * Math.PI * 2);
   ctx.stroke();
 
   ctx.fillStyle = farbe;
-  ctx.font = `700 ${(2.6 * s).toFixed(1)}px system-ui, sans-serif`;
+  ctx.font = `700 ${(4.4 * s).toFixed(1)}px system-ui, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   // Ein Hauch tiefer als die Mitte — Ziffern haengen optisch hoch.
-  ctx.fillText(String(sek), mx, my + 0.14 * s);
+  ctx.fillText(String(sek), mx, my + 0.2 * s);
   ctx.restore();
 }
 

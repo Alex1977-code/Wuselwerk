@@ -2,7 +2,7 @@ import { State, type SkillId, type Wusel } from '../core/types';
 import { standY, sx, type View } from './camera';
 import { drawSchopf, schopfFarbe } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
-import { drawBand, drawHaarZacken, bandFarbe } from './band';
+import { drawBand, drawHaarZacken, drawHaarStraehnen, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
 
 /**
@@ -440,6 +440,24 @@ export class SpriteAtlas {
       cw * s,
       ch * s,
     );
+
+    // Die Straehnen **auf** der Kuppel — nach dem Bild, damit sie darauf
+    // liegen. Zacken hinter dem Koerper brechen nur die Silhouette; erst die
+    // innere Zeichnung nimmt der Flaeche das Kappenhafte (siehe
+    // `drawHaarStraehnen`).
+    if (this.manifest.figur === 'wuselwerker' && clip.anchors && clip.stirn) {
+      const ha = clip.anchors[frame] ?? clip.anchors[0];
+      const hs = clip.stirn[frame] ?? clip.stirn[0];
+      drawHaarStraehnen(
+        ctx,
+        (ha[0] - this.manifest.anchor.x) * s,
+        (ha[1] - this.manifest.anchor.y) * s,
+        s,
+        clip.dreh ?? 0,
+        hs[0] - ha[0],
+        hs[1] - ha[1],
+      );
+    }
 
     // Das Werkzeug — vor dem Koerper, hinter dem Schopf.
     //

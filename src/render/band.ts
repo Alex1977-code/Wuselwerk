@@ -253,6 +253,107 @@ export function drawHaarZacken(
 }
 
 /**
+ * Straehnen **auf** der Haarkuppel — vor dem Bild gezeichnet.
+ *
+ * ## Warum die Zacken allein nicht reichten
+ *
+ * Die Zacken hinter dem Koerper brechen die Silhouette, aber die Flaeche
+ * selbst blieb eine glatt schattierte Kuppel — und eine glatte blaue Flaeche
+ * ueber dem Gesicht liest sich als Stoff, egal wie ihr Rand aussieht. Die
+ * Rueckmeldung kam entsprechend zweimal: „die Haare wirken wie eine Kappe."
+ *
+ * Was eine Kappe von Haar unterscheidet, ist **innere Richtung**: Haar hat
+ * einen Scheitel, von dem Straehnen auseinanderlaufen. Drei dunkle
+ * Scheitellinien und ein heller Glanzstrich geben der Flaeche diese Richtung;
+ * dazu zwei Fransen, deren Wurzeln sichtbar **auf** der Kuppel liegen und
+ * deren Spitzen ueber den Rand hinausstehen — die Verbindung zwischen Flaeche
+ * und Zackenkamm.
+ *
+ * Verankert wie Band und Zacken an der Kopfachse (Gesicht → Stirn), alle
+ * Masse in Kopfachsen: Die Straehnen nicken mit und schrumpfen mit.
+ */
+export function drawHaarStraehnen(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  s: number,
+  dreh = 0,
+  stirnX = 0,
+  stirnY = -2,
+): void {
+  const L = Math.hypot(stirnX, stirnY) || 2;
+  const neigung = Math.atan2(stirnY, stirnX) + Math.PI / 2;
+  const bg = (dreh * Math.PI) / 180;
+  // Derselbe Versatz wie bei den Zacken: Der Scheitel der Haarmasse liegt bei
+  // gedrehter Figur hinter dem Gesichtspunkt.
+  const versatz = -Math.sin(bg) * 1.6;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.rotate(neigung);
+  ctx.lineCap = 'round';
+
+  // Der Scheitelpunkt, von dem alles auslaeuft — knapp hinter der Krone.
+  const sxp = versatz - 0.2 * L;
+  const syp = -2.55 * L;
+
+  // Drei dunkle Straehnenlinien: eine nach vorn zur Stirn, eine ueber die
+  // Kuppelmitte, eine nach hinten in den Nacken. Halbdurchsichtig — sie
+  // sollen die Flaeche gliedern, nicht zerschneiden.
+  ctx.strokeStyle = HAAR_SCHATTEN;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 0.24 * L;
+  const linien: readonly (readonly [number, number, number, number])[] = [
+    // [Kontrollpunkt quer/hoch, Ende quer/hoch] relativ zum Scheitelpunkt.
+    [0.85 * L, 0.1 * L, 1.35 * L, 0.85 * L],
+    [0.35 * L, 0.5 * L, 0.55 * L, 1.15 * L],
+    [-0.75 * L, 0.15 * L, -1.2 * L, 0.95 * L],
+  ];
+  for (const [kx, ky, ex, ey] of linien) {
+    ctx.beginPath();
+    ctx.moveTo(sxp, syp);
+    ctx.quadraticCurveTo(sxp + kx, syp + ky, sxp + ex, syp + ey);
+    ctx.stroke();
+  }
+
+  // Ein Glanzstrich auf der Lichtseite (vorn), heller als der Grundton: die
+  // eine Stelle, an der Haar spiegelt und Stoff nicht.
+  ctx.strokeStyle = '#5B79E4';
+  ctx.globalAlpha = 0.75;
+  ctx.lineWidth = 0.2 * L;
+  ctx.beginPath();
+  ctx.moveTo(sxp + 0.4 * L, syp + 0.06 * L);
+  ctx.quadraticCurveTo(sxp + 0.95 * L, syp + 0.22 * L, sxp + 1.1 * L, syp + 0.62 * L);
+  ctx.stroke();
+
+  // Zwei Fransen, deren Wurzeln sichtbar auf der Kuppel sitzen und deren
+  // Spitzen darueber hinausstehen. Sie naehen Flaeche und Zackenkamm zusammen:
+  // Ohne sie waren die Zacken ein Kranz **hinter** einer glatten Kappe.
+  ctx.globalAlpha = 1;
+  const fransen: readonly (readonly [number, number, number, number, string])[] = [
+    // [quer, Neigung Grad, Hoehe, halbe Breite]
+    [versatz + 0.72 * L, 18, 0.72 * L, 0.3 * L, HAAR_LICHT],
+    [versatz - 0.85 * L, -16, 0.66 * L, 0.28 * L, HAAR_GRUND],
+  ];
+  const wurzel = -2.15 * L;
+  for (const [zx, grad, hoch, halb, farbe] of fransen) {
+    const b = (grad * Math.PI) / 180;
+    const tx = zx + Math.sin(b) * hoch;
+    const ty = wurzel - Math.cos(b) * hoch;
+    ctx.fillStyle = farbe;
+    ctx.beginPath();
+    ctx.moveTo(zx - halb, wurzel);
+    ctx.quadraticCurveTo(zx - halb * 0.5 + (tx - zx) * 0.35, wurzel + (ty - wurzel) * 0.55, tx, ty);
+    ctx.quadraticCurveTo(zx + halb * 0.55 + (tx - zx) * 0.3, wurzel + (ty - wurzel) * 0.5, zx + halb, wurzel);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/**
  * Das Stirnband zeichnen.
  *
  * @param x Gesichtspunkt auf dem Bildschirm — der Anker aus dem Manifest.

@@ -219,10 +219,12 @@ function drawIconButton(
  * Signalband.
  *
  * Die Kritik (G7) verlangte „ein kleines Portraet der Figur bei der Arbeit,
- * aus dem vorhandenen Figurenblatt zusammensetzbar" — und der Einwand aus dem
- * Grafikbedarf, die Posen allein seien zu aehnlich (74 Prozent Ueberdeckung),
- * loest sich hier von selbst: Der Zeichner setzt Keil, Spaten, Planke und
- * Schirm dazu, und genau die tragen den Unterschied.
+ * aus dem vorhandenen Figurenblatt zusammensetzbar". Der Einwand aus dem
+ * Grafikbedarf — die Posen allein seien zu aehnlich (74 Prozent
+ * Ueberdeckung) — hat sich im Spiel dann doch bestaetigt: Werkzeuge von sechs
+ * Punkten tragen den Unterschied nicht, „die Spielerfiguren lassen den Beruf
+ * nicht erkennen". Deshalb steht das Portraet nur noch **neben** dem Symbol
+ * auf den breiten Knoepfen (quer); die Lesbarkeit traegt ueberall das Symbol.
  */
 const PORTRAET: Record<SkillId, { pose: string; state: State; extra?: Partial<Wusel> }> = {
   climber: { pose: 'climbing', state: State.CLIMBING, extra: { hasClimber: true } },
@@ -314,17 +316,27 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       ctx.restore();
     }
 
-    // --- Bild: die Figur bei der Arbeit ------------------------------------
+    // --- Symbol und Figur --------------------------------------------------
     //
-    // Vom echten Zeichner, mit Werkzeug und Band — der Knopf lehrt damit
-    // nebenbei, wie der Beruf im Spielfeld aussieht. Der gewaehlte Knopf
-    // drueckt sichtbar ein: Das Bild rutscht anderthalb Punkte nach unten.
-    // Ohne Blatt bleibt das alte Strichsymbol — das Spiel bleibt bedienbar.
+    // Das **Symbol** traegt die Lesbarkeit, die **Figur bei der Arbeit** kommt
+    // nur dazu, wo der Knopf breit genug fuer beides ist. Die erste Fassung
+    // (G7) hatte die Figur allein auf den Knopf gesetzt — und die Rueckmeldung
+    // war eindeutig: „die Spielerfiguren lassen den Beruf nicht erkennen."
+    // Zu Recht: Bei vierzig Punkten Knopfbreite unterscheiden sich acht
+    // Figuren nur im Werkzeug, und das Werkzeug misst dann sechs Punkte.
+    // Eine Silhouette, die man erst suchen muss, ist kein Symbol.
+    //
+    // Der gewaehlte Knopf drueckt sichtbar ein: Alles rutscht anderthalb
+    // Punkte nach unten.
     const symbolY = b.y + b.h * (weit ? 0.4 : 0.46);
     const druck = selected ? 1.5 : 0;
-    if (s.atlas) {
+    const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
+    if (s.atlas && weit) {
+      // Breiter Knopf: links die Figur bei der Arbeit, rechts das Symbol.
+      // Die Figur lehrt, wie der Beruf im Spielfeld aussieht; das Symbol sagt,
+      // welcher es ist.
       const wz = portraetWusel(b.id);
-      const gross = Math.min(b.h * (weit ? 0.62 : 0.72), b.w * 0.92);
+      const gross = Math.min(b.h * 0.56, b.w * 0.44);
       const massstab = gross / 15;
       ctx.save();
       if (!usable) ctx.globalAlpha = 0.38;
@@ -332,12 +344,19 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
         ox: 0,
         oy: 0,
         scale: massstab,
-        box: { x: b.x + b.w / 2, y: symbolY + gross * 0.44 + druck - massstab, w: b.w, h: b.h },
+        box: { x: b.x + b.w * 0.29, y: symbolY + gross * 0.44 + druck - massstab, w: b.w, h: b.h },
       };
       s.atlas.drawWusel(ctx, van, wz, 1, Infinity, PORTRAET[b.id].pose, 0);
       ctx.restore();
+      drawSkillIcon(
+        ctx,
+        b.id,
+        b.x + b.w * 0.68,
+        symbolY + druck,
+        Math.min(b.w * 0.36, 26),
+        symbolFarbe,
+      );
     } else {
-      const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
       drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.6, 30), symbolFarbe);
     }
 
