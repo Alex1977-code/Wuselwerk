@@ -91,6 +91,7 @@ export function baueErdmaennchen() {
     bauch: stoff(FELL_BAUCH),
     pfote: stoff(PFOTE),
     auge: stoff(AUGE),
+    glanz: new THREE.MeshBasicMaterial({ color: 0xfdfaf4 }),
     nase: stoff(NASE),
   };
 
@@ -221,9 +222,15 @@ export function baueErdmaennchen() {
   // dem Kopf und sitzen dadurch in jeder Pose richtig. Die **Maske** darum
   // herum entsteht zur Laufzeit und traegt die Berufsfarbe.
   for (const seite of [-1, 1]) {
-    const auge = new THREE.Mesh(new THREE.SphereGeometry(H * 0.028, 10, 10), m.auge);
-    auge.position.set(seite * H * 0.055, H * 0.03, H * 0.088);
+    const auge = new THREE.Mesh(new THREE.SphereGeometry(H * 0.025, 12, 12), m.auge);
+    auge.position.set(seite * H * 0.058, H * 0.028, H * 0.09);
     kopf.add(auge);
+    // Der Glanzpunkt. Er sitzt oben aussen, wie das Licht: Beide Augen bekommen
+    // ihn an derselben Stelle des Kopfes, nicht spiegelbildlich — sonst sieht
+    // die Figur nicht in eine Richtung, sondern schielt.
+    const glanz = new THREE.Mesh(new THREE.SphereGeometry(H * 0.009, 8, 8), m.glanz);
+    glanz.position.set(seite * H * 0.058 - H * 0.008, H * 0.036, H * 0.104);
+    kopf.add(glanz);
   }
 
   // Die Ohren. Klein und rund und seitlich — das ist der Unterschied zu einem

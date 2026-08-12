@@ -430,7 +430,8 @@ export class SpriteAtlas {
       // Gesicht und muss der Drehung folgen, waehrend ein Schopf ueber dem Kopf
       // sitzt und es nicht muss.
       if (this.manifest.figur === 'erdmaennchen') {
-        drawMaske(ctx, px, py, zustand, farbe, s, false, clip.dreh ?? 0);
+        // Das Halstuch nur bei einem Auftrag: Wer eines traegt, arbeitet.
+        drawMaske(ctx, px, py, zustand, farbe, s, false, clip.dreh ?? 0, auftrag !== null);
       } else {
         drawSchopf(ctx, px, py, zustand, farbe, s, false, platz);
       }

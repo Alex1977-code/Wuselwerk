@@ -104,7 +104,12 @@ const DREHUNG_GRAD = {
   bashing: 24,
   mining: 26,
   digging: 18,
-  blocking: 0,
+  // Zwoelf Grad statt null. Der Blocker soll den Betrachter ansehen — aber
+  // schnurgerade frontal steht dieser Kopf als flache Scheibe mit zwei dunklen
+  // Loechern da, und die Schnauze, das freundlichste Merkmal der Figur, zeigt
+  // in die Kamera und verschwindet. Zwoelf Grad lassen sie erscheinen, ohne die
+  // Aussage „bis hierher und nicht weiter" zu schwaechen.
+  blocking: 12,
   saving: 12,
   dying: 0,
 };

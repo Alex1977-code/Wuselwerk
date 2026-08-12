@@ -16,15 +16,21 @@ import { schopfFarbe } from './schopf';
  * im Gedraenge nichts verdeckt wird und wo der Blick ohnehin hingeht — neben
  * die Augen, oben an der Figur.
  *
- * ## Der Preis, den das hat
+ * ## Der Preis, den das hat — und was daraus folgte
  *
  * Eine Maske liegt **innerhalb** der Silhouette. Der Schopf funktionierte auch
  * deshalb, weil er den Umriss durchbrach und dadurch gegen jeden Hintergrund
  * und ueber jede ueberlappende Figur hinweg zu sehen war. Flache Farbe im
- * Gesicht ist bei zwoelf Pixeln schwaecher. Ausgeglichen wird das dadurch, dass
- * bei dieser Figur viel mehr ueber die **Haltung** laeuft: Die Wachpose ist der
- * Blocker, die Grabhaltung ist der Graeber, gespreizte Glieder sind der Schirm.
- * Farbe muss hier weniger tragen als bei einem gesichtslosen Kiesel.
+ * Gesicht ist bei zwoelf Pixeln schwaecher.
+ *
+ * Genau das ist beim Spielen passiert: „Farbe fehlt." Die Maske ist knapp drei
+ * logische Pixel breit, das Fell ist sandbraun, und damit war die ganze Figur
+ * beige auf beige. Die Antwort steht unten als `HALSTUCH`: ein zweites farbiges
+ * Element direkt unter dem Kopf, an der schmalsten Stelle der Silhouette.
+ *
+ * Es erscheint **nur bei einem Auftrag**, und das ist der eigentliche Gewinn:
+ * Wer eines traegt, arbeitet. Das ist keine Zierde, sondern dieselbe Aussage
+ * wie die Farbe — nur gross genug, um sie im Pulk zu sehen.
  *
  * ## Warum sie gezeichnet und nicht gebacken wird
  *
@@ -50,11 +56,11 @@ export const MASKE_ZUSTAND = ['ruhe', 'kniff', 'weit', 'freude', 'zu'] as const;
  * so klein ist, liest man als Fleck mit Richtung, nicht als Form.
  */
 const FORM: readonly (readonly [number, number, number, number])[] = [
-  [1.35, 0.5, 0.12, 0], // 0 ruhe
-  [1.28, 0.32, 0.0, 0], // 1 kniff — die Arbeit
-  [1.42, 0.66, 0.18, 0], // 2 weit — Schreck, Fall, Wache
-  [1.35, 0.46, 0.3, 0], // 3 freude — der Bogen macht es
-  [1.2, 0.18, -0.1, 0], // 4 zu — der Tod
+  [1.6, 0.62, 0.14, 0], // 0 ruhe
+  [1.52, 0.4, 0.0, 0], // 1 kniff — die Arbeit
+  [1.68, 0.8, 0.2, 0], // 2 weit — Schreck, Fall, Wache
+  [1.6, 0.56, 0.34, 0], // 3 freude — der Bogen macht es
+  [1.42, 0.22, -0.1, 0], // 4 zu — der Tod
 ];
 
 /**
@@ -78,6 +84,19 @@ export function maskeFarbe(skill: SkillId | null): string {
 }
 
 /**
+ * Das Halstuch: halbe Breite, halbe Hoehe, Abstand unter dem Gesichtspunkt.
+ *
+ * Es sitzt am Hals, also an der **schmalsten Stelle** der Figur und direkt unter
+ * dem Kopf. Beides ist Absicht: An der schmalsten Stelle bricht Farbe den Umriss
+ * am staerksten, und unter dem Kopf liegt sie dort, wo der Blick ohnehin ist —
+ * und wo im Gedraenge nichts davor steht.
+ *
+ * Der Zipfel nach hinten ist kein Zierrat: Er gibt dem Tuch eine Richtung und
+ * damit der Figur einen zweiten Richtungshinweis neben der Schnauze.
+ */
+const HALSTUCH = { breite: 1.5, hoehe: 0.62, tief: 1.55, zipfel: 1.1 };
+
+/**
  * Die Maskenfarbe waehrend der Zuendschnur.
  *
  * Dieselbe Warnlampe wie beim Schopf, damit ein Wechsel der Figur den
@@ -94,6 +113,7 @@ export { schopfPuls as maskePuls } from './schopf';
  * @param s Bildpunkte je logischem Pixel.
  * @param spiegeln Blickt die Figur nach links?
  * @param dreh Backwinkel dieser Pose in Grad, aus dem Manifest.
+ * @param halstuch Traegt die Figur gerade einen Auftrag? Nur dann.
  */
 export function drawMaske(
   ctx: CanvasRenderingContext2D,
@@ -104,6 +124,7 @@ export function drawMaske(
   s: number,
   spiegeln = false,
   dreh = 0,
+  halstuch = false,
 ): void {
   const i = Math.max(0, Math.min(FORM.length - 1, Math.round(zustand)));
   const [breite, hoehe, bogen] = FORM[i];
@@ -116,6 +137,26 @@ export function drawMaske(
   ctx.translate(x, y);
   ctx.scale(spiegeln ? -s : s, s);
   ctx.fillStyle = farbe;
+
+  // Das Halstuch, falls die Figur einen Auftrag hat. Zuerst gezeichnet, damit
+  // die Maske darueber liegt — beide sind derselbe Farbton, und an der
+  // Ueberschneidung soll das Gesicht gewinnen.
+  if (halstuch) {
+    const b = HALSTUCH.breite * schmal;
+    ctx.beginPath();
+    ctx.moveTo(versatz - b, HALSTUCH.tief);
+    ctx.quadraticCurveTo(versatz, HALSTUCH.tief + HALSTUCH.hoehe * 2.1, versatz + b, HALSTUCH.tief);
+    ctx.quadraticCurveTo(versatz, HALSTUCH.tief - HALSTUCH.hoehe * 0.5, versatz - b, HALSTUCH.tief);
+    ctx.closePath();
+    ctx.fill();
+    // Der Zipfel, nach hinten haengend.
+    ctx.beginPath();
+    ctx.moveTo(versatz - b * 0.55, HALSTUCH.tief + HALSTUCH.hoehe * 0.4);
+    ctx.lineTo(versatz - b * 0.2, HALSTUCH.tief + HALSTUCH.hoehe * 0.6);
+    ctx.lineTo(versatz - b * 0.75, HALSTUCH.tief + HALSTUCH.zipfel + HALSTUCH.hoehe);
+    ctx.closePath();
+    ctx.fill();
+  }
 
   // Das Band ueber beiden Augen. Ein Bogen, kein Rechteck — ein Rechteck an
   // einem Kopf sieht aus wie ein Balken, ein Bogen wie eine Zeichnung im Fell.

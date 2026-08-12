@@ -157,10 +157,22 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
         }
       });
 
-      it('lässt den Blocker frontal stehen', () => {
-        // Bei beiden Figuren aus demselben Grund: Seine ganze Aussage ist „bis
-        // hierher und nicht weiter", und die richtet sich an den Betrachter.
-        expect(blatt.clips.blocking.dreh ?? 0).toBe(0);
+      it('lässt den Blocker den Betrachter ansehen', () => {
+        // Seine ganze Aussage ist „bis hierher und nicht weiter", und die
+        // richtet sich an den Betrachter — er darf sich also nicht wegdrehen
+        // wie eine laufende Figur.
+        //
+        // Geprüft wird **nahezu frontal**, nicht exakt null. Beim Erdmännchen
+        // stehen zwölf Grad: Schnurgerade von vorn ist sein Kopf eine flache
+        // Scheibe mit zwei dunklen Löchern, und die Schnauze — sein
+        // freundlichstes Merkmal — zeigt in die Kamera und verschwindet. Die
+        // Rückmeldung dazu lautete „etwas gruselig von vorn". Eine Prüfung auf
+        // exakt null hätte diese Korrektur verboten, ohne dass sie etwas
+        // schützt.
+        const blocker = blatt.clips.blocking.dreh ?? 0;
+        const laufend = blatt.clips.walking.dreh ?? 0;
+        expect(blocker).toBeLessThanOrEqual(15);
+        expect(blocker).toBeLessThan(laufend);
       });
     });
   }
