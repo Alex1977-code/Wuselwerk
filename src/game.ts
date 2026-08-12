@@ -54,6 +54,14 @@ import {
   videoEinloesen,
   type LebenStand,
 } from './leben';
+import {
+  AVATARE,
+  NAME_MAX,
+  ladeProfil,
+  nameSaeubern,
+  speichereProfil,
+  type Profil,
+} from './profil';
 
 /**
  * Wie weit ein Finger auf der Karte wandern darf, damit es noch ein Antippen
@@ -141,6 +149,12 @@ export class Game {
   private lebenTafel = false;
   private lebenVerbucht = false;
   private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
+
+  // Spielerprofil: Name und Avatarfarbe (profil.ts).
+  private profil: Profil = ladeProfil();
+  private profilTafel = false;
+  private profilKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
+  private profilChip = { x: 0, y: 0, w: 0, h: 0 };
 
   private pointers = new Map<number, PointerState>();
   private aim: PointerState | null = null;
@@ -450,6 +464,197 @@ export class Game {
       ctx.fillText('Bis morgen!', b1.x + bw / 2, b1.y + 21);
       this.lebenKnoepfe.push(b1);
     }
+  }
+
+  /** Ein rundes Porträt: Figur im Kreis, Ring in der Avatarfarbe. */
+  private portraetDisc(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    r: number,
+    farbe: string,
+    ringDick: number,
+  ): void {
+    ctx.fillStyle = '#0e1420';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    if (this.atlas) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r - ringDick / 2, 0, Math.PI * 2);
+      ctx.clip();
+      // Nah heran: Der Kreis zeigt Kopf und Schultern, nicht die ganze Figur —
+      // bei achtzehn Bildpunkten Radius ist ein Ganzkoerper nur ein Fleck.
+      this.atlas.drawClip(ctx, 'walking', 0, x, y + r * 1.35, (r * 2.1) / 15, false);
+      ctx.restore();
+    }
+    ctx.strokeStyle = farbe;
+    ctx.lineWidth = ringDick;
+    ctx.beginPath();
+    ctx.arc(x, y, r - ringDick / 2, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  /**
+   * Der Profil-Chip unten links und die Profil-Tafel.
+   *
+   * Die Tafel buendelt, was zum Spieler gehoert: Name (mit echtem
+   * Eingabefeld des Geraets, `nameEingeben`), Avatarfarbe und die eigene
+   * Bilanz. Eine **weltweite** Bestenliste braeuchte einen Server und ein
+   * Konto — das Spiel ist eine einzige Datei ohne Netz, deshalb steht hier
+   * ehrlich die Bilanz dieses Geraets (docs/bestenliste-entwurf.md).
+   */
+  private drawProfil(ctx: CanvasRenderingContext2D): void {
+    this.profilKnoepfe = [];
+    const L = this.layout;
+    const av = AVATARE[this.profil.avatar] ?? AVATARE[0];
+
+    // Der Chip: Porträt und Name.
+    ctx.font = '700 14px system-ui, sans-serif';
+    const nameW = ctx.measureText(this.profil.name).width;
+    const chipH = 44;
+    const chipW = chipH + nameW + 18;
+    const cx = 12;
+    const cy = L.cssH - chipH - 12;
+    this.profilChip = { x: cx, y: cy, w: chipW, h: chipH };
+    if (!this.profilTafel) {
+      ctx.fillStyle = 'rgba(10, 14, 22, 0.72)';
+      this.rundBox(ctx, cx, cy, chipW, chipH, chipH / 2);
+      ctx.fill();
+      this.portraetDisc(ctx, cx + chipH / 2, cy + chipH / 2, chipH / 2 - 4, av.farbe, 3);
+      ctx.fillStyle = '#eaf2ff';
+      ctx.font = '700 14px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.profil.name, cx + chipH + 4, cy + chipH / 2 + 1);
+      return;
+    }
+
+    // Die Tafel.
+    ctx.fillStyle = 'rgba(5, 8, 14, 0.6)';
+    ctx.fillRect(0, 0, L.cssW, L.cssH);
+    const tw = Math.min(340, L.cssW - 40);
+    const th = 322;
+    const tx = (L.cssW - tw) / 2;
+    const ty = (L.cssH - th) / 2 - L.cssH * 0.03;
+    ctx.fillStyle = '#141c2a';
+    this.rundBox(ctx, tx, ty, tw, th, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    this.portraetDisc(ctx, tx + tw / 2, ty + 52, 30, av.farbe, 4);
+
+    ctx.fillStyle = '#eaf2ff';
+    ctx.font = '800 19px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.profil.name, tx + tw / 2, ty + 102);
+    const bName = { id: 'name', x: tx + tw / 2 - 70, y: ty + 118, w: 140, h: 30 };
+    ctx.fillStyle = 'rgba(234, 242, 255, 0.14)';
+    this.rundBox(ctx, bName.x, bName.y, bName.w, bName.h, 10);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(234, 242, 255, 0.85)';
+    ctx.font = '600 13px system-ui, sans-serif';
+    ctx.fillText('Namen ändern', bName.x + bName.w / 2, bName.y + 16);
+    this.profilKnoepfe.push(bName);
+
+    // Die Farbwahl: sechs Ringe, der gewaehlte traegt zusaetzlich Weiss.
+    const schritt = Math.min(48, (tw - 40) / AVATARE.length);
+    const reiheX = tx + tw / 2 - (schritt * (AVATARE.length - 1)) / 2;
+    const reiheY = ty + 182;
+    for (let i = 0; i < AVATARE.length; i++) {
+      const ax = reiheX + i * schritt;
+      const gewaehlt = i === this.profil.avatar;
+      ctx.fillStyle = '#0e1420';
+      ctx.beginPath();
+      ctx.arc(ax, reiheY, 17, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = AVATARE[i].farbe;
+      ctx.lineWidth = gewaehlt ? 6 : 4;
+      ctx.beginPath();
+      ctx.arc(ax, reiheY, 13, 0, Math.PI * 2);
+      ctx.stroke();
+      if (gewaehlt) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ax, reiheY, 17.5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      this.profilKnoepfe.push({ id: `avatar-${i}`, x: ax - 21, y: reiheY - 21, w: 42, h: 42 });
+    }
+
+    // Die Bilanz dieses Geraets — die ehrliche kleine Bestenliste.
+    const k = weltkarte(this.progress);
+    ctx.fillStyle = 'rgba(234, 242, 255, 0.75)';
+    ctx.font = '600 14px system-ui, sans-serif';
+    ctx.fillText(
+      `${k.geschafft}/${k.gesamt} Level · ${k.sterne}/${k.sterneMoeglich} ★`,
+      tx + tw / 2,
+      ty + 226,
+    );
+    ctx.font = '400 11px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(234, 242, 255, 0.45)';
+    ctx.fillText('Deine Bilanz auf diesem Gerät.', tx + tw / 2, ty + 246);
+
+    const bw = tw - 48;
+    const bF = { id: 'fertig', x: tx + 24, y: ty + th - 56, w: bw, h: 40 };
+    ctx.fillStyle = '#ffd15c';
+    this.rundBox(ctx, bF.x, bF.y, bF.w, bF.h, 12);
+    ctx.fill();
+    ctx.fillStyle = '#241d08';
+    ctx.font = '700 15px system-ui, sans-serif';
+    ctx.fillText('Fertig', bF.x + bw / 2, bF.y + 21);
+    this.profilKnoepfe.push(bF);
+  }
+
+  /**
+   * Der Name kommt aus einem **echten** Eingabefeld des Geraets — mit
+   * nativer Tastatur, Umlauten und allem. Ein selbstgemaltes Tastenfeld auf
+   * der Leinwand waere mehr Arbeit und schlechter. Das Feld liegt kurz ueber
+   * dem Spiel und raeumt sich selbst weg.
+   */
+  private nameEingeben(): void {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = NAME_MAX;
+    input.value = this.profil.name;
+    input.autocomplete = 'off';
+    Object.assign(input.style, {
+      position: 'fixed',
+      left: '50%',
+      top: '28%',
+      transform: 'translate(-50%, -50%)',
+      width: '70%',
+      maxWidth: '280px',
+      fontSize: '18px',
+      padding: '12px',
+      borderRadius: '12px',
+      border: '2px solid #ffd15c',
+      background: '#141c2a',
+      color: '#eaf2ff',
+      textAlign: 'center',
+      outline: 'none',
+      zIndex: '10',
+    } as Partial<CSSStyleDeclaration>);
+    let fertig = false;
+    const uebernehmen = (): void => {
+      if (fertig) return;
+      fertig = true;
+      this.profil = { ...this.profil, name: nameSaeubern(input.value) };
+      speichereProfil(this.profil);
+      input.remove();
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') input.blur();
+    });
+    input.addEventListener('blur', uebernehmen);
+    document.body.appendChild(input);
+    input.focus();
+    input.select();
   }
 
   private toMenu(zentrieren = true): void {
@@ -787,6 +992,28 @@ export class Game {
       if (!this.audio.musicPlaying) {
         this.audio.setBesetzung('karte');
         this.audio.startMusic();
+      }
+      // Die Profil-Tafel liegt ueber der Karte und faengt jede Beruehrung.
+      if (this.profilTafel) {
+        const k = this.profilKnoepfe.find((b) => inBox(b, x, y));
+        if (k) {
+          this.audio.knopf();
+          if (k.id === 'fertig') {
+            this.profilTafel = false;
+          } else if (k.id === 'name') {
+            this.nameEingeben();
+          } else if (k.id.startsWith('avatar-')) {
+            this.profil = { ...this.profil, avatar: Number(k.id.slice(7)) };
+            speichereProfil(this.profil);
+          }
+        }
+        return;
+      }
+      // Der Profil-Chip unten links oeffnet die Tafel.
+      if (inBox(this.profilChip, x, y)) {
+        this.audio.knopf();
+        this.profilTafel = true;
+        return;
       }
       // Die Leben-Tafel liegt ueber der Karte und faengt jede Beruehrung —
       // darunter darf nichts scrollen und erst recht nichts starten.
@@ -1191,6 +1418,7 @@ export class Game {
         atlas: this.atlas,
       });
       this.drawLeben(ctx);
+      this.drawProfil(ctx);
       this.buttons = [];
       return;
     }
