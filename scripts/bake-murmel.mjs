@@ -19,7 +19,16 @@
  * Zeichnen haelt statt fuer einen Rechenfehler. Weicht ein Bild um mehr als
  * `TOLERANZ` Bildpunkte ab, bricht der Vorgang ab.
  *
+ * ## Die Ansicht
+ *
+ * Gebacken wird in **Dreiviertelansicht**, je Pose verschieden weit — siehe
+ * `DREHUNG_GRAD`. Das ist die Antwort auf „laeuft seitwaerts" und die einzige
+ * Stelle, an der sie zu geben ist: Im Zeichner bleiben die Augen in der Mitte,
+ * weil sie ins Bild gebacken sind.
+ *
  * Aufruf: `node scripts/bake-murmel.mjs [--pose walking] [--probe]`
+ *         `[--dreh 42] [--name w42]` — beides nur zum Ausprobieren einzelner
+ *         Winkel; die verbindliche Tabelle steht unten.
  */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
@@ -33,6 +42,62 @@ const ZIEL = 'src/art';
 const args = process.argv.slice(2);
 const nurPose = args.includes('--pose') ? args[args.indexOf('--pose') + 1] : null;
 const probe = args.includes('--probe');
+/** Alle Posen mit demselben Winkel backen — nur zum Ausprobieren. */
+const drehAlle = args.includes('--dreh') ? Number(args[args.indexOf('--dreh') + 1]) : null;
+/** Abweichender Ausgabename der Probe, damit man Winkel nebeneinander legen kann. */
+const probeName = args.includes('--name') ? args[args.indexOf('--name') + 1] : 'murmel-blatt';
+
+/**
+ * Wie weit sich die Figur je Pose aus der Kamera **wegdreht**, in Grad.
+ *
+ * ## Das Problem, das nur hier zu loesen ist
+ *
+ * „Laeuft seitwaerts." Die Rueckmeldung kam zweimal, und beim zweiten Mal war
+ * klar, dass es keine Frage der Neigung ist: Die Murmel wurde bis dahin in
+ * **reiner Vorderansicht** gebacken. Augen mittig, Arme nach beiden Seiten,
+ * spiegelsymmetrischer Umriss. So eine Figur kann sich waagerecht bewegen,
+ * soviel sie will — das Auge liest Verschiebung, nicht Gang. Sie sieht den
+ * Betrachter an und rutscht dabei zur Seite.
+ *
+ * Im Zeichner laesst sich das nicht beheben. Neigen, stauchen, scheren: Alles
+ * davon verschiebt Pixel, aber **die Augen bleiben in der Mitte**, weil sie ins
+ * Bild gebacken sind. Und die Blickrichtung ist der staerkste Richtungshinweis,
+ * den eine Figur ueberhaupt hat.
+ *
+ * ## Warum eine Drehung um die Hochachse
+ *
+ * Weil sie genau das tut, was fehlt, und sonst nichts: Ein Koerper, der sich um
+ * seine Hochachse dreht, behaelt seine Hoehe, seinen Fusspunkt und seine
+ * Silhouettenbreite ungefaehr — aber seine Augen wandern in die Blickrichtung,
+ * und der vordere Arm kommt nach vorn. Das ist die Dreiviertelansicht, mit der
+ * jedes Zeichentrickstudio seit hundert Jahren Bewegungsrichtung erzaehlt.
+ *
+ * ## Warum nicht alle Posen gleich
+ *
+ * Weil nicht jede Pose eine Richtung hat. Ein Blocker steht ausdruecklich
+ * frontal — das ist seine ganze Aussage („bis hierher und nicht weiter"), und
+ * ihn wegzudrehen hiesse, ihm zu widersprechen. Rettung und Tod sind
+ * Zustaende, keine Bewegungen. Der Rest dreht sich, und zwar unterschiedlich
+ * weit: Wer geht, zeigt am meisten Profil; wer an einer Wand steht und
+ * hineinhaemmert, weniger, weil er sonst aus der Wand herausdreht.
+ *
+ * Positiv heisst: nach rechts, in die Blickrichtung des ungespiegelten Blatts.
+ */
+const DREHUNG_GRAD = {
+  walking: 42,
+  falling: 24,
+  floating: 18,
+  climbing: 30,
+  hoisting: 34,
+  building: 38,
+  bashing: 34,
+  mining: 36,
+  digging: 26,
+  // Der Blocker bleibt frontal. Siehe oben.
+  blocking: 0,
+  saving: 16,
+  dying: 0,
+};
 
 /**
  * Ueberabtastung je Achse.
@@ -125,6 +190,7 @@ const AUFTRAG = posenListe.map((name, i) => ({
   spalte0: 0,
   zeiten: zeitpunkte(name),
   anker: anker.posen[name].frames.map((f) => f.anchor_px),
+  dreh: ((drehAlle ?? DREHUNG_GRAD[name] ?? 0) * Math.PI) / 180,
   index: i,
 }));
 
@@ -215,19 +281,29 @@ window.laden = async (url) => {
  * umgerechnet. Genau so ist er laut Integrationsdatei entstanden — wenn beides
  * uebereinstimmt, stimmt der Backvorgang.
  */
-window.bild = (pose, zeit) => {
+const HOCHACHSE = new THREE.Vector3(0, 1, 0);
+
+window.bild = (pose, zeit, dreh) => {
   const clip = clips[pose];
   if (!clip) throw new Error('Kein Clip ' + pose);
   mixer.stopAllAction();
   const action = mixer.clipAction(clip);
   action.reset();
   action.play();
+  // Die Dreiviertelansicht: Die Figur dreht sich um ihre Hochachse aus der
+  // Kamera weg. Begruendung siehe DREHUNG_GRAD im Backskript.
+  wurzel.rotation.set(0, dreh, 0);
   mixer.setTime(zeit);
   wurzel.updateMatrixWorld(true);
 
   renderer.render(scene, camera);
 
   const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELLE];
+  // Zurueck in die Vorderansicht. Die mitgelieferte Ankertabelle ist dort
+  // gemessen worden, also muss die Probe auch dort stattfinden — sonst
+  // prueft man die Drehung gegen eine Tabelle, die sie nicht kennt, und
+  // verliert genau die Absicherung, um die es geht.
+  const vorn = (v) => v.clone().applyAxisAngle(HOCHACHSE, -dreh);
 
   const p = new THREE.Vector3();
   crown.getWorldPosition(p);
@@ -239,15 +315,27 @@ window.bild = (pose, zeit) => {
   // wird. Die Spitze ist der Armknochen, entlang seiner eigenen Achse
   // verlaengert; ein Knochenursprung allein saesse an der Schulter, und ein
   // Werkzeug aus der Schulter sieht aus wie ein Pfeil im Ruecken.
+  //
+  // Ausgewaehlt wird in der **Vorderansicht**. Nach einer Drehung um die
+  // Hochachse kann der hintere Arm im Bild weiter rechts stehen als der
+  // vordere; wer dort auswaehlt, gibt der Figur das Werkzeug in die falsche
+  // Hand — und zwar erst ab einem bestimmten Winkel, was die schlechteste
+  // Sorte Fehler ist.
   let hand = null;
+  let handVorn = null;
   for (const a of arme) {
     const t = a.localToWorld(new THREE.Vector3(0, ARM_LAENGE, 0));
-    if (!hand || t.x > hand.x) hand = t;
+    const v = vorn(t);
+    if (!handVorn || v.x > handVorn.x) {
+      hand = t;
+      handVorn = v;
+    }
   }
 
   return {
     bild: renderer.domElement.toDataURL('image/png'),
     anker: zelle(p),
+    ankerVorn: zelle(vorn(p)),
     hand: zelle(hand),
   };
 };
@@ -292,19 +380,25 @@ if (!geladen.crown) throw new Error('Ohne den Knochen Crown laesst sich der Scho
 // --- Backen ------------------------------------------------------------------
 const bilder = [];
 const haende = [];
+const anker_gemessen = [];
 const abweichungen = [];
 for (const a of AUFTRAG) {
   for (let i = 0; i < a.zeiten.length; i++) {
     const r = await page.evaluate(
-      ([p, t]) => window.bild(p, t),
-      [a.name, a.zeiten[i]],
+      ([p, t, d]) => window.bild(p, t, d),
+      [a.name, a.zeiten[i], a.dreh],
     );
     bilder.push({ pose: a.name, reihe: a.reihe, spalte: i, png: r.bild });
     haende.push({ pose: a.name, bild: i, hand: r.hand });
+    // Der **gemessene** Anker geht ins Blatt, nicht der aus der Tabelle: Er
+    // gehoert zu dem Bild, das gerade entstanden ist. Solange nicht gedreht
+    // wird, sind beide dasselbe (die groesste Abweichung lag bei 0,30 px) —
+    // sobald gedreht wird, ist nur der gemessene richtig.
+    anker_gemessen.push({ pose: a.name, bild: i, punkt: r.anker });
     const soll = a.anker[i];
-    const dx = r.anker[0] - soll[0];
-    const dy = r.anker[1] - soll[1];
-    abweichungen.push({ pose: a.name, bild: i, dx, dy, ist: r.anker, soll });
+    const dx = r.ankerVorn[0] - soll[0];
+    const dy = r.ankerVorn[1] - soll[1];
+    abweichungen.push({ pose: a.name, bild: i, dx, dy, ist: r.ankerVorn, soll });
   }
   process.stdout.write(`  ${a.name} (${a.zeiten.length})\n`);
 }
@@ -358,8 +452,8 @@ const daten = Buffer.from(blatt.split(',')[1], 'base64');
 
 if (probe) {
   mkdirSync('art-src/proben', { recursive: true });
-  writeFileSync('art-src/proben/murmel-blatt.webp', daten);
-  console.log(`\nProbe: art-src/proben/murmel-blatt.webp (${Math.round(daten.length / 1024)} kB)`);
+  writeFileSync(`art-src/proben/${probeName}.webp`, daten);
+  console.log(`\nProbe: art-src/proben/${probeName}.webp (${Math.round(daten.length / 1024)} kB)`);
 } else {
   // Das alte Blatt weicht. Beide Endungen weg, sonst findet `findAtlasSource`
   // womoeglich noch das Vorgaengerbild.
@@ -382,6 +476,15 @@ if (probe) {
         {
           row: reihe,
           holds: anker.posen[name].frames.map((f) => f.ticks),
+          // Wie weit diese Pose aus der Kamera weggedreht gebacken wurde.
+          //
+          // Steht hier, damit **das Blatt selbst sagt, was es zeigt**. Ohne
+          // diese Zahl laesst sich ein altes, frontal gebackenes Blatt nicht
+          // von einem neuen unterscheiden — und genau das ist der Fehler, der
+          // hier zweimal passiert ist: Man sieht dem Bild nicht an, dass es
+          // veraltet ist, man sieht nur, dass die Figur seitwaerts laeuft. Ein
+          // Test haelt sich daran fest (siehe `tests/atlas.test.ts`).
+          dreh: Number((drehAlle ?? DREHUNG_GRAD[name] ?? 0).toFixed(1)),
           ...(anker.posen[name].loop ? {} : { once: true }),
           // Der Schopf hat je Einzelbild eine eigene Stelle und einen eigenen
           // Zustand. Beides gehoert ins Manifest und nicht in eine zweite
@@ -390,10 +493,20 @@ if (probe) {
           // Die Tabelle rechnet in der 28er-Zelle der Vorlage. Hier gilt das
           // aus der Figurenhoehe zurueckgerechnete Mass, also wird umgerechnet
           // — sonst sitzt der Schopf in einer anderen Einheit als der Koerper.
-          anchors: anker.posen[name].frames.map((f) => [
-            Number(((f.anchor_px[0] / ZELLE) * LOGISCH).toFixed(2)),
-            Number(((f.anchor_px[1] / ZELLE) * LOGISCH).toFixed(2)),
-          ]),
+          //
+          // Genommen wird der **gemessene** Wert, nicht der aus der Tabelle.
+          // Die Tabelle beschreibt die Vorderansicht; das Blatt zeigt seit der
+          // Dreiviertelansicht etwas anderes, und der Schopf gehoert auf den
+          // Kopf im Bild und nicht auf den in der Tabelle. Dass die Tabelle
+          // trotzdem stimmt, prueft der Abgleich weiter oben — dort wird
+          // zurueckgedreht.
+          anchors: anker_gemessen
+            .filter((g) => g.pose === name)
+            .sort((a, b) => a.bild - b.bild)
+            .map((g) => [
+              Number(((g.punkt[0] / ZELLE) * LOGISCH).toFixed(2)),
+              Number(((g.punkt[1] / ZELLE) * LOGISCH).toFixed(2)),
+            ]),
           tuff: anker.posen[name].frames.map((f) => f.tuff),
           // Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem
           // Modell gemessen. Der Zeichner entscheidet anhand der Pose, ob und

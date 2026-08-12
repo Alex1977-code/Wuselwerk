@@ -68,6 +68,15 @@ export interface ClipDef {
   tuff?: number[];
   /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
   hands?: [number, number][];
+  /**
+   * Wie weit diese Pose beim Backen aus der Kamera weggedreht wurde, in Grad.
+   *
+   * Der Renderer braucht sie nicht — die Ansicht steckt ja im Bild. Sie steht
+   * hier, damit **das Blatt selbst sagt, was es zeigt**: Ein altes, frontal
+   * gebackenes Blatt ist von einem neuen sonst nicht zu unterscheiden, und der
+   * Fehler faellt erst als „läuft seitwärts" auf. Ein Test hält sich daran fest.
+   */
+  dreh?: number;
 }
 
 export interface AtlasManifest {
@@ -119,17 +128,17 @@ export const DEFAULT_MANIFEST: AtlasManifest = {
  *
  * ## Warum das hier steht und nicht im Blatt
  *
- * Weil es genau das war, was gefehlt hat: „läuft seitwärts". Das gebackene
- * Blatt zeigt die Murmel von vorn — sie hat kein Profil, an dem man eine
- * Laufrichtung ablesen könnte, und ein Kiesel hat auch keine Beine, deren
- * Stellung es verrät. Bewegt sich so eine Figur waagerecht über den Schirm,
- * liest das Auge **Verschiebung**, nicht Gang: Sie rutscht seitwärts, wie ein
- * Spielstein, den jemand schiebt.
+ * Weil eine Neigung nichts ist, was man backen sollte. Sie ist eine Haltung,
+ * kein Körperbau: Wer geht, fällt nach vorn und fängt sich. Im Blatt wäre sie
+ * in jedes einzelne Bild eingebrannt und liesse sich nicht mehr nachstellen.
  *
- * Die Neigung ist das billigste Gegenmittel und zugleich das richtige. Wer
- * geht, fällt nach vorn und fängt sich; wer schnell geht, fällt weiter nach
- * vorn. Ein Körper, der sich in seine Richtung legt, **will** dorthin — und das
- * ist genau die Aussage, die dem Bild gefehlt hat.
+ * Was sie **nicht** ist: die Antwort auf „läuft seitwärts". Das war der erste
+ * Versuch, und er ist gescheitert — eine Neigung verschiebt Pixel, aber die
+ * Augen der Figur bleiben dabei in der Mitte, und die Blickrichtung ist der
+ * stärkste Richtungshinweis, den es gibt. Dass die Murmel jetzt in ihre
+ * Laufrichtung **sieht**, kommt aus dem Modell (`DREHUNG_GRAD` im Backskript).
+ * Die Neigung kommt obendrauf und macht aus einer gedrehten Figur eine, die
+ * sich bewegt.
  *
  * Gedreht wird um den **Fusspunkt**, weil dort der Kontakt zum Boden ist. Um
  * die Mitte gedreht rutschten die Füsse unter der Figur weg.
@@ -141,52 +150,33 @@ export const DEFAULT_MANIFEST: AtlasManifest = {
  * Behauptung.
  */
 export const LEHNE: Record<string, number> = {
-  walking: 0.2,
+  walking: 0.14,
   // Beim Fallen kippt es zurück: Der Körper bleibt hinter den Füssen.
   falling: -0.09,
   climbing: 0.06,
   // Der Aufschwung über die Kante ist die stärkste Bewegung, die es gibt.
-  hoisting: 0.24,
-  bashing: 0.12,
-  mining: 0.14,
+  hoisting: 0.2,
+  bashing: 0.09,
+  mining: 0.11,
   digging: 0.04,
-  building: 0.08,
+  building: 0.07,
 };
 
-/**
- * Wie schmal die Figur je Zustand wird — die zweite Hälfte derselben Antwort.
+/*
+ * Hier stand eine Tabelle `DREHUNG`, die das Blatt waagerecht gestaucht hat.
  *
- * ## Warum die Neigung allein nicht reicht
+ * Sie war der Versuch, die Dreiviertelansicht **im Zeichner** herzustellen: Ein
+ * schmalerer Umriss ist die Vorderansicht einer weggedrehten Figur, also müsste
+ * eine Stauchung genügen. Sie genügt nicht, und der Grund ist der Kern der
+ * ganzen Sache: Eine Stauchung schiebt Pixel zusammen, aber **die Augen bleiben
+ * in der Mitte** — sie sind ins Bild gebacken. Die Blickrichtung ist der
+ * stärkste Richtungshinweis, den eine Figur hat, und genau der lässt sich hier
+ * nicht erzeugen. Die Rückmeldung „läuft immer noch seitwärts" kam prompt.
  *
- * Weil sie das falsche Problem löst. Die Neigung sagt „sie fällt nach vorn";
- * was am Bild aber wirklich stört, ist, dass die Murmel den Betrachter **ansieht,
- * während sie zur Seite läuft**. Ihre beiden Augen sitzen mittig, ihre Arme
- * stehen nach beiden Seiten ab, ihr Umriss ist spiegelsymmetrisch — das ist
- * eine Figur in Vorderansicht, und eine Figur in Vorderansicht, die sich
- * waagerecht bewegt, rutscht. Sie geht nicht.
- *
- * ## Was ein schmalerer Umriss tut
- *
- * Er ist die Vorderansicht einer Figur, die sich **weggedreht** hat. Das ist
- * kein Effekt, sondern Perspektive: Ein Körper, der sich um die Hochachse
- * dreht, wird im Bild schmaler, und die Augen rücken zusammen. Genau das
- * passiert hier, und weil das Blatt gestaucht statt neu gezeichnet wird, kostet
- * es nichts.
- *
- * Zehn Prozent sind wenig genug, dass niemand eine Stauchung sieht, und genug,
- * dass der Umriss aufhört, spiegelsymmetrisch zu sein. Mehr sähe nach
- * Papierfigur aus.
- *
- * Nur die Zustände mit einer Richtung. Ein Blocker steht ausdrücklich frontal —
- * das ist seine ganze Aussage, und ihn wegzudrehen hiesse, ihm zu widersprechen.
+ * Gedreht wird deshalb jetzt das **Modell**, beim Backen (`DREHUNG_GRAD` in
+ * `scripts/bake-murmel.mjs`). Das Blatt bringt die Ansicht mit; eine Stauchung
+ * darüber wäre eine zweite und würde die Figur platt drücken.
  */
-export const DREHUNG: Record<string, number> = {
-  walking: 0.9,
-  climbing: 0.92,
-  hoisting: 0.9,
-  bashing: 0.92,
-  mining: 0.92,
-};
 
 /** Welcher Clip gehört zu welchem Zustand? */
 export function clipForWusel(w: Wusel): string | null {
@@ -358,8 +348,6 @@ export class SpriteAtlas {
     // Erst spiegeln, dann neigen — dadurch ist „vorn" in beiden Blickrichtungen
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     if (LEHNE[name]) ctx.rotate(LEHNE[name]);
-    // Und schmaler: die Vorderansicht einer weggedrehten Figur. Siehe `DREHUNG`.
-    if (DREHUNG[name]) ctx.scale(DREHUNG[name], 1);
     ctx.drawImage(
       this.image,
       frame * cw * ppl,

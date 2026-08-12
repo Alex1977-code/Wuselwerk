@@ -1,9 +1,9 @@
-import { WUSEL_H } from '../core/constants';
+import { SAVING_TICKS, WUSEL_H } from '../core/constants';
 import { State, type Wusel } from '../core/types';
 import { sx, sy, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
 import { drawWerkzeug } from './werkzeug';
-import { DREHUNG, LEHNE, clipForWusel } from './atlas';
+import { LEHNE, clipForWusel } from './atlas';
 
 /**
  * Die Murmel, im Code gezeichnet.
@@ -58,6 +58,40 @@ interface Haltung {
   schopf?: number;
 }
 
+/**
+ * Wie weit sich die Figur je Zustand wegdreht, 0 bis 1.
+ *
+ * ## Warum die Rueckfallebene das selbst rechnen muss
+ *
+ * Das gebackene Blatt bekommt seine Dreiviertelansicht aus dem Modell
+ * (`DREHUNG_GRAD` in `scripts/bake-murmel.mjs`) — dort dreht sich eine echte
+ * Figur, und ihre Augen wandern von selbst mit. Hier gibt es kein Modell, nur
+ * Kurven. Nachgestellt wird die Drehung deshalb aus ihren zwei sichtbaren
+ * Folgen: Der Umriss wird schmaler, und die Augen ruecken in die
+ * Laufrichtung.
+ *
+ * Die zweite Folge ist die wichtige. Genau daran ist der erste Versuch
+ * gescheitert, der nur gestaucht hat: Ohne wandernde Augen sieht die Figur
+ * weiter geradeaus, egal wie schmal sie wird.
+ *
+ * Die Werte sind die Sinuswerte der Winkel aus dem Backskript, gerundet — so
+ * laufen beide Wege nicht auseinander, wenn jemand dort etwas aendert.
+ */
+export const PROFIL: Record<string, number> = {
+  walking: 0.67,
+  falling: 0.41,
+  floating: 0.31,
+  climbing: 0.5,
+  hoisting: 0.56,
+  building: 0.62,
+  bashing: 0.56,
+  mining: 0.59,
+  digging: 0.44,
+  blocking: 0,
+  saving: 0.28,
+  dying: 0,
+};
+
 const HALTUNG: Record<string, Haltung> = {
   walking: { neigung: 0.1, stauch: 1, arme: 0.35 },
   falling: { neigung: -0.12, stauch: 0.93, arme: -0.7, schopf: 5 },
@@ -96,23 +130,28 @@ export function drawWusel(
   const pose = clipForWusel(w);
   if (!pose) return;
   const ha = HALTUNG[pose] ?? HALTUNG.walking;
+  const profil = PROFIL[pose] ?? 0;
 
   const s = v.scale;
   const fx = Math.round(sx(v, w.x));
   const fy = Math.round(sy(v, w.y));
 
-  // Das Sterben flacht ab. Der Fortschritt kommt aus der Uhr der Figur, nicht
-  // aus einem globalen Takt.
+  // Die beiden einmaligen Ablaeufe schrumpfen beziehungsweise flachen ab. Der
+  // Fortschritt kommt aus der Uhr der Figur, nicht aus einem globalen Takt.
   //
-  // Die Rettung stand frueher auch hier — sie schrumpfte die Figur auf der
-  // Stelle. Das macht jetzt `Scene.rettungsSprung`, und zwar fuer **beide**
-  // Zeichenwege gemeinsam: Ein Sprung ins Tor braucht die Stelle des Tors, und
-  // die kennt nur die Szene. Bliebe die Schrumpfung zusaetzlich hier, schrumpfte
-  // die Figur zweimal.
+  // Beides steht hier und nicht in der Szene, weil das gebackene Blatt es
+  // genauso macht: Seine sechs Rettungsbilder zeigen eine Figur, die kleiner
+  // wird. Was die Szene beisteuert, ist allein der **Bogen zum Tor** — der
+  // braucht die Stelle des Tors, und die kennt nur sie. Stuende das Schrumpfen
+  // auch dort, schrumpfte die Figur auf diesem Weg zweimal.
   let schwund = 1;
   let platt = 1;
   let deckung = 1;
-  if (w.state === State.DYING) {
+  if (w.state === State.SAVING) {
+    const t = Math.min(1, w.timer / SAVING_TICKS);
+    schwund = Math.max(0.05, 1 - t);
+    deckung = Math.max(0, 1 - t * 0.9);
+  } else if (w.state === State.DYING) {
     const t = Math.min(1, w.timer / 26);
     platt = 1 + t * 2.6;
     schwund = Math.max(0.08, 1 - t * 0.9);
@@ -133,9 +172,10 @@ export function drawWusel(
   // eine gehende Murmel seitwaerts zu rutschen schien statt zu laufen. Dieselbe
   // Tabelle wie beim gebackenen Blatt, damit beide Wege gleich laufen.
   ctx.rotate(ha.neigung * 0.5 + (LEHNE[pose] ?? 0));
-  // Und schmaler in den gerichteten Zustaenden — dieselbe Tabelle wie beim
-  // gebackenen Blatt. Siehe `DREHUNG`.
-  if (DREHUNG[pose]) ctx.scale(DREHUNG[pose], 1);
+  // Die Dreiviertelansicht: schmaler, weil eine weggedrehte Figur schmaler
+  // erscheint. Siehe `PROFIL` — das Verschieben der Augen weiter unten ist der
+  // wichtigere Teil davon.
+  if (profil > 0) ctx.scale(1 - profil * 0.22, 1);
   ctx.translate(0, wippe);
 
   // Fuesse zuerst — sie liegen hinter dem Koerper und schauen nur unten heraus.
@@ -168,12 +208,23 @@ export function drawWusel(
 
   // Augen: zwei Punkte im oberen Drittel. Sie sind das Einzige im Koerper, was
   // dunkel sein darf — deshalb darf auch kein Werkzeug hineinragen.
+  //
+  // Und sie wandern in die Laufrichtung. **Das ist der eigentliche Punkt der
+  // ganzen Dreiviertelansicht**: Ein Koerper, der sich um die Hochachse dreht,
+  // verschiebt seine Augen zur Seite, weil sie vorn auf ihm sitzen. Neigen und
+  // Stauchen erzeugen das nicht — beim gebackenen Blatt geht es nur ueber das
+  // Modell, hier geht es, weil diese Augen im Code entstehen.
+  //
+  // Zugleich ruecken sie zusammen: Der Abstand zweier Punkte auf einer
+  // gedrehten Kugel verkuerzt sich mit dem Kosinus.
   if (deckung > 0.2 && platt < 2) {
     ctx.fillStyle = AUGEN;
     const ar = Math.max(0.5, breite * 0.13);
+    const versatz = breite * 0.46 * profil;
+    const abstand = breite * 0.3 * (1 - profil * 0.3);
     for (const seite of [-1, 1]) {
       ctx.beginPath();
-      ctx.ellipse(seite * breite * 0.3, -h * 0.66, ar, ar * 1.15, 0, 0, Math.PI * 2);
+      ctx.ellipse(versatz + seite * abstand, -h * 0.66, ar, ar * 1.15, 0, 0, Math.PI * 2);
       ctx.fill();
     }
   }

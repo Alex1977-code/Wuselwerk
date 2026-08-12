@@ -106,13 +106,17 @@ export const DYING_TICKS = 26;
 /**
  * Wie lange die Rettung dauert.
  *
- * 18 Ticks waren 0,3 Sekunden — genug, um zu verschwinden, zu wenig, um
- * anzukommen. Seit die Figur einen Bogen in die Tormitte springt
- * (`Scene.rettungsSprung`), ist das die Dauer **einer sichtbaren Bewegung**,
- * und die braucht knapp eine halbe Sekunde. Kuerzer sieht man den Sprung nicht,
- * laenger haelt er den Nachschub auf.
+ * Achtzehn Ticks, und das ist keine freie Wahl: Genau so lang ist die gebackene
+ * Rettungsanimation (sechs Bilder zu je drei Ticks). Wer den Zustand laenger
+ * laufen laesst, bekommt am Ende Standzeit auf dem letzten Bild — und das
+ * letzte Bild zeigt eine Figur, die schon verschwunden ist. Sie saesse dann
+ * unsichtbar in der Tuer und hielte den Nachschub auf.
+ *
+ * Der Sprung in die Tormitte (`Scene.rettungsSprung`) passt sich dem an, statt
+ * umgekehrt: Er ist nach `BOGEN_ANTEIL` dieser Zeit fertig, weil das Blatt im
+ * letzten Drittel ohnehin nichts mehr zeigt.
  */
-export const SAVING_TICKS = 26;
+export const SAVING_TICKS = 18;
 /** Wartezeit, bis sich die Falltuer oeffnet. */
 export const HATCH_OPEN_TICKS = 45;
 

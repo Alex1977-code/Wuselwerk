@@ -34,6 +34,15 @@ interface HillLayer {
 
 const MAX_PARTICLES = 320;
 
+/**
+ * Welcher Anteil der Rettungsdauer der Sprung dauert.
+ *
+ * Das letzte Drittel der gebackenen Rettung zeigt eine Figur, die schon fast
+ * verschwunden ist. Eine Bewegung, die erst dort ankommt, sieht niemand — also
+ * ist der Bogen vorher fertig.
+ */
+const BOGEN_ANTEIL = 0.62;
+
 /** Alles, was im Spielfeld gezeichnet wird — Hintergrund, Terrain, Figuren, Partikel. */
 export class Scene {
   readonly palette: Palette;
@@ -360,12 +369,7 @@ export class Scene {
       // herum: Beide Wege (Blatt und prozedural) rechnen ihre Stelle aus der
       // Weltkoordinate aus, also gilt eine aeussere Verschiebung fuer beide.
       const sprung = this.rettungsSprung(w, world);
-      if (sprung) {
-        ctx.translate(fx + sprung.dx * v.scale, fy + sprung.dy * v.scale);
-        ctx.scale(sprung.k, sprung.k);
-        ctx.translate(-fx, -fy);
-        ctx.globalAlpha = sprung.deckung;
-      }
+      if (sprung) ctx.translate(sprung.dx * v.scale, sprung.dy * v.scale);
 
       // Die Warnlampe des Sprengmeisters: Schein dahinter, Licht darauf.
       if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
@@ -395,24 +399,31 @@ export class Scene {
    * ## Was jetzt passiert
    *
    * Ein Bogen zur Mitte des Tors: Die Figur setzt ab, steigt, kommt auf der
-   * Schwelle an und geht dort erst ins Licht. Drei Teile, und jeder tut etwas:
+   * Schwelle an und geht dort erst ins Licht. Zwei Teile:
    *
    * - **Der Weg** wird weich ein- und ausgeblendet (`smoothstep`), damit der
    *   Absprung kein Ruck ist.
    * - **Der Bogen** ist ein halber Sinus. Eine gerade Linie zum Tor waere ein
    *   Gleiten; erst die Hoehe macht daraus einen Sprung.
-   * - **Das Verschwinden** faengt erst nach gut der Haelfte an. Wer sofort
-   *   verblasst, springt nicht mehr sichtbar.
+   *
+   * ## Warum hier **nicht** geschrumpft wird
+   *
+   * Weil das Blatt es schon tut. Die sechs gebackenen Bilder der Rettung zeigen
+   * eine Figur, die kleiner wird und verschwindet — das kommt aus dem Modell.
+   * Ein zweites Schrumpfen darueber waere quadratisch: Die Figur waere nach
+   * einem Drittel des Sprungs weg, und man saehe von dem Bogen genau nichts.
+   * Genau dieser Fehler stand hier, bis der Blattabzug ihn gezeigt hat.
+   *
+   * Der Bogen ist deshalb frueher fertig als der Zustand (`BOGEN_ANTEIL`): Was
+   * das Blatt im letzten Drittel zeigt, ist schon fast nichts mehr, und eine
+   * Bewegung, die dort noch laeuft, sieht niemand.
    *
    * Zurueck kommen logische Pixel, kein Bildschirmmass — der Aufrufer
    * multipliziert mit dem Massstab. Das haelt die Rechnung von der Kamera frei.
    */
-  private rettungsSprung(
-    w: Wusel,
-    world: World,
-  ): { dx: number; dy: number; k: number; deckung: number } | null {
+  private rettungsSprung(w: Wusel, world: World): { dx: number; dy: number } | null {
     if (w.state !== State.SAVING) return null;
-    const t = Math.min(1, w.timer / SAVING_TICKS);
+    const t = Math.min(1, w.timer / (SAVING_TICKS * BOGEN_ANTEIL));
     const weich = t * t * (3 - 2 * t);
     const e = world.exit;
     // Ziel ist die Schwelle in der Tormitte, nicht der Mittelpunkt des Rechtecks:
@@ -420,14 +431,7 @@ export class Scene {
     const zielX = e.x + e.w / 2;
     const zielY = e.y + e.h * 0.86;
     const bogen = Math.sin(t * Math.PI) * WUSEL_H * 0.6;
-    // Das Schrumpfen setzt spaet ein — vorher soll man den Sprung sehen.
-    const spaet = Math.max(0, (t - 0.55) / 0.45);
-    return {
-      dx: (zielX - w.x) * weich,
-      dy: (zielY - w.y) * weich - bogen,
-      k: 1 - spaet * 0.86,
-      deckung: 1 - spaet * spaet,
-    };
+    return { dx: (zielX - w.x) * weich, dy: (zielY - w.y) * weich - bogen };
   }
 
   /**

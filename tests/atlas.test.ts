@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MANIFEST } from '../src/render/atlas';
+import { PROFIL } from '../src/render/sprites';
 import type { AtlasManifest } from '../src/render/atlas';
 import { WUSEL_H } from '../src/core/constants';
 // Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
@@ -95,6 +96,53 @@ describe('Ausgeliefertes Sprite-Blatt', () => {
         expect(t, `Schopfzustand in ${name}`).toBeGreaterThanOrEqual(0);
         expect(t, `Schopfzustand in ${name}`).toBeLessThanOrEqual(8);
       }
+    }
+  });
+});
+
+/**
+ * Die Dreiviertelansicht — und warum sie eine eigene Prüfung braucht.
+ *
+ * „Läuft seitwärts" kam **zweimal**. Beim ersten Mal habe ich es im Zeichner
+ * versucht (neigen, stauchen); das konnte nicht wirken, weil die Augen ins Bild
+ * gebacken sind und dort in der Mitte bleiben. Gedreht wird deshalb jetzt das
+ * Modell beim Backen.
+ *
+ * Damit hängt die Sache an einer Datei, der man nicht ansieht, ob sie aktuell
+ * ist: Ein altes Blatt lädt genauso, zeichnet genauso und meldet keinen Fehler
+ * — die Figur läuft nur wieder seitwärts. Deshalb schreibt der Backvorgang den
+ * Winkel ins Blatt, und deshalb steht diese Prüfung hier.
+ */
+describe('Das Blatt zeigt die Dreiviertelansicht', () => {
+  it('dreht die Gehpose deutlich aus der Kamera', () => {
+    // Die Jury über sieben Backwinkel hat 42 Grad gewählt; unter 30 Grad ist
+    // der Unterschied in Spielgrösse nicht mehr zu sehen, und dann ist die
+    // ganze Übung umsonst.
+    expect(sheet.clips.walking.dreh ?? 0).toBeGreaterThanOrEqual(30);
+  });
+
+  it('lässt den Blocker frontal stehen', () => {
+    // Seine ganze Aussage ist „bis hierher und nicht weiter". Eine weggedrehte
+    // Figur sagt das Gegenteil.
+    expect(sheet.clips.blocking.dreh ?? 0).toBe(0);
+  });
+
+  it('dreht jede Pose mit einer Richtung, aber keine über die Schulter', () => {
+    for (const [name, clip] of Object.entries(sheet.clips)) {
+      expect(clip.dreh, `${name} hat keinen Winkel im Blatt`).toBeDefined();
+      expect(clip.dreh, `${name} dreht zu weit`).toBeLessThanOrEqual(55);
+      expect(clip.dreh, `${name} dreht in die falsche Richtung`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it('hält die Rückfallebene auf demselben Profil wie das Blatt', () => {
+    // Die Rückfallebene hat kein Modell; sie stellt die Drehung aus ihren zwei
+    // sichtbaren Folgen nach (schmalerer Umriss, wandernde Augen) und braucht
+    // dafür den Sinus des Backwinkels. Laufen die beiden auseinander, sieht man
+    // es erst, wenn das Blatt einmal nicht lädt — also nie, bis es zählt.
+    for (const [name, clip] of Object.entries(sheet.clips)) {
+      const soll = Math.sin(((clip.dreh ?? 0) * Math.PI) / 180);
+      expect(PROFIL[name] ?? 0, `Profil von ${name}`).toBeCloseTo(soll, 1);
     }
   });
 });

@@ -54,7 +54,35 @@ Zellen rechts der angegebenen Bilderzahl sind leer. Ein Takt entspricht 1/60 Sek
 
 **Zellgeometrie.** Die Fußlinie der Figur liegt 3 Bildpunkte über der Zellunterkante. Der Zellausschnitt deckt 1,22 Modelleinheiten in beiden Achsen ab; die Figur ist im Ruhezustand 0,861 Einheiten hoch, also rund 79 Bildpunkte. Der Ausschnitt ist bewusst 8 % weiter als nötig, damit auch die breiteste Pose (`dying`, flachgedrückt) nicht beschnitten wird. Alle Bilder teilen denselben Maßstab — nie einzelne Zellen nachskalieren.
 
-**Spiegeln.** Die Figur ist frontal gebacken und lehnt in Bewegungsrichtung nach rechts. Für die Gegenrichtung die Zelle horizontal spiegeln. Der Schopf-Anker muss dabei mitgespiegelt werden: `x_gespiegelt = 28 − x`.
+**Spiegeln.** Die Figur lehnt in Bewegungsrichtung nach rechts. Für die Gegenrichtung die Zelle horizontal spiegeln. Der Schopf-Anker muss dabei mitgespiegelt werden: `x_gespiegelt = 28 − x`.
+
+**Nachtrag: Dreiviertelansicht statt Vorderansicht.** Ursprünglich stand hier „frontal gebacken". Das hat sich beim Spielen als Fehler erwiesen, und zwar als einer, der sich nur an dieser Stelle beheben lässt.
+
+Die Rückmeldung lautete zweimal „läuft seitwärts". Der Grund ist der Bau der Vorderansicht: Augen mittig, Arme nach beiden Seiten, spiegelsymmetrischer Umriss. Eine solche Figur kann sich waagerecht bewegen, soviel sie will — das Auge liest **Verschiebung**, nicht Gang. Sie sieht den Betrachter an und rutscht dabei zur Seite.
+
+Im Zeichner ist das nicht zu beheben. Neigen, Stauchen, Scheren verschieben Pixel, aber die Augen bleiben in der Mitte, weil sie ins Bild gebacken sind — und die Blickrichtung ist der stärkste Richtungshinweis, den eine Figur hat. Der erste Versuch mit Neigung und Stauchung ist genau daran gescheitert.
+
+Gebacken wird deshalb mit einer Drehung um die Hochachse, je Pose verschieden (`DREHUNG_GRAD` in `scripts/bake-murmel.mjs`):
+
+| Pose | Grad | | Pose | Grad |
+|---|---:|---|---|---:|
+| walking | 42 | | mining | 36 |
+| building | 38 | | hoisting | 34 |
+| bashing | 34 | | climbing | 30 |
+| digging | 26 | | falling | 24 |
+| floating | 18 | | saving | 16 |
+| **blocking** | **0** | | **dying** | **0** |
+
+Der Blocker bleibt frontal: Seine ganze Aussage ist „bis hierher und nicht weiter", und eine weggedrehte Figur sagt das Gegenteil. Der Tod ist ein Zustand, keine Bewegung.
+
+Die 42 Grad für die Gehpose sind nicht geschätzt, sondern aus sieben gebackenen Kandidaten (0, 25, 34, 42, 48, 55, 60) in Spielgröße ausgewählt worden. Ab 48 Grad beginnen die beiden Augen bei 78 Bildpunkten je Zelle zu einem Fleck zu verschmelzen, ab 55 verschwindet der hintere Arm hinter dem Körper — Gewinn an Richtung, Verlust an Figur.
+
+Zwei Folgen für alle, die mit dem Blatt arbeiten:
+
+1. **Der Schopf-Anker wird gemessen, nicht aus der Tabelle übernommen.** Die mitgelieferte Ankertabelle beschreibt die Vorderansicht; das Blatt zeigt etwas anderes. Der Backvorgang rechnet die Weltposition des `Crown`-Knochens im **gedrehten** Bild aus und schreibt sie ins Manifest. Geprüft wird weiterhin gegen die Tabelle — dafür wird der Punkt vorher zurückgedreht, sonst prüfte man die Drehung gegen eine Tabelle, die sie nicht kennt.
+2. **Das Blatt sagt selbst, was es zeigt.** Jeder Clip im Manifest trägt seinen Backwinkel als `dreh`. Ohne diese Zahl ist ein altes, frontal gebackenes Blatt von einem neuen nicht zu unterscheiden — es lädt, es zeichnet, es meldet nichts, und die Figur läuft wieder seitwärts. `tests/atlas.test.ts` hält sich daran fest.
+
+**Beleuchtung und Spiegelung.** Das Schlaglicht steht links vorn oben. Beim Spiegeln kippt es mit, links- und rechtslaufende Figuren sind also unterschiedlich hell. Gemessen an der Gehpose: 10 % Unterschied zwischen linker und rechter Bildhälfte, wovon 6 % schon in der frontalen Fassung steckten (Blocker, 0 Grad). Der Rest geht auf die Drehung. Bei zwölf logischen Pixeln Figurenhöhe liegt das unter der Schwelle, ab der man zwei Figuren für verschieden gefärbt hält — ein frontales Schlaglicht würde die Form dafür flach machen. Bewusst so gelassen; wer es ändern will, misst nach, statt zu schätzen.
 
 ---
 
