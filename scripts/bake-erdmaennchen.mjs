@@ -49,7 +49,23 @@
  *    gemessen und ins Manifest geschrieben; ein Punkt ausserhalb hiesse, dass
  *    Maske oder Werkzeug neben der Figur schweben.
  *
+ * Dazu meldet jede Zeile ihr Mass: Breite und Hoehe des Umrisses in logischen
+ * Pixeln und wie weit die Sohle vom Boden abweicht. Das ist die Zahl, an der
+ * sich eine Pose entscheidet, bevor jemand sie im Spiel sieht — die Simulation
+ * stoesst mit **einer** Spalte an, und was seitlich darueber hinaussteht, kann
+ * in einer Wand stecken, ohne dass sie davon weiss.
+ *
+ * ## Was eine Pose ueber ihren Platz sagen darf
+ *
+ * Drei Angaben duerfen in der Posendatei stehen und gelten fuer die ganze Zeile:
+ * `dreh` setzt den Blickwinkel (sonst gilt `DREHUNG_GRAD`), `boden` sucht die
+ * Standlinie am ersten Bild, `mitte` legt den Umriss in die Zellmitte. Die
+ * beiden letzten braucht jede Pose, die den Koerper aus der Senkrechten nimmt:
+ * Die Eichung setzt die Sohle nur einmal, in der aufrechten Ruhelage.
+ *
  * Aufruf: `node scripts/bake-erdmaennchen.mjs [--pose walking] [--probe] [--name x]`
+ * Zum Ausprobieren: `--variante <datei.json>` ersetzt eine Zeile, `--weit 1.8`
+ * zeichnet mit weiterem Blickfeld (nur zum Ansehen, nie zum Backen).
  */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
@@ -66,6 +82,24 @@ const args = process.argv.slice(2);
 const nurPose = args.includes('--pose') ? args[args.indexOf('--pose') + 1] : null;
 const probe = args.includes('--probe');
 const probeName = args.includes('--name') ? args[args.indexOf('--name') + 1] : 'erdmaennchen-blatt';
+/**
+ * Eine Posendatei, die eine Zeile **ersetzt**, ohne im Posenordner zu liegen.
+ *
+ * Damit laesst sich ein Gang bauen und ansehen, bevor er den vorhandenen
+ * ueberschreibt: `--pose walking --variante .../vierfuessig.json --probe`. Ohne
+ * diesen Weg muesste man die gute Fassung erst wegwerfen, um die neue zu sehen.
+ */
+const variante = args.includes('--variante') ? args[args.indexOf('--variante') + 1] : null;
+/**
+ * Nur zum Ansehen: die Zellen mit weiterem Blickfeld zeichnen.
+ *
+ * Eine Pose, die noch nicht sitzt, laeuft aus der Zelle — und dann sieht man auf
+ * dem Kontrollbild genau das nicht, was schiefgeht. Mit `--weit 1.8` steht die
+ * ganze Figur im Bild, wenn auch kleiner. Zum Backen ist das verboten: Der
+ * Massstab der Zelle haengt an `SICHT`.
+ */
+const weit = args.includes('--weit') ? Number(args[args.indexOf('--weit') + 1]) : 1;
+if (weit !== 1 && !probe) throw new Error('--weit gibt es nur mit --probe: es verstellt den Massstab.');
 
 /** Ueberabtastung je Achse. Runde Kanten und duenne Arme brauchen sie. */
 const SS = 6;
@@ -151,6 +185,11 @@ if (existsSync(POSEN)) {
   for (const datei of readdirSync(POSEN).filter((d) => d.endsWith('.json'))) {
     posen[datei.replace(/\.json$/, '')] = JSON.parse(readFileSync(join(POSEN, datei), 'utf8'));
   }
+}
+if (variante) {
+  if (!nurPose) throw new Error('--variante braucht --pose: welche Zeile soll ersetzt werden?');
+  posen[nurPose] = JSON.parse(readFileSync(variante, 'utf8'));
+  console.log(`Variante: ${nurPose} kommt aus ${variante}`);
 }
 const fehlend = ZEILEN.filter((z) => !posen[z.name]).map((z) => z.name);
 if (fehlend.length) console.log(`  (noch ohne Richtungstabelle, stehen in Ruhe: ${fehlend.join(', ')})`);
@@ -347,7 +386,64 @@ window.eiche = () => {
 
 const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELLE];
 
-window.bild = (bild, dreh) => {
+/**
+ * Der Umriss des gerenderten Bildes: die Grenzen aller undurchsichtigen Punkte,
+ * in Zellkoordinaten mit Ursprung oben links.
+ *
+ * Gemessen an den **Bildpunkten**, nicht an einer Huellbox des Modells. Eine
+ * Huellbox von THREE.Box3 kennt nur die Bindepose — sie wuerde jede Pose gleich
+ * gross melden. Und der Anschnitt, die Bodenlage und der Ueberstand haengen alle
+ * drei am tatsaechlich sichtbaren Umriss, nicht am ungeposten Netz.
+ */
+function kasten() {
+  const gl = renderer.getContext();
+  const px = new Uint8Array(GROESSE * GROESSE * 4);
+  gl.readPixels(0, 0, GROESSE, GROESSE, gl.RGBA, gl.UNSIGNED_BYTE, px);
+  let x0 = GROESSE, x1 = -1, y0 = GROESSE, y1 = -1;
+  for (let gy = 0; gy < GROESSE; gy++) {
+    // readPixels zaehlt von unten, das Bild von oben.
+    const y = GROESSE - 1 - gy;
+    const basis = gy * GROESSE * 4;
+    for (let x = 0; x < GROESSE; x++) {
+      if (px[basis + x * 4 + 3] <= 24) continue;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return null;
+  // Ueber die **Kamera** in Zellkoordinaten und nicht ueber die Bildgroesse.
+  // Beim Messen steht das Blickfeld weiter (siehe blick), und dann sind
+  // Bildpunkt und Zellpunkt nicht mehr dasselbe.
+  const bw = camera.right - camera.left;
+  const bh = camera.top - camera.bottom;
+  const zx = (p) => ((camera.left + (p / GROESSE) * bw) / SICHT + 0.5) * ZELLE;
+  const zy = (p) => ((oben - (camera.top - (p / GROESSE) * bh)) / SICHT) * ZELLE;
+  const k = { links: zx(x0), rechts: zx(x1 + 1), oben: zy(y0), unten: zy(y1 + 1) };
+  k.randberuehrung = k.links < 0.5 || k.oben < 0.5 || k.rechts > ZELLE - 0.5 || k.unten > ZELLE - 0.5;
+  return k;
+}
+
+/**
+ * Das Blickfeld voruebergehend weiten.
+ *
+ * Zum Messen unverzichtbar. Eine Pose, die aus der Zelle laeuft, wird von ihr
+ * **abgeschnitten** — und ein abgeschnittener Umriss meldet genau die Zellbreite
+ * zurueck. Man liest dann „passt gerade so", wo in Wahrheit etwas fehlt, und die
+ * Mittenkorrektur rechnet gegen eine Kante statt gegen die Figur. Zum Backen
+ * bleibt das Blickfeld die Zelle; nur die Messung sieht weiter.
+ */
+function blick(weite) {
+  const mitte = (oben + unten) / 2;
+  camera.left = (-SICHT * weite) / 2;
+  camera.right = (SICHT * weite) / 2;
+  camera.top = mitte + (SICHT * weite) / 2;
+  camera.bottom = mitte - (SICHT * weite) / 2;
+  camera.updateProjectionMatrix();
+}
+
+function zeichne(bild, dreh, grund, seite) {
   stelle(bild && bild.richtung ? bild.richtung : null, bild && bild.winkel ? bild.winkel : null);
   const skala = bild && bild.skala != null ? bild.skala : 1;
   // Stauchen und Strecken — das aelteste Mittel der Zeichentrickbewegung.
@@ -364,10 +460,74 @@ window.bild = (bild, dreh) => {
     eichFaktor * skala * st[1],
     eichFaktor * skala * st[2],
   );
-  wurzel.position.y = eichVersatz + (bild && bild.versatz ? bild.versatz : 0) * FIGUR_EINHEITEN;
+  const hub = (bild && bild.versatz ? bild.versatz : 0) + (grund || 0);
+  wurzel.position.y = eichVersatz + hub * FIGUR_EINHEITEN;
+  wurzel.position.x = seite || 0;
   wurzel.rotation.set(0, dreh, 0);
   wurzel.updateMatrixWorld(true);
   renderer.render(scene, camera);
+}
+
+/**
+ * Wieviel eine Pose absacken muss, damit sie auf dem Boden steht.
+ *
+ * Die Eichung setzt die Sohle **einmal** auf null — in der aufrechten Ruhelage.
+ * Das genuegt, solange jede Pose aufrecht ist. Eine Pose auf allen vieren aber
+ * legt den Rumpf waagerecht: Ihre tiefste Stelle liegt woanders, und mit dem
+ * Versatz der Ruhelage schwebte sie in der Luft.
+ *
+ * Gemessen wird am **ersten Bild** der Pose, nicht am tiefsten aller Bilder.
+ * Sonst zoege der Schritt, der am tiefsten sinkt, die ganze Reihe mit sich, und
+ * das Anheben der Pfoten waehrend des Durchschwingens waere weggerechnet. Bild
+ * null ist deshalb das Aufsetzbild: Dort steht die Pfote, dort gilt der Boden.
+ */
+/** Der Umriss eines Einzelbildes ohne jede Platzkorrektur — die Rohmessung. */
+window.umriss = (bild, dreh) => {
+  blick(1.8);
+  zeichne(bild, dreh, 0, 0);
+  const k = kasten();
+  blick(1);
+  return k;
+};
+
+/**
+ * Aus den Rohumrissen einer Pose: wie weit sie absacken und zur Seite ruecken muss.
+ *
+ * Die beiden Achsen werden **verschieden** gemessen, und das ist keine Willkuer.
+ *
+ * Senkrecht zaehlt das erste Bild allein. Es ist das Aufsetzbild; dort steht die
+ * Pfote, dort gilt der Boden. Naehme man stattdessen das tiefste aller Bilder,
+ * zoege das tiefste die ganze Reihe mit sich und das Abheben der Pfoten waehrend
+ * des Durchschwingens waere weggerechnet — der Gang klebte am Boden.
+ *
+ * Waagerecht zaehlen alle Bilder zusammen. Eine Seitwaertsverschiebung je Bild
+ * gaebe es nicht: Sie waere ein Ruckeln der ganzen Figur. Also eine fuer die
+ * Pose, und die muss den gesamten Umriss fassen.
+ */
+window.platz = (umrisse) => {
+  const erste = umrisse[0];
+  if (!erste) return { grund: 0, seite: 0 };
+  const untenWelt = oben - (erste.unten / ZELLE) * SICHT;
+  // Die Mitte des Umrisses auf die Zellmitte legen.
+  //
+  // Der Nullpunkt des Modells liegt nicht in der Mitte des Tieres, sondern dort,
+  // wo der Bildhauer ihn gelassen hat — bei diesem im Becken, ein gutes Stueck
+  // hinter der Koerpermitte. Aufrecht faellt das nicht auf. Waagerecht schon:
+  // Dann steht die Schnauze weit vor der Spalte, mit der die Simulation
+  // anstoesst, und das Tier beruehrt eine Wand, von der die Simulation nichts
+  // weiss. Die Verschiebung sitzt an der Wurzel und damit **hinter** der Drehung
+  // — sie ist eine reine Bildverschiebung und kann die Pose nicht verbiegen.
+  const links = Math.min(...umrisse.map((k) => k.links));
+  const rechts = Math.max(...umrisse.map((k) => k.rechts));
+  const mitteWelt = (((links + rechts) / 2 / ZELLE) - 0.5) * SICHT;
+  return { grund: -untenWelt / FIGUR_EINHEITEN, seite: -mitteWelt };
+};
+
+window.bild = (bild, dreh, grund, seite, weit) => {
+  if (weit && weit !== 1) blick(weit);
+  zeichne(bild, dreh, grund, seite);
+  const png = renderer.domElement.toDataURL('image/png');
+  if (weit && weit !== 1) blick(1);
 
   const vorn = (v) => v.clone().applyAxisAngle(HOCHACHSE, -dreh);
 
@@ -389,25 +549,19 @@ window.bild = (bild, dreh) => {
     if (!handVorn || v.z > handVorn.z) { hand = p; handVorn = v; }
   }
 
-  // Anschnitt: beruehrt etwas Undurchsichtiges den Zellrand?
-  const gl = renderer.getContext();
-  const zeile = new Uint8Array(GROESSE * 4);
-  let anschnitt = 0;
-  for (const y of [0, GROESSE - 1]) {
-    gl.readPixels(0, y, GROESSE, 1, gl.RGBA, gl.UNSIGNED_BYTE, zeile);
-    for (let i = 3; i < zeile.length; i += 4) if (zeile[i] > 24) anschnitt++;
-  }
-  const spalte = new Uint8Array(GROESSE * 4);
-  for (const x of [0, GROESSE - 1]) {
-    gl.readPixels(x, 0, 1, GROESSE, gl.RGBA, gl.UNSIGNED_BYTE, spalte);
-    for (let i = 3; i < spalte.length; i += 4) if (spalte[i] > 24) anschnitt++;
-  }
+  // Nachgemessen im weiten Blickfeld: Was ueber die Zelle hinaussteht, soll als
+  // Ueberstand in der Zahl stehen und nicht am Zellrand aufhoeren.
+  blick(1.8);
+  zeichne(bild, dreh, grund, seite);
+  const k = kasten();
+  blick(1);
 
   return {
-    bild: renderer.domElement.toDataURL('image/png'),
+    bild: png,
     gesicht: zelle(g),
     hand: hand ? zelle(hand) : null,
-    anschnitt,
+    anschnitt: k && k.randberuehrung ? 1 : 0,
+    kasten: k,
   };
 };
 window.bereit = true;
@@ -477,23 +631,65 @@ if (eichung.faktor < 0.6 || eichung.faktor > 1.7) {
 const bilder = [];
 const gesichter = [];
 const haende = [];
+/** Der gemessene Drehwinkel je Pose — die Variante darf ihn mitbringen. */
+const drehungen = {};
 let anschnitte = 0;
 for (const z of zeilen) {
   const reihe = ZEILEN.findIndex((x) => x.name === z.name);
   const tabelle = posen[z.name];
-  const dreh = ((DREHUNG_GRAD[z.name] ?? 0) * Math.PI) / 180;
+  const drehGrad = tabelle?.dreh ?? DREHUNG_GRAD[z.name] ?? 0;
+  drehungen[z.name] = drehGrad;
+  const dreh = (drehGrad * Math.PI) / 180;
+
+  // Eine Pose, die ihren Platz in der Zelle selbst sucht. Siehe `window.platz`.
+  let grund = 0;
+  let seite = 0;
+  if (tabelle?.boden) {
+    const umrisse = [];
+    for (let i = 0; i < z.holds.length; i++) {
+      const b = tabelle.frames[i] ?? tabelle.frames[0];
+      umrisse.push(await page.evaluate(([x, d]) => window.umriss(x, d), [b, dreh]));
+    }
+    const p = await page.evaluate((u) => window.platz(u), umrisse);
+    grund = p.grund;
+    if (tabelle.mitte) seite = p.seite;
+  }
+
+  const masse = [];
   for (let i = 0; i < z.holds.length; i++) {
     const bild = tabelle?.frames?.[i] ?? tabelle?.frames?.[0] ?? null;
-    const r = await page.evaluate(([b, d]) => window.bild(b, d), [bild, dreh]);
+    const r = await page.evaluate(
+      ([b, d, g, s, w]) => window.bild(b, d, g, s, w),
+      [bild, dreh, grund, seite, weit],
+    );
     bilder.push({ pose: z.name, reihe, spalte: i, png: r.bild });
     gesichter.push({ pose: z.name, bild: i, punkt: r.gesicht });
     haende.push({ pose: z.name, bild: i, punkt: r.hand ?? r.gesicht });
+    if (r.kasten) masse.push(r.kasten);
     if (r.anschnitt > 0) {
       anschnitte++;
       console.log(`  ! ${z.name} Bild ${i} beruehrt den Zellrand`);
     }
   }
-  process.stdout.write(`  ${z.name} (${z.holds.length})${tabelle ? '' : ' — Ruhelage'}\n`);
+
+  // Der Umriss in logischen Bildpunkten — das Mass, an dem sich eine waagerechte
+  // Figur entscheidet. Die Simulation stoesst mit **einer** Spalte an, gezeichnet
+  // wird um diese Spalte herum; was seitlich darueber hinaussteht, kann an einer
+  // Wand stecken, ohne dass die Simulation davon weiss.
+  if (masse.length) {
+    const inPx = (v) => (v / ZELLE) * LOGISCH;
+    const mitte = LOGISCH / 2;
+    const links = Math.max(...masse.map((k) => mitte - inPx(k.links)));
+    const rechts = Math.max(...masse.map((k) => inPx(k.rechts) - mitte));
+    const hoch = Math.max(...masse.map((k) => inPx(k.unten - k.oben)));
+    const sohle = masse.map((k) => LOGISCH - FUSS_PX / PPL - inPx(k.unten));
+    process.stdout.write(
+      `  ${z.name} (${z.holds.length})${tabelle ? '' : ' — Ruhelage'}  ` +
+        `${drehGrad}gr  breit ${(links + rechts).toFixed(1)}px ` +
+        `(links ${links.toFixed(1)} / rechts ${rechts.toFixed(1)}), hoch ${hoch.toFixed(1)}px, ` +
+        `Sohle ${Math.min(...sohle).toFixed(2)}..${Math.max(...sohle).toFixed(2)}px ueber Grund\n`,
+    );
+  }
 }
 
 // --- Probe 2 und 3 -----------------------------------------------------------
@@ -508,12 +704,18 @@ for (const [was, liste] of [
     (g) => g.punkt[0] < 0 || g.punkt[0] > ZELLE || g.punkt[1] < 0 || g.punkt[1] > ZELLE,
   );
   if (raus.length) {
-    await browser.close();
-    server.close();
-    throw new Error(
+    const text =
       `${was}punkt liegt bei ${raus.length} Bildern ausserhalb der Zelle ` +
-        `(zuerst ${raus[0].pose} Bild ${raus[0].bild}).`,
-    );
+      `(zuerst ${raus[0].pose} Bild ${raus[0].bild}).`;
+    // Im weiten Blickfeld ist das kein Abbruchgrund, sondern der Befund: Diese
+    // Betriebsart gibt es nur, um eine Pose anzusehen, die noch nicht sitzt.
+    if (weit !== 1) {
+      console.log(`  ! ${text}`);
+    } else {
+      await browser.close();
+      server.close();
+      throw new Error(text);
+    }
   }
 }
 
@@ -564,7 +766,7 @@ if (probe) {
           row: reihe,
           holds: z.holds,
           ...(z.once ? { once: true } : {}),
-          dreh: DREHUNG_GRAD[z.name] ?? 0,
+          dreh: drehungen[z.name] ?? DREHUNG_GRAD[z.name] ?? 0,
           // Der Gesichtspunkt je Einzelbild. Er tritt an die Stelle des
           // Schopfankers der Murmel: Dort haengt die Berufsfarbe daran, hier
           // die Augenmaske. Gemessen aus dem Rig, nicht von Hand gepflegt.

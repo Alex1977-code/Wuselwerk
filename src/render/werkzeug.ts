@@ -1,5 +1,5 @@
 /**
- * Das Werkzeug in der Hand der Murmel.
+ * Das Werkzeug in der Hand der Figur.
  *
  * ## Warum es ueberhaupt eines braucht
  *
@@ -111,19 +111,65 @@ function planke(ctx: CanvasRenderingContext2D, l: number): void {
 }
 
 /**
+ * Der Koerper einer Figur, so grob wie das Werkzeug ihn braucht.
+ *
+ * Alle Masse als Anteil der Koerperhoehe, damit die Zellgeometrie sie nicht
+ * beruehrt.
+ *
+ * **Warum das je Figur verschieden ist, und zwar wesentlich.** Beim Blatt der
+ * Murmel ist der Handpunkt eine **Schaetzung** — dieses Modell hat keine
+ * Handknochen, die Armspitze wurde gerechnet, und sie landet mitten im Koerper.
+ * Der ganze Apparat darunter, die Ellipse und der Versatz nach unten, ist die
+ * Berichtigung dieser Schaetzung.
+ *
+ * Das Erdmaennchen hat **echte Handknochen**. Sein Handpunkt ist die Pfote, an
+ * der Stelle, an der sie im Bild steht. Dieselbe Berichtigung noch einmal
+ * anzuwenden hiess, eine Schaetzung auszugleichen, die es nicht gibt: Das Gerat
+ * sackte anderthalb Pixel unter die Pfote und stand zweieinhalb Pixel neben dem
+ * Tier in der Luft. Genau so sah es im Spiel aus.
+ */
+interface Koerperform {
+  /** Halbe Breite des Rumpfes. */
+  breit: number;
+  /** Halbe Hoehe des Rumpfes. */
+  hoch: number;
+  /** Mitte des Rumpfes ueber dem Fusspunkt (negativ = oben). */
+  mitte: number;
+  /** Wie weit der Ansatz unter den gemeldeten Handpunkt rutscht. */
+  handab: number;
+  /** Luft zwischen Silhouette und Geraet. */
+  luft: number;
+}
+
+const KOERPER: Record<string, Koerperform> = {
+  // Die Murmel: ein Ei, und der Handpunkt ist geschaetzt.
+  //
+  // `handab` ist hier kein Feinschliff, sondern eine Notwendigkeit: Der Knochen
+  // sitzt auf Schulterhoehe, und die ist bei dieser Figur genau die Hoehe der
+  // Augen. Ohne den Versatz wuchs der Keil dem Rammer aus dem Gesicht wie ein
+  // Schnabel — im Bild sofort zu sehen, in den Zahlen nicht.
+  murmel: { breit: 0.4, hoch: 0.52, mitte: -0.5, handab: 0.14, luft: 0.12 },
+  // Das Erdmaennchen: schmaler Rumpf, echte Pfote.
+  //
+  // `breit` ist gemessen und nicht geraten. Frontal — der Blocker — ist die
+  // Figur 5,5 logische Pixel breit, also knapp 0,23 Koerperhoehen je Seite. Im
+  // Arbeitswinkel kommt die Schnauze dazu; die aber ist Kopf und liegt ueber
+  // dem Geraet, nicht dahinter. Ein Rumpf von 0,26 laesst das Werkzeug am
+  // Brustkorb austreten und trotzdem an der Pfote haengen.
+  erdmaennchen: { breit: 0.26, hoch: 0.44, mitte: -0.52, handab: 0, luft: 0.05 },
+};
+
+/**
  * Wie weit das Werkzeug aus dem Koerper heraustreten muss.
  *
- * Der Ansatz aus dem Rig ist die **Hand**, und die liegt bei mehreren Posen
- * innerhalb der Silhouette — beim Graben zum Beispiel dicht am Bauch. Zeichnet
- * man von dort aus, steckt das dunkle Blatt mitten im hellen Koerper und wird
- * als Gesichtszug gelesen. Beim ersten Versuch sah der Graeber aus, als haette
- * er einen Mund; die Vorlage verbietet genau das.
- *
- * Der Koerper wird dafuer als Ellipse angenaehert, und der Ansatz entlang der
+ * Der Koerper wird als Ellipse angenaehert, und der Ansatz entlang der
  * Werkzeugachse so weit nach aussen geschoben, bis er sie verlaesst. Das ist
  * eine quadratische Gleichung und kostet nichts — der Gewinn ist, dass es
  * **fuer jeden Winkel** stimmt und nicht je Pose von Hand nachgestellt werden
  * muss.
+ *
+ * Liegt der Ansatz schon ausserhalb der Ellipse, kommt null heraus, und das ist
+ * richtig so: Dann haelt die Figur das Geraet bereits neben sich.
  */
 function austritt(dx: number, dy: number, cx: number, cy: number, a: number, b: number): number {
   // Schnittpunkt des Strahls (d + t·c) mit der Ellipse, t >= 0. `d` ist der
@@ -139,12 +185,44 @@ function austritt(dx: number, dy: number, cx: number, cy: number, a: number, b: 
 }
 
 /**
+ * Wo das Werkzeug ansetzt und in welche Richtung es zeigt.
+ *
+ * Getrennt vom Zeichnen, damit sich diese Rechnung **pruefen** laesst. Sie ist
+ * die Stelle, an der eine Figur mit gemessenen Pfoten und eine Figur mit
+ * geschaetzten Armspitzen auseinandergehen — und der Fehler dabei sieht auf dem
+ * Blatt nach nichts aus: Das Blatt ist richtig, nur das Geraet steht daneben.
+ */
+export function werkzeugAnsatz(
+  pose: string,
+  hx: number,
+  hy: number,
+  koerperH: number,
+  figur = 'murmel',
+): { x: number; y: number; bogen: number } | null {
+  const f = FUEHRT[pose];
+  if (!f) return null;
+  const k = KOERPER[figur] ?? KOERPER.murmel;
+  const bogen = (f.winkel * Math.PI) / 180;
+  const cx = Math.cos(bogen);
+  const cy = Math.sin(bogen);
+  const hy2 = hy + koerperH * k.handab;
+  // Der Koerper als Ellipse. Ihr Mittelpunkt liegt ueber dem Fusspunkt,
+  // deshalb wird der Ansatz vorher dorthin umgerechnet.
+  const t = austritt(hx, hy2 - koerperH * k.mitte, cx, cy, koerperH * k.breit, koerperH * k.hoch);
+  // Ein Geraet, das die Silhouette genau beruehrt, sieht angeklebt aus statt
+  // gehalten — ein wenig Luft obendrauf.
+  const ab = t + koerperH * k.luft;
+  return { x: hx + cx * ab, y: hy2 + cy * ab, bogen };
+}
+
+/**
  * Das Werkzeug zeichnen.
  *
  * @param hx Ansatz in logischen Pixeln, waagerecht vom Fusspunkt aus.
  * @param hy Ansatz in logischen Pixeln, senkrecht vom Fusspunkt aus (negativ = oben).
  * @param koerperH Hoehe des Koerpers in logischen Pixeln.
  * @param s Bildpunkte je logischem Pixel.
+ * @param figur Welche Figur — sie entscheidet ueber die Koerperform.
  */
 export function drawWerkzeug(
   ctx: CanvasRenderingContext2D,
@@ -153,30 +231,16 @@ export function drawWerkzeug(
   hy: number,
   koerperH: number,
   s: number,
+  figur = 'murmel',
 ): void {
+  const a = werkzeugAnsatz(pose, hx, hy, koerperH, figur);
+  if (!a) return;
   const f = FUEHRT[pose];
-  if (!f) return;
-  const bog = (f.winkel * Math.PI) / 180;
-  const cx = Math.cos(bog);
-  const cy = Math.sin(bog);
-  // Ein Werkzeug haengt **unter** der Hand, nicht in ihr.
-  //
-  // Der Knochen sitzt auf Schulterhoehe, und das ist bei dieser Figur genau
-  // die Hoehe der Augen. Ohne diesen Versatz wuchs der Keil dem Rammer aus dem
-  // Gesicht wie ein Schnabel — im Bild sofort zu sehen, in den Zahlen nicht.
-  const hy2 = hy + koerperH * 0.14;
-  // Der Koerper als Ellipse. Ihr Mittelpunkt liegt auf halber Figurenhoehe
-  // ueber dem Fusspunkt, deshalb wird der Ansatz vorher dorthin umgerechnet.
-  const mitteY = -koerperH * 0.5;
-  const t = austritt(hx, hy2 - mitteY, cx, cy, koerperH * 0.4, koerperH * 0.52);
-  // Ein Achtel Koerperhoehe Luft obendrauf: Ein Geraet, das die Silhouette
-  // genau beruehrt, sieht angeklebt aus statt gehalten.
-  const ab = t + koerperH * 0.12;
 
   ctx.save();
-  ctx.translate((hx + cx * ab) * s, (hy2 + cy * ab) * s);
+  ctx.translate(a.x * s, a.y * s);
   ctx.scale(s, s);
-  ctx.rotate(bog);
+  ctx.rotate(a.bogen);
   if (f.geraet === 'keil') keil(ctx, f.laenge);
   else if (f.geraet === 'spaten') spaten(ctx, f.laenge);
   else planke(ctx, f.laenge);

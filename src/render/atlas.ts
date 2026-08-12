@@ -392,6 +392,7 @@ export class SpriteAtlas {
         h[1] - this.manifest.anchor.y,
         koerperH,
         s,
+        this.manifest.figur,
       );
     }
 

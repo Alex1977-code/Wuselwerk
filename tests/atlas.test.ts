@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_MANIFEST } from '../src/render/atlas';
 import { PROFIL } from '../src/render/sprites';
+import { fuehrtWerkzeug, werkzeugAnsatz } from '../src/render/werkzeug';
 import type { AtlasManifest } from '../src/render/atlas';
 import { WUSEL_H } from '../src/core/constants';
 // Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
@@ -213,5 +214,77 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
       const soll = Math.sin(((clip.dreh ?? 0) * Math.PI) / 180);
       expect(PROFIL[name] ?? 0, `Profil von ${name}`).toBeCloseTo(soll, 1);
     }
+  });
+});
+
+/**
+ * Das Werkzeug hängt an der Hand — und die Hand bedeutet je Figur etwas anderes.
+ *
+ * Bei der Murmel ist der Handpunkt eine **Schätzung**: Das Modell hat keine
+ * Handknochen, die Armspitze ist gerechnet, und sie landet mitten im Körper.
+ * Alles, was `werkzeug.ts` an Ellipse und Versatz aufbietet, ist die
+ * Berichtigung genau dieser Schätzung.
+ *
+ * Das Erdmännchen hat echte Handknochen. Sein Handpunkt ist die Pfote, dort, wo
+ * sie im Bild steht. Dieselbe Berichtigung ein zweites Mal anzuwenden hiess,
+ * einen Fehler auszugleichen, den es nicht gibt — das Gerät sackte anderthalb
+ * Pixel unter die Pfote und stand zweieinhalb Pixel neben dem Tier in der Luft.
+ *
+ * Das ist der Fehler, den kein Blatt meldet: Das Blatt war richtig, nur das
+ * Gezeichnete daneben. Deshalb prüft das hier die **Rechnung** und nicht das
+ * Bild — nämlich dass ein Gerät bei einer Figur mit gemessener Pfote auch an
+ * der Pfote bleibt.
+ */
+describe('Das Werkzeug bleibt an der Hand', () => {
+  const POSEN = ['bashing', 'mining', 'digging', 'building'];
+
+  it('setzt beim Erdmännchen dicht an der gemessenen Pfote an', () => {
+    const blatt = BLAETTER.erdmaennchen;
+    const koerperH = blatt.cell.h * 0.706;
+    for (const pose of POSEN) {
+      const clip = blatt.clips[pose];
+      expect(clip?.hands, `${pose} ohne Pfoten`).toBeDefined();
+      for (let i = 0; i < clip!.holds.length; i++) {
+        const h = clip!.hands![i] ?? clip!.hands![0];
+        const hx = h[0] - blatt.anchor.x;
+        const hy = h[1] - blatt.anchor.y;
+        const a = werkzeugAnsatz(pose, hx, hy, koerperH, 'erdmaennchen')!;
+        const abstand = Math.hypot(a.x - hx, a.y - hy);
+        // Ein logischer Pixel Luft ist das, was ein gehaltenes Gerät von einem
+        // angeklebten trennt. Zwei sind schon ein Schweben.
+        expect(abstand, `${pose} Bild ${i} steht ${abstand.toFixed(2)}px von der Pfote`)
+          .toBeLessThanOrEqual(1.2);
+      }
+    }
+  });
+
+  it('schiebt das Gerät bei der Murmel aus dem Körper heraus', () => {
+    // Die Gegenprobe. Bei geschätztem Ansatz *muss* die Ellipse greifen —
+    // sonst steckt das dunkle Blatt im hellen Körper und wird als Gesichtszug
+    // gelesen. Die Murmel hat ausdrücklich keinen.
+    const blatt = BLAETTER.murmel;
+    const koerperH = blatt.cell.h * 0.706;
+    let geschoben = 0;
+    for (const pose of POSEN) {
+      const clip = blatt.clips[pose];
+      if (!clip?.hands) continue;
+      for (let i = 0; i < clip.holds.length; i++) {
+        const h = clip.hands[i] ?? clip.hands[0];
+        const hx = h[0] - blatt.anchor.x;
+        const hy = h[1] - blatt.anchor.y;
+        const a = werkzeugAnsatz(pose, hx, hy, koerperH, 'murmel')!;
+        if (Math.hypot(a.x - hx, a.y - hy) > 1.2) geschoben++;
+      }
+    }
+    expect(geschoben, 'kein einziges Gerät wird bei der Murmel herausgeschoben').toBeGreaterThan(0);
+  });
+
+  it('kennt für jede werkzeugführende Pose eine Führung', () => {
+    for (const pose of POSEN) {
+      expect(fuehrtWerkzeug(pose), `${pose} führt kein Werkzeug`).toBe(true);
+      expect(werkzeugAnsatz(pose, 0, -6, 12, 'erdmaennchen')).not.toBeNull();
+    }
+    expect(fuehrtWerkzeug('walking')).toBe(false);
+    expect(werkzeugAnsatz('walking', 0, -6, 12)).toBeNull();
   });
 });
