@@ -41,6 +41,19 @@ import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
 import { drawTitel } from './render/titel';
 import { GameAudio } from './audio';
 import { schopfFarbe } from './render/schopf';
+import {
+  FREI_SEKUNDEN,
+  LEBEN_PRO_TAG,
+  VIDEOS_PRO_TAG,
+  abziehen,
+  heuteTag,
+  ladeLeben,
+  lebenUnbegrenzt,
+  speichereLeben,
+  tagesWechsel,
+  videoEinloesen,
+  type LebenStand,
+} from './leben';
 
 /**
  * Wie weit ein Finger auf der Karte wandern darf, damit es noch ein Antippen
@@ -120,6 +133,14 @@ export class Game {
   private atlas: SpriteAtlas | null = null;
   private selected: SkillId | null = null;
   private conditions: boolean[] = [false, false, false];
+
+  // Leben und Versuche (leben.ts). `lebenVerbucht` verhindert, dass ein
+  // Versuch doppelt zaehlt — verlieren nach einem verbuchten Abbruch etwa.
+  private leben: LebenStand = ladeLeben();
+  private readonly ohneLeben = lebenUnbegrenzt();
+  private lebenTafel = false;
+  private lebenVerbucht = false;
+  private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
   private pointers = new Map<number, PointerState>();
   private aim: PointerState | null = null;
@@ -273,6 +294,7 @@ export class Game {
     this.phase = 'intro';
     this.simAcc = 0;
     this.nachspiel = -1;
+    this.lebenVerbucht = false;
     this.clearAim();
   }
 
@@ -298,6 +320,136 @@ export class Game {
     // zuckt jede Figur beim Sprung in ihre eigene Vergangenheit.
     this.scene.klarstellen();
     this.audio.zurueckgespult();
+  }
+
+  /**
+   * Einen verlorenen Versuch verbuchen — genau einmal je Levellauf.
+   *
+   * Aufgerufen von der Niederlage (`finish`) und vom Abbruch nach der
+   * Schnupperfrist (`onOverlayButton`). Wer erst abbricht und dann doch
+   * verliert, zahlt trotzdem nur ein Leben.
+   */
+  private verbucheLeben(): void {
+    if (this.ohneLeben || this.lebenVerbucht) return;
+    this.lebenVerbucht = true;
+    this.leben = abziehen(tagesWechsel(this.leben, heuteTag()));
+    speichereLeben(this.leben);
+  }
+
+  private rundBox(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+  ): void {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  private herz(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x, y + r * 0.9);
+    ctx.bezierCurveTo(x - r * 1.4, y + r * 0.05, x - r * 0.75, y - r, x, y - r * 0.32);
+    ctx.bezierCurveTo(x + r * 0.75, y - r, x + r * 1.4, y + r * 0.05, x, y + r * 0.9);
+    ctx.fill();
+  }
+
+  /**
+   * Der Lebensvorrat auf der Karte: ein Chip oben rechts, und bei leerem
+   * Vorrat die Tafel. Beides nur, wenn das System an ist — im Testmodus
+   * (`?test`) verschwindet es vollstaendig, statt „unendlich" anzuzeigen.
+   */
+  private drawLeben(ctx: CanvasRenderingContext2D): void {
+    this.lebenKnoepfe = [];
+    if (this.ohneLeben) return;
+    const L = this.layout;
+
+    // Der Chip: Herz und Vorrat.
+    const chipW = 76;
+    const chipH = 34;
+    const cx = L.cssW - chipW - 12;
+    const cy = 12;
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.72)';
+    this.rundBox(ctx, cx, cy, chipW, chipH, 17);
+    ctx.fill();
+    ctx.fillStyle = this.leben.uebrig > 0 ? '#ff5a6e' : '#5a6478';
+    this.herz(ctx, cx + 22, cy + chipH / 2, 9);
+    ctx.fillStyle = '#eaf2ff';
+    ctx.font = '700 15px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${this.leben.uebrig}/${LEBEN_PRO_TAG}`, cx + 37, cy + chipH / 2 + 1);
+
+    if (!this.lebenTafel) return;
+
+    // Die Tafel. Sie liegt ueber allem und faengt jede Beruehrung (onDown).
+    ctx.fillStyle = 'rgba(5, 8, 14, 0.6)';
+    ctx.fillRect(0, 0, L.cssW, L.cssH);
+    const videosUebrig = this.leben.videos < VIDEOS_PRO_TAG;
+    const tw = Math.min(330, L.cssW - 40);
+    const th = videosUebrig ? 240 : 190;
+    const tx = (L.cssW - tw) / 2;
+    const ty = (L.cssH - th) / 2 - L.cssH * 0.04;
+    ctx.fillStyle = '#141c2a';
+    this.rundBox(ctx, tx, ty, tw, th, 18);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ff5a6e';
+    this.herz(ctx, tx + tw / 2, ty + 36, 15);
+    ctx.fillStyle = '#eaf2ff';
+    ctx.font = '800 19px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Keine Leben mehr', tx + tw / 2, ty + 70);
+    ctx.font = '400 14px system-ui, sans-serif';
+    ctx.fillStyle = 'rgba(234, 242, 255, 0.8)';
+    if (videosUebrig) {
+      ctx.fillText('Um Mitternacht gibt es fünf neue —', tx + tw / 2, ty + 97);
+      ctx.fillText('oder ein Video bringt eins zurück.', tx + tw / 2, ty + 116);
+      const bw = tw - 48;
+      const b1 = { id: 'video', x: tx + 24, y: ty + 136, w: bw, h: 44 };
+      ctx.fillStyle = '#ffd15c';
+      this.rundBox(ctx, b1.x, b1.y, b1.w, b1.h, 12);
+      ctx.fill();
+      ctx.fillStyle = '#241d08';
+      ctx.font = '700 15px system-ui, sans-serif';
+      ctx.fillText('Video ansehen · +1 Leben', b1.x + bw / 2, b1.y + 23);
+      ctx.font = '400 11px system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(234, 242, 255, 0.55)';
+      ctx.fillText(
+        'In dieser Fassung ohne Werbefilm — der Tipp genügt.',
+        tx + tw / 2,
+        ty + 194,
+      );
+      const b2 = { id: 'zu', x: tx + 24, y: ty + 204, w: bw, h: 30 };
+      ctx.fillStyle = 'rgba(234, 242, 255, 0.7)';
+      ctx.font = '600 14px system-ui, sans-serif';
+      ctx.fillText('Bis morgen!', b2.x + bw / 2, b2.y + 15);
+      this.lebenKnoepfe.push(b1, b2);
+    } else {
+      ctx.fillText('Genug gewuselt für heute —', tx + tw / 2, ty + 97);
+      ctx.fillText('morgen geht es weiter!', tx + tw / 2, ty + 116);
+      const bw = tw - 48;
+      const b1 = { id: 'zu', x: tx + 24, y: ty + 136, w: bw, h: 40 };
+      ctx.fillStyle = 'rgba(234, 242, 255, 0.14)';
+      this.rundBox(ctx, b1.x, b1.y, b1.w, b1.h, 12);
+      ctx.fill();
+      ctx.fillStyle = '#eaf2ff';
+      ctx.font = '700 15px system-ui, sans-serif';
+      ctx.fillText('Bis morgen!', b1.x + bw / 2, b1.y + 21);
+      this.lebenKnoepfe.push(b1);
+    }
   }
 
   private toMenu(zentrieren = true): void {
@@ -515,6 +667,7 @@ export class Game {
     recordResult(this.level, this.world);
     this.progress = loadProgress();
     const gewonnen = this.world.saved >= this.world.needed;
+    if (!gewonnen) this.verbucheLeben();
     const alle = gewonnen && this.world.saved === this.level.total;
     const bestwert = gewonnen && this.conditions.filter(Boolean).length > (vorher?.stars ?? 0);
     this.audio.levelEnde(gewonnen, alle, bestwert);
@@ -634,6 +787,25 @@ export class Game {
       if (!this.audio.musicPlaying) {
         this.audio.setBesetzung('karte');
         this.audio.startMusic();
+      }
+      // Die Leben-Tafel liegt ueber der Karte und faengt jede Beruehrung —
+      // darunter darf nichts scrollen und erst recht nichts starten.
+      if (this.lebenTafel) {
+        const k = this.lebenKnoepfe.find((b) => inBox(b, x, y));
+        if (k) {
+          this.audio.knopf();
+          if (k.id === 'video') {
+            const neu = videoEinloesen(this.leben);
+            if (neu) {
+              this.leben = neu;
+              speichereLeben(neu);
+              this.lebenTafel = false;
+            }
+          } else {
+            this.lebenTafel = false;
+          }
+        }
+        return;
       }
       // Auf der Karte ist jede Berührung erst einmal ein Schub. Ob daraus ein
       // Antippen wird, entscheidet sich beim Loslassen — genauso wie im Spiel
@@ -884,7 +1056,13 @@ export class Game {
           const lv = LEVELS.find((l) => l.id === hit.id);
           if (lv) {
             this.audio.knopf();
-            this.loadLevel(lv);
+            // Ueber Mitternacht offen gelassen? Dann ist der Vorrat wieder da.
+            this.leben = tagesWechsel(this.leben, heuteTag());
+            if (!this.ohneLeben && this.leben.uebrig <= 0) {
+              this.lebenTafel = true;
+            } else {
+              this.loadLevel(lv);
+            }
           }
         }
       }
@@ -919,6 +1097,16 @@ export class Game {
     // `resume`: Dort sagt der Filter-Sweep schon, was passiert, und beides
     // uebereinander waere doppelt gemoppelt.
     if (id !== 'resume') this.audio.knopf();
+    // Ein Abbruch nach der Schnupperfrist zaehlt wie eine Niederlage — sonst
+    // umgeht man den Verlust, indem man kurz vor dem Ende aufgibt (leben.ts).
+    // Die ersten dreissig Sekunden sind frei: Reinschnuppern kostet nichts.
+    if (
+      (id === 'restart' || id === 'retry' || id === 'menu') &&
+      this.phase === 'paused' &&
+      this.world.tickCount > FREI_SEKUNDEN * TICK_HZ
+    ) {
+      this.verbucheLeben();
+    }
     switch (id) {
       case 'start':
       case 'resume':
@@ -1002,6 +1190,7 @@ export class Game {
         anim: this.anim,
         atlas: this.atlas,
       });
+      this.drawLeben(ctx);
       this.buttons = [];
       return;
     }
@@ -1348,6 +1537,11 @@ export class Game {
   debugKartePunkt(id: string): { x: number; y: number; offen: boolean } | null {
     const t = this.karteTreffer.find((k) => k.id === id);
     return t ? { x: t.x + t.w / 2, y: t.y + t.h / 2, offen: t.offen } : null;
+  }
+
+  /** Lebensvorrat setzen — nur fuer die Sichtprobe der Leben-Tafel. */
+  debugLeben(uebrig: number, videos = 0): void {
+    this.leben = { ...this.leben, uebrig, videos };
   }
 
   /**
