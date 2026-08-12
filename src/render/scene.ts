@@ -6,7 +6,7 @@ import { mulberry32 } from '../levels/paint';
 import { standY, sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
-import { drawWarnschein, drawZuendUhr, schopfPlatz } from './schopf';
+import { drawWarnschein, drawZuendUhr, schopfFarbe, schopfPlatz } from './schopf';
 import { clipForWusel, type SpriteAtlas } from './atlas';
 import { SPAEHEN, ansicht, ansichtVergessen } from './ansicht';
 import type { TerrainView } from './terrainView';
@@ -247,6 +247,12 @@ export class Scene {
   spawnFromEvents(events: WorldEvent[]): void {
     for (const e of events) {
       switch (e.type) {
+        case 'assign':
+          // Die Vergabe quittiert im Bild (Kritik F4): ein kleiner Hauch in
+          // der Berufsfarbe steigt von der Figur auf. Der Klang kommt aus der
+          // Tonschicht; das hier ist die sichtbare Haelfte derselben Antwort.
+          this.burst(e.x, e.y - 9, 7, schopfFarbe(e.skill ?? null), 22, 520, 1.6, -46, 'weich');
+          break;
         case 'dig':
           this.schutt(e);
           break;

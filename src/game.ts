@@ -22,7 +22,7 @@ import {
   FAN_MAX,
   type Candidate,
 } from './input/targeting';
-import { Camera, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './render/camera';
+import { Camera, standY, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './render/camera';
 import { COL, drawControls, drawRecenter, drawRewind, drawTopBar, STERN_ABSTAND, STERN_EINSATZ } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
@@ -39,6 +39,7 @@ import type { KartenPunkt } from './levels/welten';
 import { wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
 import { GameAudio } from './audio';
+import { schopfFarbe } from './render/schopf';
 
 /**
  * Wie weit ein Finger auf der Karte wandern darf, damit es noch ein Antippen
@@ -971,6 +972,7 @@ export class Game {
 
     const view = this.playView();
     this.scene.draw(ctx, view, this.world, this.anim);
+    this.drawBerufsmarken(ctx, view);
     this.drawAimOverlay(ctx, view);
 
     drawOffscreenMarkers(ctx, this.layout.play, view, this.world);
@@ -1088,6 +1090,56 @@ export class Game {
       }
     }
     if (this.phase !== 'running') ctx.restore();
+  }
+
+  /**
+   * Die Dauermarken: Ist ein Beruf in der Leiste gewaehlt, tragen alle
+   * Figuren, die ihn schon haben, einen Punkt im Bandton ueber dem Kopf.
+   *
+   * Die Kritik (F4) nannte das Suchbild beim Namen: Ein Blocker in einer
+   * Laufergruppe ist auf Spielgroesse kaum zu finden, und wer drei Kletterer
+   * vergeben will, zaehlt muehsam nach, wer schon einen hat. Die Marke haengt
+   * an der **Auswahl**: Ohne gewaehlten Beruf zeigt das Spielfeld keine
+   * Verwaltungsgrafik.
+   */
+  private drawBerufsmarken(ctx: CanvasRenderingContext2D, v: View): void {
+    if (!this.selected || this.phase !== 'running') return;
+    const s = this.selected;
+    const traegt = (w: Wusel): boolean => {
+      switch (s) {
+        case 'climber':
+          return w.hasClimber;
+        case 'floater':
+          return w.hasFloater;
+        case 'bomber':
+          return w.fuse > 0;
+        case 'blocker':
+          return w.isBlocker;
+        case 'builder':
+          return w.state === State.BUILDING;
+        case 'basher':
+          return w.state === State.BASHING || w.vormerk === 'basher';
+        case 'miner':
+          return w.state === State.MINING;
+        case 'digger':
+          return w.state === State.DIGGING;
+        default:
+          return false;
+      }
+    };
+    ctx.fillStyle = schopfFarbe(s);
+    ctx.strokeStyle = 'rgba(10, 12, 18, 0.7)';
+    ctx.lineWidth = 1;
+    for (const w of this.world.wusels) {
+      if (!isActive(w) || !traegt(w)) continue;
+      const px = sx(v, w.x);
+      const py = standY(v, w.y) - (WUSEL_H + 3.4) * v.scale;
+      const r = Math.max(2, 1.15 * v.scale);
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
   }
 
   private hudState() {
