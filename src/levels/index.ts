@@ -3,6 +3,7 @@ import type { LevelDef } from './types';
 import { WELT2_LEVELS } from './welt2';
 import { WELT3_LEVELS } from './welt3';
 import { WELT4_LEVELS } from './welt4';
+import { WELT5_LEVELS } from './welt5';
 
 /** Fuellt die nicht genannten Berufe mit 0 auf. */
 function sk(partial: Partial<SkillCounts>): SkillCounts {
@@ -317,6 +318,7 @@ export const LEVELS: LevelDef[] = [
 LEVELS.push(...WELT2_LEVELS);
 LEVELS.push(...WELT3_LEVELS);
 LEVELS.push(...WELT4_LEVELS);
+LEVELS.push(...WELT5_LEVELS);
 
 export function levelById(id: string): LevelDef | undefined {
   return LEVELS.find((l) => l.id === id);

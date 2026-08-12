@@ -443,11 +443,9 @@ describe('Der ausgelieferte Katalog', () => {
 
   it('zeigt heute genau die gebauten Welten', () => {
     const karte = weltkarte({}, KATALOG);
-    expect(karte.welten).toHaveLength(3);
-    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3']);
-    expect(karte.welten[0].level).toHaveLength(10);
-    expect(karte.welten[1].level).toHaveLength(12);
-    expect(karte.welten[2].level).toHaveLength(13);
+    expect(karte.welten).toHaveLength(5);
+    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5']);
+    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 12, 13, 14, 15]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });

@@ -388,6 +388,8 @@ export const WELT3_LEVELS: LevelDef[] = [
       // Der Westboden mit der Grube: Sie faengt jeden, der nicht klettert.
       { t: 'ground', x: 0, w: 380, y: 370, h: 230, mat: MAT.ROCK, rough: 2 },
       { t: 'rect', x: 150, y: 370, w: 60, h: 68, mat: MAT.EMPTY },
+      // Muendung frei — siehe w5-15: keine raue Lippe ueber dem Grubenrand.
+      { t: 'rect', x: 146, y: 358, w: 68, h: 12, mat: MAT.EMPTY },
       // Der Berg in der Mitte.
       { t: 'rect', x: 380, y: 300, w: 200, h: 300, mat: MAT.ROCK },
       // Der Ostflügel: Blechboden mit Naht, darunter die Halle mit dem Riegel.

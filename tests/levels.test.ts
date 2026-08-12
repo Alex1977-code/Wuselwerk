@@ -830,6 +830,23 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w4-12': planFrost3,
   'w4-13': planFrost13,
   'w4-14': planFrost14,
+  // Welt 5 beschleunigt bewiesene Geometrien — die Quellplaene gelten
+  // woertlich weiter (die Koordinaten sind identisch).
+  'w5-01': planFrost1,
+  'w5-02': planLevel1,
+  'w5-03': planLevel3,
+  'w5-04': planLevel7,
+  'w5-05': planLevel8,
+  'w5-06': planKlamm11,
+  'w5-07': planKlamm5,
+  'w5-08': planLevel5,
+  'w5-09': planLevel6,
+  'w5-10': planLevel4,
+  'w5-11': planRost6,
+  'w5-12': planRost4,
+  'w5-13': planRost11,
+  'w5-14': planLevel10,
+  'w5-15': planRost13,
 };
 
 function planFor(level: LevelDef): Plan {
