@@ -132,6 +132,66 @@ const RUST: Palette = {
   dunst: 'rgba(212, 190, 160, 0.16)',
 };
 
+const FROST: Palette = {
+  // Die Frostklamm ist hoch und hell: Winterlicht von oben, Eis, das den
+  // Fels ueberzieht. Kalt, aber freundlich — keine Nacht, ein klarer
+  // Wintertag in einer Schlucht.
+  skyTop: '#3b6ea8',
+  skyMid: '#7fb2d9',
+  skyBottom: '#e8f3f8',
+  hills: ['#c9dded', '#9dbdd6', '#6d8fae'],
+  hillsDeep: ['#b3cde2', '#7fa4c2', '#527392'],
+  // Gefrorener Grund: blaugrauer Firn statt brauner Erde.
+  earth: 0x8195ad,
+  earthDeep: 0x46586e,
+  pebble: 0xa8b6c6,
+  // Die Narbe ist Schnee.
+  crust: 0xf0f6fb,
+  crustDark: 0x9fb8cd,
+  crustThickness: 3,
+  rock: 0x5f7089,
+  steel: 0x9aa5b5,
+  brick: 0xd59a4a,
+  freshBoost: 26,
+  glow: '#d8f0ff',
+  dunst: 'rgba(220, 238, 248, 0.2)',
+};
+
+const MAGMA: Palette = {
+  // Der Schlot: Daemmerhimmel ueber dem Krater, Gluthitze von unten. Die
+  // Waerme sitzt unten im Bild — Licht aus der Tiefe, nicht vom Himmel.
+  skyTop: '#2b2030',
+  skyMid: '#5c3040',
+  skyBottom: '#c96a3a',
+  hills: ['#7a4a48', '#5c3438', '#3d2228'],
+  hillsDeep: ['#653c3e', '#48282e', '#2c181e'],
+  // Verbrannter Grund, aschgrau-braun mit warmem Stich.
+  earth: 0x5e4438,
+  earthDeep: 0x2e1f1a,
+  pebble: 0x7d675c,
+  // Die Narbe ist verkohlte Kruste mit Glutriss-Farbe.
+  crust: 0x8a4a30,
+  crustDark: 0x3d201a,
+  crustThickness: 2,
+  rock: 0x4f4048,
+  steel: 0x9aa5b5,
+  brick: 0xd59a4a,
+  freshBoost: 34,
+  glow: '#ffb35c',
+  dunst: 'rgba(200, 110, 70, 0.14)',
+};
+
 export function paletteFor(theme: ThemeId): Palette {
-  return theme === 'crystal' ? CRYSTAL : theme === 'rust' ? RUST : GRASS;
+  switch (theme) {
+    case 'crystal':
+      return CRYSTAL;
+    case 'rust':
+      return RUST;
+    case 'frost':
+      return FROST;
+    case 'magma':
+      return MAGMA;
+    default:
+      return GRASS;
+  }
 }

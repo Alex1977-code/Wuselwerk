@@ -362,14 +362,111 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     fanfareGrund: 3,
   },
   /**
-   * Welt 3 — Rostwerk. **Teilt sich das Stueck der Klamm**: dieselbe dorische
-   * Schleife, derselbe Tonvorrat. Der Ort unterscheidet sich ueber Raum und
-   * Bett (`ambiente.ts`), nicht ueber die Melodie — ein eigenes drittes
-   * Stueck steht auf der Merkliste, und bis es komponiert ist, ist ein
-   * geteiltes besser als ein schlechtes.
+   * Welt 3 — Rostwerk. Ein **Arbeitslied**: mixolydisch auf G, also Dur mit
+   * kleiner Septime — die Tonart der Werkbank, kraeftig, aber nie feierlich.
+   * Derselbe Volksliedbau wie ueberall (Kopfmotiv dreimal, Mittelteil einmal
+   * woanders): Das Kopfmotiv ist ein Ruf ueber zwei Takte, die kleine Septime
+   * (F) traegt den Mittelteil, und der Schluss holt den Ruf nach Hause.
+   * Eigene Erfindung, wie alle Stuecke hier — nichts davon stammt aus einem
+   * Vorbild.
    */
-  get rust(): Stueck {
-    return STUECKE.crystal;
+  rust: {
+    melodie: [
+      // Ruf: G G H A G | D — C H
+      [0, 2], [0, 1], [4, 1], [2, 2], [0, 2],
+      [7, 4], [5, 2], [4, 2],
+      // Ruf, Antwort abwaerts: G G H A C | H A G —
+      [0, 2], [0, 1], [4, 1], [2, 2], [5, 2],
+      [4, 2], [2, 2], [0, 4],
+      // Mittelteil mit der kleinen Septime: F E D C | D — E —
+      [10, 2], [9, 2], [7, 2], [5, 2],
+      [7, 4], [9, 4],
+      // Ruf zum dritten Mal, Schluss: G G H A F | E D G —
+      [0, 2], [0, 1], [4, 1], [2, 2], [10, 2],
+      [9, 2], [7, 2], [0, 4],
+    ],
+    // Pendel zwischen G und F — die mixolydische Kadenz. Der letzte Takt
+    // steht wieder auf G: Ein Arbeitslied kommt heim und faengt neu an.
+    akkorde: [0, 10, 0, 5, 10, 5, 10, 0],
+    farbe: [4, 10],
+    // 112: schneller als die Wiese, langsamer als der Schlot — Hammertakt.
+    bpm: 112,
+    grund: 196,
+    melodieStimme: 'akkordeon',
+    zweitStimme: 'okarina',
+    harmonieStimme: 'ukulele',
+    // G-Dur pentatonisch; jede Stufe kommt in der Melodie vor.
+    sfxStufen: [0, 2, 4, 7, 9],
+    fanfareGrund: 0,
+  },
+  /**
+   * Welt 4 — Frostklamm. Reines Moll (aeolisch) auf E, langsam und glasig:
+   * Die Melodie steigt in Terzschritten wie Atem in kalter Luft und faellt
+   * in der dritten Phrase aus der Hoehe zurueck. Die Kaelte kommt nicht aus
+   * der Tonart allein, sondern aus der Besetzung — Panfloete ueber Kalimba
+   * ist Luft ueber Eis.
+   */
+  frost: {
+    melodie: [
+      // Kopf: E G A H | A G Fis —
+      [0, 2], [3, 2], [5, 2], [7, 2],
+      [5, 2], [3, 2], [2, 4],
+      // Kopf, Antwort in die Sexte: E G A C | H — A —
+      [0, 2], [3, 2], [5, 2], [8, 2],
+      [7, 4], [5, 4],
+      // Mittelteil, von oben herab: E' D H A | G — E —
+      [12, 2], [10, 2], [7, 2], [5, 2],
+      [3, 4], [0, 4],
+      // Schluss, eng um den Grundton: Fis G A G | Fis E — —
+      [2, 2], [3, 2], [5, 2], [3, 2],
+      [2, 2], [0, 6],
+    ],
+    akkorde: [0, 8, 3, 10, 8, 3, 10, 0],
+    farbe: [3, 8],
+    // 88: das langsamste Stueck des Spiels — in der Klamm traegt der Hall.
+    bpm: 88,
+    grund: 164.81,
+    melodieStimme: 'panfloete',
+    zweitStimme: 'streicher',
+    harmonieStimme: 'kalimba',
+    // E-Moll pentatonisch; jede Stufe kommt in der Melodie vor.
+    sfxStufen: [0, 3, 5, 7, 10],
+    fanfareGrund: 3,
+  },
+  /**
+   * Welt 5 — Schlot. Phrygisch auf D: Die kleine Sekunde (Es) direkt ueber
+   * dem Grundton ist die Reibung, die nie ganz ausgeht — Hitze als
+   * Intervall. Das schnellste Stueck des Spiels, und trotzdem in Vierteln
+   * erzaehlt: Der Druck kommt aus der Harmonik, nicht aus Hast.
+   */
+  magma: {
+    melodie: [
+      // Kopf, eng am Grundton: D Es F Es | D — F G
+      [0, 2], [1, 2], [3, 2], [1, 2],
+      [0, 4], [3, 2], [5, 2],
+      // Kopf, weiter hinauf: D Es F G | A — G F
+      [0, 2], [1, 2], [3, 2], [5, 2],
+      [7, 4], [5, 2], [3, 2],
+      // Mittelteil an der Spitze: A B A G | F Es D —
+      [7, 2], [8, 2], [7, 2], [5, 2],
+      [3, 2], [1, 2], [0, 4],
+      // Schluss, aus der Oktave herab: D' C A G | F Es D —
+      [12, 2], [10, 2], [7, 2], [5, 2],
+      [3, 2], [1, 2], [0, 4],
+    ],
+    // Das phrygische Pendel: D gegen Es, dazwischen einmal F. Es loest sich
+    // nie weiter als einen Halbton — genau das haelt die Spannung.
+    akkorde: [0, 1, 0, 3, 1, 0, 1, 0],
+    farbe: [1, 3],
+    // 132: Zeitdruck von oben, Hitze von unten.
+    bpm: 132,
+    grund: 146.83,
+    melodieStimme: 'klarinette',
+    zweitStimme: 'leier',
+    harmonieStimme: 'ukulele',
+    // D-Moll pentatonisch; jede Stufe kommt in der Melodie vor.
+    sfxStufen: [0, 3, 5, 7, 10],
+    fanfareGrund: 3,
   },
 };
 
@@ -547,7 +644,9 @@ function aufRaster(m: readonly Note[]): (Note | null)[] {
 const RASTER: Record<ThemeId, (Note | null)[]> = {
   grass: aufRaster(STUECKE.grass.melodie),
   crystal: aufRaster(STUECKE.crystal.melodie),
-  rust: aufRaster(STUECKE.crystal.melodie),
+  rust: aufRaster(STUECKE.rust.melodie),
+  frost: aufRaster(STUECKE.frost.melodie),
+  magma: aufRaster(STUECKE.magma.melodie),
 };
 
 /** Was die Musik über die Spiellage wissen muss. */

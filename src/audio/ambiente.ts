@@ -208,6 +208,21 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
     { art: 'brummen', pause: [5.0, 9.0], gain: 0.013, hz: 196, schwebungHz: 0.4, dauer: 6.0, oberton: 0.4 },
     { art: 'ruf', pause: [6.0, 14], gain: 0.02, hz: [1500, 2400], toene: [1, 2], rutsch: [0.7, 0.95], dauer: [0.06, 0.12], abstand: [0.12, 0.25], form: 'triangle', echos: 1 },
   ],
+  // Welt 4 — Frostklamm. Duenne, klare Hoehenluft: heller Wind, weit oben,
+  // fast ohne Tiefe; dazu selten ein glasiges Knacken — Eis, das arbeitet.
+  frost: [
+    { art: 'wind', pause: [1.6, 3.4], gain: 0.015, hz: [420, 900], q: 0.8, dauer: [2.4, 4.8], wanderung: [0.8, 1.5] },
+    { art: 'wind', pause: [3.5, 7.0], gain: 0.01, hz: [900, 1600], q: 1.1, dauer: [1.2, 2.6], wanderung: [0.6, 1.2] },
+    { art: 'ruf', pause: [5.0, 12], gain: 0.022, hz: [2600, 3800], toene: [1, 1], rutsch: [1.2, 1.6], dauer: [0.03, 0.06], abstand: [0.08, 0.15], form: 'sine', echos: 1, anschlagHz: 4800 },
+  ],
+  // Welt 5 — Schlot. Hitze hoert man als Tiefe: ein sattes Grollen auf der
+  // Quinte, dazu traeges Blubbern von unten und kein Wind — im Schlot steht
+  // die Luft.
+  magma: [
+    { art: 'brummen', pause: [3.0, 5.5], gain: 0.022, hz: 155.56, schwebungHz: 0.7, dauer: 6.5, oberton: 0.5 },
+    { art: 'ruf', pause: [2.2, 6.0], gain: 0.02, hz: [180, 340], toene: [1, 2], rutsch: [0.6, 0.85], dauer: [0.08, 0.16], abstand: [0.1, 0.22], form: 'sine', echos: 0 },
+    { art: 'wind', pause: [4.0, 8.0], gain: 0.012, hz: [160, 300], q: 0.5, dauer: [3.0, 6.0], wanderung: [0.9, 1.3] },
+  ],
 };
 
 /**
@@ -239,6 +254,10 @@ const RAEUME: Record<ThemeId, { dauer: number; pegel: number; daempfung: number 
   // Halde im Freien: kuerzer als die Hoehle, dunkler als die Wiese — Blech
   // wirft hart und hoch zurueck, aber es gibt kein Gewoelbe, das traegt.
   rust: { dauer: 1.9, pegel: 1.0, daempfung: 2600 },
+  // Frostklamm: lang und glashell — Eiswaende schlucken fast nichts.
+  frost: { dauer: 2.4, pegel: 1.05, daempfung: 6500 },
+  // Schlot: mittellang und sehr dumpf — heisses Gestein, enger Schacht.
+  magma: { dauer: 2.2, pegel: 1.15, daempfung: 1100 },
 };
 
 /**
