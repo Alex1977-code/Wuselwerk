@@ -1,5 +1,5 @@
 {
-  "_warum": "Gang auf allen vieren als Sprunggalopp: Vorderbeine als Paar, Hinterbeine als Paar, eine halbe Phase versetzt, dazwischen federt der Ruecken; einmal je Zyklus hebt der Koerper ab. Ein Trab waere die Gangart von Hund und Pferd — eine kleine Schleichkatzenverwandtschaft buendelt. Die beiden Beine eines Paares laufen sieben Hundertstel Zyklus versetzt, sonst ist die Silhouette in der Haelfte aller Bilder ein Klotz. Haltung nach der Telefonprobe berichtigt: flacher Ruecken statt hohem Hinterteil, sichtbarer Hals statt Kopf zwischen den Schultern, Schwanz fast waagerecht statt mit 54 Grad Spitze nach oben. Kopf als Winkel — der Kopfknochen hat kein Kind und nimmt keine Zielrichtung an. lehne 0, weil der Rumpf die Neigung schon hat.",
+  "_warum": "Gang auf allen vieren als Sprunggalopp: Vorderbeine als Paar, Hinterbeine als Paar, eine halbe Phase versetzt, dazwischen federt der Ruecken; einmal je Zyklus hebt der Koerper ab. Ein Trab waere die Gangart von Hund und Pferd \u2014 eine kleine Schleichkatzenverwandtschaft buendelt. Die beiden Beine eines Paares laufen sieben Hundertstel Zyklus versetzt, sonst ist die Silhouette in der Haelfte aller Bilder ein Klotz. Haltung nach der Telefonprobe berichtigt: flacher Ruecken statt hohem Hinterteil, sichtbarer Hals statt Kopf zwischen den Schultern, Schwanz fast waagerecht statt mit 54 Grad Spitze nach oben. Kopf als Winkel \u2014 der Kopfknochen hat kein Kind und nimmt keine Zielrichtung an. lehne 0, weil der Rumpf die Neigung schon hat. Hals auf das 3,2fache gestreckt und die Schulterblaetter nach hinten geschwenkt: Der Hals dieses Modells misst 0,068 Modelleinheiten, keinen ganzen logischen Pixel \u2014 waagerecht sass der Kopf damit unmittelbar auf den Schultern und die Vorderbeine sahen aus, als waeren sie am Kopf angewachsen. Der Kopfmassstab wird dabei gegengerechnet, sonst waechst er mit.",
   "dreh": 72,
   "boden": true,
   "lehne": 0,
@@ -100,6 +100,16 @@
           0.0698,
           0.2326,
           -0.9701
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -115,7 +125,10 @@
         0.9892,
         1.0219,
         0.9892
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -213,6 +226,16 @@
           0.0698,
           0.3731,
           -0.9251
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -228,7 +251,10 @@
         0.9864,
         1.0278,
         0.9864
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -326,6 +352,16 @@
           0.0698,
           0.5233,
           -0.8493
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -341,7 +377,10 @@
         0.9914,
         1.0174,
         0.9914
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -439,6 +478,16 @@
           0.0698,
           0.5981,
           -0.7984
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -454,7 +503,10 @@
         1.0016,
         0.9968,
         1.0016
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -552,6 +604,16 @@
           0.0698,
           0.5653,
           -0.8219
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -567,7 +629,10 @@
         1.0112,
         0.9781,
         1.0112
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -665,6 +730,16 @@
           0.0698,
           0.4378,
           -0.8963
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -680,7 +755,10 @@
         1.0142,
         0.9722,
         1.0142
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -778,6 +856,16 @@
           0.0698,
           0.281,
           -0.9572
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -793,7 +881,10 @@
         1.0088,
         0.9826,
         1.0088
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     },
     {
       "richtung": {
@@ -891,6 +982,16 @@
           0.0698,
           0.1931,
           -0.9787
+        ],
+        "L_Clavicle": [
+          0.9007,
+          0.06,
+          -0.4303
+        ],
+        "R_Clavicle": [
+          -0.9007,
+          0.06,
+          -0.4303
         ]
       },
       "winkel": {
@@ -906,7 +1007,10 @@
         0.9984,
         1.0032,
         0.9984
-      ]
+      ],
+      "knochenSkala": {
+        "NeckTwist01": 3.2
+      }
     }
   ]
 }

@@ -349,7 +349,7 @@ window.laden = async (url) => {
  * Gerechnet wird von aussen nach innen — erst Eltern, dann Kinder —, weil die
  * Weltdrehung eines Knochens die schon gesetzte seines Elternteils enthaelt.
  */
-function stelle(richtungen, winkel) {
+function stelle(richtungen, winkel, skala) {
   // Die Wurzeldrehung **zuruecksetzen**, bevor irgendetwas gerechnet wird.
   //
   // Zielrichtungen sind Weltrichtungen: Der Backvorgang rechnet sie ueber die
@@ -366,10 +366,30 @@ function stelle(richtungen, winkel) {
   for (const name of ordnung) {
     const b = knochen[name];
     b.quaternion.copy(ruhe[name].q);
+    // Auch den Massstab, und das ist kein Beiwerk: Der gestreckte Hals des
+    // vierfuessigen Gangs blieb sonst stehen und machte aus allen elf folgenden
+    // Posen Giraffen. Zurueckgesetzt wird, was gesetzt werden kann.
+    b.scale.set(1, 1, 1);
   }
   // Der Kopfmassstab gehoert zur Figur, nicht zur Pose — er ueberlebt jede
   // Ruecksetzung.
   if (knochen.Head) knochen.Head.scale.setScalar(1.12);
+  // Einzelne Knochen laenger machen.
+  //
+  // Fuer den Hals unverzichtbar. Er misst in diesem Modell 0,068 Einheiten —
+  // keinen ganzen logischen Pixel. Aufrecht faellt das nicht auf; waagerecht
+  // sitzt der Kopf damit unmittelbar auf den Schultern, und die Vorderbeine
+  // sehen aus, als waeren sie am Kopf angewachsen. Genau so kam es zurueck.
+  //
+  // Der Massstab eines Knochens vererbt sich an seine Kinder, deshalb wird der
+  // Kopf gegengerechnet: Sonst waechst er mit dem Hals mit.
+  if (skala) {
+    for (const [name, k] of Object.entries(skala)) {
+      if (knochen[name]) knochen[name].scale.setScalar(k);
+    }
+    const kette = ['NeckTwist01', 'NeckTwist02'].reduce((a, nm) => a * (skala[nm] ?? 1), 1);
+    if (knochen.Head && kette !== 1) knochen.Head.scale.setScalar(1.12 / kette);
+  }
   wurzel.updateMatrixWorld(true);
   // Knochen **ohne Kind** haben keine Achse, auf die sich eine Zielrichtung
   // beziehen liesse — der Kopf ist der wichtige Fall. Fuer sie gibt es die
@@ -532,7 +552,11 @@ function blick(weite) {
 }
 
 function zeichne(bild, dreh, grund, seite) {
-  stelle(bild && bild.richtung ? bild.richtung : null, bild && bild.winkel ? bild.winkel : null);
+  stelle(
+    bild && bild.richtung ? bild.richtung : null,
+    bild && bild.winkel ? bild.winkel : null,
+    bild && bild.knochenSkala ? bild.knochenSkala : null,
+  );
   const skala = bild && bild.skala != null ? bild.skala : 1;
   // Stauchen und Strecken — das aelteste Mittel der Zeichentrickbewegung.
   //

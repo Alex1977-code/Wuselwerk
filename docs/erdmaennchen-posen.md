@@ -67,9 +67,27 @@ stimmt das. Für das *Gesicht* ist es das Gegenteil — im reinen Profil ist die
 Augenmaske ein Strich. Durchprobiert wurden 56, 64, 72 und 80; bei **72** bleibt
 der Körper lang und die Maske sichtbar.
 
+### Der Hals ist gestreckt, weil es keinen gibt
+
+Der Hals dieses Modells misst **0,068 Modelleinheiten** — keinen ganzen logischen
+Pixel. Aufrecht fällt das nicht auf. Waagerecht sitzt der Kopf damit unmittelbar
+auf den Schultern, und die Rückmeldung dazu war eindeutig: *„Arme sind an Kopf
+oder Hals beim Laufen."* Sie waren es auch.
+
+`NeckTwist01` wird deshalb im Gehen auf das **3,2fache** skaliert und die beiden
+Schlüsselbeine nach hinten geschwenkt. Der Maßstab eines Knochens vererbt sich an
+seine Kinder, also wird der Kopf gegengerechnet — sonst wächst er mit. Der Hals
+misst danach gut zwei logische Pixel, und der Kopf steht vor den Vorderbeinen
+statt auf ihnen.
+
+Nur im Gehen. Die aufrechten Posen behalten ihren Hals; eine gestreckte Figur
+wäre dort eine Giraffe. Genau das ist beim ersten Versuch passiert, weil
+`stelle()` Maßstäbe setzte, aber nie zurücksetzte — der gestreckte Hals blieb
+stehen und lief in **alle elf folgenden Posen**. Zurückgesetzt wird jetzt, was
+gesetzt werden kann.
+
 Bei zwölf logischen Pixeln bleibt der Kopf klein, und was ihn lesbar macht, ist
-die zur Laufzeit gezeichnete **Augenmaske**, nicht die Geometrie. Das ist die
-Grenze dieses Modells auf allen vieren.
+zusätzlich die zur Laufzeit gezeichnete **Augenmaske**.
 
 ## Zwei Quellen von Flimmern, beide behoben
 
@@ -139,6 +157,7 @@ gesetzt.
 | `boden` | setzt die Sohle des **tiefsten** Bildes auf die Standlinie |
 | `mitte` | legt den Umriss aller Bilder in die Zellmitte |
 | `lehne` | zusätzliche Neigung im Zeichner; `0` schaltet `LEHNE` ab |
+| `knochenSkala` | je Einzelbild: einzelne Knochen strecken (Hals im Gehen) |
 
 `boden` und `mitte` braucht jede Pose, die den Körper aus der Senkrechten nimmt:
 Die Eichung setzt die Sohle nur einmal, in der aufrechten Ruhelage.
@@ -152,15 +171,15 @@ Jede Zeile meldet beim Backen ihr Maß:
 
 - **Breite** in logischen Pixeln. Die Simulation stößt mit *einer* Spalte an; was
   seitlich darüber hinaussteht, kann in einer Wand stecken, ohne dass sie davon
-  weiß. Auf allen vieren sind es 15,4 gegen eine Zellbreite von 17,0 — der
+  weiß. Auf allen vieren sind es 15,0 gegen eine Zellbreite von 17,0 — der
   Schrittausschlag der Beine ist an dieser Grenze bemessen und nicht an der
   Anatomie.
-- **Höhe.** Auf allen vieren 7,8 statt 12,1 — die Figur füllt ihren
+- **Höhe.** Auf allen vieren 8,6 statt 12,1 — die Figur füllt ihren
   Kollisionskasten nicht mehr ganz aus. Das ist die bewusst hingenommene
   Ungenauigkeit: Sie ist *konservativ*, die Figur meidet Decken, unter die sie
   passen würde, statt durch welche zu rutschen.
 - **Standfläche.** Die Breite des Umrisses im untersten Streifen. Daran hängt der
   Kontaktschatten: Der Rammer steht auf 4,3 logischen Pixeln, der Gräber auf 8,4,
-  der Läufer auf allen vieren auf 9,4. Ein Schatten, der das nicht weiß, ist beim
+  der Läufer auf allen vieren auf 9,0. Ein Schatten, der das nicht weiß, ist beim
   einen ein Nebel und beim anderen ein Fleck neben den Pfoten.
 - **Sohle über Grund.** Wie weit die Figur schwebt oder einsinkt.
