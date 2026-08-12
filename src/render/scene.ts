@@ -22,6 +22,33 @@ interface Particle {
   size: number;
   color: string;
   gravity: number;
+  /**
+   * Wie das Teilchen gezeichnet wird. `quadrat` ist das alte harte Korn und
+   * bleibt fuer Schutt richtig — ein Erdkruemel hat Ecken. `weich` ist ein
+   * Kreis mit weichem Rand fuer Feuer und Rauch, der ueber die Lebenszeit
+   * waechst. `brocken` ist ein gedrehtes Viereck mit Drall — der Erdbrocken,
+   * der aus dem Krater fliegt.
+   */
+  form?: 'quadrat' | 'weich' | 'brocken';
+  winkel?: number;
+  drall?: number;
+}
+
+/** Der Weissblitz einer Sprengung — zwei, drei Bilder, nicht mehr. */
+interface Blitz {
+  x: number;
+  y: number;
+  life: number;
+  max: number;
+}
+
+/** Die Brandspur am Krater. Sie dunkelt kurz nach und verweht. */
+interface Brandspur {
+  x: number;
+  y: number;
+  r: number;
+  life: number;
+  max: number;
 }
 
 interface HillLayer {
@@ -69,6 +96,8 @@ export class Scene {
   /** Weiche Senken auf dem vordersten Hügel — gegen die glatte Fläche. */
   private flecken: { x: number; y: number; r: number; tiefe: number }[] = [];
   private particles: Particle[] = [];
+  private blitze: Blitz[] = [];
+  private brandspuren: Brandspur[] = [];
   /** Bildschirmschütteln, nur bei Sprengungen (GDD §6). */
   shake = 0;
   /** Stellung der Lukenklappen, 0 zu bis 1 offen. */
@@ -202,6 +231,8 @@ export class Scene {
    */
   klarstellen(): void {
     this.particles = [];
+    this.blitze = [];
+    this.brandspuren = [];
     ansichtVergessen();
   }
 
@@ -242,9 +273,14 @@ export class Scene {
           // hinter dem Feuer liegt: Im ersten Versuch kam er zuletzt und deckte
           // als grosser grauer Klumpen genau den Feuerball zu, den er umgeben
           // soll. Rauch gehoert um ein Feuer herum, nicht davor.
-          this.burst(e.x, e.y, 12, '#7d7368', 26, PARTIKEL_MS.explosionRauch, 3.2, 12);
-          this.burst(e.x, e.y, 22, '#ff9a3c', 62, PARTIKEL_MS.explosionFeuer, 2.6, 150);
-          this.burst(e.x, e.y, 9, '#fff0c2', 46, PARTIKEL_MS.explosionFeuer * 0.4, 3.4, 40);
+          this.burst(e.x, e.y, 12, '#7d7368', 26, PARTIKEL_MS.explosionRauch, 3.2, 12, 'weich');
+          this.burst(e.x, e.y, 22, '#ff9a3c', 62, PARTIKEL_MS.explosionFeuer, 2.6, 150, 'weich');
+          this.burst(e.x, e.y, 9, '#fff0c2', 46, PARTIKEL_MS.explosionFeuer * 0.4, 3.4, 40, 'weich');
+          // Erdbrocken mit Drall: eckig, schwer, schnell unten. Sie sind der
+          // Beleg, dass hier **Boden** geflogen ist und nicht Konfetti.
+          this.burst(e.x, e.y, 10, '#5a4430', 78, PARTIKEL_MS.explosionFeuer * 1.4, 1.9, 300, 'brocken');
+          this.blitze.push({ x: e.x, y: e.y, life: 0.09, max: 0.09 });
+          this.brandspuren.push({ x: e.x, y: e.y, r: 15, life: 4.5, max: 4.5 });
           this.shake = Math.min(1, this.shake + 0.85);
           break;
         case 'saved':
@@ -300,6 +336,7 @@ export class Scene {
     lifeMs: number,
     groesse = 2,
     gravity = 190,
+    form: Particle['form'] = 'quadrat',
   ): void {
     for (let i = 0; i < n; i++) {
       if (this.particles.length >= MAX_PARTICLES) return;
@@ -316,6 +353,9 @@ export class Scene {
         size: Math.max(1, Math.round(groesse * (0.6 + Math.random() * 0.8))),
         color,
         gravity,
+        form,
+        winkel: Math.random() * Math.PI,
+        drall: (Math.random() - 0.5) * 9,
       });
     }
   }
@@ -328,9 +368,18 @@ export class Scene {
     const ziel = this.klappeZiel;
     const schritt = dtSec * 3.4;
     this.klappe += Math.max(-schritt, Math.min(schritt, ziel - this.klappe));
+    for (let i = this.blitze.length - 1; i >= 0; i--) {
+      this.blitze[i].life -= dtSec;
+      if (this.blitze[i].life <= 0) this.blitze.splice(i, 1);
+    }
+    for (let i = this.brandspuren.length - 1; i >= 0; i--) {
+      this.brandspuren[i].life -= dtSec;
+      if (this.brandspuren[i].life <= 0) this.brandspuren.splice(i, 1);
+    }
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.life -= dtSec;
+      if (p.winkel !== undefined && p.drall) p.winkel += p.drall * dtSec;
       if (p.life <= 0) {
         this.particles.splice(i, 1);
         continue;
@@ -383,6 +432,25 @@ export class Scene {
       this.level.height * v.scale,
     );
     ctx.restore();
+
+    // Die Brandspuren: ein dunkler Hauch am Kraterrand, der ueber ein paar
+    // Sekunden verweht. Er liegt auf dem Terrain und unter den Figuren — wie
+    // Russ. Ohne ihn sah der Krater aus, als haette ihn jemand ausgestochen
+    // statt gesprengt.
+    for (const b of this.brandspuren) {
+      const t = Math.max(0, b.life / b.max);
+      const bx = sx(v, b.x);
+      const by = sy(v, b.y);
+      const br = b.r * v.scale;
+      const g = ctx.createRadialGradient(bx, by, br * 0.4, bx, by, br * 1.25);
+      g.addColorStop(0, `rgba(30, 20, 12, ${0.34 * t})`);
+      g.addColorStop(0.7, `rgba(24, 16, 10, ${0.2 * t})`);
+      g.addColorStop(1, 'rgba(24, 16, 10, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(bx, by, br * 1.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     this.drawExit(ctx, v, world, tick);
     this.drawHatch(ctx, v, world);
@@ -1084,10 +1152,51 @@ export class Scene {
   private drawParticles(ctx: CanvasRenderingContext2D, v: View): void {
     for (const p of this.particles) {
       const a = Math.max(0, Math.min(1, p.life / p.max));
-      ctx.globalAlpha = a;
+      const px = sx(v, p.x);
+      const py = sy(v, p.y);
       ctx.fillStyle = p.color;
-      const s = Math.max(1, p.size * v.scale);
-      ctx.fillRect(sx(v, p.x), sy(v, p.y), s, s);
+      if (p.form === 'weich') {
+        // Feuer und Rauch: ein weicher Kreis, der ueber die Lebenszeit
+        // waechst und verblasst. Zwei Scheiben statt eines Verlaufs — ein
+        // createRadialGradient je Teilchen und Bild waere zu teuer.
+        const r = Math.max(1, p.size * v.scale * (1.5 - a * 0.8));
+        ctx.globalAlpha = a * 0.55;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = a * 0.7;
+        ctx.beginPath();
+        ctx.arc(px, py, r * 0.55, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.form === 'brocken') {
+        // Der Erdbrocken: ein gedrehtes Viereck. Der Drall ist der
+        // Unterschied zwischen Konfetti und Wurfgut.
+        const s = Math.max(1.4, p.size * v.scale);
+        ctx.globalAlpha = a;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(p.winkel ?? 0);
+        ctx.fillRect(-s / 2, -s / 2, s, s * 0.8);
+        ctx.restore();
+      } else {
+        ctx.globalAlpha = a;
+        const s = Math.max(1, p.size * v.scale);
+        ctx.fillRect(px, py, s, s);
+      }
+    }
+    // Der Weissblitz zuletzt, ueber allem: die zwei Bilder, in denen die
+    // Sprengung das Bild besitzt.
+    for (const b of this.blitze) {
+      const t = Math.max(0, b.life / b.max);
+      const r = (18 + (1 - t) * 26) * v.scale;
+      const g = ctx.createRadialGradient(sx(v, b.x), sy(v, b.y), 0, sx(v, b.x), sy(v, b.y), r);
+      g.addColorStop(0, `rgba(255, 252, 240, ${0.9 * t})`);
+      g.addColorStop(0.55, `rgba(255, 235, 190, ${0.5 * t})`);
+      g.addColorStop(1, 'rgba(255, 235, 190, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(sx(v, b.x), sy(v, b.y), r, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.globalAlpha = 1;
   }

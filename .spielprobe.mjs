@@ -31,7 +31,7 @@ const browser = await chromium.launch({
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, hasTouch: true,
 });
-page.on('pageerror', (e) => console.log('FEHLER', e.message));
+page.on('pageerror', (e) => console.log('FEHLER', e.stack ?? e.message));
 await page.goto(`http://127.0.0.1:${PORT}/wuselwerk-single.html`, { waitUntil: 'load' });
 await sleep(700);
 
@@ -68,7 +68,8 @@ if (beruf) {
     [beruf, 0],
   );
   if (!wo) console.log('Beruf nicht vergeben:', beruf);
-  await sleep(1400);
+  // 'bomber+knall' wartet die Zuendschnur ab und erwischt den Feuerball.
+  await sleep(process.argv[5] === 'knall' || zoom === 'knall' ? 5050 : 1400);
 }
 if (process.argv[6] === 'zurueck') {
   const b = await page.evaluate(() => {
@@ -83,7 +84,7 @@ if (process.argv[6] === 'zurueck') {
   });
   void b; void rb;
 }
-if (zoom) {
+if (zoom && Number.isFinite(Number(zoom))) {
   await page.evaluate((z) => window.__wuselwerk?.debugZoom(Number(z)), zoom);
   await sleep(400);
 }
