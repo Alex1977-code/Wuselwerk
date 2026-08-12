@@ -1,0 +1,11 @@
+{
+  "_warum": "Was am Erdmaennchen verschieden ist. Alles Uebrige gilt fuer jede Figur gleich.",
+  "modell": "erdmaennchen-rig.glb",
+  "kopfSkala": 1.12,
+  "seitenversatz": 2.2,
+  "drehung": {
+    "walking": 72, "falling": 40, "floating": 30, "climbing": 46, "hoisting": 56,
+    "building": 58, "bashing": 60, "mining": 62, "digging": 56,
+    "blocking": 12, "saving": 12, "dying": 0, "spaehen": 16
+  }
+}

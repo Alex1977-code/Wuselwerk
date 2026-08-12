@@ -8,6 +8,7 @@ import { WUSEL_H } from '../src/core/constants';
 // Node-Typen im Testpfad, und der Lader im Spiel holt das Blatt genauso.
 import murmelBlatt from '../src/art/murmel.atlas.json';
 import erdmaennchenBlatt from '../src/art/erdmaennchen.atlas.json';
+import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
 
 /**
  * Das ausgelieferte Blatt gegen den Vertrag im Code.
@@ -37,6 +38,7 @@ import erdmaennchenBlatt from '../src/art/erdmaennchen.atlas.json';
 const BLAETTER: Record<string, AtlasManifest> = {
   murmel: murmelBlatt as unknown as AtlasManifest,
   erdmaennchen: erdmaennchenBlatt as unknown as AtlasManifest,
+  wuselwerker: wuselwerkerBlatt as unknown as AtlasManifest,
 };
 const sheet = BLAETTER.murmel;
 
@@ -315,5 +317,95 @@ describe('Das Werkzeug bleibt an der Hand', () => {
     }
     expect(fuehrtWerkzeug('walking')).toBe(false);
     expect(werkzeugAnsatz('walking', 0, -6, 12)).toBeNull();
+  });
+});
+
+/**
+ * Der Stirnpunkt — und warum ein zweiter Kopfpunkt im Blatt steht.
+ *
+ * Die Signalschicht des Wuselwerkers ist ein Stirnband. Es liegt am Kopf und
+ * muss dessen Neigung folgen; ein Band, das im *Bild* senkrecht über dem
+ * Gesicht sitzt, liegt bei jeder Pose mit gesenktem Kopf quer in den Augen.
+ * Gemessen war das nicht zu ahnen und auf dem Blatt nicht zu sehen — das Blatt
+ * ist richtig, nur das Band lag daneben.
+ *
+ * Der Backvorgang schreibt deshalb einen zweiten Kopfpunkt mit. Gesicht und
+ * Stirn zusammen sind die Hochachse des Kopfes im Bild, und daran hängt alles
+ * Weitere: Höhe, Neigung **und** Größe des Bandes.
+ */
+describe('Der Kopf bringt seine eigene Hochachse mit', () => {
+  const blatt = BLAETTER.wuselwerker;
+
+  it('nennt zu jedem Einzelbild einen Stirnpunkt', () => {
+    for (const [name, clip] of Object.entries(blatt.clips)) {
+      expect(clip.stirn, `${name} ohne Stirnpunkt`).toBeDefined();
+      expect(clip.stirn!.length, `${name}: Stirnpunkte je Bild`).toBe(clip.holds.length);
+    }
+  });
+
+  it('legt die Stirn über das Gesicht, nie darunter', () => {
+    for (const [name, clip] of Object.entries(blatt.clips)) {
+      clip.stirn!.forEach((st, i) => {
+        const g = clip.anchors![i] ?? clip.anchors![0];
+        // Kleineres y ist weiter oben — die Zelle zählt von der oberen Ecke.
+        expect(st[1], `${name} Bild ${i}: Stirn unter dem Gesicht`).toBeLessThan(g[1]);
+      });
+    }
+  });
+
+  /**
+   * Die Achse ist auch das **Maß** des Bandes, nicht nur seine Richtung.
+   *
+   * In elf der dreizehn Posen misst sie 1,8 bis 1,9 logische Pixel. Die beiden
+   * Ausreißer sind gewollt: `saving` schrumpft die Figur beim Entschweben auf
+   * die Hälfte, `dying` staucht sie. Ein Band in festen Pixeln bliebe dabei
+   * stehen und stünde zuletzt größer da als der Kopf — in Achsen gerechnet
+   * schrumpft es mit. Diese Prüfung hält beides fest: dass die Achse eine
+   * brauchbare Länge hat und dass sie beim Schrumpfen wirklich mitgeht.
+   */
+  it('misst eine Achse, die mit der Figur schrumpft', () => {
+    const laenge = (name: string, i: number) => {
+      const c = blatt.clips[name];
+      const g = c.anchors![i] ?? c.anchors![0];
+      const s = c.stirn![i] ?? c.stirn![0];
+      return Math.hypot(s[0] - g[0], s[1] - g[1]);
+    };
+    for (const [name, clip] of Object.entries(blatt.clips)) {
+      for (let i = 0; i < clip.holds.length; i++) {
+        expect(laenge(name, i), `${name} Bild ${i}: Achse zu kurz`).toBeGreaterThan(0.6);
+        expect(laenge(name, i), `${name} Bild ${i}: Achse zu lang`).toBeLessThan(3);
+      }
+    }
+    const s = blatt.clips.saving;
+    expect(laenge('saving', s.holds.length - 1), 'Achse schrumpft beim Entschweben nicht')
+      .toBeLessThan(laenge('saving', 0) * 0.7);
+  });
+});
+
+/**
+ * Der Schirm hängt über der Figur, nicht an ihrer Hand.
+ *
+ * Er ist das einzige Gerät, für das der gemessene Handpunkt **nicht** gilt, und
+ * das hat einen gemessenen Grund: Beide Figuren greifen beim Schweben mit
+ * beiden Händen nach oben, und welche davon das Rig als „vorn" meldet,
+ * entscheidet der Drehwinkel der Pose. Beim Wuselwerker liegt sie bei x +3,15,
+ * beim Erdmännchen bei x −4,65 — ein Schirm an dieser Stelle stünde einmal
+ * rechts und einmal links neben der Figur.
+ */
+describe('Der Schirm', () => {
+  it('sitzt auf der Mittellinie über dem Kopf, egal wo die Hand ist', () => {
+    const koerperH = 12;
+    for (const hx of [-5, -1, 0, 3, 5]) {
+      const a = werkzeugAnsatz('floating', hx, -9, koerperH, 'wuselwerker')!;
+      expect(a, 'Schweben führt kein Gerät').not.toBeNull();
+      expect(a.x, `Handstelle ${hx} verschiebt den Schirm`).toBe(0);
+      expect(a.y, 'Schirm hängt nicht über der Figur').toBeLessThan(-koerperH);
+    }
+  });
+
+  it('gilt für jede Figur mit gebackenen Händen', () => {
+    for (const figur of ['murmel', 'erdmaennchen', 'wuselwerker']) {
+      expect(werkzeugAnsatz('floating', 2, -8, 12, figur), figur).not.toBeNull();
+    }
   });
 });

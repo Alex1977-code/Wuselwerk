@@ -465,7 +465,7 @@ if (probe) {
 
   const manifest = {
     image: 'murmel.webp',
-    // Welche Figur das Blatt zeigt — siehe `bake-erdmaennchen.mjs`.
+    // Welche Figur das Blatt zeigt — siehe `bake-figur.mjs`.
     figur: 'murmel',
     cell: { w: LOGISCH, h: LOGISCH },
     // Der Fusspunkt: waagerecht Zellmitte, senkrecht drei Bildpunkte ueber der

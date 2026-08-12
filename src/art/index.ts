@@ -41,7 +41,7 @@ export interface AtlasSource {
  * Kilobyte und ist es wert: Die Murmel ist damit nicht verloren, sondern eine
  * Zeile entfernt — und im Spiel ueber `debugFigur` sogar zur Laufzeit.
  */
-export const FIGUR: 'erdmaennchen' | 'murmel' = 'erdmaennchen';
+export const FIGUR: 'wuselwerker' | 'erdmaennchen' | 'murmel' = 'wuselwerker';
 
 /** Alle vorhandenen Blattpaare, nach Namen. */
 export function alleAtlasQuellen(): Record<string, AtlasSource> {

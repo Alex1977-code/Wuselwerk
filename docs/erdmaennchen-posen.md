@@ -3,7 +3,7 @@
 Was die Figur kann, was jede Pose sagt, und die beiden Fallen im Rig, die
 monatelang still danebengelegen haben.
 
-Gebacken mit `node scripts/bake-erdmaennchen.mjs`; die Posen stehen als
+Gebacken mit `node scripts/bake-figur.mjs erdmaennchen`; die Posen stehen als
 Richtungstabellen in `art-src/erdmaennchen/posen/*.json`, eine Datei je Pose.
 
 ## Die Leseregel

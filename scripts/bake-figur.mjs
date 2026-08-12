@@ -1,5 +1,5 @@
 /**
- * Backt das Figurenblatt des **Erdmaennchens** aus `art-src/erdmaennchen/`.
+ * Backt ein Figurenblatt aus `art-src/<figur>/`.
  *
  * ## Drei Modelle, drei Wege
  *
@@ -66,7 +66,7 @@
  *
  * Die Uebersicht ueber alle zwoelf Posen steht in `docs/erdmaennchen-posen.md`.
  *
- * Aufruf: `node scripts/bake-erdmaennchen.mjs [--pose walking] [--probe] [--name x]`
+ * Aufruf: `node scripts/bake-figur.mjs <figur> [--pose walking] [--probe] [--name x]`
  * Zum Ausprobieren: `--variante <datei.json>` ersetzt eine Zeile, `--weit 1.8`
  * zeichnet mit weiterem Blickfeld (nur zum Ansehen, nie zum Backen).
  */
@@ -75,13 +75,23 @@ import { createServer } from 'node:http';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { extname, join } from 'node:path';
 
-const QUELLE = 'art-src/erdmaennchen';
-const POSEN = join(QUELLE, 'posen');
-/** Das gelieferte Modell **mit** nachgetragener Schwanzkette. */
-const GLB = join(QUELLE, 'erdmaennchen-rig.glb');
 const ZIEL = 'src/art';
 
 const args = process.argv.slice(2);
+/**
+ * Welche Figur gebacken wird — der Ordnername unter `art-src/`.
+ *
+ * Bis zur dritten Figur stand hier eine Konstante, und das Skript hiess nach
+ * ihr. Eine dritte Kopie derselben neunhundert Zeilen waere die schlechteste
+ * aller Loesungen gewesen: Jede Behebung — und es waren vier stille Rigfallen —
+ * haette dreimal gefunden werden muessen. Was je Figur verschieden ist, steht
+ * jetzt in `art-src/<name>/figur.json`; hier steht nur noch, wie gebacken wird.
+ */
+const figurName = args.find((a) => !a.startsWith('--') && !/^[\d.]+$/.test(a) && !a.includes('/'))
+  ?? 'erdmaennchen';
+const QUELLE = join('art-src', figurName);
+const POSEN = join(QUELLE, 'posen');
+if (!existsSync(QUELLE)) throw new Error(`Kein Ordner ${QUELLE} — welche Figur?`);
 const nurPose = args.includes('--pose') ? args[args.indexOf('--pose') + 1] : null;
 const probe = args.includes('--probe');
 const probeName = args.includes('--name') ? args[args.indexOf('--name') + 1] : 'erdmaennchen-blatt';
@@ -153,7 +163,7 @@ const ZEILEN = [
  * Der Blocker steht frontal. Seine Wachpose ist die Aussage „bis hierher und
  * nicht weiter", und die richtet sich an den Betrachter.
  */
-const DREHUNG_GRAD = {
+const DREHUNG_GRAD_ERDMAENNCHEN = {
   walking: 62,
   falling: 40,
   floating: 30,
@@ -175,6 +185,21 @@ const DREHUNG_GRAD = {
   // wandert nach links und rechts — im Profil saehe man davon nichts.
   spaehen: 16,
 };
+
+/**
+ * Die Angaben, die **je Figur** verschieden sind.
+ *
+ * `figur.json` neben dem Modell. Was hier nicht steht, gilt fuer alle Figuren
+ * gleich — allen voran die Zellgeometrie: `FIGUR_EINHEITEN` und `SICHT` haengen
+ * an Zellgroesse, `ppl`, Fusspunkt und den Pruefungen im Testlauf. Eine zweite
+ * Figur mit eigenem Mass waere eine zweite Zellgeometrie und damit zwei
+ * Wahrheiten im Renderer.
+ */
+const eigenschaften = JSON.parse(readFileSync(join(QUELLE, 'figur.json'), 'utf8'));
+const GLB = join(QUELLE, eigenschaften.modell);
+
+/** Die Blickwinkel der gerade gebackenen Figur. */
+const DREHUNG_GRAD = eigenschaften.drehung ?? DREHUNG_GRAD_ERDMAENNCHEN;
 
 const FIGUR_EINHEITEN = 0.861;
 const SICHT = 1.22;
@@ -198,7 +223,7 @@ const FUSS_PX = 3;
  * linke Seite: Nach der Verschiebung darf auch die weiteste Pose dort die
  * Zellhaelfte von 8,5 nicht ueberschreiten (weitester Wert: Rettung, 7,0).
  */
-const SEITENVERSATZ = 2.2;
+const SEITENVERSATZ = eigenschaften.seitenversatz ?? 0;
 const ARM_LAENGE = 0.21;
 /** Zulaessige Abweichung der gemessenen Figurenhoehe, in Modelleinheiten. */
 const HOEHE_TOLERANZ = 0.02;
@@ -253,6 +278,7 @@ const SICHT = ${SICHT};
 const FUSS_PX = ${FUSS_PX};
 const FIGUR_EINHEITEN = ${FIGUR_EINHEITEN};
 const LOGISCH = ${LOGISCH};
+const KOPF_SKALA = ${eigenschaften.kopfSkala ?? 1};
 const GROESSE = ZELLE * SS;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -312,7 +338,7 @@ window.laden = async (url) => {
   // niemand als Verzerrung bemerkt.
   //
   // Am Knochen und nicht am Netz, damit die Haut sauber mitwaechst.
-  if (knochen.Head) knochen.Head.scale.setScalar(1.12);
+  if (knochen.Head) knochen.Head.scale.setScalar(KOPF_SKALA);
 
   // Ruhelage festhalten: die Eigendrehung jedes Knochens und seine **Achse**,
   // also die Richtung zu seinem Kind im eigenen Raum. Ohne diese Achse laesst
@@ -381,7 +407,7 @@ function stelle(richtungen, winkel, skala) {
   }
   // Der Kopfmassstab gehoert zur Figur, nicht zur Pose — er ueberlebt jede
   // Ruecksetzung.
-  if (knochen.Head) knochen.Head.scale.setScalar(1.12);
+  if (knochen.Head) knochen.Head.scale.setScalar(KOPF_SKALA);
   // Einzelne Knochen laenger machen.
   //
   // Fuer den Hals unverzichtbar. Er misst in diesem Modell 0,068 Einheiten —
@@ -396,7 +422,7 @@ function stelle(richtungen, winkel, skala) {
       if (knochen[name]) knochen[name].scale.setScalar(k);
     }
     const kette = ['NeckTwist01', 'NeckTwist02'].reduce((a, nm) => a * (skala[nm] ?? 1), 1);
-    if (knochen.Head && kette !== 1) knochen.Head.scale.setScalar(1.12 / kette);
+    if (knochen.Head && kette !== 1) knochen.Head.scale.setScalar(KOPF_SKALA / kette);
   }
   wurzel.updateMatrixWorld(true);
   // Knochen **ohne Kind** haben keine Achse, auf die sich eine Zielrichtung
@@ -673,6 +699,17 @@ window.bild = (bild, dreh, grund, seite, weit) => {
   const kopf = knochen.Head;
   const g = kopf.localToWorld(new THREE.Vector3(0, 0.06, 0.06));
 
+  // Der Stirnpunkt: dieselbe Kopfstelle, nur hoeher. Zusammen mit dem Gesicht
+  // spannt er die **Hochachse des Kopfes im Bild** auf — und die ist etwas
+  // anderes als die Hochachse des Bildes.
+  //
+  // Der Unterschied ist nicht theoretisch. Ein Stirnband, das im Bild senkrecht
+  // ueber dem Gesichtspunkt liegt, sitzt bei jeder Pose mit gesenktem Kopf
+  // quer im Gesicht statt im Haar — beim Graeber neigt sich der Kopf um
+  // sechsundzwanzig Grad, und genau so sah es aus. Gemessen statt gerechnet:
+  // Der Backvorgang kennt die Kopfdrehung, der Zeichner nicht.
+  const st = kopf.localToWorld(new THREE.Vector3(0, 0.22, 0.03));
+
   // Der Werkzeugansatz: die vordere **Hand**. Dieses Rig hat welche — bei der
   // Murmel musste die Armspitze geschaetzt werden.
   let hand = null;
@@ -696,6 +733,7 @@ window.bild = (bild, dreh, grund, seite, weit) => {
   return {
     bild: png,
     gesicht: zelle(g),
+    stirn: zelle(st),
     hand: hand ? zelle(hand) : null,
     anschnitt: k && k.randberuehrung ? 1 : 0,
     kasten: k,
@@ -777,6 +815,7 @@ if (eichung.faktor < 0.6 || eichung.faktor > 1.7) {
 // --- Backen ------------------------------------------------------------------
 const bilder = [];
 const gesichter = [];
+const stirnen = [];
 const haende = [];
 /** Der gemessene Drehwinkel je Pose — die Variante darf ihn mitbringen. */
 const drehungen = {};
@@ -813,6 +852,7 @@ for (const z of zeilen) {
     );
     bilder.push({ pose: z.name, reihe, spalte: i, png: r.bild });
     gesichter.push({ pose: z.name, bild: i, punkt: r.gesicht });
+    stirnen.push({ pose: z.name, bild: i, punkt: r.stirn ?? r.gesicht });
     haende.push({ pose: z.name, bild: i, punkt: r.hand ?? r.gesicht });
     if (r.kasten) masse.push(r.kasten);
     if (process.env.FUESSE) {
@@ -918,13 +958,13 @@ if (probe) {
   console.log(`\nProbe: art-src/proben/${probeName}.webp (${Math.round(daten.length / 1024)} kB)`);
 } else {
   mkdirSync(ZIEL, { recursive: true });
-  writeFileSync(join(ZIEL, 'erdmaennchen.webp'), daten);
+  writeFileSync(join(ZIEL, `${figurName}.webp`), daten);
   const manifest = {
-    image: 'erdmaennchen.webp',
+    image: `${figurName}.webp`,
     // Welche Figur das Blatt zeigt. Der Renderer braucht das, weil die
     // Signalschicht figurabhaengig ist: Die Murmel traegt einen Schopf, das
     // Erdmaennchen eine Augenmaske. Ohne diese Angabe muesste er es raten.
-    figur: 'erdmaennchen',
+    figur: figurName,
     cell: { w: LOGISCH, h: LOGISCH },
     anchor: { x: LOGISCH / 2, y: LOGISCH - FUSS_PX / PPL },
     ppl: PPL,
@@ -956,6 +996,17 @@ if (probe) {
               Number(((g.punkt[0] / ZELLE) * LOGISCH).toFixed(2)),
               Number(((g.punkt[1] / ZELLE) * LOGISCH).toFixed(2)),
             ]),
+          // Der Stirnpunkt je Einzelbild, in denselben Koordinaten. Zusammen
+          // mit `anchors` gibt er dem Zeichner die Hochachse des Kopfes; das
+          // Stirnband des Wuselwerkers haengt daran. Wer ihn nicht braucht,
+          // zahlt zwei Zahlen je Einzelbild dafuer.
+          stirn: stirnen
+            .filter((g) => g.pose === z.name)
+            .sort((a, b) => a.bild - b.bild)
+            .map((g) => [
+              Number(((g.punkt[0] / ZELLE) * LOGISCH).toFixed(2)),
+              Number(((g.punkt[1] / ZELLE) * LOGISCH).toFixed(2)),
+            ]),
           // Zustand der Maske je Einzelbild. Die Tabelle im Zeichner sagt, was
           // die Zahlen bedeuten.
           tuff: (posen[z.name]?.frames ?? []).map((f) => f.maske ?? 0),
@@ -978,9 +1029,9 @@ if (probe) {
     while (c.tuff.length < c.holds.length) c.tuff.push(0);
     c.tuff.length = c.holds.length;
   }
-  writeFileSync(join(ZIEL, 'erdmaennchen.atlas.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  console.log(`\nsrc/art/erdmaennchen.webp        ${Math.round(daten.length / 1024)} kB`);
-  console.log('src/art/erdmaennchen.atlas.json  Aufteilung, Haltedauern, Gesicht und Pfote');
+  writeFileSync(join(ZIEL, `${figurName}.atlas.json`), `${JSON.stringify(manifest, null, 2)}\n`);
+  console.log(`\nsrc/art/${figurName}.webp        ${Math.round(daten.length / 1024)} kB`);
+  console.log(`src/art/${figurName}.atlas.json  Aufteilung, Haltedauern, Gesicht und Pfote`);
 }
 
 await browser.close();

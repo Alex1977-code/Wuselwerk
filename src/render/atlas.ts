@@ -2,6 +2,7 @@ import { State, type SkillId, type Wusel } from '../core/types';
 import { standY, sx, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
+import { drawBand, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
 
 /**
@@ -65,6 +66,14 @@ export interface ClipDef {
    * feste Stelle liesse den Schopf bei jeder Neigung vom Kopf rutschen.
    */
   anchors?: [number, number][];
+  /**
+   * Stirnpunkt je Einzelbild, in denselben Koordinaten wie `anchors`.
+   *
+   * Zusammen geben beide die **Hochachse des Kopfes im Bild**. Das Stirnband
+   * des Wuselwerkers haengt daran: Ohne sie laege es im Bild senkrecht ueber
+   * dem Gesicht und damit bei jeder Pose mit gesenktem Kopf quer in den Augen.
+   */
+  stirn?: [number, number][];
   /** Zustand des Schopfs je Einzelbild — Index in `SCHOPF_ZUSTAND`. */
   tuff?: number[];
   /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
@@ -118,13 +127,14 @@ export interface AtlasManifest {
    *
    * Der Renderer braucht es, weil die **Signalschicht figurabhaengig** ist: Die
    * Murmel traegt einen Schopf ueber dem Kopf, das Erdmaennchen eine Augenmaske
-   * im Gesicht. Beide haengen am selben Ankerpunkt je Einzelbild und am selben
-   * Zustandsfeld — nur gezeichnet wird etwas anderes.
+   * im Gesicht, der Wuselwerker ein Stirnband im Haar. Alle drei haengen am
+   * selben Ankerpunkt je Einzelbild und am selben Zustandsfeld — nur gezeichnet
+   * wird etwas anderes.
    *
    * Fehlt die Angabe, gilt die Murmel: Alle Blaetter, die es vor dieser
    * Unterscheidung gab, zeigen sie.
    */
-  figur?: 'murmel' | 'erdmaennchen';
+  figur?: 'murmel' | 'erdmaennchen' | 'wuselwerker';
   clips: Record<string, ClipDef>;
 }
 
@@ -454,23 +464,45 @@ export class SpriteAtlas {
       const px = (a[0] - this.manifest.anchor.x) * s;
       const py = (a[1] - this.manifest.anchor.y) * s;
       const auftrag = schopfAuftrag(w);
-      // Beide Figuren teilen die Berufspalette und die Warnlampe; nur der
+      // Alle drei Figuren teilen die Berufspalette und die Warnlampe; nur der
       // Grundton ohne Auftrag ist figurabhaengig. Bei der Murmel liegt er dicht
       // am Koerper (unauffaellig ist dort richtig), beim Erdmaennchen ist er ein
-      // dunkles Naturbraun — die Augenringe sind sein Kennzeichen.
+      // dunkles Naturbraun — die Augenringe sind sein Kennzeichen —, beim
+      // Wuselwerker ein dunkles Leder gegen das kraeftige Blau des Haars.
+      const figur = this.manifest.figur;
       const grund =
-        this.manifest.figur === 'erdmaennchen' ? maskeFarbe(auftrag) : schopfFarbe(auftrag);
+        figur === 'erdmaennchen'
+          ? maskeFarbe(auftrag)
+          : figur === 'wuselwerker'
+            ? bandFarbe(auftrag)
+            : schopfFarbe(auftrag);
       const farbe = schopfPuls(grund, w.fuse);
-      // Dieselbe Mechanik, zwei Zeichner: Der Anker sagt wo, das Zustandsfeld
-      // sagt wie, und die Figur sagt was. Ein Schopf ueber dem Kopf oder eine
-      // Maske im Gesicht — beides traegt die Berufsfarbe.
+      // Dieselbe Mechanik, drei Zeichner: Der Anker sagt wo, das Zustandsfeld
+      // sagt wie, und die Figur sagt was. Ein Schopf ueber dem Kopf, eine Maske
+      // im Gesicht, ein Band im Haar — alle drei tragen die Berufsfarbe.
       //
-      // Die Maske bekommt zusaetzlich den Backwinkel dieser Pose: Sie liegt im
-      // Gesicht und muss der Drehung folgen, waehrend ein Schopf ueber dem Kopf
-      // sitzt und es nicht muss.
-      if (this.manifest.figur === 'erdmaennchen') {
+      // Maske und Band bekommen zusaetzlich den Backwinkel dieser Pose: Sie
+      // liegen am Kopf und muessen der Drehung folgen, waehrend ein Schopf
+      // ueber dem Kopf sitzt und es nicht muss.
+      if (figur === 'erdmaennchen') {
         // Das Halstuch nur bei einem Auftrag: Wer eines traegt, arbeitet.
         drawMaske(ctx, px, py, zustand, farbe, s, false, clip.dreh ?? 0, auftrag !== null);
+      } else if (figur === 'wuselwerker') {
+        // Der Stirnpunkt kommt als Versatz vom Gesichtspunkt, in logischen
+        // Pixeln — das Band rechnet daraus Hoehe und Neigung selbst.
+        const st = clip.stirn?.[frame] ?? clip.stirn?.[0];
+        drawBand(
+          ctx,
+          px,
+          py,
+          zustand,
+          farbe,
+          s,
+          false,
+          clip.dreh ?? 0,
+          st ? st[0] - a[0] : 0,
+          st ? st[1] - a[1] : -2,
+        );
       } else {
         drawSchopf(ctx, px, py, zustand, farbe, s, false, platz);
       }

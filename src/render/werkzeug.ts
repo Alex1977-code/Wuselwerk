@@ -40,7 +40,7 @@ const EISEN = '#3A3430';
 const HOLZ = '#6B5A46';
 
 /** Welche Pose welches Geraet fuehrt, und in welchem Winkel. */
-type Geraet = 'keil' | 'spaten' | 'planke' | 'krallen';
+type Geraet = 'keil' | 'spaten' | 'planke' | 'krallen' | 'schirm';
 
 interface Fuehrung {
   geraet: Geraet;
@@ -59,6 +59,9 @@ const FUEHRT: Record<string, Fuehrung> = {
   digging: { geraet: 'spaten', winkel: 90, laenge: 6.0 },
   // Steigend: Die Planke zeigt dorthin, wo die naechste Stufe entsteht.
   building: { geraet: 'planke', winkel: -22, laenge: 7.0 },
+  // Senkrecht nach oben — und als einziges Geraet **nicht** an der Hand.
+  // Warum, steht bei `SCHIRM_HOCH`.
+  floating: { geraet: 'schirm', winkel: -90, laenge: 7.4 },
 };
 
 /**
@@ -187,6 +190,69 @@ function krallen(ctx: CanvasRenderingContext2D, l: number): void {
   }
 }
 
+/**
+ * Der Schirm des Schirmspringers.
+ *
+ * ## Warum er als einziges Geraet nicht an der Hand haengt
+ *
+ * Weil er nicht gefuehrt wird, sondern **traegt**. Ein Keil zeigt dorthin, wo
+ * die Hand hinzeigt; ein Schirm steht ueber der Figur, ganz gleich wie sie die
+ * Arme haelt. Gemessen wurde das an beiden Figuren: Beim Wuselwerker meldet das
+ * Rig die vordere Hand bei x +3,15, beim Erdmaennchen bei x −4,65 — beide
+ * greifen mit beiden Haenden nach oben, und welche davon „vorn" ist, entscheidet
+ * der Zufall der Drehung. Ein Schirm an dieser Stelle stuende einmal rechts und
+ * einmal links neben der Figur.
+ *
+ * Sein Ansatz ist deshalb die **Mittellinie ueber dem Kopf**, und das braucht
+ * keine Messung: Dort haengt ein Schirm per Begriff.
+ *
+ * ## Warum es ihn ueberhaupt gibt
+ *
+ * Der Schirmspringer war der einzige Beruf ohne Gegenstand. Seine Pose — beide
+ * Arme senkrecht hoch — ist ohne Schirm die Pose eines Fallenden mit erhobenen
+ * Armen, und genau so hat sie sich auch gemessen: `falling` und `floating`
+ * ueberdecken sich zu 81 Prozent. Der Schirm ist der Unterschied, und zwar ein
+ * grosser: Er ist das breiteste Element, das eine dieser Figuren traegt.
+ */
+const TUCH = '#D8CBB4';
+const TUCH_SCHATTEN = '#A2937C';
+const LEINE = '#4A4238';
+
+/** Wie weit ueber dem Fusspunkt die Schirmkuppel sitzt, als Anteil der Koerperhoehe. */
+const SCHIRM_HOCH = 1.42;
+
+function schirm(ctx: CanvasRenderingContext2D, l: number): void {
+  const b = l * 0.5;
+  const h = l * 0.34;
+  // Die Kuppel: ein flacher Bogen, unten offen. Sie liegt im gedrehten System
+  // mit +x nach oben, deshalb wird hier in y gerechnet, als waere sie waagerecht.
+  ctx.fillStyle = TUCH;
+  ctx.beginPath();
+  ctx.moveTo(0, -b);
+  ctx.quadraticCurveTo(h * 2.1, 0, 0, b);
+  ctx.quadraticCurveTo(h * 0.55, 0, 0, -b);
+  ctx.closePath();
+  ctx.fill();
+  // Ein Schattenstreifen an der Unterkante gibt dem Tuch Woelbung. Ohne ihn ist
+  // die Kuppel ein heller Fleck, und ein Fleck ueber einer Figur ist kein Schirm.
+  ctx.fillStyle = TUCH_SCHATTEN;
+  ctx.beginPath();
+  ctx.moveTo(0, -b);
+  ctx.quadraticCurveTo(h * 0.55, 0, 0, b);
+  ctx.quadraticCurveTo(h * 0.2, 0, 0, -b);
+  ctx.closePath();
+  ctx.fill();
+  // Die Leinen: von beiden Kuppelraendern zusammenlaufend zur Figur.
+  ctx.strokeStyle = LEINE;
+  ctx.lineWidth = l * 0.055;
+  ctx.beginPath();
+  ctx.moveTo(0, -b * 0.94);
+  ctx.lineTo(-l * 0.62, -b * 0.16);
+  ctx.moveTo(0, b * 0.94);
+  ctx.lineTo(-l * 0.62, b * 0.16);
+  ctx.stroke();
+}
+
 /** Eine Planke: gerader Balken, an beiden Enden gleich. */
 function planke(ctx: CanvasRenderingContext2D, l: number): void {
   const d = l * 0.13;
@@ -245,6 +311,29 @@ const KOERPER: Record<string, Koerperform> = {
   // dem Geraet, nicht dahinter. Ein Rumpf von 0,26 laesst das Werkzeug am
   // Brustkorb austreten und trotzdem an der Pfote haengen.
   erdmaennchen: { breit: 0.26, hoch: 0.44, mitte: -0.52, handab: 0, luft: 0.05 },
+  // Der Wuselwerker: echte Handknochen wie das Erdmaennchen, aber ein Chibi.
+  //
+  // **Gemessen, und die Zahl ist die eigentliche Aussage.** In allen sechs
+  // Posen, in denen eine Hand etwas fuehrt, liegt der gemeldete Handpunkt
+  // zwischen 0,54 und 0,82 logischen Pixeln **innerhalb** der Silhouette — und
+  // zwar ueberall gleich viel. Das ist keine Schaetzung, die danebenliegt, das
+  // ist die Dicke des Aermels: Der Knochen sitzt im Handgelenk, der Handschuh
+  // steht darum herum. Ein Ausgleich, der diese acht Zehntel wieder aufhebt,
+  // ist damit alles, was noetig ist — deshalb `luft` 0,06 (0,72 Pixel bei einer
+  // Koerperhoehe von zwoelf) und `handab` null.
+  //
+  // Die Ellipse traegt hier bewusst nichts bei: `breit` 0,22 sind 2,6 Pixel je
+  // Seite und damit der blosse Rumpf ohne Arme. Jede Hand, die etwas fuehrt,
+  // liegt weiter aussen, `austritt` liefert null, und der Ansatz bleibt an der
+  // Hand. Genau das war beim Erdmaennchen die Lehre: Wer echte Haende hat, darf
+  // sich die Berichtigung fuer geschaetzte nicht ein zweites Mal aufhalsen.
+  //
+  // Der Kopf steht dabei aussen vor. Er ist bei dieser Figur mit Haar acht
+  // Pixel breit und damit breiter als jedes Werkzeug lang aus der Hand ragt —
+  // aber er sitzt oben, und die Haende arbeiten auf Brust- bis Huefthoehe.
+  // Eine Ellipse, die das Haar einschloesse, schoebe den Spaten quer durch die
+  // Figur hinaus.
+  wuselwerker: { breit: 0.22, hoch: 0.4, mitte: -0.5, handab: 0, luft: 0.06 },
 };
 
 /**
@@ -299,6 +388,10 @@ export function werkzeugAnsatz(
   // Eine Kralle sitzt dort, wo die Pfote ist — auch wenn die gerade unter dem
   // Bauch durchzieht und man sie halb nicht sieht. Genau das soll man sehen.
   if (f.geraet === 'krallen') return { x: hx, y: hy, bogen };
+  // Der Schirm haengt ueber der Mittellinie und nicht an der Hand. Die
+  // gemeldete Handstelle geht hier absichtlich nicht ein — warum, steht bei
+  // `SCHIRM_HOCH`.
+  if (f.geraet === 'schirm') return { x: 0, y: -koerperH * SCHIRM_HOCH, bogen };
   const hy2 = hy + koerperH * k.handab;
   // Der Koerper als Ellipse. Ihr Mittelpunkt liegt ueber dem Fusspunkt,
   // deshalb wird der Ansatz vorher dorthin umgerechnet.
@@ -338,6 +431,7 @@ export function drawWerkzeug(
   if (f.geraet === 'keil') keil(ctx, f.laenge);
   else if (f.geraet === 'spaten') spaten(ctx, f.laenge);
   else if (f.geraet === 'krallen') krallen(ctx, f.laenge);
+  else if (f.geraet === 'schirm') schirm(ctx, f.laenge);
   else planke(ctx, f.laenge);
   ctx.restore();
 }
