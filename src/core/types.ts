@@ -141,4 +141,12 @@ export interface WorldEvent {
   skill?: SkillId;
   cause?: DeathCause;
   n?: number;
+  /**
+   * Blickrichtung der Figur beim Ereignis.
+   *
+   * Nur fuer die Darstellung: Schutt fliegt **nach hinten**, und wohin das ist,
+   * weiss ausserhalb der Simulation niemand. Aendert keinen Zustand und geht
+   * nicht in `hash()` ein.
+   */
+  dir?: -1 | 1;
 }

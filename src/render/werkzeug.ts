@@ -159,16 +159,22 @@ export function drawWerkzeug(
   const bog = (f.winkel * Math.PI) / 180;
   const cx = Math.cos(bog);
   const cy = Math.sin(bog);
+  // Ein Werkzeug haengt **unter** der Hand, nicht in ihr.
+  //
+  // Der Knochen sitzt auf Schulterhoehe, und das ist bei dieser Figur genau
+  // die Hoehe der Augen. Ohne diesen Versatz wuchs der Keil dem Rammer aus dem
+  // Gesicht wie ein Schnabel — im Bild sofort zu sehen, in den Zahlen nicht.
+  const hy2 = hy + koerperH * 0.14;
   // Der Koerper als Ellipse. Ihr Mittelpunkt liegt auf halber Figurenhoehe
   // ueber dem Fusspunkt, deshalb wird der Ansatz vorher dorthin umgerechnet.
   const mitteY = -koerperH * 0.5;
-  const t = austritt(hx, hy - mitteY, cx, cy, koerperH * 0.4, koerperH * 0.52);
+  const t = austritt(hx, hy2 - mitteY, cx, cy, koerperH * 0.4, koerperH * 0.52);
   // Ein Achtel Koerperhoehe Luft obendrauf: Ein Geraet, das die Silhouette
   // genau beruehrt, sieht angeklebt aus statt gehalten.
   const ab = t + koerperH * 0.12;
 
   ctx.save();
-  ctx.translate((hx + cx * ab) * s, (hy + cy * ab) * s);
+  ctx.translate((hx + cx * ab) * s, (hy2 + cy * ab) * s);
   ctx.scale(s, s);
   ctx.rotate(bog);
   if (f.geraet === 'keil') keil(ctx, f.laenge);

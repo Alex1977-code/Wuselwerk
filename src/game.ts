@@ -1000,6 +1000,47 @@ export class Game {
     return t ? { x: t.x + t.w / 2, y: t.y + t.h / 2, offen: t.offen } : null;
   }
 
+  /**
+   * Einen Beruf unmittelbar vergeben, ohne Zielen.
+   *
+   * Nur fuer die Sichtprobe. Ueber die Bedienung sind manche Posen kaum
+   * herzustellen — ein Schraegbagger braucht die richtige Figur an der
+   * richtigen Wand —, und ohne diesen Weg bliebe ihr Aussehen ungeprueft.
+   * Genau das ist bei drei von vier Werkzeugen passiert.
+   *
+   * @param n Der wievielte laufende Wusling, ab 0.
+   */
+  debugAssign(skill: SkillId, n = 0): { x: number; y: number } | null {
+    const frei = this.world.wusels.filter((w) => isActive(w) && w.state === State.WALKING);
+    const w = frei[Math.min(n, frei.length - 1)];
+    if (!w) return null;
+    if (!this.world.assign(w.id, skill)) return null;
+    // Die Stelle zurueckgeben, damit die Sichtprobe die Kamera dorthin fuehren
+    // kann. Ohne sie muesste sie raten, und eine Figur, die aus dem Bild
+    // laeuft, ist keine Pruefung.
+    return { x: w.x, y: w.y };
+  }
+
+  /**
+   * Ein Level unmittelbar laden, an der Freischaltung vorbei.
+   *
+   * Nur fuer die Sichtprobe. Die Berufe eines Levels stehen in seinen Daten;
+   * wer den Rammer sehen will, braucht ein Level, das einen hergibt — und das
+   * ist auf der Karte gesperrt, solange man es nicht erspielt hat. Ohne diesen
+   * Weg pruefte man immer nur das erste Level.
+   */
+  debugLoadLevel(id: string): boolean {
+    const lv = LEVELS.find((l) => l.id === id);
+    if (!lv) return false;
+    this.loadLevel(lv);
+    return true;
+  }
+
+  /** Massstab setzen — die Sichtprobe kann nicht mit zwei Fingern zoomen. */
+  debugZoom(z: number): void {
+    this.camera.setZoom(z);
+  }
+
   debugCamera(): { follow: boolean; cx: number; cy: number } {
     return { follow: this.camera.follow, cx: this.camera.cx, cy: this.camera.cy };
   }

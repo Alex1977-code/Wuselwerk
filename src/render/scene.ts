@@ -8,6 +8,7 @@ import { paletteFor, type Palette } from './palette';
 import { drawFuseOverlay, drawWusel } from './sprites';
 import type { SpriteAtlas } from './atlas';
 import type { TerrainView } from './terrainView';
+import { SCHUTT_MS, schuttWuerfe } from './schutt';
 
 interface Particle {
   x: number;
@@ -170,7 +171,7 @@ export class Scene {
     for (const e of events) {
       switch (e.type) {
         case 'dig':
-          this.burst(e.x, e.y, 3, '#8a6236', 26, 40);
+          this.schutt(e);
           break;
         case 'brick':
           this.burst(e.x, e.y, 2, '#c98a52', 18, 30);
@@ -191,6 +192,32 @@ export class Scene {
           break;
         default:
           break;
+      }
+    }
+  }
+
+  /**
+   * Schutt streuen. Die Richtungen kommen aus `schutt.ts` und werden dort
+   * geprueft — hier wird nur noch gezeichnet.
+   */
+  private schutt(e: WorldEvent): void {
+    for (const w of schuttWuerfe(e.skill, e.dir === -1 ? -1 : 1)) {
+      for (let i = 0; i < w.anzahl; i++) {
+        if (this.particles.length >= MAX_PARTICLES) return;
+        const a = (Math.random() - 0.5) * w.streu;
+        const v = w.tempo * (0.45 + Math.random() * 0.55);
+        const life = (SCHUTT_MS * (0.6 + Math.random() * 0.8)) / 1000;
+        this.particles.push({
+          x: e.x + w.dx,
+          y: e.y + w.dy,
+          vx: w.seite * Math.cos(a) * v,
+          vy: Math.sin(a) * v + w.tempo * w.hoch,
+          life,
+          max: life,
+          size: 1 + Math.floor(Math.random() * 2),
+          color: w.farbe,
+          gravity: 210,
+        });
       }
     }
   }
