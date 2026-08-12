@@ -702,11 +702,26 @@ export class Scene {
     const refY = this.level.height * 0.42;
     const ox = v.ox * faktor + refX * (1 - faktor);
     const oy = v.oy * faktor + refY * (1 - faktor);
+    const hoehle = this.level.theme === 'crystal';
     for (const w of this.wolken) {
       const cx = v.box.x + (w.x - ox) * v.scale;
       const cy = v.box.y + (w.y - oy) * v.scale;
       const r = w.r * v.scale;
       if (cx < v.box.x - r * 3 || cx > v.box.x + v.box.w + r * 3) continue;
+      if (hoehle) {
+        // Unter Tage gibt es keine Wolken. An ihrer Stelle schimmern ferne
+        // Lichtinseln — der Widerschein der Kristalle in der Höhlenluft. Sie
+        // nutzen dieselben gespeicherten Orte, damit der Raumeindruck (weit
+        // hinten, fast unbewegt) erhalten bleibt.
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 1.5);
+        g.addColorStop(0, `rgba(191, 230, 255, ${w.deckung * 0.3})`);
+        g.addColorStop(1, 'rgba(191, 230, 255, 0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        continue;
+      }
       for (let i = 0; i < w.ballen; i++) {
         // Aus der gespeicherten Zahl gestreute Ballen — dieselbe Wolke sieht
         // dadurch bei jedem Bild gleich aus, ohne dass sie gespeichert waere.
@@ -792,13 +807,16 @@ export class Scene {
       if (layer === this.hills[this.hills.length - 1]) {
         ctx.save();
         ctx.clip();
+        // Der Schattenton folgt der Welt: Wiesengrün im Grasland, Tiefblau in
+        // der Klamm — ein grüner Schatten auf blauem Fels läse sich als Moos.
+        const schatten = this.level.theme === 'crystal' ? '10, 14, 40' : '12, 34, 20';
         for (const f of this.flecken) {
           const fx = v.box.x + (f.x - ox) * v.scale;
           const fy = v.box.y + (f.y - oy) * v.scale;
           const fr = f.r * v.scale;
           const gg = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
-          gg.addColorStop(0, `rgba(12, 34, 20, ${f.tiefe})`);
-          gg.addColorStop(1, 'rgba(12, 34, 20, 0)');
+          gg.addColorStop(0, `rgba(${schatten}, ${f.tiefe})`);
+          gg.addColorStop(1, `rgba(${schatten}, 0)`);
           ctx.fillStyle = gg;
           ctx.beginPath();
           ctx.arc(fx, fy, fr, 0, Math.PI * 2);
@@ -845,12 +863,61 @@ export class Scene {
     const ox = v.ox * layer.factor + refX * (1 - layer.factor);
     const oy = v.oy * layer.factor + refY * (1 - layer.factor);
     ctx.fillStyle = layer.deep;
+    const hoehle = this.level.theme === 'crystal';
     for (const b of this.baeume) {
       const px = v.box.x + (b.x - ox) * v.scale;
       if (px < v.box.x - 20 || px > v.box.x + v.box.w + 20) continue;
       const py = v.box.y + (b.y - oy) * v.scale;
       const h = b.h * v.scale;
       const br = h * 0.34 * b.breit;
+      if (hoehle) {
+        // In der Klamm wachsen keine Bäume: Der Massstab auf dem Grat kommt
+        // von Kristallzacken — dieselben Orte und Grössen, andere Silhouette.
+        ctx.beginPath();
+        if (b.form === 1) {
+          // Die hohe Nadel mit kleinem Seitzacken.
+          ctx.moveTo(px - br * 0.5, py + 1);
+          ctx.lineTo(px - br * 0.08, py - h * 1.05);
+          ctx.lineTo(px + br * 0.34, py + 1);
+          ctx.moveTo(px + br * 0.3, py + 1);
+          ctx.lineTo(px + br * 0.72, py - h * 0.4);
+          ctx.lineTo(px + br * 1.05, py + 1);
+        } else if (b.form === 2) {
+          // Der gekippte Zacken — gewachsen, wie die Ader ihn schob.
+          ctx.moveTo(px - br * 0.9, py + 1);
+          ctx.lineTo(px + br * 0.25, py - h * 0.72);
+          ctx.lineTo(px + br * 0.85, py + 1);
+        } else {
+          // Die Doppelspitze.
+          ctx.moveTo(px - br * 0.85, py + 1);
+          ctx.lineTo(px - br * 0.3, py - h * 0.62);
+          ctx.lineTo(px + br * 0.05, py + 1);
+          ctx.moveTo(px - br * 0.12, py + 1);
+          ctx.lineTo(px + br * 0.32, py - h * 0.88);
+          ctx.lineTo(px + br * 0.95, py + 1);
+        }
+        ctx.closePath();
+        ctx.fill();
+        // Eine Flanke fängt das Licht aus der Wand — daran erkennt das Auge
+        // Kristall statt Fels.
+        ctx.save();
+        ctx.strokeStyle = 'rgba(191, 230, 255, 0.22)';
+        ctx.lineWidth = Math.max(0.7, v.scale * 0.4);
+        ctx.beginPath();
+        if (b.form === 2) {
+          ctx.moveTo(px - br * 0.9, py + 1);
+          ctx.lineTo(px + br * 0.25, py - h * 0.72);
+        } else if (b.form === 1) {
+          ctx.moveTo(px - br * 0.5, py + 1);
+          ctx.lineTo(px - br * 0.08, py - h * 1.05);
+        } else {
+          ctx.moveTo(px - br * 0.12, py + 1);
+          ctx.lineTo(px + br * 0.32, py - h * 0.88);
+        }
+        ctx.stroke();
+        ctx.restore();
+        continue;
+      }
       // Stamm zuerst, dann die Krone — drei Silhouetten im Wechsel:
       // die runde Laubkrone, die hohe schmale Pappel, der flache Schirm.
       ctx.fillRect(px - Math.max(0.6, br * 0.16), py - h * 0.45, Math.max(1.2, br * 0.32), h * 0.5);

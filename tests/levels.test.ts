@@ -190,6 +190,82 @@ function planLevel10(): Plan {
   };
 }
 
+// --- Musterlösungen der Kristallklamm -------------------------------------
+//
+// Sechs der zwölf Level übersetzen bewährte Grasland-Geometrien in Fels und
+// Stahl, mit denselben Koordinaten — ihre Pläne stehen schon oben. Nur die
+// sechs neuen Formen brauchen eigene Lösungen.
+
+/** Reines Ankommen: Die Kante erledigt alles, null Zuweisungen. */
+function planKlamm1(): Plan {
+  return () => {};
+}
+
+/** Rechts vom Ende der Stahlader graben — die Tür liegt im Schacht. */
+function planKlamm2(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 578, 590);
+    if (c && w.assign(c.id, 'digger')) done = true;
+  };
+}
+
+/** Sechs Kletterer für den Kamin — die Stirnseite ist Stahl. */
+function planKlamm3(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x < 415 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/** Der Schrägbagger, auf der Oberfläche vor der Kammer angesetzt. */
+function planKlamm5(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 424, 436, -1);
+    if (c && w.assign(c.id, 'miner')) done = true;
+  };
+}
+
+/** Fünf Sekunden Zündschnur — die Naht liegt hier bei 287. */
+function planKlamm6(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 185, 188, 1);
+    if (c && w.assign(c.id, 'bomber')) done = true;
+  };
+}
+
+/**
+ * Schacht bis auf die Stahlsohle, dann der Stollen nach rechts zur Tür.
+ * Der Rammer wird als Vormerkung vergeben — er greift von selbst, sobald
+ * die Schachtwand in Reichweite kommt (Kritik F3c).
+ */
+function planKlamm11(): Plan {
+  let graeber: number | null = null;
+  let gerammt = false;
+  return (w) => {
+    if (graeber === null) {
+      const c = walkerNear(w, 474, 486, 1);
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (!gerammt) {
+      const d = w.wuselById(graeber);
+      if (d && d.state === State.WALKING && d.dir === 1 && d.y > 370) {
+        if (w.assign(d.id, 'basher')) gerammt = true;
+      }
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -201,6 +277,18 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-08': planLevel8,
   'w1-09': planLevel9,
   'w1-10': planLevel10,
+  'w2-01': planKlamm1,
+  'w2-02': planKlamm2,
+  'w2-03': planKlamm3,
+  'w2-04': planLevel3,
+  'w2-05': planKlamm5,
+  'w2-06': planKlamm6,
+  'w2-07': planLevel4,
+  'w2-08': planLevel8,
+  'w2-09': planLevel5,
+  'w2-10': planLevel9,
+  'w2-11': planKlamm11,
+  'w2-12': planLevel10,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -219,7 +307,7 @@ describe('Alle Level sind lösbar', () => {
   it('die Musterlösungen bleiben im Par-Budget', () => {
     for (const level of LEVELS) {
       const w = play(level, planFor(level));
-      expect(w.skillsUsed).toBeLessThanOrEqual(level.par);
+      expect(w.skillsUsed, level.id).toBeLessThanOrEqual(level.par);
     }
   });
 });
@@ -242,7 +330,7 @@ describe('Levelaufbau', () => {
       // 20 Sekunden reichen, um die ersten Figuren landen zu sehen.
       for (let i = 0; i < 60 * 20 && w.released < 2; i++) w.tick();
       for (let i = 0; i < 60 * 10; i++) w.tick();
-      expect(w.dead).toBe(0);
+      expect(w.dead, level.id).toBe(0);
     }
   });
 });

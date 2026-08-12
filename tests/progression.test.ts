@@ -441,12 +441,14 @@ describe('Der ausgelieferte Katalog', () => {
     for (const l of LEVELS) expect(gesehen.has(l.id), l.id).toBe(true);
   });
 
-  it('zeigt heute genau die gebaute Welt', () => {
+  it('zeigt heute genau die gebauten Welten', () => {
     const karte = weltkarte({}, KATALOG);
-    expect(karte.welten).toHaveLength(1);
-    expect(karte.welten[0].welt.id).toBe('w1');
+    expect(karte.welten).toHaveLength(2);
+    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2']);
     expect(karte.welten[0].level).toHaveLength(10);
-    expect(karte.welten[0].level.map((l) => l.id)).toEqual(LEVELS.map((l) => l.id));
+    expect(karte.welten[1].level).toHaveLength(12);
+    const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
+    expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });
 
   it('teilt Welt 1 in drei Etappen', () => {
@@ -456,7 +458,9 @@ describe('Der ausgelieferte Katalog', () => {
   });
 
   it('gibt am Ende von Welt 1 den zusätzlichen Gräber', () => {
-    const alle = stand(...LEVELS.map((l) => l.id));
+    // Nur Welt 1 ist durchgespielt — Welt 2 bleibt offen, sonst käme ihre
+    // Belohnung dazu und der Test prüfte zwei Dinge auf einmal.
+    const alle = stand(...LEVELS.filter((l) => l.id.startsWith('w1-')).map((l) => l.id));
     const b = verdienteBelohnungen(alle, KATALOG);
     expect(b).toHaveLength(1);
     expect(b[0].art).toBe('werkzeug');

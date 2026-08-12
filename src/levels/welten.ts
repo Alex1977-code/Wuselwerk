@@ -199,8 +199,8 @@ function welt(
  * etwas bei — Unterricht ist teuer. Späte Welten variieren ein bekanntes
  * Vokabular, und Variation trägt fünfzehn Level.
  *
- * **Nur Welt 1 ist gebaut.** Für die übrigen stehen die IDs, die Bahn und die
- * Belohnung schon fest; sobald jemand ein Level mit der passenden ID in
+ * **Welt 1 und 2 sind gebaut.** Für die übrigen stehen die IDs, die Bahn und
+ * die Belohnung schon fest; sobald jemand ein Level mit der passenden ID in
  * `LEVELS` schreibt, erscheint es auf der Karte. Welten ohne ein einziges
  * gebautes Level lässt `weltkarte()` weg — die Karte verspricht nichts, was
  * das Spiel nicht halten kann.

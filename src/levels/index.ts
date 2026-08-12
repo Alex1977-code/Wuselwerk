@@ -1,5 +1,6 @@
 import { MAT, SKILLS, type SkillCounts } from '../core/types';
 import type { LevelDef } from './types';
+import { WELT2_LEVELS } from './welt2';
 
 /** Fuellt die nicht genannten Berufe mit 0 auf. */
 function sk(partial: Partial<SkillCounts>): SkillCounts {
@@ -307,6 +308,11 @@ export const LEVELS: LevelDef[] = [
     ],
   },
 ];
+
+// Welt 2 haengt sich hier an — die Karte findet ihre Level ueber die IDs
+// (`welten.ts`): Ein Level existiert, sobald es hier steht, an keiner
+// zweiten Stelle.
+LEVELS.push(...WELT2_LEVELS);
 
 export function levelById(id: string): LevelDef | undefined {
   return LEVELS.find((l) => l.id === id);
