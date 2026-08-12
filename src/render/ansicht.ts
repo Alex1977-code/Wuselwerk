@@ -80,6 +80,25 @@ interface Stand {
   pose: string;
   /** Eigener Takt fuer Posen, die nicht die der Simulation sind. */
   takt: number;
+  /**
+   * Ob dieser Posenlauf am eigenen Takt haengt.
+   *
+   * **Der Punkt, an dem die erste Fassung gescheitert ist.** Sie hat je Bild
+   * entschieden: „zeigt der Zeichner gerade die Pose der Simulation? dann
+   * `w.timer`, sonst der eigene." Im Schacht wechselt die Simulation staendig
+   * zwischen Laufen und Fallen — und damit wechselte auch die Uhr, Bild fuer
+   * Bild, zwischen zwei voellig verschiedenen Zahlen: 176, 1, 3, 5, 180, 1,
+   * 182, 0. Der Bildindex sprang dadurch jedes Bild an eine andere Stelle des
+   * Gangzyklus. Das war das Flackern, das nach zwei Behebungen uebrig blieb.
+   *
+   * Entschieden wird deshalb **je Posenlauf**, nicht je Bild: Wer einmal auf den
+   * eigenen Takt gewechselt ist, bleibt darauf, bis die Pose wechselt.
+   */
+  eigen: boolean;
+  /** Bildstempel des letzten Fortschreibens. */
+  stempel: number;
+  /** Das Ergebnis dieses Bildes, fuer den zweiten Aufruf. */
+  letzte: Ansicht;
   /** Bilder ohne Fortkommen. */
   still: number;
   /** Die Spanne, in der sie sich dabei bewegt hat. */
@@ -112,16 +131,21 @@ export interface Ansicht {
  * @param sim Die Pose, die sich aus dem Simulationszustand ergibt.
  * @param kannSpaehen Ob das Blatt die Spaehpose ueberhaupt kennt.
  */
-export function ansicht(w: Wusel, sim: string, kannSpaehen = false): Ansicht {
+export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): Ansicht {
   const alt = stand.get(w.id);
   if (!alt) {
-    const neu: Stand = {
+    const erste: Ansicht = { dir: w.dir, pose: sim, takt: w.timer };
+    stand.set(w.id, {
       dir: w.dir, x: w.x, zustand: w.state, pose: sim,
       takt: 0, still: 0, von: w.x, bis: w.x,
-    };
-    stand.set(w.id, neu);
-    return { dir: neu.dir, pose: sim, takt: w.timer };
+      eigen: false, stempel: bild, letzte: erste,
+    });
+    return erste;
   }
+  // Zweimal im selben Bild: Die Lupe zeichnet die Szene ein zweites Mal. Ohne
+  // diesen Riegel liefe jeder Zaehler doppelt so schnell, sobald jemand zielt.
+  if (bild === alt.stempel) return alt.letzte;
+  alt.stempel = bild;
 
   const bewegt = w.x !== alt.x;
   if (bewegt || w.state !== alt.zustand) alt.dir = w.dir;
@@ -163,10 +187,13 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false): Ansicht {
   if (pose !== alt.pose) {
     alt.pose = pose;
     alt.takt = 0;
+    alt.eigen = pose !== sim;
   } else {
     alt.takt++;
+    if (pose !== sim) alt.eigen = true;
   }
-  return { dir: alt.dir, pose, takt: pose === sim ? w.timer : alt.takt };
+  alt.letzte = { dir: alt.dir, pose, takt: alt.eigen ? alt.takt : w.timer };
+  return alt.letzte;
 }
 
 /**

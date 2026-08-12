@@ -369,7 +369,7 @@ export class Scene {
       // Siehe `schopfPlatz`.
       // Was **gezeichnet** wird, nicht was die Simulation gerade meint. Siehe
       // `ansicht.ts`: In einer Grube kippt beides zwanzig Mal je Sekunde.
-      const sicht = ansicht(w, clipForWusel(w) ?? '', !!this.atlas?.has(SPAEHEN));
+      const sicht = ansicht(w, clipForWusel(w) ?? '', !!this.atlas?.has(SPAEHEN), tick);
       const blick = sicht.dir;
       const platz = schopfPlatz(
         (px, py) => world.terrain.solid(px, py),

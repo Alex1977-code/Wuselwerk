@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { State, type Wusel } from '../src/core/types';
-import { SPAEHEN, ansicht, ansichtVergessen } from '../src/render/ansicht';
+import { SPAEHEN, ansicht as rohAnsicht, ansichtVergessen } from '../src/render/ansicht';
+
+/**
+ * Ein Aufruf je Bild, mit fortlaufendem Bildstempel.
+ *
+ * Den braucht `ansicht` wirklich: Die Lupe zeichnet die Szene ein zweites Mal,
+ * und ohne Stempel liefe jeder Zaehler doppelt so schnell, sobald jemand zielt.
+ */
+let bild = 0;
+const ansicht = (w: Wusel, sim: string, kannSpaehen = false) =>
+  rohAnsicht(w, sim, kannSpaehen, ++bild);
 
 function figur(over: Partial<Wusel> = {}): Wusel {
   return { id: 1, x: 10, y: 20, dir: 1, state: State.WALKING, timer: 0, fallDist: 0, ...over } as Wusel;
@@ -11,6 +21,49 @@ function figur(over: Partial<Wusel> = {}): Wusel {
  * im Bild eine Katastrophe, alle drei in der Simulation völlig korrekt.
  */
 describe('Die gezeichnete Ansicht', () => {
+  it('gibt im selben Bild zweimal dieselbe Antwort', () => {
+    // Die Lupe zeichnet die Szene ein zweites Mal — mit demselben Bildstempel
+    // darf das nichts fortschreiben.
+    ansichtVergessen();
+    const w = figur();
+    rohAnsicht(w, 'walking', true, 7);
+    const a = rohAnsicht(w, 'walking', true, 8);
+    const b = rohAnsicht(w, 'walking', true, 8);
+    expect(b).toEqual(a);
+  });
+
+  /**
+   * Der Fehler, der nach zwei Behebungen uebrig blieb. Im Schacht wechselt die
+   * Simulation staendig zwischen Laufen und Fallen. Wer je Bild entscheidet,
+   * welche Uhr gilt, springt zwischen `w.timer` (gross) und dem eigenen Zaehler
+   * (klein) hin und her — der Bildindex landet jedes Bild an einer anderen
+   * Stelle des Gangzyklus, und genau das sieht man als Flackern.
+   */
+  it('hält die Uhr fest, solange die Pose läuft', () => {
+    ansichtVergessen();
+    const w = figur({ timer: 200 });
+    ansicht(w, 'walking');
+    const takte: number[] = [];
+    for (let i = 0; i < 20; i++) {
+      if (i % 3 === 2) {
+        w.state = State.FALLING;
+        w.fallDist = 1;
+        w.timer = 0;
+        takte.push(ansicht(w, 'falling').takt);
+      } else {
+        w.state = State.WALKING;
+        w.fallDist = 0;
+        w.timer += 40;
+        takte.push(ansicht(w, 'walking').takt);
+      }
+    }
+    // Genau **ein** Sprung zurueck ist erlaubt: der Wechsel von der Uhr der
+    // Simulation auf die eigene, wenn das erste Absacken kommt. Danach laeuft
+    // sie durch. Vorher waren es neunzehn — je Bild einer.
+    const spruenge = takte.filter((t, i) => i > 0 && t <= takte[i - 1]).length;
+    expect(spruenge, `Takte: ${takte.join(' ')}`).toBeLessThanOrEqual(1);
+  });
+
   it('hält die Blickrichtung, wenn sich die Figur nicht von der Stelle rührt', () => {
     ansichtVergessen();
     const w = figur();

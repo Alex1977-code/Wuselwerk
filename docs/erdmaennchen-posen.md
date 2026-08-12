@@ -112,7 +112,7 @@ nicht **weg**.
 die prozedurale Rückfallebene — funktioniert unverändert weiter; der Zeichner
 fragt vorher, ob es sie gibt.
 
-## Zwei Quellen von Flimmern, beide behoben
+## Drei Quellen von Flimmern, alle behoben
 
 **1. Die Blickrichtung kippte zwanzig Mal je Sekunde.** In einem Schacht, dessen
 Wände höher sind als `MAX_STEP`, läuft eine Figur gegen die eine Wand, dreht um,
@@ -145,6 +145,27 @@ Pixelblatt ist das Runden richtig. Für ein gemaltes ist es ein sichtbarer Fehle
 Das Gelände gleitet beim Scrollen weich, die Figur sprang daneben in ganzen
 Schritten — kein Springen, ein Zittern auf dem Boden. Gerundet wird jetzt nur
 noch, wenn das Blatt tatsächlich ein Pixelraster ist (`ppl <= 1`).
+
+**3. Der Bildindex sprang zwischen zwei Uhren.** Der hartnäckigste, weil er erst
+nach den beiden anderen sichtbar wurde. Die erste Fassung entschied **je Bild**,
+welche Uhr gilt: zeigt der Zeichner gerade die Pose der Simulation, dann
+`w.timer`, sonst den eigenen Zähler. Im Schacht wechselt die Simulation ständig
+zwischen Laufen und Fallen — und damit wechselte auch die Uhr, Bild für Bild,
+zwischen zwei völlig verschiedenen Zahlen:
+
+```
+Figur 3 (läuft):  takt = 176  1  3  5  180  1  182  0  2  4  186 …
+```
+
+Der Bildindex landete dadurch jedes Bild an einer anderen Stelle des Gangzyklus.
+Entschieden wird jetzt **je Posenlauf**: Wer einmal auf den eigenen Takt
+gewechselt ist, bleibt darauf, bis die Pose wechselt. Gemessen im laufenden
+Spiel fiel die Zahl der Rücksprünge des Bildindex von **53 auf 5** bei 350
+Bildern — und die verbliebenen sind je ein einmaliger Uhrenwechsel.
+
+Dazu ein Riegel gegen doppeltes Fortschreiben: Die **Lupe** zeichnet die Szene
+ein zweites Mal, und ohne Bildstempel liefe jeder Zähler doppelt so schnell,
+sobald jemand zielt.
 
 ## Die drei Grabberufe arbeiten mit den Pfoten
 
