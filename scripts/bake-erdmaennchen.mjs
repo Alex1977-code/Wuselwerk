@@ -258,6 +258,19 @@ window.laden = async (url) => {
  * Weltdrehung eines Knochens die schon gesetzte seines Elternteils enthaelt.
  */
 function stelle(richtungen, winkel) {
+  // Die Wurzeldrehung **zuruecksetzen**, bevor irgendetwas gerechnet wird.
+  //
+  // Zielrichtungen sind Weltrichtungen: Der Backvorgang rechnet sie ueber die
+  // Weltdrehung des Elternteils in den lokalen Raum. Steht die Wurzel dabei
+  // schon auf dem Blickwinkel dieser Pose, kommt alles um genau diesen Winkel
+  // verdreht heraus.
+  //
+  // Genau das ist passiert, und der Fehler war so still, wie er nur sein kann:
+  // Beim **ersten** Bild stand die Wurzel noch auf null, also stimmte es. Ab dem
+  // zweiten stand dort die Drehung des vorigen Aufrufs. Auf dem Blatt sah man
+  // ein Bild mit Schwanz und sieben ohne — man haelt so etwas fuer ein Flackern
+  // des Schwanzes und sucht am Schwanz.
+  wurzel.rotation.set(0, 0, 0);
   for (const name of ordnung) {
     const b = knochen[name];
     b.quaternion.copy(ruhe[name].q);
