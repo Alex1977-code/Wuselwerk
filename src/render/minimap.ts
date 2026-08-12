@@ -28,7 +28,12 @@ const MAP_MAX_H = 78;
 const MARGIN = 8;
 
 export function minimapBox(L: Layout, level: LevelDef): Box | null {
-  const k = Math.min(MAP_MAX_W / level.width, MAP_MAX_H / level.height);
+  // Quer ist das Sichtfeld schmal, und die Karte lag zu einem spuerbaren Teil
+  // darauf — inklusive der Gegend um den Ausgang (Kritik F7). Sie schrumpft
+  // dort auf gut zwei Drittel; die Halbtransparenz dazu regelt `drawMinimap`.
+  const quer = L.cssW > L.cssH;
+  const faktor = quer ? 0.7 : 1;
+  const k = Math.min((MAP_MAX_W * faktor) / level.width, (MAP_MAX_H * faktor) / level.height);
   const w = Math.round(level.width * k);
   const h = Math.round(level.height * k);
   if (w < 40 || h < 24) return null;
@@ -48,12 +53,16 @@ export function drawMinimap(
   terrain: HTMLCanvasElement,
   v: View,
   grabbed: boolean,
+  quer = false,
 ): void {
   const kx = b.w / level.width;
   const ky = b.h / level.height;
 
   ctx.save();
-  ctx.globalAlpha = grabbed ? 1 : 0.82;
+  // Quer durchsichtiger als hoch: Dort verdeckt die Karte Spielflaeche, und
+  // wer sie gerade nicht anfasst, soll hindurchsehen koennen. Ob quer ist,
+  // sagt der Aufrufer — er kennt das Layout, diese Datei nicht.
+  ctx.globalAlpha = grabbed ? 1 : quer ? 0.55 : 0.82;
 
   ctx.fillStyle = '#080b12';
   roundRect(ctx, b.x, b.y, b.w, b.h, 6);

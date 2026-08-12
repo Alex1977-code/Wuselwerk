@@ -23,7 +23,7 @@ import {
   type Candidate,
 } from './input/targeting';
 import { Camera, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './render/camera';
-import { COL, drawControls, drawRecenter, drawRewind, drawTopBar } from './render/hud';
+import { COL, drawControls, drawRecenter, drawRewind, drawTopBar, STERN_ABSTAND, STERN_EINSATZ } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
 import { drawIntro, drawPause, drawResult, type Button } from './render/overlays';
@@ -170,6 +170,11 @@ export class Game {
    * niemanden festhalten).
    */
   private nachspiel = -1;
+  /** Wann die aktuelle Phase begann — fuer Einblendungen und Sternauftritte. */
+  private phaseSeitMs = 0;
+  private zuletztGezeichnetePhase: Phase | null = null;
+  /** Wie viele Sterne schon geklungen haben (je Ergebnisbild). */
+  private sterneGeklungen = 0;
   private simAcc = 0;
   private anim = 0;
   /** Zuletzt hoerbar gemachte Raste des Reglers; -1 heisst "noch keine". */
@@ -915,6 +920,7 @@ export class Game {
         this.terrainView.canvas,
         this.camera.view(this.layout.play),
         grabbed,
+        this.layout.cssW > this.layout.cssH,
       );
     }
 
@@ -945,6 +951,22 @@ export class Game {
     }
 
     this.buttons = [];
+    // Tafeln erscheinen nicht, sie treten auf: kurz durchsichtig und ein paar
+    // Punkte tiefer, dann stehen sie. Die Uhr dafuer beginnt mit dem
+    // Phasenwechsel — hier gemessen statt an jedem Wechsel gesetzt, weil die
+    // Phase an fuenf Stellen wechselt und keine davon vergessen werden darf.
+    if (this.phase !== this.zuletztGezeichnetePhase) {
+      this.zuletztGezeichnetePhase = this.phase;
+      this.phaseSeitMs = performance.now();
+      this.sterneGeklungen = 0;
+    }
+    const seit = (performance.now() - this.phaseSeitMs) / 1000;
+    const auftritt = Math.min(1, seit / 0.26);
+    if (this.phase !== 'running') {
+      ctx.save();
+      ctx.globalAlpha = auftritt;
+      ctx.translate(0, (1 - auftritt) * 26);
+    }
     if (this.phase === 'intro') this.buttons = drawIntro(ctx, this.layout, this.level);
     else if (this.phase === 'paused') this.buttons = drawPause(ctx, this.layout);
     else if (this.phase === 'result') {
@@ -958,8 +980,21 @@ export class Game {
         this.conditions,
         parKnown,
         i + 1 < LEVELS.length,
+        seit,
       );
+      // Jeder Stern klingt in dem Moment, in dem er ploppt — dasselbe Pling
+      // wie im Spiel, drei Stufen steigend (Kritik G8 und S4 in einem).
+      const verdient = this.conditions.filter(Boolean).length;
+      const faellig = Math.max(
+        0,
+        Math.min(verdient, Math.floor((seit - STERN_EINSATZ) / STERN_ABSTAND) + 1),
+      );
+      while (this.sterneGeklungen < faellig) {
+        this.audio.stern(this.sterneGeklungen);
+        this.sterneGeklungen++;
+      }
     }
+    if (this.phase !== 'running') ctx.restore();
   }
 
   private hudState() {

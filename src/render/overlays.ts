@@ -138,6 +138,7 @@ export function drawResult(
   conditions: boolean[],
   parKnown: boolean,
   hasNext: boolean,
+  zeit = Infinity,
 ): Button[] {
   const won = world.saved >= world.needed;
   const b = panel(ctx, L, 356);
@@ -147,7 +148,7 @@ export function drawResult(
   ctx.font = '700 22px system-ui, sans-serif';
   ctx.fillText(won ? 'Geschafft!' : 'Nicht genug', b.x + b.w / 2, b.y + 20);
 
-  drawStars(ctx, b.x + b.w / 2, b.y + 72, 15, conditions);
+  drawStars(ctx, b.x + b.w / 2, b.y + 72, 15, conditions, zeit);
 
   ctx.fillStyle = COL.text;
   ctx.font = '600 15px system-ui, sans-serif';

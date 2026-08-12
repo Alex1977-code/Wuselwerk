@@ -397,20 +397,45 @@ function drawRateSlider(ctx: CanvasRenderingContext2D, L: Layout, w: World): voi
 }
 
 /** `earned` als Anzahl (Menü) oder als drei Einzelbedingungen (Ergebnis). */
+/**
+ * Drei Sterne — mit Auftritt.
+ *
+ * `zeit` ist die Zeit seit dem Erscheinen der Tafel, in Sekunden. Jeder
+ * verdiente Stern hat seinen eigenen Einsatz und **ploppt**: Er kommt zu
+ * gross an und setzt sich. Ohne `zeit` (die Kartenansicht) stehen alle
+ * sofort — dort sind sie Bestand, kein Ereignis.
+ */
 export function drawStars(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
   size: number,
   earned: number | boolean[],
+  zeit?: number,
 ): void {
   const flags =
     typeof earned === 'number' ? [earned >= 1, earned >= 2, earned >= 3] : earned;
   const gap = size * 1.9;
   for (let i = 0; i < 3; i++) {
-    star(ctx, cx + (i - 1) * gap, cy, size, flags[i] ? COL.accent : '#2a3244');
+    let r = size;
+    let da = true;
+    if (zeit !== undefined && flags[i]) {
+      const einsatz = STERN_EINSATZ + i * STERN_ABSTAND;
+      const t = (zeit - einsatz) / 0.22;
+      if (t < 0) da = false;
+      else if (t < 1) r = size * (1.45 - 0.45 * t * t);
+    }
+    if (!da) {
+      star(ctx, cx + (i - 1) * gap, cy, size, '#2a3244');
+      continue;
+    }
+    star(ctx, cx + (i - 1) * gap, cy, r, flags[i] ? COL.accent : '#2a3244');
   }
 }
+
+/** Wann der erste Stern kommt und wie weit die weiteren dahinter liegen. */
+export const STERN_EINSATZ = 0.55;
+export const STERN_ABSTAND = 0.5;
 
 function star(
   ctx: CanvasRenderingContext2D,

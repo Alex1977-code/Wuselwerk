@@ -114,6 +114,11 @@ export class GameAudio {
     this.sfx.zurueckgespult();
   }
 
+  /** Ein Stern des Ergebnisbilds ploppt — der wievielte, sagt die Tonhoehe. */
+  stern(i: number): void {
+    this.sfx.stern(i);
+  }
+
   werkzeugGewaehlt(skill: SkillId): void {
     this.sfx.werkzeugGewaehlt(skill);
   }

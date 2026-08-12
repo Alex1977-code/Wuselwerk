@@ -945,6 +945,20 @@ export class Sfx {
     pling(this.engine, { freq: ton(7), dur: 0.16, gain: 0.08, bus: 'sfx', fest: false, delay: 0.16 });
   }
 
+  /**
+   * Der Sternauftritt im Ergebnisbild: ein Pling je Stern, steigend.
+   *
+   * Dieselbe Stimme wie die Werkzeugwahl — es ist derselbe Klangkoerper des
+   * Spiels, nur hoeher hinauf: Drei Sterne sind eine kleine Fanfare aus
+   * Einzeltoenen, keine neue Farbe.
+   */
+  stern(i: number): void {
+    pling(this.engine, { freq: ton(6 + i * 2), dur: 0.3, gain: 0.14, bus: 'sfx', fest: true });
+    this.engine.noise({
+      dur: 0.05, gain: 0.04, filter: 'highpass', freq: 5200, delay: 0.01, bus: 'sfx',
+    });
+  }
+
   werkzeugGewaehlt(skill?: SkillId): void {
     const i = skill ? Math.max(0, SKILLS.indexOf(skill)) : 0;
     pling(this.engine, { freq: ton(i), dur: 0.24, gain: 0.12, bus: 'sfx', fest: false });
