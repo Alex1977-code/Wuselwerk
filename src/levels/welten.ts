@@ -92,6 +92,13 @@ export interface Welt {
   levelIds: string[];
   /** Bandpunkt je Level, gleiche Reihenfolge wie `levelIds`. */
   punkte: KartenPunkt[];
+  /**
+   * Sterntore: Vor dem Level mit diesem Index (ab 0) verlangt das Band eine
+   * Gesamtzahl Sterne. Die uebliche, faire Genre-Mechanik (Kritik F6): Wer nur
+   * durchrennt, sammelt vor dem Tor nach — und sieht dabei, wofuer die Sterne
+   * da sind. Hoechstens eines je Welt; mehr waeren Schranken statt Tore.
+   */
+  sternTor?: { vorIndex: number; sterne: number };
   /** Breite des Weltabschnitts in Bildschirmbreiten. */
   bandBreite: number;
   /** Das Weltentor am Ende des Abschnitts. */
@@ -206,6 +213,10 @@ export const WELTEN: Welt[] = [
     kartenTheme: 'grass',
     farbe: '#63b23f',
     soll: 10,
+    // Das Sterntor vor Punkt 7: zwoelf von achtzehn bis dahin moeglichen
+    // Sternen. Wer jedes Level nur eben besteht, hat sechs — und einen Grund,
+    // zwei alte Level besser zu spielen, bevor es weitergeht.
+    sternTor: { vorIndex: 6, sterne: 12 },
     belohnung: {
       art: 'werkzeug',
       skill: 'digger',

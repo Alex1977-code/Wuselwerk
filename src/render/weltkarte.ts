@@ -70,6 +70,24 @@ function punktR(L: Layout): number {
   return Math.max(13, Math.min(26, L.cssW * 0.032));
 }
 
+function kreisRunde(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  const rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+
 function kreis(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -265,6 +283,24 @@ function levelPunkt(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(lv.nr), x, y + 1);
+    // Die Sterntor-Plakette: Was hier fehlt, sind Sterne, kein Vorgaenger.
+    // Sie macht aus dem grauen Punkt eine Ansage — „ab 12 Sternen" ist ein
+    // Ziel, „gesperrt" ist nur eine Wand.
+    if (lv.sternTor) {
+      const ty = y - r - 12;
+      ctx.fillStyle = 'rgba(10, 14, 22, 0.82)';
+      const text = `${lv.sternTor.sterne}`;
+      ctx.font = `700 ${Math.round(r * 0.62)}px system-ui, sans-serif`;
+      const tw = ctx.measureText(text).width;
+      const bw = tw + r * 1.5;
+      kreisRunde(ctx, x - bw / 2, ty - r * 0.55, bw, r * 1.1, r * 0.55);
+      ctx.fill();
+      stern(ctx, x - tw / 2 - r * 0.05, ty, r * 0.34);
+      ctx.fillStyle = COL.accent;
+      stern(ctx, x - tw / 2 - r * 0.05, ty, r * 0.34);
+      ctx.fillStyle = '#ffe9a0';
+      ctx.fillText(text, x + r * 0.3, ty + 1);
+    }
   } else {
     const fertig = lv.zustand === 'geschafft';
     // Ein Schlagschatten setzt den Punkt auf den Weg, statt ihn hineinzumalen.

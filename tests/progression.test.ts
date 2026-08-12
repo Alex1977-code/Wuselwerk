@@ -479,3 +479,56 @@ function levelVon(id: string): LevelDef {
   if (!von) throw new Error(`Level ${id} gibt es nicht`);
   return von;
 }
+
+/**
+ * Das Sterntor — Kritikpunkt F6: Sterne müssen etwas kaufen.
+ *
+ * Es hält unabhängig vom Vorgänger zu: Wer nur durchrennt (ein Stern je
+ * Level), steht davor und hat einen Grund, alte Level besser zu spielen.
+ * Ein einmal geschafftes Level hinter dem Tor bleibt geschafft.
+ */
+describe('Sterntor', () => {
+  const TOR: Katalog = {
+    welten: [
+      {
+        ...T_WELTEN[0],
+        sternTor: { vorIndex: 2, sterne: 5 },
+      },
+      ...T_WELTEN.slice(1),
+    ],
+    level: T_LEVEL,
+  };
+
+  it('hält zu, solange die Sterne fehlen', () => {
+    const p: Progress = {
+      't1-01': { won: true, bestSaved: 10, bestSkills: 2, stars: 2 },
+      't1-02': { won: true, bestSaved: 10, bestSkills: 2, stars: 2 },
+    };
+    // Vier Sterne, fünf verlangt: t1-03 bleibt trotz geschafftem Vorgänger zu.
+    expect(levelZustand(p, 't1-03', TOR)).toBe('gesperrt');
+  });
+
+  it('öffnet mit der geforderten Sternzahl', () => {
+    const p: Progress = {
+      't1-01': { won: true, bestSaved: 10, bestSkills: 2, stars: 3 },
+      't1-02': { won: true, bestSaved: 10, bestSkills: 2, stars: 2 },
+    };
+    expect(levelZustand(p, 't1-03', TOR)).toBe('offen');
+  });
+
+  it('nimmt Geschafftes nicht zurück', () => {
+    const p: Progress = {
+      't1-03': { won: true, bestSaved: 10, bestSkills: 2, stars: 1 },
+    };
+    expect(levelZustand(p, 't1-03', TOR)).toBe('geschafft');
+  });
+
+  it('trägt die Plakette in die Karte', () => {
+    const p: Progress = {
+      't1-01': { won: true, bestSaved: 10, bestSkills: 2, stars: 2 },
+    };
+    const karte = weltkarte(p, TOR);
+    const punkt = karte.welten[0].level[2];
+    expect(punkt.sternTor).toEqual({ sterne: 5, fehlen: 3 });
+  });
+});

@@ -90,6 +90,11 @@ export interface LevelKarte {
   etappe: string;
   zustand: LevelZustand;
   sterne: number;
+  /**
+   * Steht vor diesem Level ein Sterntor? Dann traegt der Punkt eine Plakette
+   * mit der Forderung; `fehlen` sagt, wie viele noch fehlen (0 = offen).
+   */
+  sternTor?: { sterne: number; fehlen: number };
   /** Punkt im Gesamtband. */
   pos: KartenPunkt;
 }
@@ -260,12 +265,42 @@ export function levelZustand(p: Progress, levelId: string, k: Katalog = KATALOG)
     const liste = welten[wi].level;
     const li = liste.findIndex((l) => l.id === levelId);
     if (li < 0) continue;
+    // Das Sterntor haelt zu, bis genug Sterne da sind — unabhaengig davon,
+    // ob der Vorgaenger steht (Kritik F6: Sterne muessen etwas kaufen).
+    const tor = sternTorFuer(levelId, k);
+    if (tor && gesamtSterne(p) < tor.sterne) return 'gesperrt';
     if (li > 0) return istGeschafft(p, liste[li - 1].id) ? 'offen' : 'gesperrt';
     if (wi === 0) return 'offen';
     const vorige = welten[wi - 1].level;
     return vorige.every((l) => istGeschafft(p, l.id)) ? 'offen' : 'gesperrt';
   }
   return 'gesperrt';
+}
+
+/** Alle je verdienten Sterne, ueber alle Level. */
+export function gesamtSterne(p: Progress): number {
+  let n = 0;
+  for (const id of Object.keys(p)) n += p[id]?.stars ?? 0;
+  return n;
+}
+
+/**
+ * Das Sterntor eines Levels — verlangt es welche, und ist es offen?
+ *
+ * `null` heisst: Vor diesem Level steht kein Tor. Das Tor gilt nur fuer den
+ * Eintritt; ein einmal geschafftes Level bleibt geschafft, auch wenn jemand
+ * dem Spielstand Sterne wegnehmen koennte (kann niemand — Bestwerte).
+ */
+export function sternTorFuer(
+  levelId: string,
+  k: Katalog = KATALOG,
+): { sterne: number } | null {
+  for (const w of k.welten) {
+    const t = w.sternTor;
+    if (!t) continue;
+    if (w.levelIds[t.vorIndex] === levelId) return { sterne: t.sterne };
+  }
+  return null;
 }
 
 export function istFreigeschaltet(p: Progress, levelId: string, k: Katalog = KATALOG): boolean {
@@ -452,8 +487,11 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
     const level: LevelKarte[] = defs.map((def, i) => {
       lauf++;
       const geschafft = istGeschafft(p, def.id);
+      const tor = sternTorFuer(def.id, k);
+      const torZu = tor !== null && gesamtSterne(p) < tor.sterne;
       const offen =
-        i > 0 ? istGeschafft(p, defs[i - 1].id) : wi === 0 || vorigeWeltFertig;
+        !torZu &&
+        (i > 0 ? istGeschafft(p, defs[i - 1].id) : wi === 0 || vorigeWeltFertig);
       const zustand: LevelZustand = geschafft ? 'geschafft' : offen ? 'offen' : 'gesperrt';
       const sterne = sternenZahl(p, def.id);
       if (zustand === 'geschafft') geschafftGesamt++;
@@ -467,6 +505,9 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
         etappe: def.chapter,
         zustand,
         sterne,
+        ...(tor
+          ? { sternTor: { sterne: tor.sterne, fehlen: Math.max(0, tor.sterne - gesamtSterne(p)) } }
+          : {}),
         pos: punkte[i],
       };
     });
