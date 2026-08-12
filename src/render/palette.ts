@@ -37,6 +37,14 @@ export interface Palette {
   /** Frisch freigelegtes Material ist heller (GDD §6). */
   freshBoost: number;
   glow: string;
+  /**
+   * Der Dunstschleier ueber der Kulisse — Luftperspektive als eine Farbe.
+   *
+   * Er liegt ueber Himmel und Huegeln und **unter** Terrain und Figuren:
+   * Was klar ist, ist nah und begehbar; was verdunstet, ist Hintergrund.
+   * Halbtransparent in der Himmelsfarbe der jeweiligen Welt.
+   */
+  dunst: string;
 }
 
 const GRASS: Palette = {
@@ -71,6 +79,7 @@ const GRASS: Palette = {
   /** Frisch freigelegtes Material ist heller (GDD §6). */
   freshBoost: 30,
   glow: '#ffe6a8',
+  dunst: 'rgba(198, 230, 242, 0.16)',
 };
 
 const CRYSTAL: Palette = {
@@ -94,6 +103,7 @@ const CRYSTAL: Palette = {
   brick: 0xd59a4a,
   freshBoost: 34,
   glow: '#bfe6ff',
+  dunst: 'rgba(150, 190, 235, 0.15)',
 };
 
 export function paletteFor(theme: ThemeId): Palette {

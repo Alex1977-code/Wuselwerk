@@ -57,7 +57,7 @@ export class Scene {
   readonly palette: Palette;
   private hills: HillLayer[] = [];
   /** Silhouetten auf dem vordersten Hügelzug — sie geben ihm Massstab. */
-  private baeume: { x: number; y: number; h: number; breit: number }[] = [];
+  private baeume: { x: number; y: number; h: number; breit: number; form: number }[] = [];
   private wolken: {
     x: number;
     y: number;
@@ -141,6 +141,10 @@ export class Scene {
         y: yLog,
         h: 9 + bewuchs() * 9,
         breit: 0.55 + bewuchs() * 0.5,
+        // Drei Silhouetten statt einer. „Alle aus derselben Form" stand in
+        // der Kritik, und es stimmte: Ein Kamm aus lauter gleichen Lollis
+        // liest sich als Stempelmuster, nicht als Wald.
+        form: Math.floor(bewuchs() * 3),
       });
     }
     this.baeume.sort((a, b) => a.h - b.h);
@@ -347,6 +351,17 @@ export class Scene {
 
     this.drawSky(ctx, v);
     this.drawHills(ctx, v);
+
+    // Der Dunstschleier — die eine Zeile, die Kulisse und Spielflaeche trennt.
+    //
+    // Die Kritik unter G2: Der vorderste Huegel „sieht begehbarer aus als
+    // mancher echte Boden." Die Antwort ist Luftperspektive, konsequent bis
+    // zur vordersten Schicht: Ueber **alles**, was hinter dem Terrain liegt,
+    // legt sich ein hauchduenner Schleier in der Himmelsfarbe. Das Terrain
+    // und die Figuren werden danach in voller Saettigung darueber gezeichnet
+    // — was klar ist, ist nah und begehbar; was verdunstet, ist Kulisse.
+    ctx.fillStyle = this.palette.dunst;
+    ctx.fillRect(v.box.x, v.box.y, v.box.w, v.box.h);
 
     // Das Terrain wird weich vergrössert, nicht hart.
     //
@@ -755,13 +770,24 @@ export class Scene {
       const py = v.box.y + (b.y - oy) * v.scale;
       const h = b.h * v.scale;
       const br = h * 0.34 * b.breit;
-      // Stamm und Krone in einem Zug: ein schmales Rechteck, darauf drei
-      // ueberlappende Kreise. Mehr braucht eine Silhouette nicht.
+      // Stamm zuerst, dann die Krone — drei Silhouetten im Wechsel:
+      // die runde Laubkrone, die hohe schmale Pappel, der flache Schirm.
       ctx.fillRect(px - Math.max(0.6, br * 0.16), py - h * 0.45, Math.max(1.2, br * 0.32), h * 0.5);
       ctx.beginPath();
-      ctx.arc(px, py - h * 0.62, br, 0, Math.PI * 2);
-      ctx.arc(px - br * 0.62, py - h * 0.44, br * 0.72, 0, Math.PI * 2);
-      ctx.arc(px + br * 0.62, py - h * 0.44, br * 0.72, 0, Math.PI * 2);
+      if (b.form === 1) {
+        // Pappel: zwei gestapelte, schmale Ovale.
+        ctx.ellipse(px, py - h * 0.55, br * 0.55, h * 0.34, 0, 0, Math.PI * 2);
+        ctx.ellipse(px, py - h * 0.86, br * 0.38, h * 0.2, 0, 0, Math.PI * 2);
+      } else if (b.form === 2) {
+        // Schirm: eine breite, flache Haube mit gerader Unterkante.
+        ctx.ellipse(px, py - h * 0.52, br * 1.35, h * 0.26, 0, Math.PI, 0);
+        ctx.closePath();
+      } else {
+        // Laubkrone: drei ueberlappende Kreise.
+        ctx.arc(px, py - h * 0.62, br, 0, Math.PI * 2);
+        ctx.arc(px - br * 0.62, py - h * 0.44, br * 0.72, 0, Math.PI * 2);
+        ctx.arc(px + br * 0.62, py - h * 0.44, br * 0.72, 0, Math.PI * 2);
+      }
       ctx.fill();
     }
   }

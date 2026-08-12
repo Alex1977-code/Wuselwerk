@@ -11,7 +11,7 @@ import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-const [ziel = 'art-src/proben/spiel.png', level = 'w1-01', warten = '4', beruf = ''] =
+const [ziel = 'art-src/proben/spiel.png', level = 'w1-01', warten = '4', beruf = '', zoom = ''] =
   process.argv.slice(2);
 const PORT = 4344;
 const server = spawn(
@@ -82,6 +82,10 @@ if (process.argv[6] === 'zurueck') {
     return g && g['layout'] ? null : null;
   });
   void b; void rb;
+}
+if (zoom) {
+  await page.evaluate((z) => window.__wuselwerk?.debugZoom(Number(z)), zoom);
+  await sleep(400);
 }
 await page.screenshot({ path: ziel });
 await browser.close();

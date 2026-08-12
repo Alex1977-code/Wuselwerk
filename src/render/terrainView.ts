@@ -16,32 +16,45 @@ import { paletteFor, type Palette } from './palette';
  * berechnet, stimmt jede Kante von selbst, und es kostet kein Kilobyte in der
  * Einzeldatei.
  *
+ * ## Warum die Leinwand feiner ist als die Maske (`SUPER`)
+ *
+ * Die Spielkritik hat es an der richtigen Stelle erwischt: „genau dort, wo das
+ * Spiel selbst hinzoomt, wird der Boden zu weichgezeichnetem Schmirgelpapier."
+ * Der Grund war die Aufloesung, nicht die Malerei — ein Bildpunkt je logischem
+ * Pixel, und die Lupe vergroessert das Zweieinhalbfache auf das Dreifache.
+ * Was immer man in dieser Aufloesung malt, wird dort zu Matsch.
+ *
+ * Die Leinwand traegt deshalb `SUPER` Bildpunkte je logischem Pixel. Die
+ * **Maske** bleibt, was sie ist — die Simulation kennt weiterhin nur logische
+ * Pixel —, aber innerhalb eines Maskenpixels darf das Material Details haben:
+ * Kiesel mit Licht- und Schattenkante, Wurzelfasern, Plattenfugen mit Fase.
+ * Erst dadurch besteht der Boden den Blick durch die Lupe.
+ *
  * ## Was Erde nach Erde aussehen laesst
  *
- * Die vorherige Fassung war eine Flaechenfarbe plus Pixelrauschen plus
- * Helligkeitsverlauf. Das liest sich als **angestrichene Wand**, und zwar aus
- * vier Gruenden, die hier alle einzeln behoben sind:
- *
  * 1. **Rauschen je Bildpunkt ist Salz, kein Boden.** Echte Erde hat Klumpen in
- *    mehreren Groessen. Deshalb `wolke()`: weich verlaufendes Rauschen mit
- *    einstellbarer Feldgroesse, zweimal uebereinander — grosse Schollen, feines
- *    Korn.
+ *    mehreren Groessen: Feuchtflecken (sehr gross), Schollen, Kiesel, Korn.
  * 2. **Nur Helligkeit zu aendern wirkt wie Plastik.** Erde aendert mit der
- *    Tiefe ihre *Farbe*: oben warm und trocken, unten kuehl und satt. Darum
- *    zwei Farben (`earth`, `earthDeep`) und ein Uebergang dazwischen, nicht ein
- *    Verlauf auf einer.
+ *    Tiefe ihre *Farbe*: oben warm und trocken, unten kuehl und satt.
  * 3. **Eine Kante ohne Verdunklung sieht ausgeschnitten aus.** Wo Material an
- *    Luft grenzt, wird es dunkler — das ist die Verschattung, die dem Auge
- *    sagt, dass hier Volumen aufhoert und nicht Farbe.
- * 4. **Unter Gras kommt nicht sofort Braun.** Zwischen Narbe und Erde liegt
- *    eine dunkle Wurzelschicht. Fehlt sie, stossen zwei Flaechen stumpf
- *    aneinander und die Narbe liest sich als aufgemalter Streifen.
+ *    Luft grenzt, liegt jetzt eine schmale dunkle Konturlinie (ein
+ *    Unterpixel breit) und obenauf ein heller Lichtsaum — das ist zugleich die
+ *    Trennung von Spielflaeche und Kulisse, die die Kritik unter G2 verlangt:
+ *    Was einen Saum hat, ist begehbar; was keinen hat, ist Hintergrund.
+ * 4. **Ein Kiesel ist ein Ding, kein Fleck.** Er bekommt eine helle
+ *    Oberseite und eine dunkle Unterseite aus dem Gefaelle seines eigenen
+ *    Rauschfelds — das billigste Relief, das es gibt.
  *
  * ## Was das kostet
  *
  * Nur der veraenderte Bereich wird neu berechnet, deshalb kosten auch grosse
- * Sprengungen kaum etwas. Der volle Durchlauf passiert einmal beim Laden.
+ * Sprengungen kaum etwas. Der volle Durchlauf passiert einmal beim Laden und
+ * ist mit `SUPER` = 2 viermal so teuer wie vorher — gemessen im Rahmen von
+ * Zehntelsekunden, einmalig.
  */
+
+/** Bildpunkte je logischem Pixel auf der Terrain-Leinwand. */
+const SUPER = 2;
 
 /** Deterministisches Pixelrauschen — gleiche Stelle, gleiche Koernung. */
 function grain(x: number, y: number): number {
@@ -108,12 +121,12 @@ export class TerrainView {
   ) {
     this.pal = paletteFor(theme);
     this.canvas = document.createElement('canvas');
-    this.canvas.width = terrain.width;
-    this.canvas.height = terrain.height;
+    this.canvas.width = terrain.width * SUPER;
+    this.canvas.height = terrain.height * SUPER;
     const ctx = this.canvas.getContext('2d', { willReadFrequently: false });
     if (!ctx) throw new Error('2D-Kontext nicht verfügbar');
     this.ctx = ctx;
-    this.img = this.ctx.createImageData(terrain.width, terrain.height);
+    this.img = this.ctx.createImageData(terrain.width * SUPER, terrain.height * SUPER);
     // Die Narbe ist unterschiedlich dick, sonst laeuft eine Linie mit
     // Zirkelgenauigkeit ueber den ganzen Bildschirm. Sie haengt nur an der
     // Spalte, also wird sie einmal berechnet und nicht je Bildpunkt.
@@ -136,22 +149,33 @@ export class TerrainView {
     // das Aussehen aller Bildpunkte darunter, so weit `TIEFENSICHT` reicht.
     const y1 = Math.min(this.terrain.height - 1, d.y + d.h + TIEFENSICHT);
     this.paint(x0, y0, x1, y1);
-    this.ctx.putImageData(this.img, 0, 0, x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+    this.ctx.putImageData(
+      this.img,
+      0,
+      0,
+      x0 * SUPER,
+      y0 * SUPER,
+      (x1 - x0 + 1) * SUPER,
+      (y1 - y0 + 1) * SUPER,
+    );
   }
 
   private paint(x0: number, y0: number, x1: number, y1: number): void {
     const { mat, fresh, width, height } = this.terrain;
     const data = this.img.data;
     const p = this.pal;
+    const zeile = width * SUPER;
 
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
         const i = y * width + x;
         const m = mat[i];
-        const o = i * 4;
 
         if (m === MAT.EMPTY) {
-          data[o + 3] = 0;
+          for (let uy = 0; uy < SUPER; uy++) {
+            const basis = ((y * SUPER + uy) * zeile + x * SUPER) * 4;
+            for (let ux = 0; ux < SUPER; ux++) data[basis + ux * 4 + 3] = 0;
+          }
           continue;
         }
 
@@ -165,146 +189,202 @@ export class TerrainView {
           tiefe++;
         }
 
-        // Verschattung an den Kanten. Gezaehlt wird nur seitlich und nach
-        // unten: Oben ist die Lichtseite, dort wird aufgehellt statt
-        // abgedunkelt.
-        let offen = 0;
-        if (x > 0 && mat[i - 1] === MAT.EMPTY) offen++;
-        if (x < width - 1 && mat[i + 1] === MAT.EMPTY) offen++;
-        if (y < height - 1 && mat[i + width] === MAT.EMPTY) offen++;
+        // Offene Seiten, einzeln: Die Konturlinie liegt genau auf den
+        // Unterpixeln, die an die Luft grenzen — deshalb reicht die Summe
+        // nicht mehr, es zaehlt die Richtung.
+        const offenL = x > 0 && mat[i - 1] === MAT.EMPTY;
+        const offenR = x < width - 1 && mat[i + 1] === MAT.EMPTY;
+        const offenU = y < height - 1 && mat[i + width] === MAT.EMPTY;
+        const offen = (offenL ? 1 : 0) + (offenR ? 1 : 0) + (offenU ? 1 : 0);
 
-        let r: number;
-        let g: number;
-        let b: number;
-        // Helligkeit und Waerme getrennt: Nur an der Helligkeit zu drehen
-        // ergibt Plastik, weil echtes Material mit dem Licht auch seine Farbe
-        // aendert.
-        let hell = 0;
-        let warm = 0;
+        for (let uy = 0; uy < SUPER; uy++) {
+          for (let ux = 0; ux < SUPER; ux++) {
+            // Die Mitte des Unterpixels in logischen Koordinaten — daran
+            // haengen alle Rauschfelder, damit das Material beim Nachbarn
+            // nahtlos weitergeht.
+            const xf = x + (ux + 0.5) / SUPER;
+            const yf = y + (uy + 0.5) / SUPER;
 
-        switch (m) {
-          case MAT.EARTH: {
-            const dick = this.narbe[x];
-            // Aufgegrabene Erde traegt keine Narbe mehr — daran sieht man
-            // jederzeit, wo schon gearbeitet wurde.
-            if (!isFresh && tiefe < dick) {
-              r = (p.crust >> 16) & 0xff;
-              g = (p.crust >> 8) & 0xff;
-              b = p.crust & 0xff;
-              // Die oberste Reihe faengt das Licht, die unterste liegt schon im
-              // Schatten der Halme darueber.
-              hell += tiefe === 0 ? 16 : -9 * tiefe;
-              // Halme: senkrechte Streifen. Sie haengen nur an der Spalte,
-              // deshalb steht der Boden still, waehrend die Kamera schwenkt.
-              if (p.crustThickness >= 2) hell += (grain(x, 7) - 0.5) * 30;
-            } else {
-              // Zwei Erdfarben, ueberblendet mit der Tiefe im Level. Der
-              // Uebergang ist das, was aus einer Flaeche einen Querschnitt
-              // macht.
-              const t = Math.min(1, (y / height) * 1.25);
-              const eR = (p.earth >> 16) & 0xff;
-              const eG = (p.earth >> 8) & 0xff;
-              const eB = p.earth & 0xff;
-              r = eR + (((p.earthDeep >> 16) & 0xff) - eR) * t;
-              g = eG + (((p.earthDeep >> 8) & 0xff) - eG) * t;
-              b = eB + ((p.earthDeep & 0xff) - eB) * t;
+            let r: number;
+            let g: number;
+            let b: number;
+            // Helligkeit und Waerme getrennt: Nur an der Helligkeit zu drehen
+            // ergibt Plastik, weil echtes Material mit dem Licht auch seine
+            // Farbe aendert.
+            let hell = 0;
+            let warm = 0;
 
-              // Der dunkle Wurzelsaum direkt unter der Narbe.
-              if (!isFresh && tiefe < dick + 2.2) {
-                const s = 1 - (tiefe - dick) / 2.2;
-                r += (((p.crustDark >> 16) & 0xff) - r) * s * 0.85;
-                g += (((p.crustDark >> 8) & 0xff) - g) * s * 0.85;
-                b += ((p.crustDark & 0xff) - b) * s * 0.85;
+            switch (m) {
+              case MAT.EARTH: {
+                const dick = this.narbe[x];
+                // Aufgegrabene Erde traegt keine Narbe mehr — daran sieht man
+                // jederzeit, wo schon gearbeitet wurde.
+                if (!isFresh && tiefe < dick) {
+                  r = (p.crust >> 16) & 0xff;
+                  g = (p.crust >> 8) & 0xff;
+                  b = p.crust & 0xff;
+                  // Die oberste Reihe faengt das Licht, die unterste liegt
+                  // schon im Schatten der Halme darueber.
+                  hell += tiefe === 0 ? 16 : -9 * tiefe;
+                  // Halme: senkrechte Streifen, jetzt in halber Pixelbreite —
+                  // aus dem Streifen wird ein Grashalm.
+                  if (p.crustThickness >= 2) {
+                    hell += (grain(Math.floor(xf * SUPER), 7) - 0.5) * 34;
+                  }
+                } else {
+                  // Zwei Erdfarben, ueberblendet mit der Tiefe im Level. Der
+                  // Uebergang ist das, was aus einer Flaeche einen Querschnitt
+                  // macht.
+                  const t = Math.min(1, (y / height) * 1.25);
+                  const eR = (p.earth >> 16) & 0xff;
+                  const eG = (p.earth >> 8) & 0xff;
+                  const eB = p.earth & 0xff;
+                  r = eR + (((p.earthDeep >> 16) & 0xff) - eR) * t;
+                  g = eG + (((p.earthDeep >> 8) & 0xff) - eG) * t;
+                  b = eB + ((p.earthDeep & 0xff) - eB) * t;
+
+                  // Der dunkle Wurzelsaum direkt unter der Narbe.
+                  if (!isFresh && tiefe < dick + 2.2) {
+                    const s = 1 - (tiefe - dick) / 2.2;
+                    r += (((p.crustDark >> 16) & 0xff) - r) * s * 0.85;
+                    g += (((p.crustDark >> 8) & 0xff) - g) * s * 0.85;
+                    b += ((p.crustDark & 0xff) - b) * s * 0.85;
+                  }
+                  // Einzelne Wurzelfasern, die aus dem Saum haengen. Sie sind
+                  // der Grund, warum der Streifen kein Streifen mehr ist.
+                  if (!isFresh && tiefe < dick + 5) {
+                    const faser = wolke(xf * 2.6, yf * 0.55, 2.2);
+                    if (faser > 0.84) hell -= (faser - 0.84) * 130;
+                  }
+
+                  // Feuchtflecken: die groesste Ordnung. Ohne sie wiederholt
+                  // sich der Boden sichtbar, mit ihnen hat er Gegenden.
+                  const feucht = wolke(xf * 0.6, yf * 0.6, 26);
+                  if (feucht < 0.38) {
+                    hell -= (0.38 - feucht) * 46;
+                    warm -= (0.38 - feucht) * 22;
+                  }
+
+                  // Schollen und Korn — Korn jetzt je Unterpixel.
+                  const schollen = wolke(xf, yf, 6.5);
+                  hell += (schollen - 0.5) * 24;
+                  hell += (grain(x * SUPER + ux, y * SUPER + uy) - 0.5) * 12;
+                  warm += (schollen - 0.5) * 18;
+
+                  // Kiesel: selten, und jetzt mit Relief. Die helle Ober- und
+                  // dunkle Unterseite kommen aus dem Gefaelle des eigenen
+                  // Rauschfelds — Licht von links oben, wie ueberall im Spiel.
+                  const kies = wolke(xf * 1.4, yf, 3.4);
+                  if (kies > 0.88) {
+                    const s = Math.min(1, (kies - 0.88) * 7) * 0.7;
+                    r += (((p.pebble >> 16) & 0xff) - r) * s;
+                    g += (((p.pebble >> 8) & 0xff) - g) * s;
+                    b += ((p.pebble & 0xff) - b) * s;
+                    const relief =
+                      wolke((xf - 0.4) * 1.4, yf - 0.4, 3.4) -
+                      wolke((xf + 0.4) * 1.4, yf + 0.4, 3.4);
+                    hell += relief * 90 * s;
+                    warm *= 0.4;
+                  }
+                  // Dunkle Einschluesse als Gegengewicht. Ein Boden, in dem
+                  // nur helle Dinge stecken, wirkt wie eine Flaeche mit
+                  // Sprenkeln; erst beides zusammen wirkt wie Material mit
+                  // Innenleben.
+                  const dunkel = wolke(xf, yf * 1.3, 4.2);
+                  if (dunkel < 0.12) hell -= (0.12 - dunkel) * 90;
+
+                  // Frisch angeschnittene Erde faengt oben Licht.
+                  if (tiefe === 0) hell += 13;
+                }
+                break;
               }
-
-              // Schollen und Korn.
-              const schollen = wolke(x, y, 6.5);
-              hell += (schollen - 0.5) * 24 + (grain(x, y) - 0.5) * 11;
-              warm = (schollen - 0.5) * 18;
-
-              // Kiesel: **selten und schwach**. Der erste Versuch stand auf
-              // 0,86 mit voller Deckung, und das Ergebnis sah aus wie
-              // verstreute Reiskoerner — ein Boden hat Steine, aber er ist
-              // nicht damit bestreut. Die Schwelle laesst jetzt nur noch die
-              // Spitzen des Rauschens durch, und selbst die decken die Erde nur
-              // zu zwei Dritteln zu.
-              //
-              // Sie gehen zur *grauen* Seite, nicht zur hellen. Waeren sie nur
-              // heller, laese das Auge sie als Lichtflecken statt als Material.
-              const kies = wolke(x * 1.4, y, 3.4);
-              if (kies > 0.9) {
-                const s = Math.min(1, (kies - 0.9) * 8) * 0.66;
-                r += (((p.pebble >> 16) & 0xff) - r) * s;
-                g += (((p.pebble >> 8) & 0xff) - g) * s;
-                b += ((p.pebble & 0xff) - b) * s;
-                warm *= 0.4;
+              case MAT.ROCK: {
+                r = (p.rock >> 16) & 0xff;
+                g = (p.rock >> 8) & 0xff;
+                b = p.rock & 0xff;
+                // Grossform zuerst: Fels ist nicht gleichmaessig grau, er hat
+                // hellere und dunklere Partien in Metergroesse.
+                hell += (wolke(xf * 0.8, yf * 0.8, 17) - 0.5) * 18;
+                // Sedimentbaender: dasselbe Rauschen, in der Waagerechten
+                // stark gestreckt. Genau diese Streckung macht aus Flecken
+                // Schichten — und Schichten sind das, woran man Fels erkennt.
+                hell += (wolke(xf * 0.3, yf, 7) - 0.5) * 30;
+                // Risse. Ein schmales Band eines weichen Rauschens ergibt
+                // Hoehenlinien, und die verlaufen wie Spruenge im Gestein —
+                // jetzt in Unterpixelbreite, also als Linie statt als Kette.
+                const riss = wolke(xf, yf, 5);
+                if (riss > 0.78 && riss < 0.796) hell -= 40;
+                hell += (grain(x * SUPER + ux, y * SUPER + uy) - 0.5) * 9;
+                if (tiefe === 0) hell += 20;
+                hell -= (y / height) * 20;
+                break;
               }
-              // Dunkle Einschluesse als Gegengewicht. Ein Boden, in dem nur
-              // helle Dinge stecken, wirkt wie eine Fläche mit Sprenkeln; erst
-              // beides zusammen wirkt wie Material mit Innenleben.
-              const dunkel = wolke(x, y * 1.3, 4.2);
-              if (dunkel < 0.12) hell -= (0.12 - dunkel) * 90;
-
-              // Frisch angeschnittene Erde faengt oben Licht.
-              if (tiefe === 0) hell += 13;
+              case MAT.STEEL: {
+                r = (p.steel >> 16) & 0xff;
+                g = (p.steel >> 8) & 0xff;
+                b = p.steel & 0xff;
+                // Stahl liest sich als Metall ueber drei Dinge: **Bahnen**
+                // (waagerechte Platten mit versetzten Stoessen), **Fasen**
+                // (die Fuge faengt an ihrer Unterkante Licht) und **Nieten**
+                // entlang der Fugen — mit Kopflicht und Randschatten, wie die
+                // Kiesel. Das Schachbrett von vorher war eine Textur; das hier
+                // ist eine Konstruktion.
+                const bahn = Math.floor(yf / 10);
+                const naht = yf - bahn * 10;
+                const vers = (bahn % 2) * 9;
+                const stoss = (((xf + vers) % 18) + 18) % 18;
+                hell += bahn % 2 === 0 ? 5 : -4;
+                if (naht < 0.55) hell -= 30;
+                else if (naht < 1.05) hell += 16;
+                if (stoss < 0.5) hell -= 22;
+                const nx = (((xf + vers) % 6) + 6) % 6;
+                const nd = Math.hypot(nx - 3, naht - 2.1);
+                if (nd < 0.8) hell += nd < 0.42 ? 26 : -13;
+                // Buerstenstrich: feine waagerechte Streifen je Bahn.
+                hell += (grain(Math.floor(yf * SUPER * 2), bahn) - 0.5) * 7;
+                if (tiefe === 0) hell += 24;
+                // Stahl ist das einzige Material, das nicht zerstoerbar ist.
+                // Er darf deshalb als einziges kalt glaenzen — die Ansage.
+                warm = -8;
+                break;
+              }
+              case MAT.BRICK:
+                r = (p.brick >> 16) & 0xff;
+                g = (p.brick >> 8) & 0xff;
+                b = p.brick & 0xff;
+                // Fugen quer zur Laufrichtung, damit man die einzelnen Stufen
+                // einer Bruecke zaehlen kann.
+                hell += (((xf % 7) + 7) % 7) < 0.55 ? -26 : 5;
+                if (tiefe === 0) hell += 22;
+                hell += (grain(x * SUPER + ux, y * SUPER + uy) - 0.5) * 9;
+                break;
+              default:
+                r = (p.rock >> 16) & 0xff;
+                g = (p.rock >> 8) & 0xff;
+                b = p.rock & 0xff;
             }
-            break;
+
+            // Die Konturlinie: genau die Unterpixel, die an Luft grenzen,
+            // werden deutlich dunkler. Sie ist die Antwort auf „Hintergrund
+            // und Spielflaeche verschwimmen" — begehbares Material hat einen
+            // gezogenen Rand, die Kulisse hat keinen. Obenauf stattdessen ein
+            // Lichtsaum: Die Sonne steht ueber dem Level.
+            if (offenL && ux === 0) hell -= 34;
+            if (offenR && ux === SUPER - 1) hell -= 34;
+            if (offenU && uy === SUPER - 1) hell -= 38;
+            if (tiefe === 0 && uy === 0) hell += 24;
+            // Die alte flaechige Verschattung bleibt, schwaecher — sie traegt
+            // die Rundung, die Kontur traegt die Kante.
+            hell -= offen * 6;
+            if (isFresh) hell += p.freshBoost;
+
+            const o = ((y * SUPER + uy) * zeile + (x * SUPER + ux)) * 4;
+            data[o] = clamp255(r + hell + warm);
+            data[o + 1] = clamp255(g + hell + warm * 0.35);
+            data[o + 2] = clamp255(b + hell - warm * 0.55);
+            data[o + 3] = 255;
           }
-          case MAT.ROCK: {
-            r = (p.rock >> 16) & 0xff;
-            g = (p.rock >> 8) & 0xff;
-            b = p.rock & 0xff;
-            // Sedimentbaender: dasselbe Rauschen, in der Waagerechten stark
-            // gestreckt. Genau diese Streckung macht aus Flecken Schichten —
-            // und Schichten sind das, woran man Fels erkennt.
-            hell += (wolke(x * 0.3, y, 7) - 0.5) * 30;
-            // Risse. Ein schmales Band eines weichen Rauschens ergibt
-            // Hoehenlinien, und die verlaufen wie Spruenge im Gestein.
-            const riss = wolke(x, y, 5);
-            if (riss > 0.78 && riss < 0.807) hell -= 34;
-            hell += (grain(x, y) - 0.5) * 9;
-            if (tiefe === 0) hell += 20;
-            hell -= (y / height) * 20;
-            break;
-          }
-          case MAT.STEEL:
-            r = (p.steel >> 16) & 0xff;
-            g = (p.steel >> 8) & 0xff;
-            b = p.steel & 0xff;
-            // Geschraubte Platten. Das Schachbrett ist die Plattenteilung, der
-            // helle Punkt in der Mitte die Niete.
-            hell += (((x >> 3) + (y >> 3)) & 1) === 0 ? 7 : -7;
-            if (x % 8 === 4 && y % 8 === 4) hell += 36;
-            if (tiefe === 0) hell += 24;
-            // Stahl ist das einzige Material, das nicht zerstoerbar ist. Er darf
-            // deshalb als einziges kalt glaenzen — das ist die Ansage.
-            warm = -8;
-            break;
-          case MAT.BRICK:
-            r = (p.brick >> 16) & 0xff;
-            g = (p.brick >> 8) & 0xff;
-            b = p.brick & 0xff;
-            // Fugen quer zur Laufrichtung, damit man die einzelnen Stufen einer
-            // Bruecke zaehlen kann.
-            hell += x % 7 === 0 ? -26 : 5;
-            if (tiefe === 0) hell += 22;
-            hell += (grain(x, y) - 0.5) * 9;
-            break;
-          default:
-            r = (p.rock >> 16) & 0xff;
-            g = (p.rock >> 8) & 0xff;
-            b = p.rock & 0xff;
         }
-
-        // Verschattung an jeder Kante zur Luft. Ohne sie sieht jedes Loch
-        // ausgeschnitten aus statt gegraben.
-        hell -= offen * 10;
-        if (isFresh) hell += p.freshBoost;
-
-        data[o] = clamp255(r + hell + warm);
-        data[o + 1] = clamp255(g + hell + warm * 0.35);
-        data[o + 2] = clamp255(b + hell - warm * 0.55);
-        data[o + 3] = 255;
       }
     }
   }
