@@ -36,6 +36,14 @@ eine Malvorlage für Handarbeit und zugleich die Notlösung, falls am Modell
 etwas nicht stimmt — Zellraster und Fusspunkt sind garantiert richtig, weil
 derselbe Code sie auch im Spiel benutzt.
 
+## Ausgezogene Blätter
+
+Hier liegt nur, was das Spiel **ausliefert** — alles in diesem Ordner wandert
+in die Einzeldatei. Die Blätter der Murmel und des Erdmännchens sind deshalb zu
+ihren Quelldaten gezogen (`art-src/murmel/`, `art-src/erdmaennchen/`); die
+Tests prüfen sie dort weiter. Zurückholen: Paar herüberkopieren und `FIGUR` in
+`index.ts` umstellen — die Begründung steht dort am Kommentar.
+
 ## Rückfallebene
 
 Fehlt hier eine Datei, oder kann ein Blatt einen Zustand nicht bedienen,

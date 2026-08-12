@@ -37,9 +37,24 @@ export interface AtlasSource {
  * darueber, welche Figur im Spiel steht, und das ist keine Entscheidung, das ist
  * ein Zufall.
  *
- * Beide Blaetter bleiben im Bau. Das kostet die Einzeldatei rund neunzig
- * Kilobyte und ist es wert: Die Murmel ist damit nicht verloren, sondern eine
- * Zeile entfernt — und im Spiel ueber `debugFigur` sogar zur Laufzeit.
+ * ## Nur noch ein Blatt im Bau — die Umkehr einer frueheren Entscheidung
+ *
+ * Hier stand einmal: „Beide Blaetter bleiben im Bau, das kostet rund neunzig
+ * Kilobyte und ist es wert." Aus neunzig sind mit dem dritten Blatt 292
+ * geworden, und der Auftraggeber hat das Geld anders ausgegeben: fuer die
+ * Grafiken aus `docs/grafikbedarf.md` (Beschluss vom 2026-08-12, §5 dort).
+ *
+ * Die Blaetter der Murmel und des Erdmaennchens liegen seitdem bei ihren
+ * Quelldaten — `art-src/murmel/` und `art-src/erdmaennchen/` — und die Tests
+ * pruefen sie dort weiter. Wer eine der beiden zurueckholen will:
+ *
+ * ```
+ * cp art-src/erdmaennchen/erdmaennchen.{atlas.json,webp} src/art/
+ * ```
+ *
+ * und diese Konstante umstellen. **Nur umstellen reicht nicht**: Fehlt das
+ * Blatt im Ordner, faellt `findAtlasSource` stumm auf das erstbeste zurueck,
+ * und im Spiel steht kommentarlos die falsche Figur.
  */
 export const FIGUR: 'wuselwerker' | 'erdmaennchen' | 'murmel' = 'wuselwerker';
 

@@ -9,8 +9,14 @@ import type { AtlasManifest } from '../src/render/atlas';
 import { WUSEL_H } from '../src/core/constants';
 // Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
 // Node-Typen im Testpfad, und der Lader im Spiel holt das Blatt genauso.
-import murmelBlatt from '../src/art/murmel.atlas.json';
-import erdmaennchenBlatt from '../src/art/erdmaennchen.atlas.json';
+//
+// Murmel und Erdmännchen liegen **nicht mehr in `src/art/`** — sie sind aus dem
+// Bau gestrichen (Beschluss vom 2026-08-12, siehe `docs/grafikbedarf.md` §5)
+// und ruhen bei ihren Quelldaten. Die Prüfungen laufen weiter gegen sie: Ein
+// Blatt, das zurückkommt, soll denselben Vertrag erfüllen wie am Tag seines
+// Auszugs.
+import murmelBlatt from '../art-src/murmel/murmel.atlas.json';
+import erdmaennchenBlatt from '../art-src/erdmaennchen/erdmaennchen.atlas.json';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
 
 /**

@@ -1339,11 +1339,11 @@ vorsichtshalber **nicht** angesetzt.
 **Ergebnis:** 618 kB − 292 kB + 315 kB = **rund 641 kB**. Der ganze Bedarf dieser
 Liste kostet netto **23 kB**.
 
-Das ist eine Entscheidung des Auftraggebers und keine, die ich treffe: Die beiden
-Blätter sind erhalten gebliebene Arbeit und über `debugFigur` zur Laufzeit
-umschaltbar. Wer sie behalten will, behält sie — dann liegt die Datei bei 933 kB,
-und dann fallen zuerst Titelbild (55 kB) und Welttafeln (55 kB) weg oder werden
-halbiert.
+**Entschieden am 2026-08-12: gestrichen.** Die beiden Blätter sind aus
+`src/art/` zu ihren Quelldaten gezogen (`art-src/murmel/`,
+`art-src/erdmaennchen/`) und damit aus dem Bau; die Tests prüfen sie dort
+weiter, und der Rückweg steht am `FIGUR`-Kommentar in `src/art/index.ts`.
+Das Budget dieser Liste ist damit gedeckt.
 
 **Prüfregel für jede Lieferung:** Nach dem Einbau `npm run build:single` laufen
 lassen und die Größe von `spielen.html` ablesen. Sie ist die einzige Zahl, die
