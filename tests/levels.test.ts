@@ -529,6 +529,257 @@ function planRost13(): Plan {
   };
 }
 
+
+// --- Musterlösungen der Frostklamm ----------------------------------------
+//
+// Welt 4 ist senkrecht: Fast jeder Plan beschreibt einen Abstieg. Die
+// y-Filter unterscheiden die Etagen — x allein sagt in einer schmalen
+// Welt nichts mehr.
+
+/** Die Kaskade trägt von selbst: null Zuweisungen. */
+function planFrost1(): Plan {
+  return () => {};
+}
+
+/** Pfercht aufgraben, dann jeden Fallenden schirmen — sechs Schirme. */
+function planFrost2(): Plan {
+  let auf = false;
+  let given = 0;
+  return (w) => {
+    if (!auf) {
+      const c = walkerNear(w, 230, 250);
+      if (c && w.assign(c.id, 'digger')) auf = true;
+      return;
+    }
+    if (given >= 6) return;
+    for (const x of w.wusels) {
+      if (x.state === State.FALLING && !x.hasFloater && x.y > 320 && w.skills.floater > 0) {
+        if (w.assign(x.id, 'floater')) given++;
+        if (given >= 6) return;
+      }
+    }
+  };
+}
+
+/** Zweimal senkrecht: erst durch das Sims, dann durch die Zwischendecke. */
+function planFrost3(): Plan {
+  let erster = false;
+  let zweiter = false;
+  return (w) => {
+    if (!erster) {
+      // Nie unter der Falltuer graben: Nachruecker fielen sonst von der
+      // Tuerhoehe durch den fertigen Schacht — weit ueber der Grenze.
+      const c = walkerNear(w, 60, 100);
+      if (c && w.assign(c.id, 'digger')) erster = true;
+      return;
+    }
+    if (!zweiter) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 280 && x.y < 330 && x.x >= 240 && x.x <= 280,
+      );
+      if (c && w.assign(c.id, 'digger')) zweiter = true;
+    }
+  };
+}
+
+/** Die Brücke über den Spalt, mit Nachschub. */
+function planFrost4(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 206, 214, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+    }
+  };
+}
+
+/** Schacht auf die Terrasse, dann der Wächter an die Westkante. */
+function planFrost5(): Plan {
+  let erster = false;
+  let gewacht = false;
+  return (w) => {
+    if (!erster) {
+      const c = walkerNear(w, 150, 190);
+      if (c && w.assign(c.id, 'digger')) erster = true;
+      return;
+    }
+    if (!gewacht) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === -1 && x.y > 280 && x.y < 300 &&
+          x.x >= 128 && x.x <= 168,
+      );
+      if (c && w.assign(c.id, 'blocker')) gewacht = true;
+    }
+  };
+}
+
+/** Wie Schirmpflicht, nur mit Zwischenhalt — der eine Schirm gilt weiter. */
+function planFrost6(): Plan {
+  return planFrost2();
+}
+
+/** Die Kaskade hinab, dann sechs Kletterer auf den Türpfeiler. */
+function planFrost7(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.y > 400 && x.x > 140,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/** Die Naht liegt bei 180 — hundert Bildpunkte Vorhalt im Rücklauf. */
+function planFrost8(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 280, 283, -1);
+    if (c && w.assign(c.id, 'bomber')) done = true;
+  };
+}
+
+/** Zwei Schrägen im Zickzack, die zweite vom Kammerboden aus. */
+function planFrost9(): Plan {
+  let erste = false;
+  let zweite = false;
+  return (w) => {
+    if (!erste) {
+      const c = walkerNear(w, 300, 320, -1);
+      if (c && w.assign(c.id, 'miner')) erste = true;
+      return;
+    }
+    if (!zweite) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 330 && x.x >= 80 && x.x <= 100,
+      );
+      if (c && w.assign(c.id, 'miner')) zweite = true;
+    }
+  };
+}
+
+/** Zwei Wächter für zwei offene Kanten — die Tür liegt dazwischen. */
+function planFrost10(): Plan {
+  let erster = false;
+  let rechts = false;
+  let links = false;
+  return (w) => {
+    if (!erster) {
+      const c = walkerNear(w, 150, 190);
+      if (c && w.assign(c.id, 'digger')) erster = true;
+      return;
+    }
+    // Der Westwaechter zuerst: Jeder Nachruecker erreicht den Schacht
+    // westwaerts (nach dem Abprall an der Ostwand) und landet mit Blick
+    // nach links — die Westkante ist zuerst dran.
+    if (!links) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === -1 && x.y > 280 && x.y < 300 &&
+          x.x >= 136 && x.x <= 180,
+      );
+      if (c && w.assign(c.id, 'blocker')) links = true;
+      return;
+    }
+    if (!rechts) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === 1 && x.y > 280 && x.y < 300 &&
+          x.x >= 300 && x.x <= 344,
+      );
+      if (c && w.assign(c.id, 'blocker')) rechts = true;
+    }
+  };
+}
+
+/** Drei Bauer in einer Kette über die Klamm. */
+function planFrost11(): Plan {
+  let builder: number | null = null;
+  let ketten = 0;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 126, 136, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (ketten < 2) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        ketten++;
+      }
+    }
+  };
+}
+
+/** Sechs Kletterer die Treppe hinauf — jede Stufe zu hoch zum Steigen. */
+function planFrost13(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber && x.x < 160);
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/** Schacht, Wächter, zweiter Schacht, Naht, Riegel — der ganze Abstieg. */
+function planFrost14(): Plan {
+  let erster = false;
+  let gewacht = false;
+  let zweiter = false;
+  let bombed = false;
+  let gerammt = false;
+  return (w) => {
+    if (!erster) {
+      const c = walkerNear(w, 150, 190);
+      if (c && w.assign(c.id, 'digger')) erster = true;
+      return;
+    }
+    if (!gewacht) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === -1 && x.y > 260 && x.y < 280 &&
+          x.x >= 128 && x.x <= 168,
+      );
+      if (c && w.assign(c.id, 'blocker')) gewacht = true;
+      return;
+    }
+    if (!zweiter) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 260 && x.y < 280 && x.x >= 296 && x.x <= 316,
+      );
+      if (c && w.assign(c.id, 'digger')) zweiter = true;
+      return;
+    }
+    if (!bombed) {
+      // Die Zuendung westwaerts: Wer vom Schacht kommt, laeuft nach links —
+      // hundert Bildpunkte vor der Naht bei 200 heisst also bei 300.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === -1 && x.y > 330 && x.y < 350 &&
+          x.x >= 298 && x.x <= 301,
+      );
+      if (c && w.assign(c.id, 'bomber')) bombed = true;
+      return;
+    }
+    if (!gerammt) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 390 && x.x > 200,
+      );
+      if (c && w.assign(c.id, 'basher')) gerammt = true;
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -565,6 +816,20 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w3-11': planRost11,
   'w3-12': planRost12,
   'w3-13': planRost13,
+  'w4-01': planFrost1,
+  'w4-02': planFrost2,
+  'w4-03': planFrost3,
+  'w4-04': planFrost4,
+  'w4-05': planFrost5,
+  'w4-06': planFrost6,
+  'w4-07': planFrost7,
+  'w4-08': planFrost8,
+  'w4-09': planFrost9,
+  'w4-10': planFrost10,
+  'w4-11': planFrost11,
+  'w4-12': planFrost3,
+  'w4-13': planFrost13,
+  'w4-14': planFrost14,
 };
 
 function planFor(level: LevelDef): Plan {
