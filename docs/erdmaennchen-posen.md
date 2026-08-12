@@ -29,6 +29,7 @@ aufgetragen hat.
 | `blocking` | 2 | aufrecht, frontal | bis hierher und nicht weiter |
 | `saving` | 6 | aufrecht, Arme hoch | gerettet |
 | `dying` | 8 | frontal | verloren |
+| `spaehen` | 6 | kerzengerade, Pfoten vor der Brust | kommt nicht weiter — **kein** Simulationszustand |
 
 ## Der Gang ist ein Sprunggalopp, kein Trab
 
@@ -89,6 +90,28 @@ gesetzt werden kann.
 Bei zwölf logischen Pixeln bleibt der Kopf klein, und was ihn lesbar macht, ist
 zusätzlich die zur Laufzeit gezeichnete **Augenmaske**.
 
+## Die dreizehnte Zeile: Spähen
+
+Die einzige Pose, die **keinem** Simulationszustand entspricht. Die Simulation
+kennt sie nicht; der Zeichner setzt sie ein, wenn eine laufende Figur seit einer
+guten halben Sekunde nicht über drei Pixel hinauskommt — im Schacht, hinter einem
+Blocker, in einer Sackgasse.
+
+Sie sagt damit etwas Wahres, das man sonst nicht sieht (*dieser hier kommt nicht
+weiter*), sie ersetzt das Zappeln, das die Simulation an solchen Stellen erzeugt,
+und sie **passt**: Aufrecht ist die Figur 5,7 logische Pixel breit, auf allen
+vieren 15,0. In einen drei Pixel breiten Grabschacht passt nur die eine von
+beiden.
+
+Das Kriterium ist nicht „gar nicht von der Stelle". Das war die erste Fassung und
+sie greift im Schacht nicht: Der ist drei Pixel breit, die Figur pendelt darin,
+und der Zähler fällt bei jedem Schritt zurück. Sie bewegt sich — sie kommt nur
+nicht **weg**.
+
+`DEFAULT_MANIFEST` kennt die Zeile nicht. Ein Blatt ohne sie — das Murmelblatt,
+die prozedurale Rückfallebene — funktioniert unverändert weiter; der Zeichner
+fragt vorher, ob es sie gibt.
+
 ## Zwei Quellen von Flimmern, beide behoben
 
 **1. Die Blickrichtung kippte zwanzig Mal je Sekunde.** In einem Schacht, dessen
@@ -98,11 +121,24 @@ dran. Die Simulation ist im Recht: Eine eingesperrte Figur läuft auf und ab.
 Gezeichnet sprang dabei ein dreizehn Pixel breiter waagerechter Körper von links
 nach rechts, und in einer Grube voller Figuren flimmerte das halbe Bild.
 
-`src/render/blick.ts` zeichnet deshalb die Richtung, in die sich die Figur
+`src/render/ansicht.ts` zeichnet deshalb die Richtung, in die sich die Figur
 **zuletzt wirklich bewegt hat**. Wer läuft, ändert seine Stelle — dann folgt das
 Bild sofort. Wer nur auf der Stelle umdreht, ändert nichts, und dann bleibt auch
 das Bild stehen. Das ist reiner Ansichtszustand; die Simulation weiß nichts davon
 und bleibt deterministisch.
+
+**1b. Die Pose kippte fünfzehn Mal je Sekunde.** Ein Gräber räumt alle sieben
+Ticks eine Zeile. Wer darüber steht, verliert den Boden, fällt **einen** Pixel,
+landet, läuft, verliert den Boden. `walking` und `falling` wechseln sich damit
+dauernd ab — und seit die eine Pose waagerecht auf vier Beinen und die andere
+aufrecht ist, ist das kein Übergang mehr, sondern ein Zucken.
+
+Ein Fall unter **drei Pixeln** ist deshalb kein Fall, sondern ein Absacken: Die
+vorige Pose bleibt stehen. Dazu läuft für eine ersetzte Pose ein **eigener
+Takt** — `setState` setzt `w.timer` bei jedem Zustandswechsel auf null, und ohne
+den eigenen Takt bliebe die Laufbewegung im Schacht auf Bild eins stehen.
+Solange der Zeichner die Pose der Simulation zeigt, bleibt es bei `w.timer`;
+daran hängt die Zusage, dass Bild eins das Wirkungsbild ist.
 
 **2. Die Figur rastete auf ganze Bildpunkte ein, das Gelände nicht.** Für ein
 Pixelblatt ist das Runden richtig. Für ein gemaltes ist es ein sichtbarer Fehler:

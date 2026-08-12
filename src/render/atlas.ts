@@ -357,8 +357,12 @@ export class SpriteAtlas {
     w: Wusel,
     blick: -1 | 1 = w.dir,
     platz = Infinity,
+    // Pose und Takt kommen von aussen, weil der Zeichner beides gegenueber der
+    // Simulation glaetten darf — siehe `ansicht.ts`.
+    pose?: string,
+    takt?: number,
   ): boolean {
-    const name = clipForWusel(w);
+    const name = pose ?? clipForWusel(w);
     if (!name) return false;
     const clip = this.manifest.clips[name];
     if (!clip) return false;
@@ -369,7 +373,7 @@ export class SpriteAtlas {
     // vor, als die Simulation kennt — die Zelle im Bild ist entsprechend
     // grösser als die Zelle in logischen Pixeln.
     const ppl = this.manifest.ppl ?? 1;
-    const frame = frameFor(clip, w.timer);
+    const frame = frameFor(clip, takt ?? w.timer);
     const s = v.scale;
 
     // Auf ganze Bildpunkte einrasten — aber **nur** bei Pixelgrafik.

@@ -131,6 +131,11 @@ const ZEILEN = [
   { name: 'blocking', holds: [8, 8] },
   { name: 'saving', holds: [3, 3, 3, 3, 3, 3], once: true },
   { name: 'dying', holds: [3, 3, 3, 3, 3, 3, 4, 4], once: true },
+  // Die dreizehnte Zeile, und die einzige, die **keinem** Simulationszustand
+  // entspricht. Der Zeichner setzt sie ein, wenn eine laufende Figur nicht von
+  // der Stelle kommt; `DEFAULT_MANIFEST` kennt sie deshalb nicht, und ein Blatt
+  // ohne sie funktioniert weiter.
+  { name: 'spaehen', holds: [14, 14, 14, 14, 14, 14] },
 ];
 
 /**
@@ -166,6 +171,9 @@ const DREHUNG_GRAD = {
   blocking: 12,
   saving: 12,
   dying: 0,
+  // Fast frontal. Das Sichern richtet sich an den Betrachter, und der Blick
+  // wandert nach links und rechts — im Profil saehe man davon nichts.
+  spaehen: 16,
 };
 
 const FIGUR_EINHEITEN = 0.861;

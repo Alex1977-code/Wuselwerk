@@ -8,7 +8,7 @@ import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
 import { clipForWusel, type SpriteAtlas } from './atlas';
-import { blickVergessen, blickrichtung } from './blick';
+import { SPAEHEN, ansicht, ansichtVergessen } from './ansicht';
 import type { TerrainView } from './terrainView';
 import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
 
@@ -86,7 +86,7 @@ export class Scene {
     // Der gezeichnete Blick ist Ansichtszustand je Figurennummer. Ein neues
     // Level bringt neue Figuren mit denselben Nummern — ohne dieses Vergessen
     // erbten sie die Blickrichtung ihrer Vorgaenger.
-    blickVergessen();
+    ansichtVergessen();
   }
 
   private buildHills(): void {
@@ -367,9 +367,10 @@ export class Scene {
       // halbe Koerper und steckte deshalb in jeder Wand, an der eine Murmel
       // entlanglief — die Simulation kennt nur die zwoelf Pixel Koerperhoehe.
       // Siehe `schopfPlatz`.
-      // Die **gezeichnete** Blickrichtung, nicht die der Simulation. Siehe
-      // `blick.ts`: In einer Grube kippt `w.dir` zwanzig Mal je Sekunde.
-      const blick = blickrichtung(w);
+      // Was **gezeichnet** wird, nicht was die Simulation gerade meint. Siehe
+      // `ansicht.ts`: In einer Grube kippt beides zwanzig Mal je Sekunde.
+      const sicht = ansicht(w, clipForWusel(w) ?? '', !!this.atlas?.has(SPAEHEN));
+      const blick = sicht.dir;
       const platz = schopfPlatz(
         (px, py) => world.terrain.solid(px, py),
         w.x,
@@ -382,7 +383,7 @@ export class Scene {
 
       // Der Kontaktschatten. Er kommt vor allem anderen, weil er unter allem
       // liegt.
-      this.drawBodenschatten(ctx, v, w, world);
+      this.drawBodenschatten(ctx, v, w, world, sicht.pose);
 
       ctx.save();
       // Der Sprung ins Tor sitzt als Bildschirmversatz **um** den Zeichner
@@ -395,7 +396,9 @@ export class Scene {
       if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
       // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz)) drawWusel(ctx, v, w, tick, blick, platz);
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, sicht.takt)) {
+        drawWusel(ctx, v, w, tick, blick, platz);
+      }
       if (w.fuse > 0) drawWarnlicht(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       ctx.restore();
     }
@@ -437,6 +440,7 @@ export class Scene {
     v: View,
     w: Wusel,
     world: World,
+    pose?: string,
   ): void {
     // Wie weit ist der Boden? `w.y` ist die unterste Koerperzeile, also liegt
     // der Boden bei stehenden Figuren unmittelbar darunter.
@@ -458,7 +462,7 @@ export class Scene {
     // zehn. Ein Schatten, der das nicht weiss, ist beim einen ein Nebel und
     // beim anderen ein Fleck neben den Pfoten. Der Backvorgang misst es je Pose
     // und schreibt es ins Blatt; fehlt die Angabe, gilt der alte Wert.
-    const clipName = clipForWusel(w);
+    const clipName = pose ?? clipForWusel(w);
     const gemessen = clipName ? this.atlas?.manifest.clips[clipName]?.fuss : undefined;
     const stand = gemessen && gemessen > 0 ? gemessen : WUSEL_H * 0.5;
     // Je hoeher die Figur, desto breiter und blasser — so verhaelt sich ein
