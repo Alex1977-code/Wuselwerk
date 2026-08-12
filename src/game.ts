@@ -337,6 +337,21 @@ export class Game {
   }
 
   /**
+   * Darf ein Level starten? Ohne Leben: zurueck zur Karte, Tafel auf.
+   *
+   * Ein Aufruf je Startweg (Kartentipp prueft selbst, Neustart und Weiter
+   * rufen hierher) — die Regel steht damit an jeder Tuer, nicht nur an der
+   * Vordertuer.
+   */
+  private startErlaubt(): boolean {
+    this.leben = tagesWechsel(this.leben, heuteTag());
+    if (this.ohneLeben || this.leben.uebrig > 0) return true;
+    this.toMenu();
+    this.lebenTafel = true;
+    return false;
+  }
+
+  /**
    * Einen verlorenen Versuch verbuchen — genau einmal je Levellauf.
    *
    * Aufgerufen von der Niederlage (`finish`) und vom Abbruch nach der
@@ -1348,12 +1363,18 @@ export class Game {
         break;
       case 'restart':
       case 'retry':
+        // Auch der Neustart ist ein Start: Ohne Leben fuehrt er zur Karte,
+        // wo die Tafel die Lage erklaert. Vorher galt das nur fuer den Weg
+        // ueber die Karte — Neustart und Weiter waren ein Schlupfloch, und
+        // damit war das Budget wirkungslos.
+        if (!this.startErlaubt()) break;
         this.loadLevel(this.level);
         this.phase = 'running';
         this.audio.setBesetzung('voll');
         this.audio.startMusic();
         break;
       case 'next': {
+        if (!this.startErlaubt()) break;
         const i = LEVELS.findIndex((l) => l.id === this.level.id);
         const nxt = LEVELS[i + 1];
         if (nxt) {
@@ -1647,6 +1668,7 @@ export class Game {
       cameraFollow: this.camera.follow,
       muted: this.audio.muted,
       atlas: this.atlas,
+      leben: this.ohneLeben ? null : { uebrig: this.leben.uebrig },
     };
   }
 

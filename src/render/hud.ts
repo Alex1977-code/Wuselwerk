@@ -36,6 +36,12 @@ export interface HudState {
   muted: boolean;
   /** Das Figurenblatt — die Knoepfe zeigen die Figur bei der Arbeit. */
   atlas: SpriteAtlas | null;
+  /**
+   * Lebensvorrat fuer die Kopfleiste — `null`, wenn das System aus ist
+   * (Testmodus). Im Level sichtbar, damit man **vor** dem riskanten Zug
+   * weiss, was eine Niederlage kostet, nicht erst auf der Karte danach.
+   */
+  leben: { uebrig: number } | null;
 }
 
 export function roundRect(
@@ -74,9 +80,26 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
 
   ctx.textBaseline = 'top';
   ctx.textAlign = 'left';
+  // Der Lebensvorrat, ganz links in der oberen Zeile: Herz und Zahl. Die
+  // Etappe rueckt dafuer nach rechts — sie ist Auskunft, das Herz ist Einsatz.
+  let linksX = 10;
+  if (s.leben) {
+    const hx = 16;
+    const hy = 13;
+    ctx.fillStyle = s.leben.uebrig > 0 ? '#ff5a6e' : '#5a6478';
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + 5.4);
+    ctx.bezierCurveTo(hx - 8.4, hy + 0.3, hx - 4.5, hy - 6, hx, hy - 1.9);
+    ctx.bezierCurveTo(hx + 4.5, hy - 6, hx + 8.4, hy + 0.3, hx, hy + 5.4);
+    ctx.fill();
+    ctx.fillStyle = COL.text;
+    ctx.font = '700 11px system-ui, sans-serif';
+    ctx.fillText(String(s.leben.uebrig), hx + 9, 8);
+    linksX = hx + 9 + ctx.measureText(String(s.leben.uebrig)).width + 8;
+  }
   ctx.fillStyle = COL.dim;
   ctx.font = '600 10px system-ui, sans-serif';
-  ctx.fillText(s.level.chapter.toUpperCase(), 10, 7);
+  ctx.fillText(s.level.chapter.toUpperCase(), linksX, 7);
   ctx.fillStyle = COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
   // Der Name endet, wo die Mitte-Spalte beginnt — gemessen, nicht gehofft.
