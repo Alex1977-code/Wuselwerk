@@ -439,6 +439,8 @@ export class Scene {
     );
     ctx.restore();
 
+    this.drawSeitenwaende(ctx, v);
+
     // Die Brandspuren: ein dunkler Hauch am Kraterrand, der ueber ein paar
     // Sekunden verweht. Er liegt auf dem Terrain und unter den Figuren — wie
     // Russ. Ohne ihn sah der Krater aus, als haette ihn jemand ausgestochen
@@ -663,6 +665,64 @@ export class Scene {
    * Der dritte Wert auf halber Höhe biegt ihn — oben bleibt es lange dunkel,
    * zum Horizont hin wird es schnell hell. Das ist, was ein Abendhimmel tut.
    */
+  /**
+   * Die Seitenwaende der Welt — der sichtbare Grund, warum am Rand Schluss ist.
+   *
+   * Die Simulation behandelt den Weltrand seit jeher als Wand: Eine Figur
+   * dreht dort um wie an Fels. Gezeichnet wurde dort aber Himmel, und so sah
+   * es aus, als drehte der Wusel **am Abgrund einfach um** — genau so kam es
+   * als Rueckmeldung. Die Wand, die die Simulation meint, muss man sehen.
+   *
+   * Jenseits der Weltgrenzen steht deshalb massives Gestein: eine dunkle
+   * Felsflaeche im Ton der Welt, zur Spielflaeche hin beleuchtet (dort ist
+   * das Licht), nach aussen absinkend, mit ein paar senkrechten Schattenfugen
+   * als Massstab. Unten bleibt der Abgrund offen — der ist echt.
+   */
+  private drawSeitenwaende(ctx: CanvasRenderingContext2D, v: View): void {
+    const linksS = sx(v, 0);
+    const rechtsS = sx(v, this.level.width);
+    const box = v.box;
+    if (linksS <= box.x && rechtsS >= box.x + box.w) return;
+
+    const ton = this.palette.rock >>> 0;
+    const dunkel = (f: number): string => {
+      const r = Math.round(((ton >> 16) & 255) * f);
+      const g = Math.round(((ton >> 8) & 255) * f);
+      const b = Math.round((ton & 255) * f);
+      return `rgb(${r}, ${g}, ${b})`;
+    };
+
+    const wand = (vonX: number, bisX: number, kante: number, richtung: 1 | -1): void => {
+      const breite = bisX - vonX;
+      if (breite <= 0) return;
+      // Beleuchtet an der Kante zur Spielflaeche, dunkler in der Tiefe.
+      const g = ctx.createLinearGradient(kante, 0, kante - richtung * Math.max(140, breite), 0);
+      g.addColorStop(0, dunkel(0.62));
+      g.addColorStop(1, dunkel(0.34));
+      ctx.fillStyle = g;
+      ctx.fillRect(vonX, box.y, breite, box.h);
+      // Senkrechte Schattenfugen geben der Flaeche Massstab — eine glatte
+      // Wand in einem Verlauf laese sich wieder als Himmel, nur dunkler.
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+      const schritt = Math.max(18, 26 * v.scale);
+      const start = Math.floor((vonX - box.x) / schritt) * schritt + box.x;
+      for (let x = start; x < bisX; x += schritt) {
+        const w = 2 + ((x * 7919) % 5);
+        if (x + w > vonX && x < bisX) {
+          ctx.fillRect(Math.max(vonX, x), box.y, Math.min(w, bisX - x), box.h);
+        }
+      }
+      // Die Lichtkante: der eine helle Strich, der sagt, wo die Wand beginnt.
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+      ctx.fillRect(kante - (richtung < 0 ? 2 : 0), box.y, 2, box.h);
+    };
+
+    if (linksS > box.x) wand(box.x, Math.min(linksS, box.x + box.w), linksS, -1);
+    if (rechtsS < box.x + box.w) {
+      wand(Math.max(rechtsS, box.x), box.x + box.w, rechtsS, 1);
+    }
+  }
+
   private drawSky(ctx: CanvasRenderingContext2D, v: View): void {
     // Der Verlauf hängt an der *Welt*, nicht am Bildschirm.
     //
