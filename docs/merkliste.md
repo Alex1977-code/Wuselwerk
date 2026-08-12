@@ -30,8 +30,11 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
 
 ## Grafik
 
-- ⬜ Der **Hintergrund im Spiel**: Anmutung **dreidimensionaler und
-  moderner** (die Mechanik gefällt).
+- ✅ Der **Hintergrund im Spiel**: Anmutung **dreidimensionaler und
+  moderner** — sechs Maßnahmen nach Grafik-Direktion (Dunst-Höhenverlauf,
+  Himmelskörper mit Bloom, Nebelbänke auf eigener Parallaxe-Ebene, Korn
+  gegen Banding, Vignette, statische Lichtbahnen), alles vorgebacken,
+  `src/render/scene.ts`.
 - ✅ Die **Posenknöpfe unten**: Symbol trägt die Lesbarkeit, Figur bei der
   Arbeit daneben, wo Platz ist (Rückmeldungsrunde nach der Kritik).
 - ✅ **Avatare** zur Auswahl: sechs Ringfarben um das Porträt
