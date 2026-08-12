@@ -1,6 +1,6 @@
 import type { Rect, SkillCounts } from '../core/types';
 
-export type ThemeId = 'grass' | 'crystal';
+export type ThemeId = 'grass' | 'crystal' | 'rust';
 
 export type PaintOp =
   | { t: 'rect'; x: number; y: number; w: number; h: number; mat: number }

@@ -361,6 +361,16 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // zu diesem Stueck gehoert.
     fanfareGrund: 3,
   },
+  /**
+   * Welt 3 — Rostwerk. **Teilt sich das Stueck der Klamm**: dieselbe dorische
+   * Schleife, derselbe Tonvorrat. Der Ort unterscheidet sich ueber Raum und
+   * Bett (`ambiente.ts`), nicht ueber die Melodie — ein eigenes drittes
+   * Stueck steht auf der Merkliste, und bis es komponiert ist, ist ein
+   * geteiltes besser als ein schlechtes.
+   */
+  get rust(): Stueck {
+    return STUECKE.crystal;
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -537,6 +547,7 @@ function aufRaster(m: readonly Note[]): (Note | null)[] {
 const RASTER: Record<ThemeId, (Note | null)[]> = {
   grass: aufRaster(STUECKE.grass.melodie),
   crystal: aufRaster(STUECKE.crystal.melodie),
+  rust: aufRaster(STUECKE.crystal.melodie),
 };
 
 /** Was die Musik über die Spiellage wissen muss. */

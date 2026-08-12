@@ -249,13 +249,14 @@ export const WELTEN: Welt[] = [
     id: 'w3',
     name: 'Rostwerk',
     thema: 'Eine Halde aus Stahl und Schrott. Wenig ist grabbar, alles ist im Weg.',
-    // Bis es eine eigene Palette gibt, trägt der Kartenabschnitt die der Höhle:
-    // kühl, metallisch, dunkel — das ist von Rost am wenigsten weit entfernt.
-    kartenTheme: 'crystal',
-    themaGeplant: 'rust',
+    kartenTheme: 'rust',
     farbe: '#c07a3a',
     soll: 13,
     phase: 4,
+    // Das Sterntor vor Punkt 8: vierzig Sterne aus bis dahin 87 moeglichen.
+    // Wer alles nur eben besteht, hat 29 — und zwei Welten voller Gruende,
+    // besser zu werden, bevor die Halde ihre Pruefungen oeffnet.
+    sternTor: { vorIndex: 7, sterne: 40 },
     belohnung: {
       art: 'werkzeug',
       skill: 'floater',

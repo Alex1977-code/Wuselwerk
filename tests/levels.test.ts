@@ -266,6 +266,269 @@ function planKlamm11(): Plan {
   };
 }
 
+// --- Musterlösungen des Rostwerks -----------------------------------------
+//
+// Welt 3 verlangt Mehrschritt-Pläne: fast jedes Level verkettet zwei bis
+// drei Arbeiten. Die Pläne lesen sich entsprechend als kleine Drehbücher.
+
+/** Ein Gräber durch die Rostnaht im Blechboden. */
+function planRost1(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 500, 510);
+    if (c && w.assign(c.id, 'digger')) done = true;
+  };
+}
+
+/** Kletterer und Schirm auf dieselbe Figur — die Stahlwand verlangt beides. */
+function planRost2(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber && x.x < 415);
+    if (!c) return;
+    if (w.assign(c.id, 'climber')) {
+      w.assign(c.id, 'floater');
+      n++;
+    }
+  };
+}
+
+/** Zwei Schrägen nacheinander: erst in Kammer A, von dort in Kammer B. */
+function planRost3(): Plan {
+  let erste = false;
+  let zweite = false;
+  return (w) => {
+    if (!erste) {
+      const c = walkerNear(w, 612, 624, -1);
+      if (c && w.assign(c.id, 'miner')) erste = true;
+      return;
+    }
+    if (!zweite) {
+      // Ein Läufer, der schon in Kammer A angekommen ist (y > 400).
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 400 && x.x >= 340 && x.x <= 380,
+      );
+      if (c && w.assign(c.id, 'miner')) zweite = true;
+    }
+  };
+}
+
+/** Blocker, zwei Brückenketten von derselben Hand, dann die Erlösung. */
+function planRost4(): Plan {
+  let builder: number | null = null;
+  let blocker: number | null = null;
+  let kette1 = false;
+  let bruecke2 = false;
+  let kette2 = false;
+  let bombed = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 356, 364, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    const b = w.wuselById(builder);
+    if (!kette1 && b && b.state === State.BUILDING && !bruecke2 && b.bricks <= 2) {
+      if (w.assign(b.id, 'builder')) kette1 = true;
+      return;
+    }
+    if (blocker === null) {
+      const c = w.wusels.find(
+        (x) => x.id !== builder && x.state === State.WALKING && x.dir === 1 && x.x >= 296 && x.x <= 322,
+      );
+      if (c && w.assign(c.id, 'blocker')) blocker = c.id;
+      return;
+    }
+    // Dieselbe Hand baut weiter: Nach der ersten Brücke läuft der Bauer zum
+    // zweiten Spalt und setzt dort erneut an.
+    if (!bruecke2 && b && b.state === State.WALKING && b.dir === 1 && b.x >= 628 && b.x <= 640) {
+      if (w.assign(b.id, 'builder')) {
+        bruecke2 = true;
+        kette1 = true;
+      }
+      return;
+    }
+    if (bruecke2 && !kette2 && b && b.state === State.BUILDING && b.bricks <= 2) {
+      if (w.assign(b.id, 'builder')) kette2 = true;
+      return;
+    }
+    if (!bombed && kette2 && b && b.state === State.WALKING && b.x > 700) {
+      const bl = w.wuselById(blocker);
+      if (bl && w.assign(bl.id, 'bomber')) bombed = true;
+    }
+  };
+}
+
+/** Senkrecht bis aufs Blech, dann als Vormerkung waagerecht ins Freie. */
+function planRost6(): Plan {
+  let graeber: number | null = null;
+  let gerammt = false;
+  return (w) => {
+    if (graeber === null) {
+      const c = walkerNear(w, 330, 350, 1);
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (!gerammt) {
+      const d = w.wuselById(graeber);
+      if (d && d.state === State.WALKING && d.dir === 1 && d.y > 290) {
+        if (w.assign(d.id, 'basher')) gerammt = true;
+      }
+    }
+  };
+}
+
+/** Die Brücke im Gegenlauf: gebaut nach links, mit Nachschub. */
+function planRost7(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 408, 420, -1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+    }
+  };
+}
+
+/** Sechs Kletterer aufs Hochregal; der erste oben flickt die Lücke. */
+function planRost8(): Plan {
+  let n = 0;
+  let geflickt = false;
+  let flicker: number | null = null;
+  return (w) => {
+    if (flicker !== null) {
+      const f = w.wuselById(flicker);
+      if (f && f.state === State.BUILDING && f.bricks <= 2 && w.assign(f.id, 'builder')) {
+        flicker = null;
+      }
+    }
+    if (!geflickt) {
+      // Wer schon auf dem Regal läuft (y < 300), flickt vor der Lücke.
+      const oben = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y < 300 && x.dir === 1 && x.x >= 594 && x.x <= 599,
+      );
+      if (oben && w.assign(oben.id, 'builder')) {
+        geflickt = true;
+        flicker = oben.id;
+        return;
+      }
+    }
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.y > 400 && x.x < 500,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/** Brückenkette über den Spalt, dann sechsmal Kletterer und Schirm. */
+function planRost10(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  let n = 0;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 390, 398, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x > 460 && x.x < 690,
+    );
+    if (!c) return;
+    if (w.assign(c.id, 'climber')) {
+      w.assign(c.id, 'floater');
+      n++;
+    }
+  };
+}
+
+/** Die Naht sprengen, in die Halle fallen, den Riegel rammen. */
+function planRost11(): Plan {
+  let bombed = false;
+  let gerammt = false;
+  return (w) => {
+    if (!bombed) {
+      const c = walkerNear(w, 438, 441, 1);
+      if (c && w.assign(c.id, 'bomber')) bombed = true;
+      return;
+    }
+    if (!gerammt) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 380 && x.x > 560,
+      );
+      if (c && w.assign(c.id, 'basher')) gerammt = true;
+    }
+  };
+}
+
+/** Brückenkette, dann die Schräge in die Kammer — drei Werke, eine Reihe. */
+function planRost12(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  let geschraegt = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 470, 478, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (!geschraegt) {
+      const c = walkerNear(w, 688, 700, 1);
+      if (c && w.assign(c.id, 'miner')) geschraegt = true;
+    }
+  };
+}
+
+/** Sieben Kletterer, eine Naht, ein Riegel — die Grube sortiert den Rest. */
+function planRost13(): Plan {
+  let n = 0;
+  let bombed = false;
+  let gerammt = false;
+  return (w) => {
+    if (n < 7) {
+      const c = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber);
+      if (c && w.assign(c.id, 'climber')) n++;
+      return;
+    }
+    if (!bombed) {
+      const c = walkerNear(w, 738, 741, 1);
+      if (c && w.assign(c.id, 'bomber')) bombed = true;
+      return;
+    }
+    if (!gerammt) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 400 && x.x > 790,
+      );
+      if (c && w.assign(c.id, 'basher')) gerammt = true;
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -289,6 +552,19 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w2-10': planLevel9,
   'w2-11': planKlamm11,
   'w2-12': planLevel10,
+  'w3-01': planRost1,
+  'w3-02': planRost2,
+  'w3-03': planRost3,
+  'w3-04': planRost4,
+  'w3-05': planLevel4,
+  'w3-06': planRost6,
+  'w3-07': planRost7,
+  'w3-08': planRost8,
+  'w3-09': planKlamm11,
+  'w3-10': planRost10,
+  'w3-11': planRost11,
+  'w3-12': planRost12,
+  'w3-13': planRost13,
 };
 
 function planFor(level: LevelDef): Plan {

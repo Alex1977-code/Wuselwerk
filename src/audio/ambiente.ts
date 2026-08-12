@@ -198,6 +198,16 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
     // nur ueber geplante Wiederholungen.
     { art: 'ruf', pause: [2.6, 8.0], gain: 0.028, hz: [3050, 4300], toene: [1, 1], rutsch: [1.35, 1.95], dauer: [0.05, 0.09], abstand: [0.1, 0.2], form: 'sine', echos: 2, anschlagHz: 5200 },
   ],
+  // Welt 3 — Rostwerk. Im Freien, aber zwischen Blech: Wind wie auf der
+  // Wiese, nur stumpfer; ein Aechzen alter Traeger auf G (Septime der
+  // dorischen Tonart, liegt im Tonvorrat des geteilten Stuecks); und selten
+  // ein fernes metallisches Klacken mit einem einzigen Echo — die Halde
+  // antwortet einmal, ein Fels haette zweimal geantwortet.
+  rust: [
+    { art: 'wind', pause: [1.8, 3.6], gain: 0.017, hz: [210, 400], q: 0.6, dauer: [2.2, 4.6], wanderung: [0.7, 1.3] },
+    { art: 'brummen', pause: [5.0, 9.0], gain: 0.013, hz: 196, schwebungHz: 0.4, dauer: 6.0, oberton: 0.4 },
+    { art: 'ruf', pause: [6.0, 14], gain: 0.02, hz: [1500, 2400], toene: [1, 2], rutsch: [0.7, 0.95], dauer: [0.06, 0.12], abstand: [0.12, 0.25], form: 'triangle', echos: 1 },
+  ],
 };
 
 /**
@@ -226,6 +236,9 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
 const RAEUME: Record<ThemeId, { dauer: number; pegel: number; daempfung: number }> = {
   grass: { dauer: 1.5, pegel: 0.8, daempfung: 5000 },
   crystal: { dauer: 2.9, pegel: 1.25, daempfung: 1400 },
+  // Halde im Freien: kuerzer als die Hoehle, dunkler als die Wiese — Blech
+  // wirft hart und hoch zurueck, aber es gibt kein Gewoelbe, das traegt.
+  rust: { dauer: 1.9, pegel: 1.0, daempfung: 2600 },
 };
 
 /**

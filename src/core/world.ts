@@ -523,7 +523,17 @@ export class World {
    */
   private wandInReichweite(w: Wusel): boolean {
     const lx = this.aheadX(w, 1, C.BASH_LOOK);
-    return this.terrain.hasSolid(lx, w.y - C.WUSEL_H + 1, C.BASH_LOOK, C.WUSEL_H);
+    // Nur der obere Teil des Koerpers zaehlt: Eine Stufe, die man
+    // hinaufsteigen kann (MAX_STEP), ist keine Wand. Ohne diese Grenze
+    // meldete jeder Zwei-Punkte-Huckel des rauen Bodens „Wand in
+    // Reichweite" — die direkte Zuweisung rammte den Huckel, die
+    // Vormerkung verpuffte daran, und die eigentliche Wand blieb stehen.
+    return this.terrain.hasSolid(
+      lx,
+      w.y - C.WUSEL_H + 1,
+      C.BASH_LOOK,
+      C.WUSEL_H - C.MAX_STEP - 1,
+    );
   }
 
   /** Passt der Koerper (eine Spalte hoch WUSEL_H) an diese Stelle? */
@@ -588,7 +598,8 @@ export class World {
       return;
     }
 
-    // Die Vormerkung greift, sobald ihre Gelegenheit da ist.
+    // Die Vormerkung greift, sobald ihre Gelegenheit da ist. Was als Wand
+    // zaehlt, entscheidet `wandInReichweite` — und zwar streng: siehe dort.
     if (w.vormerk === 'basher' && this.wandInReichweite(w)) {
       w.vormerk = null;
       this.setState(w, State.BASHING);

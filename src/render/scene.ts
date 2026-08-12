@@ -924,12 +924,36 @@ export class Scene {
     const oy = v.oy * layer.factor + refY * (1 - layer.factor);
     ctx.fillStyle = layer.deep;
     const hoehle = this.level.theme === 'crystal';
+    const halde = this.level.theme === 'rust';
     for (const b of this.baeume) {
       const px = v.box.x + (b.x - ox) * v.scale;
       if (px < v.box.x - 20 || px > v.box.x + v.box.w + 20) continue;
       const py = v.box.y + (b.y - oy) * v.scale;
       const h = b.h * v.scale;
       const br = h * 0.34 * b.breit;
+      if (halde) {
+        // Auf der Halde waechst nichts: Der Massstab kommt von dem, was
+        // stehen geblieben ist — Schlote, Masten, ein gekippter Traeger.
+        // Dieselben Orte und Groessen wie die Baeume, andere Silhouette.
+        if (b.form === 1) {
+          // Der Schlot, mit Krone.
+          ctx.fillRect(px - br * 0.3, py - h * 1.1, br * 0.6, h * 1.1);
+          ctx.fillRect(px - br * 0.45, py - h * 1.2, br * 0.9, h * 0.14);
+        } else if (b.form === 2) {
+          // Der gekippte Traeger.
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(-0.28);
+          ctx.fillRect(-br * 0.16, -h * 1.05, br * 0.32, h * 1.05);
+          ctx.restore();
+        } else {
+          // Der Gittermast: Stamm und zwei Querstreben.
+          ctx.fillRect(px - br * 0.14, py - h, br * 0.28, h);
+          ctx.fillRect(px - br * 0.75, py - h * 0.82, br * 1.5, h * 0.09);
+          ctx.fillRect(px - br * 0.5, py - h * 0.5, br, h * 0.09);
+        }
+        continue;
+      }
       if (hoehle) {
         // In der Klamm wachsen keine Bäume: Der Massstab auf dem Grat kommt
         // von Kristallzacken — dieselben Orte und Grössen, andere Silhouette.

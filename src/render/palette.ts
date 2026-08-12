@@ -106,6 +106,32 @@ const CRYSTAL: Palette = {
   dunst: 'rgba(150, 190, 235, 0.15)',
 };
 
+const RUST: Palette = {
+  // Das Rostwerk liegt im Freien, aber unter einem Arbeitshimmel: staubig,
+  // warm, mit einem Horizont wie hinter Schmelzoefen. Kein Blau — Blau ist
+  // die Farbe der Figur, und die soll hier vor Braun und Grau stehen.
+  skyTop: '#4d4f5e',
+  skyMid: '#8a7f83',
+  skyBottom: '#d9bc95',
+  // Halden statt Huegel: Schuttkegel, hinten ausgeblichen, vorn dunkel.
+  hills: ['#b0a294', '#83766a', '#57493c'],
+  hillsDeep: ['#9c8f82', '#6a5e52', '#3e3229'],
+  // Asche und Schutt statt Erde — grabbar, aber muede.
+  earth: 0x6e5c49,
+  earthDeep: 0x3b2f25,
+  pebble: 0x8d837a,
+  // Die Narbe ist eine Rosthaut: oxydiert, warm, zwei Bildpunkte dick.
+  crust: 0xc06a32,
+  crustDark: 0x6e3a1a,
+  crustThickness: 2,
+  rock: 0x5c554e,
+  steel: 0x9aa5b5,
+  brick: 0xd59a4a,
+  freshBoost: 30,
+  glow: '#ffd9a0',
+  dunst: 'rgba(212, 190, 160, 0.16)',
+};
+
 export function paletteFor(theme: ThemeId): Palette {
-  return theme === 'crystal' ? CRYSTAL : GRASS;
+  return theme === 'crystal' ? CRYSTAL : theme === 'rust' ? RUST : GRASS;
 }
