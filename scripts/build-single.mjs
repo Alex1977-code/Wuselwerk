@@ -8,7 +8,7 @@
  *
  * Voraussetzung: `npx vite build` lief vorher.
  */
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, copyFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const DIST = 'dist';
@@ -124,6 +124,35 @@ ${safeJs}
 
 writeFileSync(join(DIST, 'wuselwerk-artifact.html'), body);
 
+/**
+ * Das App-Icon (scripts/make-icon.mjs → art-src/icon/).
+ *
+ * Zwei Wege, weil die Plattformen zwei Sprachen sprechen:
+ * - Das **Favicon** kommt als Data-URI in den Kopf — funktioniert überall,
+ *   auch wenn die Datei allein verschickt wird.
+ * - Das **Home-Bildschirm-Icon** (apple-touch-icon) lädt iOS nicht
+ *   verlässlich aus Data-URIs; es will eine echte Adresse. Deshalb legt der
+ *   Build `apple-touch-icon.png` neben die Seite (Stamm und dist). Wer die
+ *   einzelne Datei ohne Nachbarn öffnet, bekommt Safaris Bildschirmfoto als
+ *   Rückfall — mit Nachbardatei (GitHub Pages) das echte Icon.
+ */
+const iconKopf = (() => {
+  const klein = 'art-src/icon/icon-64.png';
+  const gross = 'art-src/icon/icon-180.png';
+  if (!existsSync(klein) || !existsSync(gross)) {
+    console.warn('Kein Icon gefunden — `node scripts/make-icon.mjs` erzeugt es.');
+    return '';
+  }
+  const b64 = readFileSync(klein).toString('base64');
+  copyFileSync(gross, join(DIST, 'apple-touch-icon.png'));
+  copyFileSync(gross, 'apple-touch-icon.png');
+  return `<link rel="icon" type="image/png" href="data:image/png;base64,${b64}">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wusel">`;
+})();
+
 writeFileSync(
   join(DIST, 'wuselwerk-single.html'),
   `<!doctype html>
@@ -132,7 +161,7 @@ writeFileSync(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#05070c">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e131c'/%3E%3Crect x='6' y='2' width='4' height='4' fill='%23f4d7ac'/%3E%3Crect x='6' y='6' width='4' height='6' fill='%232fc9b8'/%3E%3Crect x='6' y='12' width='4' height='2' fill='%231d8f85'/%3E%3C/svg%3E">
+${iconKopf}
 </head>
 <body>
 ${body}

@@ -11,10 +11,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Wuselwerk</title>
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230e131c'/%3E%3Crect x='6' y='2' width='4' height='4' fill='%23f4d7ac'/%3E%3Crect x='6' y='6' width='4' height='6' fill='%232fc9b8'/%3E%3Crect x='6' y='12' width='4' height='2' fill='%231d8f85'/%3E%3C/svg%3E"
-    />
+    <!-- Das echte Icon (scripts/make-icon.mjs). Der Pfad gilt im Dev-Server;
+         die Einzeldatei bekommt es vom Build als Data-URI eingebettet. -->
+    <link rel="icon" type="image/png" href="/art-src/icon/icon-64.png" />
+    <link rel="apple-touch-icon" href="/art-src/icon/icon-180.png" />
   </head>
   <body>
     <canvas id="spielfeld"></canvas>

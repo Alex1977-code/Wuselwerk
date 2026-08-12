@@ -77,6 +77,9 @@ async function check(label, viewport, shot) {
     await page.mouse.click(rect.x + b.x + b.w / 2, rect.y + b.y + b.h / 2);
     return true;
   };
+  // Zuerst steht der Titelbildschirm — seine ganze Flaeche ist der Knopf.
+  await page.mouse.click(rect.x + 150, rect.y + 150);
+  await sleep(400);
   // Level 1 liegt jetzt auf der Uebersichtskarte, nicht mehr in einer Liste
   // aus Knoepfen. Der Punkt wird deshalb bei der Karte erfragt — dieselbe
   // Regel wie oben: nicht eintippen, sondern das Spiel fragen.
