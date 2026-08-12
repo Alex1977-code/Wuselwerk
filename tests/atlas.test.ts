@@ -178,21 +178,31 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
   }
 
   /**
-   * Die Drehung ist **figurabhängig**, und das ist keine Nachlässigkeit.
+   * Die Drehung ist **figurabhängig**, und die Begründung dafür hat sich
+   * unterwegs umgedreht.
    *
    * Die Murmel ist ein spiegelsymmetrischer Kiesel mit mittigen Augen; sie hat
-   * kein Vorderende. Ihre Laufrichtung entsteht ausschliesslich daraus, dass das
-   * Modell weit genug weggedreht gebacken wird — unter 30 Grad liest man sie in
-   * Spielgrösse nicht, und genau das war die Beschwerde.
+   * kein Vorderende. Ihre Laufrichtung entsteht ausschliesslich aus der
+   * Drehung — unter 30 Grad liest man sie in Spielgrösse nicht, über 48 Grad
+   * verliert sie ihr Gesicht, weil die beiden Augen zu einem Fleck verschmelzen.
+   * Sie hat also ein Fenster, und 42 Grad liegen darin.
    *
-   * Das Erdmännchen hat eine Schnauze. Sie bricht die Silhouette nach vorn, und
-   * damit ist die Richtung schon gesagt. Gedreht wird nur noch so weit, dass der
-   * Körper Tiefe bekommt — mehr wäre hier Verlust ohne Gewinn.
+   * Für das Erdmännchen hatte ich vor dem Modell das Gegenteil vermutet: Eine
+   * Schnauze sage die Richtung schon, also genüge wenig Drehung. Das war falsch
+   * herum gedacht. Eine Schnauze **gewinnt** mit jedem Grad — im Profil ist sie
+   * ein spitzes Dreieck, das die Silhouette durchbricht; frontal ist sie ein
+   * Fleck, der in die Kamera zeigt und verschwindet. Und die Augen können nicht
+   * verschmelzen, weil sie in der Textur sitzen und weit auseinander stehen.
+   * Diese Figur hat also kein oberes Ende des Fensters, und sie steht bei 62.
+   *
+   * Was hier geprüft wird, ist deshalb nicht mehr „viel gegen wenig", sondern
+   * das, was für beide gilt: **Wer läuft, ist deutlich weggedreht.**
    */
-  it('dreht die Murmel weit, das Erdmännchen wenig', () => {
-    expect(BLAETTER.murmel.clips.walking.dreh ?? 0).toBeGreaterThanOrEqual(30);
-    expect(BLAETTER.erdmaennchen.clips.walking.dreh ?? 0).toBeGreaterThan(0);
-    expect(BLAETTER.erdmaennchen.clips.walking.dreh ?? 0).toBeLessThan(30);
+  it('dreht jede laufende Figur deutlich weg', () => {
+    for (const [figur, blatt] of Object.entries(BLAETTER)) {
+      expect(blatt.clips.walking.dreh ?? 0, `${figur} läuft zu frontal`).toBeGreaterThanOrEqual(30);
+      expect(blatt.clips.walking.dreh ?? 0, `${figur} dreht sich weg`).toBeLessThanOrEqual(75);
+    }
   });
 
   it('hält die Rückfallebene auf dem Profil der Murmel', () => {

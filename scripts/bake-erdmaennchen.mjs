@@ -1,18 +1,29 @@
 /**
  * Backt das Figurenblatt des **Erdmaennchens** aus `art-src/erdmaennchen/`.
  *
- * ## Was hier anders ist als bei der Murmel
+ * ## Drei Modelle, drei Wege
  *
- * Die Murmel kam als geriggtes Modell mit zwoelf fertigen Animationen; dieser
- * Backvorgang musste nur abtasten. Das Erdmaennchen entsteht im Code
- * (`modell.mjs`), und seine Posen stehen als **Winkeltabellen** in
- * `art-src/erdmaennchen/posen/*.json` — eine Datei je Pose. Das ist kein
- * Rueckschritt, sondern der Weg, den dieses Projekt bei seiner ersten Figur
- * schon gegangen ist.
+ * Die Murmel kam geriggt **und animiert**; dort wurde nur abgetastet. Das
+ * geliefertes Erdmaennchen kommt geriggt, aber **ohne eine einzige Animation**
+ * — und ohne Schwanzknochen, die `scripts/rig-schwanz.mjs` nachtraegt. Seine
+ * Posen stehen deshalb als Tabellen in `art-src/erdmaennchen/posen/*.json`, eine
+ * Datei je Pose. An zwoelf Posen kann man so unabhaengig arbeiten, ohne sich in
+ * dieselbe Datei zu schreiben.
  *
- * Eine Datei je Pose hat einen zweiten Grund: An zwoelf Posen kann man
- * unabhaengig voneinander arbeiten, ohne sich gegenseitig in dieselbe Datei zu
- * schreiben.
+ * ## Warum die Posen **Richtungen** nennen und keine Winkel
+ *
+ * Weil ich die Achsen dieses Rigs nicht kenne. Es ist nicht meins: Die Knochen
+ * haben ihre eigenen Bindedrehungen, und welche Achse einen Arm hebt statt ihn
+ * zu schwenken, sieht man ihnen nicht an. Beim prozeduralen Vorgaengermodell
+ * hatte ich genau das geraten — Arme heben laeuft ueber Z, nicht ueber X —, und
+ * drei Posen sahen deshalb aus wie Stehen.
+ *
+ * Eine Posentabelle sagt hier stattdessen, **wohin ein Knochen zeigen soll**:
+ * ein Vektor im Modellraum, +z nach vorn, +y nach oben, +x zur linken Seite der
+ * Figur. Der Backvorgang misst die Ruherichtung des Knochens (die Stelle seines
+ * Kindes) und rechnet die Drehung aus, die daraus die Zielrichtung macht. Das
+ * ist rigunabhaengig, es ist lesbar („Arm zeigt nach vorn unten"), und es kann
+ * nicht am falschen Vorzeichen scheitern.
  *
  * ## Der Massstab ist derselbe wie bei der Murmel
  *
@@ -47,6 +58,8 @@ import { extname, join } from 'node:path';
 
 const QUELLE = 'art-src/erdmaennchen';
 const POSEN = join(QUELLE, 'posen');
+/** Das gelieferte Modell **mit** nachgetragener Schwanzkette. */
+const GLB = join(QUELLE, 'erdmaennchen-rig.glb');
 const ZIEL = 'src/art';
 
 const args = process.argv.slice(2);
@@ -86,24 +99,28 @@ const ZEILEN = [
 /**
  * Wie weit sich jede Pose aus der Kamera wegdreht, in Grad.
  *
- * Deutlich weniger als bei der Murmel, und das ist der eigentliche Gewinn
- * dieser Figur: Die **Schnauze** zeigt die Richtung an, nicht die Drehung. Ein
- * Tier hat ein Vorderende und kann gar nicht mehrdeutig stehen. Gedreht wird
- * nur so weit, dass der Koerper Tiefe bekommt.
+ * Deutlich **mehr** als bei der Murmel, und zwar aus dem umgekehrten Grund.
+ *
+ * Die Murmel musste gedreht werden, damit ihre mittigen Augen ueberhaupt eine
+ * Seite bekamen; ueber 48 Grad verlor sie dabei ihr Gesicht. Dieses Tier hat
+ * eine **Schnauze**, und die gewinnt mit jedem Grad: Im Profil ist sie ein
+ * spitzes Dreieck, das die Silhouette nach vorn durchbricht, und damit ist die
+ * Laufrichtung ohne jeden Zweifel gesagt. Sechzig Grad zeigen sie voll und
+ * lassen den Koerper trotzdem breit genug, dass man die Arbeit daran sieht.
  *
  * Der Blocker steht frontal. Seine Wachpose ist die Aussage „bis hierher und
  * nicht weiter", und die richtet sich an den Betrachter.
  */
 const DREHUNG_GRAD = {
-  walking: 24,
-  falling: 16,
-  floating: 12,
-  climbing: 20,
-  hoisting: 24,
-  building: 26,
-  bashing: 24,
-  mining: 26,
-  digging: 18,
+  walking: 62,
+  falling: 40,
+  floating: 30,
+  climbing: 46,
+  hoisting: 56,
+  building: 58,
+  bashing: 60,
+  mining: 62,
+  digging: 44,
   // Zwoelf Grad statt null. Der Blocker soll den Betrachter ansehen — aber
   // schnurgerade frontal steht dieser Kopf als flache Scheibe mit zwei dunklen
   // Loechern da, und die Schnauze, das freundlichste Merkmal der Figur, zeigt
@@ -128,7 +145,7 @@ const PPL = ZELLE / LOGISCH;
 const zeilen = nurPose ? ZEILEN.filter((z) => z.name === nurPose) : ZEILEN;
 if (zeilen.length === 0) throw new Error(`Pose ${nurPose} steht nicht in der Zeilentabelle`);
 
-/** Die Winkeltabellen. Fehlt eine Datei, steht die Pose in Ruhelage. */
+/** Die Richtungstabellen. Fehlt eine Datei, steht die Pose in Ruhelage. */
 const posen = {};
 if (existsSync(POSEN)) {
   for (const datei of readdirSync(POSEN).filter((d) => d.endsWith('.json'))) {
@@ -136,7 +153,7 @@ if (existsSync(POSEN)) {
   }
 }
 const fehlend = ZEILEN.filter((z) => !posen[z.name]).map((z) => z.name);
-if (fehlend.length) console.log(`  (noch ohne Winkeltabelle, stehen in Ruhe: ${fehlend.join(', ')})`);
+if (fehlend.length) console.log(`  (noch ohne Richtungstabelle, stehen in Ruhe: ${fehlend.join(', ')})`);
 
 // --- Seite -------------------------------------------------------------------
 const TYPES = {
@@ -158,13 +175,13 @@ const PAGE = `<!doctype html><meta charset="utf-8"><title>Backofen</title>
 </script>
 <script type="module">
 import * as THREE from 'three';
-import { baueErdmaennchen, stelle, FIGUR_EINHEITEN } from '/art-src/erdmaennchen/modell.mjs';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const ZELLE = ${ZELLE};
 const SS = ${SS};
 const SICHT = ${SICHT};
 const FUSS_PX = ${FUSS_PX};
-const ARM_LAENGE = ${ARM_LAENGE};
+const FIGUR_EINHEITEN = ${FIGUR_EINHEITEN};
 const GROESSE = ZELLE * SS;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -174,10 +191,6 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-
-// Beleuchtung wie bei der Murmel: weich von schraeg oben vorn, viel Grundlicht,
-// ein kuehles Gegenlicht fuer die Silhouette. Ein Pelz vertraegt kein hartes
-// Schlaglicht — er wird davon zu Kunststoff.
 scene.add(new THREE.HemisphereLight(0xffffff, 0x9a8f80, 2.0));
 const key = new THREE.DirectionalLight(0xfff4e2, 1.5);
 key.position.set(-0.5, 1.2, 1.5);
@@ -188,146 +201,173 @@ scene.add(rim);
 
 const unten = -(FUSS_PX / ZELLE) * SICHT;
 const oben = unten + SICHT;
-const camera = new THREE.OrthographicCamera(-SICHT / 2, SICHT / 2, oben, unten, 0.01, 20);
-camera.position.set(0, 0, 6);
+const camera = new THREE.OrthographicCamera(-SICHT / 2, SICHT / 2, oben, unten, 0.01, 40);
+camera.position.set(0, 0, 12);
 camera.lookAt(0, 0, 0);
 
-const { wurzel, gelenke, gesicht } = baueErdmaennchen();
-scene.add(wurzel);
-
 const HOCHACHSE = new THREE.Vector3(0, 1, 0);
+let wurzel = null;
+let netz = null;
+const knochen = {};
+/** Ruhedrehung und Achse je Knochen — die Grundlage der Richtungsposen. */
+const ruhe = {};
+let ordnung = [];
 let eichFaktor = 1;
 let eichVersatz = 0;
-const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELLE];
 
-/**
- * Scheitelhoehe ohne Ohren, aus der Geometrie gemessen — und danach geeicht.
- *
- * **Der Massstab kommt aus dem Modell, nicht aus einer Zahl.** Wer die
- * Proportionen von Hand auf eine Zielhoehe rechnet, rechnet bei jeder Aenderung
- * neu und trifft sie nie ganz; hier wird stattdessen gemessen und einmal
- * skaliert. Das ist derselbe Weg, den der aeltere Backvorgang dieses Projekts
- * geht, und er hat einen weiteren Vorteil: Die **Proportionen** bleiben genau
- * die, die im Modell stehen — nur die Groesse folgt der Simulation.
- */
-window.hoehe = () => {
-  stelle(gelenke, {});
-  wurzel.rotation.set(0, 0, 0);
+window.laden = async (url) => {
+  const gltf = await new GLTFLoader().loadAsync(url);
+  wurzel = new THREE.Object3D();
+  wurzel.add(gltf.scene);
+  scene.add(wurzel);
   wurzel.updateMatrixWorld(true);
-  let max = -Infinity;
-  wurzel.traverse((o) => {
-    if (!o.isMesh) return;
-    // Ohren zaehlen nicht zur Figurenhoehe — sie ragen darueber hinaus, so wie
-    // der Schopf der Murmel.
-    for (let p = o.parent; p; p = p.parent) if (p.name && p.name.endsWith('_Ohr')) return;
-    o.geometry.computeBoundingBox();
-    const b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
-    max = Math.max(max, b.max.y);
+  gltf.scene.traverse((o) => {
+    if (o.isBone) knochen[o.name] = o;
+    if (o.isSkinnedMesh) {
+      netz = o;
+      o.frustumCulled = false;
+      const m = o.material;
+      if (m && m.roughness !== undefined) m.roughness = 0.92;
+      if (m && m.metalness !== undefined) m.metalness = 0.0;
+    }
   });
-  return max;
+
+  // Ruhelage festhalten: die Eigendrehung jedes Knochens und seine **Achse**,
+  // also die Richtung zu seinem Kind im eigenen Raum. Ohne diese Achse laesst
+  // sich keine Zielrichtung ausrechnen — sie ist das, was gedreht wird.
+  for (const [name, b] of Object.entries(knochen)) {
+    const kind = b.children.find((c) => c.isBone);
+    const achse = kind
+      ? kind.position.clone().normalize()
+      : new THREE.Vector3(0, 1, 0);
+    ruhe[name] = { q: b.quaternion.clone(), achse, hatKind: !!kind };
+  }
+  // Nach Tiefe sortieren: Eltern zuerst. Die Weltdrehung eines Kindes haengt an
+  // der schon gesetzten Drehung seines Elternteils.
+  ordnung = Object.keys(knochen).sort((x, y) => {
+    const tiefe = (o) => { let n = 0; for (let p = o; p; p = p.parent) n++; return n; };
+    return tiefe(knochen[x]) - tiefe(knochen[y]);
+  });
+  return { knochen: Object.keys(knochen).length, netz: !!netz };
 };
 
-/** Tiefster Punkt der Figur in Weltkoordinaten. */
-function tiefster() {
-  let min = Infinity;
+/**
+ * Eine Pose setzen: je Knochen eine Zielrichtung im Modellraum.
+ *
+ * Gerechnet wird von aussen nach innen — erst Eltern, dann Kinder —, weil die
+ * Weltdrehung eines Knochens die schon gesetzte seines Elternteils enthaelt.
+ */
+function stelle(richtungen, winkel) {
+  for (const name of ordnung) {
+    const b = knochen[name];
+    b.quaternion.copy(ruhe[name].q);
+  }
   wurzel.updateMatrixWorld(true);
-  wurzel.traverse((o) => {
-    if (!o.isMesh) return;
-    o.geometry.computeBoundingBox();
-    const b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
-    min = Math.min(min, b.min.y);
-  });
-  return min;
+  // Knochen **ohne Kind** haben keine Achse, auf die sich eine Zielrichtung
+  // beziehen liesse — der Kopf ist der wichtige Fall. Fuer sie gibt es die
+  // Eulerdrehung, und nur fuer sie: Ueberall sonst waere sie das Raten, das
+  // dieser Umbau gerade abgeschafft hat.
+  if (winkel) {
+    const grad = Math.PI / 180;
+    for (const [name, w] of Object.entries(winkel)) {
+      const b = knochen[name];
+      if (!b) continue;
+      b.quaternion.copy(ruhe[name].q);
+      b.rotateX((w[0] || 0) * grad);
+      b.rotateY((w[1] || 0) * grad);
+      b.rotateZ((w[2] || 0) * grad);
+    }
+    wurzel.updateMatrixWorld(true);
+  }
+  if (!richtungen) return;
+  const eltern = new THREE.Quaternion();
+  const ziel = new THREE.Vector3();
+  for (const name of ordnung) {
+    const soll = richtungen[name];
+    if (!soll || !knochen[name] || !ruhe[name].hatKind) continue;
+    const b = knochen[name];
+    b.parent.updateWorldMatrix(true, false);
+    b.parent.getWorldQuaternion(eltern);
+    // Zielrichtung vom Modellraum in den Raum des Elternteils.
+    ziel.set(soll[0], soll[1], soll[2]).normalize().applyQuaternion(eltern.clone().invert());
+    b.quaternion.setFromUnitVectors(ruhe[name].achse, ziel);
+    b.updateWorldMatrix(false, true);
+  }
+  wurzel.updateMatrixWorld(true);
 }
 
-/**
- * Einmal eichen: Scheitel auf FIGUR_EINHEITEN, Sohle auf null.
- *
- * Beides gemessen, nicht gerechnet. Der zweite Teil ist der wichtigere und war
- * mir beim ersten Versuch durchgerutscht: Meine Beinlaengen summierten sich auf
- * mehr als die Hufthoehe, die Figur steckte also im Boden und wurde unten von
- * der Zelle abgeschnitten. Von Hand nachzujustieren waere die falsche Antwort —
- * bei zweiundsechzig Einzelbildern muss die Sohle **von selbst** auf der
- * Standlinie liegen.
- *
- * Geeicht wird in der Ruhelage, und der Versatz bleibt danach stehen. Wuerde je
- * Pose neu gemessen, koennte die Figur nie einen Fuss heben — jede Pose saesse
- * wieder auf dem Boden.
- */
+function spanne() {
+  wurzel.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(wurzel);
+  return { oben: box.max.y, unten: box.min.y };
+}
+
 window.eiche = () => {
   wurzel.scale.setScalar(1);
   wurzel.position.set(0, 0, 0);
-  // Gemessen wird die Spanne **von der Sohle bis zum Scheitel**, nicht die Hoehe
-  // ueber dem Nullpunkt. Der erste Versuch nahm nur den Scheitel, verschob die
-  // Figur danach auf die Standlinie — und war um genau den Sohlenabstand zu
-  // kurz. Ein Fehler von einem halben Prozent, den keine Pruefung gefangen
-  // haette, weil er unter der Toleranz lag.
-  const oben = window.hoehe();
-  const unten = tiefster();
-  const faktor = FIGUR_EINHEITEN / (oben - unten);
+  wurzel.rotation.set(0, 0, 0);
+  stelle(null, null);
+  const s = spanne();
+  const faktor = FIGUR_EINHEITEN / (s.oben - s.unten);
   wurzel.scale.setScalar(faktor);
-  wurzel.position.y = -unten * faktor;
+  wurzel.position.y = -s.unten * faktor;
   eichFaktor = faktor;
   eichVersatz = wurzel.position.y;
   wurzel.updateMatrixWorld(true);
-  return { roh: oben - unten, faktor, sohle: unten * faktor, geeicht: window.hoehe() };
+  const n = spanne();
+  return { roh: s.oben - s.unten, faktor, geeicht: n.oben - n.unten };
 };
 
+const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELLE];
+
 window.bild = (bild, dreh) => {
-  const posenWinkel = (bild && bild.winkel) || {};
-  stelle(gelenke, posenWinkel);
-  wurzel.rotation.set(0, dreh, 0);
-  // Die Eichung aus eiche() ist der Ausgangspunkt; skala und versatz kommen
-  // obendrauf. Beide gehoeren ins Blatt: Rettung und Tod schrumpfen im Modell
-  // und nicht im Zeichner.
-  const skala = (bild && bild.skala) != null ? bild.skala : 1;
+  stelle(bild && bild.richtung ? bild.richtung : null, bild && bild.winkel ? bild.winkel : null);
+  const skala = bild && bild.skala != null ? bild.skala : 1;
   wurzel.scale.setScalar(eichFaktor * skala);
-  wurzel.position.y = eichVersatz + ((bild && bild.versatz) || 0) * FIGUR_EINHEITEN;
+  wurzel.position.y = eichVersatz + (bild && bild.versatz ? bild.versatz : 0) * FIGUR_EINHEITEN;
+  wurzel.rotation.set(0, dreh, 0);
   wurzel.updateMatrixWorld(true);
   renderer.render(scene, camera);
 
   const vorn = (v) => v.clone().applyAxisAngle(HOCHACHSE, -dreh);
 
-  const g = new THREE.Vector3();
-  gesicht.getWorldPosition(g);
+  // Der Gesichtspunkt: die Kopfstelle, nach vorn und oben versetzt, damit er
+  // zwischen den Augen liegt und nicht im Schaedelmittelpunkt.
+  const kopf = knochen.Head;
+  const g = kopf.localToWorld(new THREE.Vector3(0, 0.06, 0.06));
 
-  // Die vordere Pfote — ausgewaehlt in der **Vorderansicht**, damit die Wahl
-  // nicht ab einem bestimmten Drehwinkel umspringt.
+  // Der Werkzeugansatz: die vordere **Hand**. Dieses Rig hat welche — bei der
+  // Murmel musste die Armspitze geschaetzt werden.
   let hand = null;
   let handVorn = null;
-  for (const name of ['L_Ellbogen', 'R_Ellbogen']) {
-    const a = gelenke[name];
-    if (!a) continue;
-    const t = a.localToWorld(new THREE.Vector3(0, -ARM_LAENGE * 0.5, 0));
-    const v = vorn(t);
-    if (!handVorn || v.z > handVorn.z) {
-      hand = t;
-      handVorn = v;
-    }
+  for (const name of ['L_Hand', 'R_Hand']) {
+    const h = knochen[name];
+    if (!h) continue;
+    const p = new THREE.Vector3();
+    h.getWorldPosition(p);
+    const v = vorn(p);
+    if (!handVorn || v.z > handVorn.z) { hand = p; handVorn = v; }
   }
 
-  // Anschnittpruefung: Beruehrt etwas Undurchsichtiges den Zellrand?
-  const px = new Uint8Array(GROESSE * 4);
+  // Anschnitt: beruehrt etwas Undurchsichtiges den Zellrand?
   const gl = renderer.getContext();
-  const rand = () => {
-    const proben = [];
-    for (const y of [0, GROESSE - 1]) {
-      gl.readPixels(0, y, GROESSE, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      for (let i = 3; i < GROESSE * 4; i += 4) if (px[i] > 24) proben.push('waagerecht');
-    }
-    const spalte = new Uint8Array(GROESSE * 4);
-    for (const x of [0, GROESSE - 1]) {
-      gl.readPixels(x, 0, 1, GROESSE, gl.RGBA, gl.UNSIGNED_BYTE, spalte);
-      for (let i = 3; i < GROESSE * 4; i += 4) if (spalte[i] > 24) proben.push('senkrecht');
-    }
-    return proben.length;
-  };
+  const zeile = new Uint8Array(GROESSE * 4);
+  let anschnitt = 0;
+  for (const y of [0, GROESSE - 1]) {
+    gl.readPixels(0, y, GROESSE, 1, gl.RGBA, gl.UNSIGNED_BYTE, zeile);
+    for (let i = 3; i < zeile.length; i += 4) if (zeile[i] > 24) anschnitt++;
+  }
+  const spalte = new Uint8Array(GROESSE * 4);
+  for (const x of [0, GROESSE - 1]) {
+    gl.readPixels(x, 0, 1, GROESSE, gl.RGBA, gl.UNSIGNED_BYTE, spalte);
+    for (let i = 3; i < spalte.length; i += 4) if (spalte[i] > 24) anschnitt++;
+  }
 
   return {
     bild: renderer.domElement.toDataURL('image/png'),
     gesicht: zelle(g),
     hand: hand ? zelle(hand) : null,
-    anschnitt: rand(),
+    anschnitt,
   };
 };
 window.bereit = true;
@@ -363,6 +403,10 @@ page.on('console', (m) => {
 });
 await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => window.bereit === true, null, { timeout: 30000 });
+
+const geladen = await page.evaluate((u) => window.laden(u), `/${GLB}`);
+console.log(`Modell geladen — ${geladen.knochen} Knochen, Netz ${geladen.netz ? 'da' : 'FEHLT'}`);
+if (!geladen.netz) throw new Error('Kein gehaeutetes Netz im Modell');
 
 // --- Probe 1: die Figurenhoehe ----------------------------------------------
 //

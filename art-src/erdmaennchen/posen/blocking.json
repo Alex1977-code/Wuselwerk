@@ -1,75 +1,169 @@
 {
-  "_warum": "Die Wachpose, also die Ruhelage — nur ein Atemzug Unterschied zwischen den zwei Bildern. Sie ist der Grund, warum diese Figur gewaehlt wurde.",
+  "_warum": "Die Wachpose: aufrecht, Vorderpfoten vor der Brust, Schwanz als Stuetze nach hinten unten. Sie ist der Grund, warum diese Figur gewaehlt wurde — das bekannteste Bild dieses Tieres **ist** der Blocker.",
   "frames": [
     {
-      "winkel": {
-        "Wirbel": [
-          -2.0,
-          0,
-          0
+      "richtung": {
+        "Spine01": [
+          0.0,
+          0.9998,
+          0.02
         ],
-        "Hals": [
-          4,
-          0,
-          0
+        "Spine02": [
+          0.0,
+          1.0,
+          0.0
         ],
-        "Schwanz1": [
-          122,
-          30,
-          0
+        "L_Thigh": [
+          0.0797,
+          -0.9968,
+          0.0
         ],
-        "Schwanz2": [
-          -8,
-          6,
-          0
+        "R_Thigh": [
+          -0.0797,
+          -0.9968,
+          0.0
         ],
-        "Schwanz3": [
-          -8,
-          4,
-          0
+        "L_Calf": [
+          0.0499,
+          -0.9975,
+          -0.0499
         ],
-        "Schwanz4": [
-          -8,
-          2,
-          0
+        "R_Calf": [
+          -0.0499,
+          -0.9975,
+          -0.0499
+        ],
+        "L_Upperarm": [
+          0.2638,
+          -0.9421,
+          0.2073
+        ],
+        "R_Upperarm": [
+          -0.2638,
+          -0.9421,
+          0.2073
+        ],
+        "L_Forearm": [
+          0.1938,
+          -0.3392,
+          0.9206
+        ],
+        "R_Forearm": [
+          -0.1938,
+          -0.3392,
+          0.9206
+        ],
+        "Tail01": [
+          0.0,
+          -0.0499,
+          -0.9988
+        ],
+        "Tail02": [
+          0.0,
+          0.1384,
+          -0.9904
+        ],
+        "Tail03": [
+          0.0,
+          0.3548,
+          -0.935
+        ],
+        "Tail04": [
+          0.0,
+          0.516,
+          -0.8566
         ]
       },
-      "maske": 2
+      "maske": 2,
+      "winkel": {
+        "Head": [
+          2,
+          0,
+          0
+        ]
+      }
     },
     {
-      "winkel": {
-        "Wirbel": [
-          -3.5,
-          0,
-          0
+      "richtung": {
+        "Spine01": [
+          0.0,
+          0.9988,
+          0.0499
         ],
-        "Hals": [
-          5,
-          0,
-          0
+        "Spine02": [
+          0.0,
+          1.0,
+          0.0
         ],
-        "Schwanz1": [
-          122,
-          30,
-          0
+        "L_Thigh": [
+          0.0797,
+          -0.9968,
+          0.0
         ],
-        "Schwanz2": [
-          -8,
-          6,
-          0
+        "R_Thigh": [
+          -0.0797,
+          -0.9968,
+          0.0
         ],
-        "Schwanz3": [
-          -8,
-          4,
-          0
+        "L_Calf": [
+          0.0499,
+          -0.9975,
+          -0.0499
         ],
-        "Schwanz4": [
-          -8,
-          2,
-          0
+        "R_Calf": [
+          -0.0499,
+          -0.9975,
+          -0.0499
+        ],
+        "L_Upperarm": [
+          0.2638,
+          -0.9421,
+          0.2073
+        ],
+        "R_Upperarm": [
+          -0.2638,
+          -0.9421,
+          0.2073
+        ],
+        "L_Forearm": [
+          0.1938,
+          -0.3392,
+          0.9206
+        ],
+        "R_Forearm": [
+          -0.1938,
+          -0.3392,
+          0.9206
+        ],
+        "Tail01": [
+          0.0,
+          -0.0499,
+          -0.9988
+        ],
+        "Tail02": [
+          0.0,
+          0.1384,
+          -0.9904
+        ],
+        "Tail03": [
+          0.0,
+          0.3548,
+          -0.935
+        ],
+        "Tail04": [
+          0.0,
+          0.516,
+          -0.8566
         ]
       },
-      "maske": 2
+      "maske": 2,
+      "winkel": {
+        "Head": [
+          0,
+          0,
+          0
+        ]
+      }
     }
   ]
 }
