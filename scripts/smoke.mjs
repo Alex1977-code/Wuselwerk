@@ -557,6 +557,58 @@ async function main() {
   }
   check('§3.3 Auswahl-Fächer öffnet sich', fanned >= 2, `${fanned} Kandidaten`);
 
+  // --- Selbstzerstörung: der Vorgang muss zu sehen sein --------------------
+  //
+  // Der gemeldete Fehler: „den Sprengvorgang sieht man nicht, weil das Level
+  // direkt beendet wird". Er stimmte, und er war unsichtbar für jede Prüfung,
+  // die nur auf Zustände schaut — die Sprengung fand statt, die Zahlen waren
+  // richtig, nur legte sich das Ergebnisbild im selben Bild darüber.
+  //
+  // Geprüft wird deshalb der Ablauf und nicht das Bild: Nach dem letzten
+  // Zünder muss die Ergebnisphase **warten**, solange noch etwas fliegt. Ein
+  // Standbild könnte das nie zeigen.
+  await page.evaluate(() => window.__wuselwerk.debugNuke());
+  let sahWarnlampe = false;
+  let sahFeuer = 0;
+  let nachspielGesehen = false;
+  let vorhang = null;
+  for (let i = 0; i < 120; i++) {
+    const stand = await page.evaluate(() => ({
+      zuender: window.__wuselwerk.debugZuender(),
+      partikel: window.__wuselwerk.debugPartikel(),
+      nach: window.__wuselwerk.debugNachspiel(),
+      stats: window.__wuselwerk.debugStats(),
+    }));
+    if (stand.zuender && !sahWarnlampe) {
+      sahWarnlampe = true;
+      await page.screenshot({ path: `${OUT}/14-warnlampe.png` });
+    }
+    sahFeuer = Math.max(sahFeuer, stand.partikel.anzahl);
+    // Der Kern der Sache: Die Welt ist fertig, das Bild ist es nicht.
+    if (stand.nach.laeuft && stand.partikel.anzahl > 0) {
+      if (!nachspielGesehen) {
+        nachspielGesehen = true;
+        await page.screenshot({ path: `${OUT}/15-nachspiel.png` });
+      }
+    }
+    if (stand.stats.phase === 'result') {
+      vorhang = stand.partikel.anzahl;
+      break;
+    }
+    await sleep(100);
+  }
+  check('Selbstzerstörung zündet und wirft Partikel', sahFeuer > 0, `${sahFeuer} Partikel gleichzeitig`);
+  check(
+    'das Ergebnisbild wartet, bis die Sprengung zu sehen war',
+    nachspielGesehen,
+    nachspielGesehen ? 'Nachspiel lief mit fliegenden Partikeln' : 'Vorhang fiel sofort',
+  );
+  check(
+    'und legt sich erst über ein leeres Feld',
+    vorhang === 0 || vorhang === null,
+    vorhang === null ? 'Ergebnisphase nicht erreicht' : `${vorhang} Partikel beim Umschalten`,
+  );
+
   await browser.close();
   stopServer();
 

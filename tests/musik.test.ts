@@ -152,7 +152,24 @@ describe('Notentext der Begleitmusik', () => {
         // `music.ts` importiert: Sonst prüfte der Test nur noch, dass eine
         // Angabe mit sich selbst übereinstimmt. Wer eine Stimme hinzufügt, muss
         // hier bewusst bestätigen, dass sie halten kann.
-        expect(['akkordeon', 'klarinette', 'panfloete', 'okarina']).toContain(p.melodieStimme);
+        //
+        // `leier` und `streicher` sind dazugekommen: gestrichene Saiten, also
+        // Dauerton statt Anschlag. Beide halten (`hold` 0,8 bzw. 0,74).
+        const haltend = ['akkordeon', 'klarinette', 'panfloete', 'okarina', 'leier', 'streicher'];
+        expect(haltend).toContain(p.melodieStimme);
+        expect(haltend).toContain(p.zweitStimme);
+      });
+
+      /**
+       * Die Zweitstimme muss eine **andere** sein.
+       *
+       * Sie ist die Antwort auf „zu eintönig": Jeder zweite Durchgang gibt die
+       * Melodie weiter (`DURCHGAENGE`). Stünde dort dieselbe Stimme, liefe der
+       * ganze Bau leer, ohne dass irgendetwas kaputt wäre — der Fehler von der
+       * leisen Sorte, den man erst nach Minuten Zuhören bemerkt.
+       */
+      it('hat für den Wechsel eine wirklich andere Stimme', () => {
+        expect(p.zweitStimme).not.toBe(p.melodieStimme);
       });
 
       it('stimmt die Geräusche auf Töne, die in der Melodie vorkommen', () => {

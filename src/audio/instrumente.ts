@@ -283,7 +283,13 @@ export function panfloete(e: E, t: TonOpts): void {
 }
 
 /**
- * Klarinette — die Stimme, die eine Melodie tragen kann.
+ * Klarinette — **Zweitstimme** der Hoehle.
+ *
+ * Sie hat die Melodie an die `streicher` abgegeben („zu floetenartig", siehe
+ * dort) und traegt sie jetzt in jedem zweiten Durchgang. Das ist keine
+ * Zurueckstufung, sondern ihre eigentliche Aufgabe: Der Wechsel zwischen einer
+ * obertonreichen und einer obertonarmen Stimme ist das, was die Achttaktschleife
+ * davon abhaelt, zur Tapete zu werden (siehe `DURCHGAENGE` in `music.ts`).
  *
  * 1. **Huellkurve.** Sie **haelt** (`hold: 0.72`). Das ist der ganze
  *    Unterschied zu allem darueber: Eine gehaltene Note verbindet sich mit der
@@ -351,13 +357,18 @@ export function akkordeon(e: E, t: TonOpts): void {
 }
 
 /**
- * Okarina — die Melodiestimme der Wiese.
+ * Okarina — **Zweitstimme** der Wiese.
  *
- * Sie loest das Akkordeon ab, und der Grund steht im Bild: Eine
- * Musette-Stimmung — drei gegeneinander verstimmte Zungen — ist der Klang eines
- * Jahrmarkts. Das Spiel zeigt aber einen Mittag ueber offenen Huegeln. Die
- * Melodie bleibt Note fuer Note dieselbe (sie ist abgenommen); nur wer sie
- * spielt, aendert sich.
+ * Sie hat das Akkordeon abgeloest (Musette ist Jahrmarkt, die Wiese ist keiner)
+ * und die Fuehrung inzwischen an die `leier` weitergegeben („zu floetenartig",
+ * siehe dort). Geblieben ist ihr die Antwort: Jeder zweite Durchgang gehoert
+ * ihr, und der Wechsel zwischen gestrichen und geblasen ist genau das, was die
+ * Schleife lebendig haelt (siehe `DURCHGAENGE` in `music.ts`).
+ *
+ * Was sie dafuer besonders geeignet macht, steht unten unter Punkt 1: Sie ist
+ * die **leiseste Klangfarbe** im Melodiefenster, die es hier gibt. Nach einem
+ * Durchgang mit drei Saegezaehnen wirkt sie dadurch fast wie eine Pause — und
+ * eine Pause ist die staerkste Abwechslung, die eine Schleife haben kann.
  *
  * Eine Okarina ist akustisch fast ein Sonderfall, und genau das macht sie hier
  * brauchbar:
@@ -410,6 +421,138 @@ export function okarina(e: E, t: TonOpts): void {
   e.noise({
     dur: Math.min(0.13, d), gain: g * 0.2, filter: 'bandpass',
     freq: t.freq * 2.1, q: 1.3, ...ohneEcho(t),
+  });
+}
+
+/**
+ * Drehleier — die neue Melodiestimme der Wiese.
+ *
+ * ## Warum sie die Okarina abloest
+ *
+ * Rueckmeldung nach dem Spielen: „zu floetenartig". Das ist keine Geschmacks-
+ * frage, sondern eine richtige Beobachtung ueber den Bau der bisherigen Stimme.
+ * Eine Okarina ist ein Helmholtz-Resonator und hat **fast keine Obertoene** —
+ * praktisch nur den Grundton. Genau deshalb war sie ausgesucht worden (sie
+ * stellt das Melodiefenster nicht zu), und genau das macht sie auch aus:
+ * Ein Klang aus einem einzigen Teilton *ist* eine Floete. Man kann ihn lauter
+ * oder leiser machen, aber er wird nie etwas anderes.
+ *
+ * ## Warum ausgerechnet eine Drehleier
+ *
+ * Weil sie drei Dinge auf einmal loest, die sonst gegeneinander laufen:
+ *
+ * 1. **Sie haelt.** Ein Rad streicht die Saiten durchgehend — das ist der
+ *    Grund, warum die Melodie ueberhaupt eine Linie sein kann. Ein Stabspiel
+ *    koennte das nicht, und deshalb war der Ausweg bisher immer eine Blasstimme.
+ * 2. **Sie ist obertonreich.** Gestrichene Saiten haben alle Teiltoene, also
+ *    einen Saegezahn. Das ist das Gegenteil der Okarina und damit die Antwort
+ *    auf die Rueckmeldung — mit Filter statt ungebremst, sonst wird aus dem
+ *    Melodiefenster ein Kamm.
+ * 3. **Sie gehoert dorthin.** Eine Drehleier ist das Volksliedinstrument
+ *    schlechthin, und ueber dem Stueck liegt ein Achttakter mit Volksliedbau.
+ *    Ein Synthesizerlead haette dieselbe Obertonfrage geloest und die Welt
+ *    daneben verfehlt.
+ *
+ * ## Was sie erkennbar macht
+ *
+ * Der **Schnarrsteg** („Trompette"): ein loser Steg, den das Rad bei jedem
+ * Antippen zum Schnarren bringt. Ohne ihn ist eine Drehleier eine gefilterte
+ * Saegezahnwelle und klingt nach Heimorgel; mit ihm erkennt man sie sofort. Er
+ * steht hier als kurzer, tief liegender Rauschstoss am Ansatz.
+ *
+ * Dazu drei Saiten, sieben Cent auseinander — das ist die Schwebung eines
+ * Instruments, das niemand ganz sauber stimmen kann, und sie ist der Unterschied
+ * zwischen einer Stimme und einem Oszillator. Elf Cent waeren Musette gewesen
+ * (das Akkordeon), sechs waeren zu wenig, um es zu hoeren.
+ */
+export function leier(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.11;
+  const d = t.dur ?? 0.4;
+  for (const [stimmung, seite] of [
+    [0.9959, -0.16],
+    [1, 0],
+    [1.0041, 0.16],
+  ] as const) {
+    e.tone({
+      freq: t.freq * stimmung,
+      dur: d,
+      type: 'sawtooth',
+      gain: g * 0.3,
+      attack: 0.022,
+      hold: 0.8,
+      // Der Filter faehrt nach unten. Ein Rad drueckt beim Ansetzen kurz
+      // staerker auf die Saite als danach — der Ton ist am Anfang am hellsten.
+      filterHz: t.freq * 4.4,
+      filterSweep: 0.55,
+      vibratoHz: 5.6,
+      vibratoCents: 7,
+      ...o(t),
+      pan: (t.pan ?? 0) + seite,
+    });
+  }
+  // Der Schnarrsteg. Tief und kurz — er gehoert zum Anschlag, nicht zum Ton.
+  e.noise({
+    dur: 0.045, gain: g * 0.22, filter: 'bandpass', freq: 380, q: 1.1, ...ohneEcho(t),
+  });
+}
+
+/**
+ * Streicher — die neue Melodiestimme der Hoehle.
+ *
+ * Sie loest die Klarinette ab, aus demselben Grund wie die Drehleier die
+ * Okarina: Eine Klarinette ist eine gedackte Roehre und hat nur die *ungeraden*
+ * Teiltoene. Das ist hohl und naeselnd — naeher an einer Floete als an allem
+ * anderen, was ein Orchester hat.
+ *
+ * Was eine gestrichene Saite stattdessen ausmacht, und was hier drinsteht:
+ *
+ * 1. **Der Bogen braucht Zeit.** Ein deutlich langsamerer Anstieg als bei jeder
+ *    Blasstimme (0,085 s). Das ist der hoerbarste Unterschied ueberhaupt: Ein
+ *    Streicher setzt *an*, er faengt nicht *an*.
+ * 2. **Alle Teiltoene, aber gedeckelt.** Saegezahn durch einen Tiefpass, der
+ *    ueber den Ton **aufmacht** statt zu schliessen — ein wachsender Bogendruck.
+ *    Genau umgekehrt zur Drehleier, und deshalb klingen die beiden trotz
+ *    gleicher Wellenform nicht nach demselben Instrument.
+ * 3. **Vibrato aus der Hand.** Deutlich breiter als bei einer Blasstimme
+ *    (16 Cent statt 8 bis 11), weil es aus dem Finger kommt und nicht aus dem
+ *    Atem.
+ * 4. **Der Bogenansatz.** Ein kurzer, hoher Rauschstoss: das Kratzen, bevor der
+ *    Ton steht. Ohne ihn ist es ein Pad.
+ *
+ * Eine Oktave darueber liegt eine sehr leise vierte Stimme. Sie ist der Grund,
+ * warum das Ganze in einer Hoehle noch da ist: Der Grundton der Melodie liegt
+ * dort tief, und was tief liegt, verliert ein Handylautsprecher zuerst.
+ */
+export function streicher(e: E, t: TonOpts): void {
+  const g = t.gain ?? 0.11;
+  const d = t.dur ?? 0.4;
+  for (const [stimmung, seite] of [
+    [0.9971, -0.14],
+    [1.0029, 0.14],
+  ] as const) {
+    e.tone({
+      freq: t.freq * stimmung,
+      dur: d,
+      type: 'sawtooth',
+      gain: g * 0.34,
+      attack: 0.085,
+      hold: 0.74,
+      // Nach oben: Der Bogendruck waechst, waehrend der Ton steht.
+      filterHz: t.freq * 2.6,
+      filterSweep: 2.4,
+      vibratoHz: 5.5,
+      vibratoCents: 16,
+      ...o(t),
+      pan: (t.pan ?? 0) + seite,
+    });
+  }
+  // Die Oktave. Sie traegt den Ton auf kleinen Membranen.
+  e.tone({
+    freq: t.freq * 2, dur: d * 0.8, type: 'triangle', gain: g * 0.11, attack: 0.09,
+    hold: 0.6, ...ohneEcho(t),
+  });
+  e.noise({
+    dur: 0.055, gain: g * 0.13, filter: 'bandpass', freq: t.freq * 3.4, q: 1.6, ...ohneEcho(t),
   });
 }
 

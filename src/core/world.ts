@@ -301,10 +301,31 @@ export class World {
     }
   }
 
+  /**
+   * Gerettet wird, wer **ganz** in der Tuer steht.
+   *
+   * Vorher zaehlte jede Ueberdeckung mit dem Ausgangsrechteck. Das ist
+   * rechnerisch bequem und sieht falsch aus: Die Simulation fuehrt eine Figur
+   * als eine Spalte, gezeichnet wird sie neun Bildpunkte breit — beim ersten
+   * beruehrten Bildpunkt der Oeffnung stand also fast der ganze Koerper noch
+   * daneben. Man sah keine Figur hineingehen, sondern eine, die am Torpfosten
+   * verschwindet.
+   *
+   * Der Rand ist deshalb ihre halbe Breite (`EXIT_RAND`) und keine feste Zahl
+   * und kein Anteil der Torbreite. Ein Anteil waere hier der naheliegende und
+   * falsche Weg: Er haette breite Tore streng gemacht und beim Fallen durch
+   * einen gegrabenen Schacht die Tormitte erzwungen — ein Schacht darf aber
+   * neben der Mitte liegen.
+   *
+   * Die Deckelung auf `(e.w - 1) / 2` haelt schmale Tore passierbar. Ohne sie
+   * haette ein Tor von vier Bildpunkten Breite gar keinen Durchgang mehr, und
+   * das Level waere unloesbar, ohne dass man saehe, warum.
+   */
   private checkExit(w: Wusel): boolean {
     if (w.state === State.BLOCKING) return false;
     const e = this.exit;
-    if (w.x < e.x || w.x >= e.x + e.w) return false;
+    const rand = Math.min(C.EXIT_RAND, Math.floor((e.w - 1) / 2));
+    if (w.x < e.x + rand || w.x >= e.x + e.w - rand) return false;
     if (w.y < e.y || w.y >= e.y + e.h) return false;
     this.saved++;
     this.setState(w, State.SAVING);

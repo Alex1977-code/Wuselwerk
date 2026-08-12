@@ -3,7 +3,7 @@ import { State, type Wusel } from '../core/types';
 import { sx, sy, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
 import { drawWerkzeug } from './werkzeug';
-import { clipForWusel } from './atlas';
+import { DREHUNG, LEHNE, clipForWusel } from './atlas';
 
 /**
  * Die Murmel, im Code gezeichnet.
@@ -90,6 +90,7 @@ export function drawWusel(
   v: View,
   w: Wusel,
   tick: number,
+  platz = Infinity,
 ): void {
   if (w.state === State.DEAD || w.state === State.SAVED) return;
   const pose = clipForWusel(w);
@@ -100,16 +101,18 @@ export function drawWusel(
   const fx = Math.round(sx(v, w.x));
   const fy = Math.round(sy(v, w.y));
 
-  // Die beiden einmaligen Ablaeufe schrumpfen beziehungsweise flachen ab. Der
-  // Fortschritt kommt aus der Uhr der Figur, nicht aus einem globalen Takt.
+  // Das Sterben flacht ab. Der Fortschritt kommt aus der Uhr der Figur, nicht
+  // aus einem globalen Takt.
+  //
+  // Die Rettung stand frueher auch hier — sie schrumpfte die Figur auf der
+  // Stelle. Das macht jetzt `Scene.rettungsSprung`, und zwar fuer **beide**
+  // Zeichenwege gemeinsam: Ein Sprung ins Tor braucht die Stelle des Tors, und
+  // die kennt nur die Szene. Bliebe die Schrumpfung zusaetzlich hier, schrumpfte
+  // die Figur zweimal.
   let schwund = 1;
   let platt = 1;
   let deckung = 1;
-  if (w.state === State.SAVING) {
-    const t = Math.min(1, w.timer / 18);
-    schwund = Math.max(0.05, 1 - t);
-    deckung = Math.max(0, 1 - t * 0.9);
-  } else if (w.state === State.DYING) {
+  if (w.state === State.DYING) {
     const t = Math.min(1, w.timer / 26);
     platt = 1 + t * 2.6;
     schwund = Math.max(0.08, 1 - t * 0.9);
@@ -125,7 +128,14 @@ export function drawWusel(
   ctx.globalAlpha = deckung;
   ctx.translate(fx, fy);
   ctx.scale(w.dir < 0 ? -s : s, s);
-  ctx.rotate(ha.neigung * 0.5);
+  // Haltung **und** Neigung in die Laufrichtung. Die Haltung sagt, was die Figur
+  // gerade tut; die Neigung sagt, wohin sie will — und genau die fehlte, weshalb
+  // eine gehende Murmel seitwaerts zu rutschen schien statt zu laufen. Dieselbe
+  // Tabelle wie beim gebackenen Blatt, damit beide Wege gleich laufen.
+  ctx.rotate(ha.neigung * 0.5 + (LEHNE[pose] ?? 0));
+  // Und schmaler in den gerichteten Zustaenden — dieselbe Tabelle wie beim
+  // gebackenen Blatt. Siehe `DREHUNG`.
+  if (DREHUNG[pose]) ctx.scale(DREHUNG[pose], 1);
   ctx.translate(0, wippe);
 
   // Fuesse zuerst — sie liegen hinter dem Koerper und schauen nur unten heraus.
@@ -172,7 +182,7 @@ export function drawWusel(
   drawWerkzeug(ctx, pose, breite * 0.55, -h * 0.5, h, 1);
   const zustand =
     ha.schopf ?? (pose === 'walking' ? 1 + (Math.floor(tick / 6) % 2) : 0);
-  drawSchopf(ctx, 0, -h, zustand, schopfPuls(schopfFarbe(auftragVon(w)), w.fuse), 1);
+  drawSchopf(ctx, 0, -h, zustand, schopfPuls(schopfFarbe(auftragVon(w)), w.fuse), 1, false, platz);
 
   ctx.restore();
   ctx.globalAlpha = 1;
@@ -208,24 +218,13 @@ function auftragVon(w: Wusel) {
   }
 }
 
-/**
- * Der Sprengcountdown — **ohne Ziffer**.
+/*
+ * Der Sprengcountdown steht nicht mehr hier.
  *
- * Die Vorlage ist hier ausdruecklich: kein Zaehler ueber dem Kopf. Der Schopf
- * pulst stattdessen zwischen Akzentfarbe und Weiss, und der Takt verdoppelt
- * sich in den letzten zwei Sekunden. Das ist ohne Text lesbar, funktioniert bei
- * jeder Figurengroesse und passt zu einer Figur, die kein Gesicht hat.
- *
- * Das Pulsen selbst steckt in `schopfPuls` und gilt fuer beide Zeichenwege.
- * Diese Funktion bleibt als Anlaufstelle bestehen und zeichnet nichts mehr —
- * sie zu entfernen hiesse, den Aufrufer in `scene.ts` mit zu aendern, und der
- * gehoert nicht zu dieser Aenderung.
+ * Er war zuletzt eine leere Funktion, die nichts zeichnete — ein Ueberrest aus
+ * der Zeit, als eine Ziffer ueber dem Kopf stand. Die Warnlampe (Schein hinter
+ * der Figur, Licht auf ihr, gluehender Schopf) liegt jetzt vollstaendig in
+ * `schopf.ts` und wird von `scene.ts` fuer beide Zeichenwege gemeinsam
+ * aufgerufen. Eine leere Anlaufstelle stehen zu lassen, haette nur so
+ * ausgesehen, als gaebe es hier noch etwas.
  */
-export function drawFuseOverlay(
-  _ctx: CanvasRenderingContext2D,
-  _v: View,
-  _w: Wusel,
-  _tick: number,
-): void {
-  /* Der Countdown laeuft ueber die Schopffarbe. */
-}

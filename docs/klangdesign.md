@@ -170,6 +170,11 @@ Puls daraus gebaut:
 - **Akkordeon → Okarina.** Rund, fast nur Grundton und schwacher zweiter
   Teilton, Anblasrauschen, langsam einsetzendes Vibrato, zwei Stimmen 6 Cent
   auseinander. Warm und kindlich, ohne Jahrmarkt.
+  *Nachtrag:* Genau diese Obertonarmut ist später als „zu flötenartig"
+  zurückgekommen — sie ist der Grund, warum die Okarina das Melodiefenster frei
+  lässt, **und** der Grund, warum sie wie eine Flöte klingt. Die Führung hat
+  jetzt die Drehleier; die Okarina antwortet in jedem zweiten Durchgang. Siehe
+  §4, Zeilen 21 bis 23.
 - **Achtbit-Ebene → weg.** Ersatzlos. Ihre Aufgabe war, der Melodie eine Kante zu
   geben; die übernimmt der Pling, dessen Glasanteil dasselbe tut, aber zum Bild
   gehört.
@@ -248,6 +253,9 @@ zerfällt das Klangbild in „Musik" und „Spiel", egal wie gut beides für sic
 | 18 | Stinger folgt der Tonart der Welt | Eine Fanfare in C über einer Höhle in A ist heute noch verzeihlich, weil C-Dur die Paralleltonart ist. Bei Welt 3 ist sie es nicht mehr. |
 | 19 | Pause: Tiefpass **und** mehr Luft | Ein Tiefpass allein klingt nach kaputtem Gerät. Tiefpass plus doppelte Luft klingt nach einem Schritt zurück — genau das, was eine Pause ist. |
 | 20 | Ausgangsschimmer bekommt Gold: dritte Schicht, warme Mitte | Der Ausgang ist das einzige Objekt im Bild, das selbst leuchtet. Er klang bisher blau. |
+| 21 | Okarina → Drehleier (Wiese), Klarinette → Streicher (Höhle) | Nachgereicht nach dem Spielen: „zu flötenartig". Beide alten Stimmen sind per Konstruktion obertonarm — eine Okarina hat fast nur den Grundton, eine Klarinette nur die ungeraden Teiltöne. Gestrichene Saiten haben alle, gefiltert statt ungebremst. |
+| 22 | Vier Durchgänge mit wechselnder Melodiestimme, Bruch und Richtungsumkehr | Nachgereicht: „zu eintönig". Nicht die Melodie war es, sondern die Schleife — zwanzig Sekunden, zehnmal hintereinander Note für Note gleich. |
+| 23 | Musikbus 0,7 → 0,5 | Nachgereicht: „zu laut". Die 0,7 kamen aus „mehr Volumen, basslastiger" — nur hebt der Bus alles an, auch das, was kein Gewicht bekommen sollte. Was basslastig wirklich trägt (Bassschiene, Anriss, Pumpe), bleibt. |
 
 ---
 
@@ -260,7 +268,7 @@ zieht, gewinnt der heutige Auftrag — und das Bild.
 | Vorgabe | Entscheidung | Grund |
 |---|---|---|
 | „dünne 8-Bit-Ebene aus Square-Lead" | gestrichen | Nichts am Spiel ist mehr gerastert. Die Ebene ist ein Zitat ohne Gegenstand — und sie sitzt im Melodiefenster. |
-| „Akkordeon trägt die Hookline" | Okarina | Jahrmarkt gegen Wiese. Siehe §0. |
+| „Akkordeon trägt die Hookline" | Drehleier, Okarina als Zweitstimme | Jahrmarkt gegen Wiese. Siehe §0 — und §4, Zeile 21, warum die Okarina die Führung wieder abgegeben hat. |
 | „12-Bit-Sampler-Crunch, Tape-Wow" | nur die Bandsättigung bleibt | Crunch und Wow sind Alterungszeichen. Ein gemaltes Bild in vollen Farben will keine simulierte Abnutzung. Die Sättigungskennlinie bleibt, weil sie zwei echte Aufgaben hat (Volumen und Übersteuerungsschutz). |
 | „hüpfender Zwei-Viertel-Groove, 118–134 BPM" | 3-3-2 bei 120 / 100 BPM | Zwei Viertel gerade ist genau der Groove, der heute läuft und der nach Metronom klingt. |
 | „Mono, 44,1 kHz, als OGG" | monokompatibles Stereo, alles synthetisiert | Dateien scheiden ohnehin aus (Einzeldatei). Mono*kompatibel* ja, Mono nein — Breite kostet auf dem Telefon nichts und gewinnt auf Kopfhörern alles. |

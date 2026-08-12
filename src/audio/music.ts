@@ -9,10 +9,12 @@ import {
   kalimba,
   kies,
   klarinette,
+  leier,
   okarina,
   panfloete,
   pizzicato,
   pling,
+  streicher,
   tick,
   ukulele,
   woodblock,
@@ -71,13 +73,19 @@ import {
  * „basslastig" auf einem Telefon wirklich heisst —, und die Melodie geht in ein
  * tempogekoppeltes Echo (`AudioEngine.setEcho`).
  *
- * ## Der Bogen
+ * ## Zwei Boegen, einer ueber dem anderen
  *
- * Die Schleife ist acht Takte lang, und sie hat jetzt eine Richtung: Kies und
- * Sechzehntelfigur schwellen ueber die acht Takte an und fallen beim
- * Wiedereinstieg zurueck (`bogen`). Ohne das klingt Takt 8 wie Takt 1, und der
- * Punkt, an dem die Schleife herumkommt, ist die auffaelligste Stelle des
- * Stuecks.
+ * **Der kleine**, ueber acht Takte: Kies und Sechzehntelfigur schwellen an und
+ * fallen beim Wiedereinstieg zurueck (`bogen`). Ohne das klingt Takt 8 wie
+ * Takt 1, und der Punkt, an dem die Schleife herumkommt, ist die auffaelligste
+ * Stelle des Stuecks.
+ *
+ * **Der grosse**, ueber vier Durchgaenge (`DURCHGAENGE`): Die Melodie wandert
+ * zwischen zwei Stimmen, einmal faellt das Schlagwerk zwei Takte lang aus, die
+ * Sechzehntelfigur kehrt ihre Richtung um, und am Ende kommt eine Oktave
+ * darueber. Das ist die Antwort auf „zu eintoenig" — der kleine Bogen allein
+ * reicht nicht, weil ein Level mehrere Minuten dauert und der Achttakter nur
+ * zwanzig Sekunden.
  *
  * ## Die Ebenen
  *
@@ -104,6 +112,16 @@ import {
  */
 type Note = readonly [number | null, number];
 
+/**
+ * Die Stimmen, die eine Melodie **halten** koennen.
+ *
+ * Ein Stabspiel steht hier nicht: Es kann keinen Ton halten, und eine Melodie
+ * aus lauter abfallenden Anschlaegen piekst nur vor sich hin. Den Anschlag gibt
+ * ohnehin das Stabspiel darunter dazu — siehe `update`.
+ */
+const STIMMEN = { akkordeon, klarinette, panfloete, okarina, leier, streicher } as const;
+type StimmName = keyof typeof STIMMEN;
+
 interface Stueck {
   melodie: readonly Note[];
   /** Akkordgrundton je Takt, in Halbtönen. */
@@ -114,12 +132,20 @@ interface Stueck {
   /** Frequenz des Grundtons. */
   grund: number;
   /**
-   * Wer die Melodie **haelt**. Immer eine Blasstimme, nie ein Stabspiel: Ein
-   * Stabspiel kann keinen Ton halten, und eine Melodie aus lauter abfallenden
-   * Anschlaegen piekst nur vor sich hin. Den Anschlag gibt ohnehin das Stabspiel
-   * darunter dazu — siehe `update`.
+   * Wer die Melodie **haelt**, und wer sie im naechsten Durchgang uebernimmt.
+   *
+   * Zwei Stimmen statt einer, und das ist die Antwort auf „zu eintoenig". Eine
+   * Achttaktschleife, die immer gleich klingt, wird nach dem dritten Umlauf zur
+   * Tapete — nicht weil die Melodie schlecht waere, sondern weil **nichts
+   * passiert**. In einem Orchester gibt man die Melodie in der Wiederholung
+   * weiter; genau das tut `DURCHGAENGE`.
+   *
+   * `stimme` fuehrt, `zweitStimme` antwortet. Sie muessen sich hoerbar
+   * unterscheiden, sonst ist der Wechsel keiner — gepaart sind deshalb eine
+   * obertonreiche (gestrichen) und eine obertonarme (geblasen).
    */
-  melodieStimme: 'akkordeon' | 'klarinette' | 'panfloete' | 'okarina';
+  melodieStimme: StimmName;
+  zweitStimme: StimmName;
   harmonieStimme: 'ukulele' | 'kalimba';
   /**
    * Die Fuenftonleiter, in der die **Geraeusche** dieser Welt stehen.
@@ -275,7 +301,11 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     //    freien 190 ms (`schrittDauer`).
     bpm: 120,
     grund: 261.63,
-    melodieStimme: 'okarina',
+    // Drehleier statt Okarina — „zu floetenartig" war eine richtige
+    // Beobachtung ueber den Bau der alten Stimme, nicht ueber ihren Pegel.
+    // Die Begruendung im Einzelnen steht bei `leier` in `instrumente.ts`.
+    melodieStimme: 'leier',
+    zweitStimme: 'okarina',
     harmonieStimme: 'ukulele',
     // C-Dur pentatonisch. Jede Stufe kommt in der Melodie oben vor.
     sfxStufen: [0, 2, 4, 7, 9],
@@ -318,7 +348,11 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // ein langsames Stueck in Bewegung, ohne hektisch zu werden.
     bpm: 100,
     grund: 220,
-    melodieStimme: 'klarinette',
+    // Streicher statt Klarinette, aus demselben Grund: Eine gedackte Roehre hat
+    // nur die ungeraden Teiltoene und liegt damit naeher an einer Floete als an
+    // allem anderen. Die Klarinette bleibt als Zweitstimme.
+    melodieStimme: 'streicher',
+    zweitStimme: 'klarinette',
     harmonieStimme: 'kalimba',
     // A-Moll pentatonisch. Jede Stufe kommt in der Melodie oben vor — und alle
     // fuenf liegen in A-dorisch, das ist derselbe Tonvorrat.
@@ -431,6 +465,66 @@ const LOOKAHEAD = 0.35;
  */
 export const ARPEGGIO = [0, 7, 12, 7, 0, 7, 12, 7] as const;
 
+/**
+ * Was sich von Durchgang zu Durchgang aendert.
+ *
+ * ## Warum es das braucht
+ *
+ * Rueckmeldung nach dem Spielen: „zu eintoenig". Das lag nicht an der Melodie —
+ * die ist abgenommen und hat Kopfmotiv, Mittelteil und drei verschiedene
+ * Antworten. Es lag daran, dass die Schleife **jedes Mal identisch** war. Ein
+ * Level dauert mehrere Minuten, der Achttakter gut zwanzig Sekunden; man hoert
+ * dieselben zwanzig Sekunden also zehnmal hintereinander, Note fuer Note gleich.
+ * Das wird zur Tapete, egal wie gut sie ist.
+ *
+ * ## Was geaendert wird — und was ausdruecklich nicht
+ *
+ * Die Melodie bleibt Ton fuer Ton dieselbe; sie ist abgenommen
+ * (`docs/musik-abnahme.md`). Geaendert wird das **Arrangement**, und das ist
+ * ausdruecklich frei. Vier Durchgaenge, also zweiunddreissig Takte, danach
+ * beginnt der Bogen von vorn — lang genug, dass sich nichts aufdraengt, kurz
+ * genug, dass man den Bau bemerkt.
+ *
+ * | Durchgang | Melodie | Schlagwerk | Figur | dazu |
+ * |---|---|---|---|---|
+ * | 1 | fuehrende Stimme | voll | vorwaerts | — |
+ * | 2 | Zweitstimme | voll | rueckwaerts | — |
+ * | 3 | fuehrende Stimme | zwei Takte Pause | vorwaerts | — |
+ * | 4 | Zweitstimme | voll | rueckwaerts | Oktave darueber |
+ *
+ * Drei Mittel, und jedes tut etwas anderes:
+ *
+ * - **Der Stimmwechsel** aendert die Klangfarbe der Hauptsache. Das ist der
+ *   auffaelligste Eingriff und deshalb der, der jeden zweiten Durchgang kommt.
+ * - **Der Bruch** — zwei Takte ohne Schlagwerk — aendert die *Dichte*. Er ist
+ *   das aelteste Mittel gegen Monotonie ueberhaupt: Was wegfaellt, hoert man
+ *   beim Wiederkommen doppelt.
+ * - **Die Richtungsumkehr der Sechzehntelfigur** aendert die Bewegung, ohne
+ *   einen einzigen Ton zu tauschen: dieselben drei Toene, entgegengesetzte
+ *   Kontur.
+ * - **Die Oktavdopplung** im letzten Durchgang ist die Steigerung vor dem
+ *   Neuanfang. Sie liegt bei hoechstens gut 2 kHz und bleibt damit im Fenster
+ *   der Melodie — eine Transposition waere hier falsch gewesen, sie haette die
+ *   Melodie unter 800 Hz gedrueckt und der Sechzehntelfigur in die Quere.
+ */
+export interface Durchgang {
+  /** `false` heisst: die Zweitstimme fuehrt. */
+  haupt: boolean;
+  /** Erste zwei Takte ohne Schlagwerk. */
+  bruch: boolean;
+  /** Die Sechzehntelfigur laeuft rueckwaerts. */
+  rueck: boolean;
+  /** Leise Oktavdopplung ueber der Melodie. */
+  oktave: boolean;
+}
+
+export const DURCHGAENGE: readonly Durchgang[] = [
+  { haupt: true, bruch: false, rueck: false, oktave: false },
+  { haupt: false, bruch: false, rueck: true, oktave: false },
+  { haupt: true, bruch: true, rueck: false, oktave: false },
+  { haupt: false, bruch: false, rueck: true, oktave: true },
+];
+
 function aufRaster(m: readonly Note[]): (Note | null)[] {
   const raster: (Note | null)[] = [];
   for (const n of m) {
@@ -466,11 +560,14 @@ export class Music {
   private gefiltert = false;
   /** Steht die Echozeit schon auf dem Tempo des laufenden Stuecks? */
   private echoGesetzt = false;
+  /** Der wievielte Umlauf der Achttaktschleife laeuft — Index in `DURCHGAENGE`. */
+  private durchgang = 0;
 
-  get state(): { playing: boolean; notes: number; lage: string } {
+  get state(): { playing: boolean; notes: number; lage: string; durchgang: number } {
     return {
       playing: this.playing,
       notes: this.notes,
+      durchgang: this.durchgang,
       lage: this.lage.pausiert
         ? 'pausiert'
         : this.lage.restSekunden <= 10
@@ -501,6 +598,9 @@ export class Music {
     if (this.playing) return;
     this.playing = true;
     this.step = 0;
+    // Jedes Level faengt beim ersten Durchgang an. Sonst haengt der Klang der
+    // ersten zwanzig Sekunden davon ab, wie lange das vorige Level gedauert hat.
+    this.durchgang = 0;
     this.nextTime = engine.time + 0.1;
   }
 
@@ -562,6 +662,12 @@ export class Music {
       // Stelle im Achttakter, 0 am Anfang, 1 am Ende. Der Bogen (siehe Dateikopf).
       const bogen = takt / Math.max(1, p.akkorde.length - 1);
       const imTakt = i % TAKT;
+      // Was dieser Umlauf anders macht als der vorige — siehe `DURCHGAENGE`.
+      const va = DURCHGAENGE[this.durchgang % DURCHGAENGE.length];
+      // Der Bruch: zwei Takte ohne Schlagwerk. Bass, Flaeche, Figur und Melodie
+      // laufen weiter — was fehlt, ist der Antrieb, und genau den hoert man beim
+      // Wiederkommen doppelt.
+      const schlagwerk = !endspurt && !(va.bruch && i < TAKT * 2);
 
       // --- Der Motor: Schlag im Dreier-Dreier-Zweier, Bass in die Luecken ----
       //
@@ -574,7 +680,7 @@ export class Music {
       // Geaendert hat sich, **wo** der Schlag steht: 0, 3, 6 statt auf jeder
       // Viertel. Die Dichte unten ist unveraendert, der Akzent ist es nicht.
       if (!endspurt) {
-        if (PULS[imTakt]) {
+        if (PULS[imTakt] && schlagwerk) {
           erdschlag(engine, { freq: 0, gain: 0.21, ...g });
           // Zum selben Zeitpunkt weicht alles Liegende kurz zurueck. Das ist
           // der Grund, warum eine moderne Mischung unten wuchtig klingt, ohne
@@ -607,7 +713,7 @@ export class Music {
       }
 
       // --- Perkussion -------------------------------------------------------
-      if (!endspurt) {
+      if (schlagwerk) {
         // Der Kies sitzt auf den Achteln zwischen den Schlaegen: dieselbe
         // Rhythmik wie der Bass, nur zwei Oktaven weiter oben. Dass beide Enden
         // des Frequenzbandes sich einig sind, wo „daneben" ist, macht den Groove
@@ -654,7 +760,11 @@ export class Music {
       // Lockere entsteht also allein aus dieser einen Zeile.
       if (!knapp) {
         for (const halb of [0, 1]) {
-          const ton = ARPEGGIO[(i * 2 + halb) % ARPEGGIO.length];
+          // Rueckwaerts in jedem zweiten Durchgang: dieselben drei Toene,
+          // entgegengesetzte Kontur. Bewegung aendern, ohne einen Ton zu
+          // tauschen — siehe `DURCHGAENGE`.
+          const stelle = (i * 2 + halb) % ARPEGGIO.length;
+          const ton = ARPEGGIO[va.rueck ? ARPEGGIO.length - 1 - stelle : stelle];
           pizzicato(engine, {
             freq: f(wurzel + ton),
             dur: stepDur * 0.42,
@@ -708,14 +818,8 @@ export class Music {
       if (!knapp && note && note[0] !== null) {
         const halbton = note[0] + schiebung;
         const laenge = stepDur * note[1];
-        const stimme =
-          p.melodieStimme === 'okarina'
-            ? okarina
-            : p.melodieStimme === 'akkordeon'
-              ? akkordeon
-              : p.melodieStimme === 'klarinette'
-                ? klarinette
-                : panfloete;
+        // Die fuehrende oder die antwortende Stimme, je Durchgang.
+        const stimme = STIMMEN[va.haupt ? p.melodieStimme : p.zweitStimme];
         // Etwas kuerzer als der Notenwert: Zwischen zwei Toenen muss eine
         // Kante bleiben, sonst verschmelzen sie zu einem Gleiten.
         //
@@ -737,6 +841,13 @@ export class Music {
         // im Bild des Spiels ist nichts mehr gerastert — und dass sie
         // ausgerechnet im Fenster der Melodie sass.
         pling(engine, { freq: f(halbton, 1), dur: Math.min(0.34, laenge), gain: 0.07, ...g });
+        // Die Oktavdopplung im letzten Durchgang — die Steigerung vor dem
+        // Neuanfang. Leise und ohne Echo: Sie soll die Melodie **hell** machen,
+        // nicht verdoppeln. Der hoechste Ton landet bei gut 2 kHz und bleibt
+        // damit im Fenster der Melodie.
+        if (va.oktave) {
+          stimme(engine, { freq: f(halbton, 2), dur: laenge * 0.8, gain: 0.045, ...g });
+        }
         this.notes++;
       }
 
@@ -755,7 +866,11 @@ export class Music {
 
       this.nextTime += stepDur;
       naechsteAchtel = this.nextTime;
-      this.step = (this.step + 1) % raster.length;
+      this.step++;
+      if (this.step >= raster.length) {
+        this.step = 0;
+        this.durchgang = (this.durchgang + 1) % DURCHGAENGE.length;
+      }
     }
   }
 }

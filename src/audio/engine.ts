@@ -51,7 +51,22 @@ export type Bus = 'sfx' | 'music' | 'pad';
  * Saettigungskennlinie am Ausgang endet bei 0,92, unabhaengig davon, was
  * hineingeht.
  */
-const MUSIK_PEGEL = 0.7;
+/**
+ * 0,5 statt 0,7 — die Musik stand zu weit vorn.
+ *
+ * Die 0,7 stammen aus dem Auftrag „mehr Volumen, basslastiger". Der war
+ * richtig, die Umsetzung an dieser Stelle nicht: Der Musikbus ist der einzige
+ * Regler, der **alles gleichzeitig** anhebt, also auch das, was gar nicht mehr
+ * Gewicht bekommen sollte. Was „basslastiger" wirklich gebracht hat, sind drei
+ * andere Dinge — die Bassschiene (`bassSchiene`), der Anriss im `bass` und das
+ * Zuruecktreten der Flaeche bei jedem Schlag (`pumpe`). Die wirken alle weiter.
+ *
+ * Was der hohe Pegel dagegen bewirkt hat, steht in der Rueckmeldung nach dem
+ * Spielen: „zu laut". Auf einem Telefon geht die Musik damit ueber die
+ * Geraeusche, und die Geraeusche sind hier die Rueckmeldung des Spiels — man
+ * hoert dann nicht mehr, ob ein Spatenstich gesessen hat.
+ */
+const MUSIK_PEGEL = 0.5;
 const SFX_PEGEL = 0.9;
 
 export class AudioEngine {

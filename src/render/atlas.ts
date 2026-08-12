@@ -113,6 +113,81 @@ export const DEFAULT_MANIFEST: AtlasManifest = {
   },
 };
 
+/**
+ * Wie weit sich die Figur je Zustand in ihre Bewegungsrichtung legt, in
+ * Bogenmass. Positiv ist nach vorn.
+ *
+ * ## Warum das hier steht und nicht im Blatt
+ *
+ * Weil es genau das war, was gefehlt hat: „läuft seitwärts". Das gebackene
+ * Blatt zeigt die Murmel von vorn — sie hat kein Profil, an dem man eine
+ * Laufrichtung ablesen könnte, und ein Kiesel hat auch keine Beine, deren
+ * Stellung es verrät. Bewegt sich so eine Figur waagerecht über den Schirm,
+ * liest das Auge **Verschiebung**, nicht Gang: Sie rutscht seitwärts, wie ein
+ * Spielstein, den jemand schiebt.
+ *
+ * Die Neigung ist das billigste Gegenmittel und zugleich das richtige. Wer
+ * geht, fällt nach vorn und fängt sich; wer schnell geht, fällt weiter nach
+ * vorn. Ein Körper, der sich in seine Richtung legt, **will** dorthin — und das
+ * ist genau die Aussage, die dem Bild gefehlt hat.
+ *
+ * Gedreht wird um den **Fusspunkt**, weil dort der Kontakt zum Boden ist. Um
+ * die Mitte gedreht rutschten die Füsse unter der Figur weg.
+ *
+ * Die Zahlen sind klein: 0,13 rad sind siebeneinhalb Grad, bei zwölf logischen
+ * Pixeln Körperhöhe also gut anderthalb Pixel Versatz am Kopf. Mehr sähe nach
+ * Sturm aus. Was nicht in der Tabelle steht, steht aufrecht — Blocker,
+ * Rettung und Tod sind Zustände ohne Richtung, und eine Neigung wäre dort eine
+ * Behauptung.
+ */
+export const LEHNE: Record<string, number> = {
+  walking: 0.2,
+  // Beim Fallen kippt es zurück: Der Körper bleibt hinter den Füssen.
+  falling: -0.09,
+  climbing: 0.06,
+  // Der Aufschwung über die Kante ist die stärkste Bewegung, die es gibt.
+  hoisting: 0.24,
+  bashing: 0.12,
+  mining: 0.14,
+  digging: 0.04,
+  building: 0.08,
+};
+
+/**
+ * Wie schmal die Figur je Zustand wird — die zweite Hälfte derselben Antwort.
+ *
+ * ## Warum die Neigung allein nicht reicht
+ *
+ * Weil sie das falsche Problem löst. Die Neigung sagt „sie fällt nach vorn";
+ * was am Bild aber wirklich stört, ist, dass die Murmel den Betrachter **ansieht,
+ * während sie zur Seite läuft**. Ihre beiden Augen sitzen mittig, ihre Arme
+ * stehen nach beiden Seiten ab, ihr Umriss ist spiegelsymmetrisch — das ist
+ * eine Figur in Vorderansicht, und eine Figur in Vorderansicht, die sich
+ * waagerecht bewegt, rutscht. Sie geht nicht.
+ *
+ * ## Was ein schmalerer Umriss tut
+ *
+ * Er ist die Vorderansicht einer Figur, die sich **weggedreht** hat. Das ist
+ * kein Effekt, sondern Perspektive: Ein Körper, der sich um die Hochachse
+ * dreht, wird im Bild schmaler, und die Augen rücken zusammen. Genau das
+ * passiert hier, und weil das Blatt gestaucht statt neu gezeichnet wird, kostet
+ * es nichts.
+ *
+ * Zehn Prozent sind wenig genug, dass niemand eine Stauchung sieht, und genug,
+ * dass der Umriss aufhört, spiegelsymmetrisch zu sein. Mehr sähe nach
+ * Papierfigur aus.
+ *
+ * Nur die Zustände mit einer Richtung. Ein Blocker steht ausdrücklich frontal —
+ * das ist seine ganze Aussage, und ihn wegzudrehen hiesse, ihm zu widersprechen.
+ */
+export const DREHUNG: Record<string, number> = {
+  walking: 0.9,
+  climbing: 0.92,
+  hoisting: 0.9,
+  bashing: 0.92,
+  mining: 0.92,
+};
+
 /** Welcher Clip gehört zu welchem Zustand? */
 export function clipForWusel(w: Wusel): string | null {
   switch (w.state) {
@@ -255,7 +330,7 @@ export class SpriteAtlas {
    * Zeichnet eine Figur. Gespiegelt wird um den Fusspunkt: Weil der Anker auf
    * halber Zellbreite sitzt, genügt dafür `scale(-1, 1)` ohne Versatzausgleich.
    */
-  drawWusel(ctx: CanvasRenderingContext2D, v: View, w: Wusel): boolean {
+  drawWusel(ctx: CanvasRenderingContext2D, v: View, w: Wusel, platz = Infinity): boolean {
     const name = clipForWusel(w);
     if (!name) return false;
     const clip = this.manifest.clips[name];
@@ -280,6 +355,11 @@ export class SpriteAtlas {
     ctx.imageSmoothingEnabled = ppl > 1;
     ctx.translate(footX, footY);
     if (w.dir < 0) ctx.scale(-1, 1);
+    // Erst spiegeln, dann neigen — dadurch ist „vorn" in beiden Blickrichtungen
+    // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
+    if (LEHNE[name]) ctx.rotate(LEHNE[name]);
+    // Und schmaler: die Vorderansicht einer weggedrehten Figur. Siehe `DREHUNG`.
+    if (DREHUNG[name]) ctx.scale(DREHUNG[name], 1);
     ctx.drawImage(
       this.image,
       frame * cw * ppl,
@@ -338,6 +418,8 @@ export class SpriteAtlas {
         zustand,
         schopfPuls(schopfFarbe(schopfAuftrag(w)), w.fuse),
         s,
+        false,
+        platz,
       );
     }
     ctx.restore();

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Ambiente } from '../src/audio/ambiente';
 import type { AudioEngine } from '../src/audio/engine';
-import { Music, STUECKE, bisNaechsteAchtel, schrittDauer, tonart } from '../src/audio/music';
+import { DURCHGAENGE, Music, STUECKE, bisNaechsteAchtel, schrittDauer, tonart } from '../src/audio/music';
 import { Sfx } from '../src/audio/sfx';
 
 /**
@@ -34,6 +34,15 @@ interface Einsatz {
   bus: string;
   pan: number;
   echo: number;
+  /**
+   * Die Wellenform. Sie ist hier das einzige, woran sich eine Melodiestimme von
+   * einer anderen unterscheiden lässt: Der Aufschreiber sieht nur Aufrufe an die
+   * Klangwerkstatt, nicht, welche Funktion sie geschickt hat. Gestrichene
+   * Stimmen (Drehleier, Streicher) schicken Sägezähne, geblasene (Okarina,
+   * Klarinette) Dreiecke und Rechtecke — daran hängt die Prüfung des
+   * Stimmwechsels.
+   */
+  welle: string;
 }
 
 /** Ein Aufschreiber anstelle der Klangwerkstatt. */
@@ -61,6 +70,7 @@ class Aufschreiber {
       bus: String(o.bus ?? 'sfx'),
       pan: Number(o.pan ?? 0),
       echo: Number(o.echo ?? 0),
+      welle: String(o.type ?? 'square'),
     });
   }
   noise(o: Record<string, unknown>): void {
@@ -71,6 +81,7 @@ class Aufschreiber {
       bus: String(o.bus ?? 'sfx'),
       pan: Number(o.pan ?? 0),
       echo: Number(o.echo ?? 0),
+      welle: 'rausch',
     });
   }
   duck(): void {}
@@ -180,6 +191,88 @@ describe('Die laufende Tonschicht', () => {
     // anderen Farbe.
     expect(STUECKE.grass.bpm).not.toBe(STUECKE.crystal.bpm);
     expect(Math.abs(STUECKE.grass.bpm - STUECKE.crystal.bpm)).toBeGreaterThanOrEqual(12);
+  });
+});
+
+/**
+ * Der Bogen über vier Durchgänge — die Antwort auf „zu eintönig".
+ *
+ * Diese Prüfungen sind nötig, weil der Fehler, den sie abfangen, **stumm** ist:
+ * Eine Schleife, die sich nicht ändert, klingt nicht falsch. Sie klingt genau
+ * wie vorgesehen — nur eben zehnmal hintereinander gleich, und das merkt man
+ * erst nach Minuten. Ginge `DURCHGAENGE` beim Umbauen verloren, liefe alles
+ * weiter, und niemand hätte einen Anhaltspunkt.
+ *
+ * Gemessen wird deshalb am Unterschied zwischen den Umläufen, nicht daran, ob
+ * überhaupt etwas gespielt wird.
+ */
+describe('Die Schleife wiederholt sich nicht einfach', () => {
+  const ACHTEL_JE_UMLAUF = 64;
+
+  /** Die Einsätze eines einzelnen Umlaufs, vom nullten an gezählt. */
+  function umlauf(thema: 'grass' | 'crystal', n: number): Einsatz[] {
+    const e = new Aufschreiber();
+    const m = new Music();
+    m.setTheme(thema);
+    m.setLage({ restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false });
+    m.start(e as unknown as AudioEngine);
+    const achtel = 60 / STUECKE[thema].bpm / 2;
+    let vorher = 0;
+    for (let i = 0; i < ACHTEL_JE_UMLAUF * (n + 1); i++) {
+      // Der Vorlauf plant über den Horizont hinaus; der Schnitt liegt deshalb
+      // dort, wo der gewünschte Umlauf beginnt, und nicht am Aufrufzähler.
+      if (i === ACHTEL_JE_UMLAUF * n) vorher = e.einsaetze.length;
+      m.update(e as unknown as AudioEngine);
+      e.zeit += achtel;
+    }
+    return e.einsaetze.slice(vorher);
+  }
+
+  for (const thema of ['grass', 'crystal'] as const) {
+    describe(thema, () => {
+      it('gibt die Melodie im zweiten Umlauf an eine andere Stimme weiter', () => {
+        // Die führende Stimme ist gestrichen (Sägezahn), die antwortende
+        // geblasen (Dreieck bzw. Rechteck). Gemessen wird im Melodiefenster
+        // oberhalb von 800 Hz — darunter liegt die Begleitung, und die wechselt
+        // nicht.
+        const saegen = (n: number) =>
+          umlauf(thema, n).filter((x) => x.welle === 'sawtooth' && x.freq > 800).length;
+        expect(saegen(0), 'die führende Stimme fehlt').toBeGreaterThan(0);
+        expect(saegen(1), 'im zweiten Umlauf spielt dieselbe Stimme weiter').toBe(0);
+      });
+
+      it('nimmt im dritten Umlauf das Schlagwerk kurz heraus', () => {
+        // Der Bruch: zwei Takte ohne Schlag. Das Pumpen hängt am Schlag und ist
+        // damit sein Abdruck — drei Schläge je Takt, acht Takte, also
+        // vierundzwanzig je Umlauf und sechs weniger, wenn zwei Takte fehlen.
+        const pumpenIn = (n: number) => {
+          const e = new Aufschreiber();
+          const m = new Music();
+          m.setTheme(thema);
+          m.setLage({ restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false });
+          m.start(e as unknown as AudioEngine);
+          const achtel = 60 / STUECKE[thema].bpm / 2;
+          let vorher = 0;
+          for (let i = 0; i < ACHTEL_JE_UMLAUF * (n + 1); i++) {
+            if (i === ACHTEL_JE_UMLAUF * n) vorher = e.pumpen.length;
+            m.update(e as unknown as AudioEngine);
+            e.zeit += achtel;
+          }
+          return e.pumpen.length - vorher;
+        };
+        expect(pumpenIn(2)).toBeLessThan(pumpenIn(0));
+      });
+    });
+  }
+
+  it('lässt keine zwei aufeinanderfolgenden Umläufe gleich sein', () => {
+    // Die Tabelle selbst. Zwei gleiche Einträge hintereinander wären eine
+    // Schleife von vierundsechzig Takten mit einer stillen Stelle darin.
+    for (let i = 0; i < DURCHGAENGE.length; i++) {
+      const a = DURCHGAENGE[i];
+      const b = DURCHGAENGE[(i + 1) % DURCHGAENGE.length];
+      expect(JSON.stringify(a), `Umlauf ${i} und ${i + 1} sind gleich`).not.toBe(JSON.stringify(b));
+    }
   });
 });
 

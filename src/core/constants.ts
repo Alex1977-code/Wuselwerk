@@ -72,9 +72,47 @@ export const NUKE_STAGGER = 8;
 // --- Blocker --------------------------------------------------------------
 export const BLOCK_RADIUS = 5;
 
+// --- Ausgang --------------------------------------------------------------
+/**
+ * Wie weit die Figur in die Toroeffnung hinein muss, in logischen Pixeln.
+ *
+ * ## Warum es diesen Rand gibt
+ *
+ * Vorher zaehlte **jede** Ueberdeckung mit dem Ausgangsrechteck. Die Figur war
+ * damit gerettet, sobald ihr Mittelpunkt den aeussersten Bildpunkt der Oeffnung
+ * streifte — und weil die Simulation eine Figur als *eine Spalte* fuehrt,
+ * waehrend sie neun Bildpunkte breit gezeichnet wird, stand zu diesem Zeitpunkt
+ * fast der ganze Koerper noch neben der Tuer. Man sah keine Figur hineingehen,
+ * sondern eine, die am Torpfosten verschwindet.
+ *
+ * ## Woher die Zahl kommt
+ *
+ * Aus der Figur, nicht aus einem Geschmack: Es ist ihre **halbe Breite**. Der
+ * Koerper reicht `WUSEL_H * 0.38` nach jeder Seite (siehe `sprites.ts`), ist
+ * also gut neun Bildpunkte breit; genau dieser Abstand von der Kante sorgt
+ * dafuer, dass der ganze Koerper drinsteht. Die Regel lautet damit schlicht:
+ * **Gerettet wird, wer ganz in der Tuer steht.**
+ *
+ * Ein Anteil der Torbreite waere hier falsch gewesen. Er haette breite Tore
+ * unnoetig streng gemacht und — schlimmer — beim Fallen durch einen gegrabenen
+ * Schacht die Mitte erzwungen, obwohl ein Schacht neben der Mitte liegen darf.
+ * Wo das Tor schmaler ist als zwei Koerperbreiten, wird der Rand entsprechend
+ * gekuerzt (siehe `World.checkExit`); sonst gaebe es Tore ohne Durchgang.
+ */
+export const EXIT_RAND = Math.ceil(WUSEL_H * 0.38);
+
 // --- Zustandsdauern -------------------------------------------------------
 export const DYING_TICKS = 26;
-export const SAVING_TICKS = 18;
+/**
+ * Wie lange die Rettung dauert.
+ *
+ * 18 Ticks waren 0,3 Sekunden — genug, um zu verschwinden, zu wenig, um
+ * anzukommen. Seit die Figur einen Bogen in die Tormitte springt
+ * (`Scene.rettungsSprung`), ist das die Dauer **einer sichtbaren Bewegung**,
+ * und die braucht knapp eine halbe Sekunde. Kuerzer sieht man den Sprung nicht,
+ * laenger haelt er den Nachschub auf.
+ */
+export const SAVING_TICKS = 26;
 /** Wartezeit, bis sich die Falltuer oeffnet. */
 export const HATCH_OPEN_TICKS = 45;
 

@@ -1,11 +1,12 @@
-import { WUSEL_H } from '../core/constants';
-import { DeathCause, type WorldEvent } from '../core/types';
+import { SAVING_TICKS, WUSEL_H } from '../core/constants';
+import { DeathCause, State, type Wusel, type WorldEvent } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
 import { mulberry32 } from '../levels/paint';
 import { sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
-import { drawFuseOverlay, drawWusel } from './sprites';
+import { drawWusel } from './sprites';
+import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
 import type { SpriteAtlas } from './atlas';
 import type { TerrainView } from './terrainView';
 import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
@@ -338,17 +339,95 @@ export class Scene {
     this.drawHatch(ctx, v, world);
 
     for (const w of world.wusels) {
+      if (w.state === State.DEAD || w.state === State.SAVED) continue;
+
+      // Wie viel Raum der Schopf an dieser Stelle hat. Er ist laenger als der
+      // halbe Koerper und steckte deshalb in jeder Wand, an der eine Murmel
+      // entlanglief — die Simulation kennt nur die zwoelf Pixel Koerperhoehe.
+      // Siehe `schopfPlatz`.
+      const platz = schopfPlatz(
+        (px, py) => world.terrain.solid(px, py),
+        w.x,
+        w.y - WUSEL_H,
+        w.dir,
+      );
+
+      const fx = sx(v, w.x);
+      const fy = sy(v, w.y);
+
+      ctx.save();
+      // Der Sprung ins Tor sitzt als Bildschirmversatz **um** den Zeichner
+      // herum: Beide Wege (Blatt und prozedural) rechnen ihre Stelle aus der
+      // Weltkoordinate aus, also gilt eine aeussere Verschiebung fuer beide.
+      const sprung = this.rettungsSprung(w, world);
+      if (sprung) {
+        ctx.translate(fx + sprung.dx * v.scale, fy + sprung.dy * v.scale);
+        ctx.scale(sprung.k, sprung.k);
+        ctx.translate(-fx, -fy);
+        ctx.globalAlpha = sprung.deckung;
+      }
+
+      // Die Warnlampe des Sprengmeisters: Schein dahinter, Licht darauf.
+      if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
       // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
-      if (this.atlas?.drawWusel(ctx, v, w)) {
-        if (w.fuse > 0) drawFuseOverlay(ctx, v, w, tick);
-      } else {
-        drawWusel(ctx, v, w, tick);
-      }
+      if (!this.atlas?.drawWusel(ctx, v, w, platz)) drawWusel(ctx, v, w, tick, platz);
+      if (w.fuse > 0) drawWarnlicht(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
+      ctx.restore();
     }
     this.drawParticles(ctx, v);
 
     ctx.restore();
+  }
+
+  /**
+   * Der Sprung ins Tor.
+   *
+   * ## Was vorher passierte
+   *
+   * Die Figur schrumpfte auf der Stelle und wurde durchsichtig — wo auch immer
+   * sie den Ausgang zum ersten Mal beruehrte. Das war am **Rand** des Tors, weil
+   * die Simulation jede Ueberdeckung mit dem Ausgangsrechteck zaehlte (das ist
+   * jetzt anders, siehe `EXIT_SCHWELLE`), und es sah nach Verschwinden aus, nicht
+   * nach Ankommen. Ein Ausgang, in den niemand hineingeht, ist kein Ausgang,
+   * sondern eine Falle mit gutem Licht.
+   *
+   * ## Was jetzt passiert
+   *
+   * Ein Bogen zur Mitte des Tors: Die Figur setzt ab, steigt, kommt auf der
+   * Schwelle an und geht dort erst ins Licht. Drei Teile, und jeder tut etwas:
+   *
+   * - **Der Weg** wird weich ein- und ausgeblendet (`smoothstep`), damit der
+   *   Absprung kein Ruck ist.
+   * - **Der Bogen** ist ein halber Sinus. Eine gerade Linie zum Tor waere ein
+   *   Gleiten; erst die Hoehe macht daraus einen Sprung.
+   * - **Das Verschwinden** faengt erst nach gut der Haelfte an. Wer sofort
+   *   verblasst, springt nicht mehr sichtbar.
+   *
+   * Zurueck kommen logische Pixel, kein Bildschirmmass — der Aufrufer
+   * multipliziert mit dem Massstab. Das haelt die Rechnung von der Kamera frei.
+   */
+  private rettungsSprung(
+    w: Wusel,
+    world: World,
+  ): { dx: number; dy: number; k: number; deckung: number } | null {
+    if (w.state !== State.SAVING) return null;
+    const t = Math.min(1, w.timer / SAVING_TICKS);
+    const weich = t * t * (3 - 2 * t);
+    const e = world.exit;
+    // Ziel ist die Schwelle in der Tormitte, nicht der Mittelpunkt des Rechtecks:
+    // Man geht in eine Tuer hinein, man schwebt nicht in ihrer Mitte.
+    const zielX = e.x + e.w / 2;
+    const zielY = e.y + e.h * 0.86;
+    const bogen = Math.sin(t * Math.PI) * WUSEL_H * 0.6;
+    // Das Schrumpfen setzt spaet ein — vorher soll man den Sprung sehen.
+    const spaet = Math.max(0, (t - 0.55) / 0.45);
+    return {
+      dx: (zielX - w.x) * weich,
+      dy: (zielY - w.y) * weich - bogen,
+      k: 1 - spaet * 0.86,
+      deckung: 1 - spaet * spaet,
+    };
   }
 
   /**

@@ -69,6 +69,25 @@ const PAN_SCHWELLE = 10;
  */
 const PAN_SCHWELLE_ZIEL = 44;
 
+/**
+ * Untergrenze des Nachspiels in Sekunden — auch ohne Partikel.
+ *
+ * Ein gewonnenes Level endet oft still: Die letzte Figur geht durch die Tuer,
+ * und das war es. Faellt der Vorhang im selben Bild, wirkt es wie ein Abbruch.
+ * Ein halber Atemzug reicht, damit man den letzten Zustand noch sieht.
+ */
+const NACHSPIEL_MIN = 0.5;
+/**
+ * Obergrenze des Nachspiels in Sekunden.
+ *
+ * Der Explosionsrauch steht 1,1 s (`PARTIKEL_MS.explosionRauch`), und bei einer
+ * Selbstzerstoerung zuenden die Figuren nacheinander — der letzte Rauch kann
+ * also spaet kommen. Zwei Sekunden reichen fuer den Feuerball und den Beginn
+ * des Rauchs; darueber hinaus zu warten hiesse, jemanden vor stehendem Rauch
+ * festzuhalten.
+ */
+const NACHSPIEL_MAX = 2;
+
 interface PointerState {
   id: number;
   x: number;
@@ -128,6 +147,29 @@ export class Game {
   private wanderT = 0;
   /** Stand vor dem letzten Levelende — Ausgangspunkt der Wanderung. */
   private standVorher: Progress = {};
+  /**
+   * Nachspiel: Sekunden, die zwischen dem Ende der Simulation und dem
+   * Ergebnisbild noch vergehen. `-1` heisst „laeuft nicht".
+   *
+   * ## Warum es das gibt
+   *
+   * Ohne diese Uhr sah man die Selbstzerstoerung **nie**. Der Ablauf war:
+   * letzte Figur zuendet, explodiert, ist tot — und im selben Bild steht
+   * `activeCount` auf null, `World.checkEnd` setzt die Phase, und das
+   * Ergebnisbild legt sich ueber den Feuerball. Das lauteste Ereignis des
+   * Spiels fand hinter einem Vorhang statt, der genau in dem Moment fiel, in
+   * dem es losging.
+   *
+   * Dass es niemandem auffiel, hat denselben Grund wie bei den zu kurzen
+   * Partikeln (`render/schutt.ts`): Was gar nicht zu sehen ist, sieht nicht
+   * falsch aus. Man haelt die Sprengung fuer wirkungslos.
+   *
+   * Die Uhr laeuft nicht fest ab, sondern **nach dem Bild**: Sie wartet, bis
+   * keine Partikel mehr fliegen, mit einer Untergrenze (auch ein stiller Sieg
+   * braucht einen Atemzug) und einer Obergrenze (Rauch, der lange steht, darf
+   * niemanden festhalten).
+   */
+  private nachspiel = -1;
   private simAcc = 0;
   private anim = 0;
   /** Zuletzt hoerbar gemachte Raste des Reglers; -1 heisst "noch keine". */
@@ -206,6 +248,7 @@ export class Game {
     this.screen = 'play';
     this.phase = 'intro';
     this.simAcc = 0;
+    this.nachspiel = -1;
     this.clearAim();
   }
 
@@ -376,7 +419,28 @@ export class Game {
       guard++;
     }
     this.dispatchEvents();
-    if (this.world.phase !== 'running') this.finish();
+    if (this.world.phase !== 'running') this.nachspielen(dt);
+  }
+
+  /**
+   * Der Vorhang faellt erst, wenn das Bild fertig ist.
+   *
+   * Die Simulation steht hier bereits — `World.tick` kehrt bei beendeter Phase
+   * sofort zurueck. Was weiterlaeuft, ist allein die Darstellung: Partikel,
+   * Ruettelbild, die letzten Toene. Genau die will man sehen.
+   *
+   * Gewartet wird nach dem, was noch fliegt, nicht nach einer festen Zahl. Bei
+   * einer Selbstzerstoerung sind das gut zwei Sekunden Feuer und Rauch, bei
+   * einem stillen Sieg ein halber Atemzug — und mehr braucht keiner von beiden.
+   */
+  private nachspielen(dt: number): void {
+    if (this.nachspiel < 0) this.nachspiel = 0;
+    this.nachspiel += dt;
+    if (this.nachspiel < NACHSPIEL_MIN) return;
+    const { anzahl } = this.scene.partikelStand;
+    if (anzahl > 0 && this.nachspiel < NACHSPIEL_MAX) return;
+    this.nachspiel = -1;
+    this.finish();
   }
 
   /** Verteilt die Weltereignisse an Partikel, Ton und Haptik. */
@@ -504,6 +568,10 @@ export class Game {
       if (hit) this.onOverlayButton(hit.id);
       return;
     }
+    // Im Nachspiel steht die Simulation schon, das Bild laeuft nur noch aus.
+    // Ein Auftrag waere von hier an wirkungslos — er wuerde stumm verpuffen und
+    // dabei ein Werkzeug verbrauchen.
+    if (this.nachspiel >= 0) return;
 
     const L = this.layout;
 
@@ -1022,6 +1090,21 @@ export class Game {
   }
 
   /**
+   * Einer Figur dicht an einer Stelle den Beruf geben — fuer Nahaufnahmen.
+   *
+   * `debugAssign` nimmt die n-te laufende Figur, und welche das ist, haengt am
+   * Zufall des Augenblicks. Wer einen Schacht ueber der Tuer braucht, muss die
+   * Figur nach ihrem **Ort** aussuchen.
+   */
+  debugAssignAt(x: number, skill: SkillId = 'digger', toleranz = 2): { x: number; y: number } | null {
+    const nah = this.world.wusels
+      .filter((w) => isActive(w) && w.state === State.WALKING && Math.abs(w.x - x) <= toleranz)
+      .sort((a, b) => Math.abs(a.x - x) - Math.abs(b.x - x))[0];
+    if (!nah || !this.world.assign(nah.id, skill)) return null;
+    return { x: nah.x, y: nah.y };
+  }
+
+  /**
    * Ein Level unmittelbar laden, an der Freischaltung vorbei.
    *
    * Nur fuer die Sichtprobe. Die Berufe eines Levels stehen in seinen Daten;
@@ -1050,6 +1133,28 @@ export class Game {
    */
   debugPartikel(): { anzahl: number; restMs: number } {
     return this.scene ? this.scene.partikelStand : { anzahl: 0, restMs: 0 };
+  }
+
+  /**
+   * Der Stand des Nachspiels — die Wartezeit zwischen Simulationsende und
+   * Ergebnisbild.
+   *
+   * Fuer die Sichtprobe, und aus demselben Grund wie `debugPartikel`: Ob eine
+   * Sprengung zu sehen war, laesst sich nicht fotografieren. Man kann nur
+   * pruefen, ob der Vorhang noch oben war, waehrend noch etwas flog. Genau das
+   * war der gemeldete Fehler — das Ergebnisbild legte sich ueber den Feuerball.
+   */
+  debugNachspiel(): { laeuft: boolean; sekunden: number; weltphase: string } {
+    return {
+      laeuft: this.nachspiel >= 0,
+      sekunden: Math.max(0, this.nachspiel),
+      weltphase: this.world?.phase ?? 'kein Level',
+    };
+  }
+
+  /** Selbstzerstoerung ausloesen — die Sichtprobe kann den Knopf nicht treffen. */
+  debugNuke(): void {
+    this.world?.nuke();
   }
 
   /** Wo der Sprengmeister mit der kuerzesten Zuendschnur gerade steht. */

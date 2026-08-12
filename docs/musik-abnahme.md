@@ -135,3 +135,25 @@ steht in `docs/klangdesign.md`. Die Punkte, die man am ehesten für eine
 
 Die Tonfolgen und die Akkordfolge in `STUECKE` sind Note für Note dieselben wie
 am Tag der Abnahme.
+
+---
+
+## 7. Die zweite Rückmeldung: „zu laut, zu flötenartig, zu eintönig"
+
+Drei Beobachtungen aus dem Spielen, und alle drei betreffen die rechte Spalte —
+also das, was ausdrücklich nicht mit abgenommen ist. Sie stehen hier trotzdem,
+weil jemand sonst beim nächsten Blick auf `STUECKE` denkt, die Melodie sei
+angefasst worden.
+
+| Rückmeldung | was daran wirklich falsch war | was geändert wurde |
+|---|---|---|
+| „zu laut" | Der Musikbus stand auf 0,7. Das kam aus dem Auftrag „mehr Volumen, basslastiger" — richtig gewollt, an der falschen Stelle umgesetzt: Der Bus hebt **alles** an, auch das, was kein Gewicht bekommen sollte. Auf einem Telefon ging die Musik damit über die Geräusche, und die Geräusche sind die Rückmeldung des Spiels. | `MUSIK_PEGEL` 0,7 → 0,5. Was „basslastig" wirklich trägt — Bassschiene, Anriss im Bass, Pumpe unter dem Schlag — bleibt unverändert. |
+| „zu flötenartig" | Eine richtige Beobachtung über den **Bau** der Stimmen, nicht über ihren Pegel. Die Okarina ist ein Helmholtz-Resonator und hat fast nur den Grundton; die Klarinette ist eine gedackte Röhre und hat nur die ungeraden Teiltöne. Beide waren aus gutem Grund gewählt (sie stellen das Melodiefenster nicht zu) — und beide sind damit per Konstruktion flötenähnlich. | Neue führende Stimmen: **Drehleier** (Wiese) und **Streicher** (Höhle). Gestrichene Saiten, also alle Teiltöne, gefiltert statt ungebremst. Okarina und Klarinette bleiben als Zweitstimmen. |
+| „zu eintönig" | Nicht die Melodie — sie hat Kopfmotiv, Mittelteil und drei verschiedene Antworten. Die **Schleife** war es: acht Takte, rund zwanzig Sekunden, in einem Level zehnmal hintereinander Note für Note gleich. | `DURCHGAENGE`: vier Umläufe mit wechselnder Melodiestimme, einem Bruch im dritten (zwei Takte ohne Schlagwerk), umgekehrter Sechzehntelfigur und einer Oktavdopplung im vierten. |
+
+**An den Melodien ist auch hier nichts geändert.** Der Stimmwechsel gibt
+dieselben Töne an ein anderes Instrument weiter — das ist, was ein Orchester in
+der Wiederholung tut. Die Oktavdopplung ist eine zusätzliche Stimme, keine
+Transposition: Die abgenommene Lage bleibt genau, wo sie war, und das ist hier
+nicht nur eine Formalie — eine Transposition nach unten hätte die Melodie unter
+800 Hz gedrückt und damit in das Band, das der Begleitung gehört.

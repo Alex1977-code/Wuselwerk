@@ -1,3 +1,4 @@
+import { TICK_HZ } from '../core/constants';
 import type { SkillId } from '../core/types';
 
 /**
@@ -69,24 +70,169 @@ export function schopfFarbe(skill: SkillId | null): string {
   return skill ? FARBE[skill] : OHNE_AUFTRAG;
 }
 
+// ---------------------------------------------------------------------------
+// Die Warnlampe
+// ---------------------------------------------------------------------------
+
 /**
- * Der Sprengcountdown — als Pulsen der Schopffarbe, nicht als Ziffer.
+ * Der Sprengcountdown — als **Warnlampe**, nicht als Ziffer und nicht als
+ * Flackern.
  *
- * Die Vorgabe ist hier ausdruecklich: kein Zaehler ueber dem Kopf. Der Schopf
- * wechselt im Sekundentakt zwischen Akzentfarbe und Weiss, und der Takt
- * verdoppelt sich in den letzten zwei Sekunden. Das ist ohne Text lesbar,
- * funktioniert bei jeder Figurengroesse und passt zu einer Figur, die kein
- * Gesicht hat.
+ * ## Was vorher falsch war
  *
- * Getaktet wird an der **Zuendschnur selbst**, nicht an einer Bilduhr. Die
- * zaehlt in Simulationsschritten herunter und ist damit fuer jede Figur die
- * richtige Uhr: Zwei Sprengmeister, die nacheinander gezuendet wurden, pulsen
- * gegeneinander statt im Gleichschritt — und man sieht, wer zuerst hochgeht.
+ * Der Schopf sprang hart zwischen seiner Farbe und Weiss hin und her. Das war
+ * die richtige Idee an der falschen Stelle: Der Schopf ist ein paar Bildpunkte
+ * breit, und ein harter Wechsel an einem so kleinen Ding liest sich als
+ * Flimmern, nicht als Warnung. Bei einem Pulk laufender Figuren sah man ihn
+ * schlicht nicht.
+ *
+ * ## Was eine Warnlampe ausmacht
+ *
+ * Drei Dinge, und alle drei fehlten:
+ *
+ * 1. **Sie wechselt weich.** Eine Gluehwendel hat Traegheit. Ein harter
+ *    Rechteckwechsel ist ein Stroboskop, und ein Stroboskop liest man als
+ *    Stoerung, nicht als Ansage.
+ * 2. **Sie leuchtet ihre Umgebung an.** Das ist der eigentliche Unterschied:
+ *    Nicht die Lampe ist auffaellig, sondern der Lichtkegel um sie herum. Ein
+ *    Schein, der ueber den Umriss hinausgeht, ist auch dann noch zu sehen, wenn
+ *    die Figur selbst hinter etwas steht.
+ * 3. **Sie hat einen Takt, den man mitzaehlen kann.** Gut ein Puls je Sekunde
+ *    („nicht zu schnell"), und in den letzten zwei Sekunden der doppelte — das
+ *    ist die Stelle, an der aus einer Anzeige eine Aufforderung wird.
+ *
+ * ## Warum die Phase **rueckwaerts** gezaehlt wird
+ *
+ * `fuse` zaehlt zum Knall hin herunter, und die Phase wird daraus von hinten
+ * aufgebaut. Damit liegt der hellste Punkt jedes Pulses genau auf dem Knall,
+ * und nicht irgendwo davor. Vorwaerts gezaehlt haengt es vom Zufall der
+ * Zuendschnurlaenge ab, ob die Lampe im Dunkeln oder im Hellen explodiert —
+ * und man sieht dem letzten Puls dann nicht an, dass er der letzte war.
+ *
+ * Getaktet wird an der Zuendschnur der **einzelnen Figur**, nicht an einer
+ * Bilduhr. Zwei nacheinander gezuendete Sprengmeister pulsen dadurch
+ * gegeneinander, und man sieht, wer zuerst hochgeht.
+ */
+/** Pulse je Sekunde, solange noch Zeit ist. Knapp ueber eins — mitzaehlbar. */
+const LAMPE_HZ = 1.15;
+/** Pulse je Sekunde in den letzten zwei Sekunden. Doppelt, nicht schneller. */
+const LAMPE_HZ_ENDE = 2.3;
+/** Wann der Takt umschaltet, in Ticks. */
+const LAMPE_ENDSPURT = 2 * TICK_HZ;
+
+/**
+ * Helligkeit der Warnlampe, 0 bis 1. Rein aus `fuse` — also deterministisch und
+ * fuer jede Figur ihre eigene.
+ */
+export function zuenderGlut(fuse: number): number {
+  if (fuse <= 0) return 0;
+  const nah = Math.min(fuse, LAMPE_ENDSPURT);
+  const weit = Math.max(0, fuse - LAMPE_ENDSPURT);
+  const phase = (nah * LAMPE_HZ_ENDE + weit * LAMPE_HZ) / TICK_HZ;
+  // Kosinus statt Sinus: Bei fuse = 0 steht die Lampe auf hell.
+  return 0.5 + 0.5 * Math.cos(2 * Math.PI * phase);
+}
+
+/** Farbmischung im sRGB-Raum. Fuer eine Lampe genau genug. */
+function mische(a: string, b: string, t: number): string {
+  const k = Math.max(0, Math.min(1, t));
+  const zahl = (h: string, i: number) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  const teil = (i: number) => Math.round(zahl(a, i) + (zahl(b, i) - zahl(a, i)) * k);
+  return `rgb(${teil(0)}, ${teil(1)}, ${teil(2)})`;
+}
+
+/** Das Signalorange der Lampe und ihr weissgluehender Kern. */
+const WARN_ORANGE = '#FF5A22';
+const WARN_KERN = '#FFF0C6';
+
+/**
+ * Die Schopffarbe waehrend der Zuendschnur.
+ *
+ * Zwei Stufen statt einer: erst von der Berufsfarbe ins Signalorange, dann im
+ * obersten Drittel ins Weissgluehende. Eine einzige Rampe zwischen zwei Farben
+ * sieht aus, als waere jemand am Regler; zwei Stufen sehen aus, als glühte
+ * etwas auf.
  */
 export function schopfPuls(basis: string, fuse: number): string {
   if (fuse <= 0) return basis;
-  const takt = fuse < 120 ? 15 : 30;
-  return Math.floor(fuse / takt) % 2 === 0 ? '#FFFFFF' : basis;
+  const glut = zuenderGlut(fuse);
+  const heiss = mische(basis, WARN_ORANGE, Math.min(1, glut * 1.5));
+  return mische(heiss, WARN_KERN, Math.max(0, (glut - 0.66) / 0.34));
+}
+
+/**
+ * Der Schein **hinter** der Figur.
+ *
+ * Er ist das eigentliche Warnzeichen: Er reicht ueber den Umriss hinaus, faellt
+ * also auch auf das Gelaende daneben, und ist damit noch zu erkennen, wenn die
+ * Figur selbst im Gewuehl steckt. Gezeichnet wird er vor der Figur, damit er
+ * hinter ihr liegt — ein Schein ueber dem Koerper waere Nebel.
+ *
+ * @param x Fusspunkt auf dem Bildschirm.
+ * @param koerperH Figurenhoehe in logischen Pixeln.
+ * @param s Bildpunkte je logischem Pixel.
+ */
+export function drawWarnschein(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  koerperH: number,
+  s: number,
+  fuse: number,
+): void {
+  const glut = zuenderGlut(fuse);
+  if (glut <= 0.02) return;
+  const my = y - koerperH * 0.55 * s;
+  // Der Radius atmet mit. Eine Lampe, die nur heller wird, ist ein Regler; eine,
+  // deren Hof mitwaechst, ist Licht.
+  const r = koerperH * s * (0.9 + 0.85 * glut);
+  const schein = ctx.createRadialGradient(x, my, 0, x, my, r);
+  schein.addColorStop(0, `rgba(255, 122, 48, ${0.5 * glut})`);
+  schein.addColorStop(0.45, `rgba(255, 90, 34, ${0.22 * glut})`);
+  schein.addColorStop(1, 'rgba(255, 80, 30, 0)');
+  ctx.save();
+  ctx.fillStyle = schein;
+  ctx.beginPath();
+  ctx.arc(x, my, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+/**
+ * Das Licht **auf** der Figur.
+ *
+ * Hier liegt die Antwort auf „die Murmel soll deutlich die Farbe wechseln",
+ * ohne die Regel zu brechen, dass ihr Koerper nie eingefaerbt wird: Das ist
+ * keine Farbe, das ist **Beleuchtung**. Der Kiesel bleibt derselbe Kiesel, er
+ * steht nur in orangem Licht — genau das, was eine Lampe auf dem Kopf mit ihrem
+ * Traeger macht.
+ *
+ * Technisch ein additiver Auftrag, auf die Koerperflaeche beschnitten. Ohne den
+ * Beschnitt waere es ein zweiter Schein und damit doppelt gemoppelt.
+ */
+export function drawWarnlicht(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  koerperH: number,
+  s: number,
+  fuse: number,
+): void {
+  const glut = zuenderGlut(fuse);
+  if (glut <= 0.02) return;
+  const b = koerperH * 0.42 * s;
+  const h = koerperH * s;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(x, y - h * 0.5, b, h * 0.54, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+  const licht = ctx.createRadialGradient(x, y - h * 0.62, 0, x, y - h * 0.45, h * 0.8);
+  licht.addColorStop(0, `rgba(255, 138, 62, ${0.62 * glut})`);
+  licht.addColorStop(1, `rgba(210, 60, 20, ${0.2 * glut})`);
+  ctx.fillStyle = licht;
+  ctx.fillRect(x - b, y - h * 1.1, b * 2, h * 1.2);
+  ctx.restore();
 }
 
 /**
@@ -161,12 +307,71 @@ const FORM: readonly (readonly [number, number, number, number])[] = [
   [0, 0, 0, 0], // 8 schirm — eigene Form, siehe unten
 ];
 
+/** Der laengste Schopf ueberhaupt. Weiter muss keine Messung reichen. */
+export const SCHOPF_MAX = FORM.reduce((m, f) => Math.max(m, f[0]), 0);
+
+/**
+ * Wie viel Platz der Schopf an dieser Stelle hat, in logischen Pixeln.
+ *
+ * ## Warum das noetig wurde
+ *
+ * Der Schopf ist sieben logische Pixel lang, der Koerper zwoelf. Er ragt also
+ * ueber die Haelfte einer Figurenhoehe ueber den Kopf hinaus — und der
+ * Kollisionskoerper der Simulation ist genau die zwoelf. Laeuft eine Murmel
+ * dicht an einer Betonwand entlang, steckt ihr Schopf **in** der Wand. Das ist
+ * kein Simulationsfehler (die Figur steht richtig), sondern ein Bildfehler, und
+ * er ist der auffaelligste, den eine Figur haben kann: Etwas an ihr ist im
+ * Stein.
+ *
+ * ## Warum nicht einfach kuerzen
+ *
+ * Weil der Schopf die halbe Figur ist. Er traegt Mimik, Beruf und Fallschirm;
+ * ihn auf Wandstaerke zu stutzen hiesse, die Figur ueberall dort zu
+ * verschlechtern, wo gar keine Wand ist. Ein Buschel Haare **weicht** einer
+ * Wand ohnehin — es ist das einzige an dieser Figur, das das kann.
+ *
+ * ## Wie gemessen wird
+ *
+ * Ein Viertelkreis vom Senkrechten bis fast waagerecht nach vorn, in
+ * Einserschritten nach aussen abgetastet. Zurueck kommt der erste Radius, an dem
+ * irgendwo Gestein steht. Bewusst **richtungsunabhaengig**: Welchen Winkel der
+ * Schopf im naechsten Einzelbild einnimmt, weiss der Zeichner nicht — und eine
+ * Murmel dicht an der Wand soll auf allen Bildern ducken, nicht nur auf denen,
+ * die zufaellig in die Wand zeigen.
+ *
+ * @param solid Gelaendeabfrage; die Renderschicht kennt das Terrain nicht selbst.
+ * @param ax Ansatzpunkt in Weltkoordinaten.
+ * @param dir Blickrichtung der Figur; „vorn" ist ihre Laufrichtung.
+ */
+export function schopfPlatz(
+  solid: (x: number, y: number) => boolean,
+  ax: number,
+  ay: number,
+  dir: -1 | 1,
+): number {
+  // Fuenf Winkel von senkrecht bis 80 Grad nach vorn. Weniger liesse Luecken,
+  // mehr kostet nur.
+  const winkel = [0, 0.35, 0.7, 1.05, 1.4];
+  for (let r = 1; r <= SCHOPF_MAX; r++) {
+    for (const wi of winkel) {
+      const px = Math.round(ax + Math.sin(wi) * r * dir);
+      const py = Math.round(ay - Math.cos(wi) * r);
+      if (solid(px, py)) return r - 1;
+    }
+  }
+  return SCHOPF_MAX;
+}
+
 /**
  * Den Schopf zeichnen.
  *
  * @param x Ansatzpunkt auf dem Bildschirm — der Anker aus dem Manifest.
  * @param s Bildpunkte je logischem Pixel.
  * @param spiegeln Blickt die Figur nach links? Dann kippt auch der Schopf mit.
+ * @param platz Freier Raum in logischen Pixeln, aus `schopfPlatz`. Ist er
+ *   kleiner als die natuerliche Laenge, duckt sich der Schopf: kuerzer, breiter
+ *   und staerker gekruemmt — so, wie sich Haare unter einer Decke legen. Ein
+ *   blosses Abschneiden saehe aus wie ein Zeichenfehler.
  */
 export function drawSchopf(
   ctx: CanvasRenderingContext2D,
@@ -176,13 +381,24 @@ export function drawSchopf(
   farbe: string,
   s: number,
   spiegeln = false,
+  platz = Infinity,
 ): void {
   const i = Math.max(0, Math.min(FORM.length - 1, Math.round(zustand)));
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(spiegeln ? -s : s, s);
   ctx.fillStyle = farbe;
-  if (i === 8) schirm(ctx, 6.4);
-  else zacke(ctx, ...FORM[i]);
+  if (i === 8) {
+    // Auch der Schirm duckt sich. Ein Fallschirm, der in die Decke ragt, ist
+    // derselbe Fehler wie eine Zacke, die es tut.
+    schirm(ctx, Math.min(6.4, Math.max(2.2, platz)));
+  } else {
+    const [laenge, breite, winkel, biegung] = FORM[i];
+    // Wie stark geduckt: 1 heisst freier Himmel.
+    const k = Math.max(0.28, Math.min(1, platz / laenge));
+    // Was an Laenge fehlt, geht in Breite und Kruemmung. Ein Buschel, das
+    // anstoesst, wird stumpfer und rollt sich ein — es wird nicht kuerzer.
+    zacke(ctx, laenge * k, breite * (1 + (1 - k) * 0.45), winkel, biegung + (1 - k) * 0.5);
+  }
   ctx.restore();
 }

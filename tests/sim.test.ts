@@ -297,9 +297,10 @@ describe('Falltür, Ausgang und Quote', () => {
     expect(w.released).toBe(1); // total = 1
   });
 
-  it('rettet Figuren am Ausgang und zählt sie', () => {
+  it('rettet Figuren in der Türöffnung und zählt sie', () => {
     const w = testWorld();
-    const a = place(w, 190, 79);
+    // Zehn breit, Rand vier (gedeckelt auf (10-1)/2) — offen ist [192, 194).
+    const a = place(w, 193, 79);
     w.exit.x = 188;
     w.exit.y = 70;
     w.exit.w = 10;
@@ -308,6 +309,70 @@ describe('Falltür, Ausgang und Quote', () => {
     expect(w.saved).toBe(1);
     run(w, C.SAVING_TICKS + 2);
     expect(a.state).toBe(State.SAVED);
+  });
+
+  /**
+   * Der Rand des Tors ist **nicht** der Ausgang.
+   *
+   * Vorher zaehlte jede Ueberdeckung mit dem Ausgangsrechteck. Die Figur
+   * verschwand damit an seinem aeussersten Bildpunkt — und dort steht im Bild
+   * der gemalte Steinrahmen. Das sah nicht nach Hineingehen aus, sondern nach
+   * Verschlucktwerden an der Mauer.
+   *
+   * Geprueft wird auf **einem** Tick: Die Figur laeuft danach weiter und kommt
+   * gleich darauf an der Schwelle an, wo sie richtig gerettet wird. Der Punkt
+   * ist nicht, dass sie nie ankommt, sondern dass sie es nicht am Rand tut.
+   */
+  it('rettet nicht schon am Rand des Tors', () => {
+    const w = testWorld();
+    place(w, 188, 79);
+    w.exit.x = 188;
+    w.exit.y = 70;
+    w.exit.w = 10;
+    w.exit.h = 20;
+    run(w, 1);
+    expect(w.saved).toBe(0);
+  });
+
+  /**
+   * Auch ein sehr schmales Tor muss zu treffen sein.
+   *
+   * Der Rand ist die halbe Figurenbreite, also fünf Bildpunkte. Bei einem vier
+   * Bildpunkte breiten Tor bliebe davon nichts übrig, und dort käme nie jemand
+   * an — ein Level, das sich nicht gewinnen lässt, ohne dass man sähe, warum.
+   * Deshalb ist der Rand in `checkExit` gedeckelt, und deshalb steht diese
+   * Prüfung hier.
+   */
+  it('lässt auch ein sehr schmales Tor passierbar', () => {
+    const w = testWorld();
+    w.exit.x = 100;
+    w.exit.y = 70;
+    w.exit.w = 4;
+    w.exit.h = 20;
+    place(w, 102, 79);
+    run(w, 1);
+    expect(w.saved).toBe(1);
+  });
+
+  /**
+   * Der Fall durch einen Schacht neben der Mitte muss weiter ankommen.
+   *
+   * Das ist der Grund, warum der Rand eine feste Länge ist und kein Anteil der
+   * Torbreite: Wer über der Tür gräbt, trifft sie selten mittig. Ein Anteil
+   * hätte breite Tore auf ihr mittleres Drittel verengt und damit eine ganz
+   * normale Spielweise stillgelegt — der Schacht wäre richtig gewesen und die
+   * Figuren wären trotzdem vorbeigefallen.
+   */
+  it('rettet auch abseits der Mitte, solange der Körper drinsteht', () => {
+    const w = testWorld();
+    // Vierzig breit wie in Level 1, Rand fünf — offen ist [225, 255).
+    w.exit.x = 220;
+    w.exit.y = 70;
+    w.exit.w = 40;
+    w.exit.h = 20;
+    place(w, 251, 79);
+    run(w, 1);
+    expect(w.saved).toBe(1);
   });
 });
 
