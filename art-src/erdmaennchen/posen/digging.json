@@ -1,0 +1,245 @@
+{
+  "_warum": "Tief gehockt, beide Vorderpfoten schaufeln nach unten hinten. Das ist die Bewegung, die dieses Tier wirklich macht — und die Auswurfrichtung in schutt.ts stimmte schon vorher damit ueberein.",
+  "frames": [
+    {
+      "winkel": {
+        "Wirbel": [
+          42.0,
+          0,
+          0
+        ],
+        "Hals": [
+          -10,
+          0,
+          0
+        ],
+        "Kopf": [
+          -16,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -34.0,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          -34.0,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          8.0,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8.0,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -22,
+          0,
+          8
+        ],
+        "R_Bein": [
+          -22,
+          0,
+          -8
+        ],
+        "L_Knie": [
+          40,
+          0,
+          0
+        ],
+        "R_Knie": [
+          40,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          37.6,
+          0,
+          0
+        ],
+        "Hals": [
+          -10,
+          0,
+          0
+        ],
+        "Kopf": [
+          -16,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -4.300000000000001,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          -4.300000000000001,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          22.299999999999997,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          22.299999999999997,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -22,
+          0,
+          8
+        ],
+        "R_Bein": [
+          -22,
+          0,
+          -8
+        ],
+        "L_Knie": [
+          40,
+          0,
+          0
+        ],
+        "R_Knie": [
+          40,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          34.0,
+          0,
+          0
+        ],
+        "Hals": [
+          -10,
+          0,
+          0
+        ],
+        "Kopf": [
+          -16,
+          0,
+          0
+        ],
+        "L_Arm": [
+          20.0,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          20.0,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          34.0,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          34.0,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -22,
+          0,
+          8
+        ],
+        "R_Bein": [
+          -22,
+          0,
+          -8
+        ],
+        "L_Knie": [
+          40,
+          0,
+          0
+        ],
+        "R_Knie": [
+          40,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    }
+  ]
+}

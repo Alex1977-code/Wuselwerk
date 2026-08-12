@@ -1,6 +1,7 @@
 import { State, type SkillId, type Wusel } from '../core/types';
 import { sx, sy, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
+import { drawMaske, maskeFarbe } from './maske';
 import { drawWerkzeug } from './werkzeug';
 
 /**
@@ -94,6 +95,18 @@ export interface AtlasManifest {
    * wie fein das Blatt dieselbe Figur beschreibt.
    */
   ppl?: number;
+  /**
+   * Welche Figur dieses Blatt zeigt.
+   *
+   * Der Renderer braucht es, weil die **Signalschicht figurabhaengig** ist: Die
+   * Murmel traegt einen Schopf ueber dem Kopf, das Erdmaennchen eine Augenmaske
+   * im Gesicht. Beide haengen am selben Ankerpunkt je Einzelbild und am selben
+   * Zustandsfeld — nur gezeichnet wird etwas anderes.
+   *
+   * Fehlt die Angabe, gilt die Murmel: Alle Blaetter, die es vor dieser
+   * Unterscheidung gab, zeigen sie.
+   */
+  figur?: 'murmel' | 'erdmaennchen';
   clips: Record<string, ClipDef>;
 }
 
@@ -399,16 +412,28 @@ export class SpriteAtlas {
       const vor = clip.once ? Math.max(0, frame - 1) : (frame - 1 + n) % n;
       const a = clip.anchors[frame] ?? clip.anchors[0];
       const zustand = clip.tuff[vor] ?? 0;
-      drawSchopf(
-        ctx,
-        (a[0] - this.manifest.anchor.x) * s,
-        (a[1] - this.manifest.anchor.y) * s,
-        zustand,
-        schopfPuls(schopfFarbe(schopfAuftrag(w)), w.fuse),
-        s,
-        false,
-        platz,
-      );
+      const px = (a[0] - this.manifest.anchor.x) * s;
+      const py = (a[1] - this.manifest.anchor.y) * s;
+      const auftrag = schopfAuftrag(w);
+      // Beide Figuren teilen die Berufspalette und die Warnlampe; nur der
+      // Grundton ohne Auftrag ist figurabhaengig. Bei der Murmel liegt er dicht
+      // am Koerper (unauffaellig ist dort richtig), beim Erdmaennchen ist er ein
+      // dunkles Naturbraun — die Augenringe sind sein Kennzeichen.
+      const grund =
+        this.manifest.figur === 'erdmaennchen' ? maskeFarbe(auftrag) : schopfFarbe(auftrag);
+      const farbe = schopfPuls(grund, w.fuse);
+      // Dieselbe Mechanik, zwei Zeichner: Der Anker sagt wo, das Zustandsfeld
+      // sagt wie, und die Figur sagt was. Ein Schopf ueber dem Kopf oder eine
+      // Maske im Gesicht — beides traegt die Berufsfarbe.
+      //
+      // Die Maske bekommt zusaetzlich den Backwinkel dieser Pose: Sie liegt im
+      // Gesicht und muss der Drehung folgen, waehrend ein Schopf ueber dem Kopf
+      // sitzt und es nicht muss.
+      if (this.manifest.figur === 'erdmaennchen') {
+        drawMaske(ctx, px, py, zustand, farbe, s, false, clip.dreh ?? 0);
+      } else {
+        drawSchopf(ctx, px, py, zustand, farbe, s, false, platz);
+      }
     }
     ctx.restore();
     return true;

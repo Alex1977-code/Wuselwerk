@@ -1,0 +1,75 @@
+{
+  "_warum": "Die Wachpose, also die Ruhelage — nur ein Atemzug Unterschied zwischen den zwei Bildern. Sie ist der Grund, warum diese Figur gewaehlt wurde.",
+  "frames": [
+    {
+      "winkel": {
+        "Wirbel": [
+          -2.0,
+          0,
+          0
+        ],
+        "Hals": [
+          4,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          122,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 2
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -3.5,
+          0,
+          0
+        ],
+        "Hals": [
+          5,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          122,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 2
+    }
+  ]
+}

@@ -28,11 +28,35 @@ export interface AtlasSource {
   name: string;
 }
 
-export function findAtlasSource(): AtlasSource | null {
+/**
+ * Welche Figur das Spiel benutzt.
+ *
+ * **Ausdruecklich statt nach Dateiname.** Vorher nahm die Suche schlicht das
+ * erste Blattpaar, das der Ordner hergab — solange dort genau eines lag, war das
+ * unauffaellig. Mit einer zweiten Figur entschiede die alphabetische Reihenfolge
+ * darueber, welche Figur im Spiel steht, und das ist keine Entscheidung, das ist
+ * ein Zufall.
+ *
+ * Beide Blaetter bleiben im Bau. Das kostet die Einzeldatei rund neunzig
+ * Kilobyte und ist es wert: Die Murmel ist damit nicht verloren, sondern eine
+ * Zeile entfernt — und im Spiel ueber `debugFigur` sogar zur Laufzeit.
+ */
+export const FIGUR: 'erdmaennchen' | 'murmel' = 'erdmaennchen';
+
+/** Alle vorhandenen Blattpaare, nach Namen. */
+export function alleAtlasQuellen(): Record<string, AtlasSource> {
+  const out: Record<string, AtlasSource> = {};
   for (const [path, manifest] of Object.entries(manifests)) {
     const base = path.replace(/\.atlas\.json$/, '');
     const url = images[`${base}.webp`] ?? images[`${base}.png`];
-    if (url) return { manifest, url, name: base.replace('./', '') };
+    if (url) out[base.replace('./', '')] = { manifest, url, name: base.replace('./', '') };
   }
-  return null;
+  return out;
+}
+
+export function findAtlasSource(name: string = FIGUR): AtlasSource | null {
+  const alle = alleAtlasQuellen();
+  // Der Rueckfall auf irgendein vorhandenes Blatt bleibt: Wer ein eigenes
+  // Blattpaar in diesen Ordner legt, soll es sehen, ohne hier etwas zu aendern.
+  return alle[name] ?? Object.values(alle)[0] ?? null;
 }

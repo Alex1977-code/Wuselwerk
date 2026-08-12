@@ -1,0 +1,245 @@
+{
+  "_warum": "Beide Vorderpfoten waagerecht nach vorn. Bild 0 ist das Wirkungsbild — die Simulation raeumt bei timer % interval == 0 aus, und dort steht der Bildindex auf 0.",
+  "frames": [
+    {
+      "winkel": {
+        "Wirbel": [
+          14,
+          0,
+          0
+        ],
+        "Hals": [
+          0,
+          0,
+          0
+        ],
+        "Kopf": [
+          -6,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -124.0,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          -124.0,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          8.0,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8.0,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -14,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -14,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          24,
+          0,
+          0
+        ],
+        "R_Knie": [
+          24,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          114,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          14,
+          0,
+          0
+        ],
+        "Hals": [
+          0,
+          0,
+          0
+        ],
+        "Kopf": [
+          -6,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -88.9,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          -88.9,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          24.9,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          24.9,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -14,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -14,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          24,
+          0,
+          0
+        ],
+        "R_Knie": [
+          24,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          114,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          14,
+          0,
+          0
+        ],
+        "Hals": [
+          0,
+          0,
+          0
+        ],
+        "Kopf": [
+          -6,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -70.0,
+          0,
+          -26
+        ],
+        "R_Arm": [
+          -70.0,
+          0,
+          26
+        ],
+        "L_Ellbogen": [
+          34.0,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          34.0,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -14,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -14,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          24,
+          0,
+          0
+        ],
+        "R_Knie": [
+          24,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          114,
+          30,
+          0
+        ],
+        "Schwanz2": [
+          -8,
+          6,
+          0
+        ],
+        "Schwanz3": [
+          -8,
+          4,
+          0
+        ],
+        "Schwanz4": [
+          -8,
+          2,
+          0
+        ]
+      },
+      "maske": 1
+    }
+  ]
+}

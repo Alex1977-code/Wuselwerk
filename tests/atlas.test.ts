@@ -5,7 +5,8 @@ import type { AtlasManifest } from '../src/render/atlas';
 import { WUSEL_H } from '../src/core/constants';
 // Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
 // Node-Typen im Testpfad, und der Lader im Spiel holt das Blatt genauso.
-import blatt from '../src/art/murmel.atlas.json';
+import murmelBlatt from '../src/art/murmel.atlas.json';
+import erdmaennchenBlatt from '../src/art/erdmaennchen.atlas.json';
 
 /**
  * Das ausgelieferte Blatt gegen den Vertrag im Code.
@@ -24,7 +25,19 @@ import blatt from '../src/art/murmel.atlas.json';
  * wieder falsch. Geprüft wird deshalb die Eigenschaft, um die es eigentlich
  * ging — nicht die Zahl, die sie einmal hatte.
  */
-const sheet = blatt as unknown as AtlasManifest;
+/**
+ * **Beide** ausgelieferten Blätter, nicht nur das eingeschaltete.
+ *
+ * Seit es zwei Figuren gibt, ist „das Blatt" mehrdeutig. Nur das aktive zu
+ * prüfen wäre die schlechteste Wahl: Das inaktive verfällt dann still, und man
+ * merkt es genau in dem Moment, in dem jemand umschaltet. Der Vertrag gilt für
+ * jedes Blatt, das im Bau liegt.
+ */
+const BLAETTER: Record<string, AtlasManifest> = {
+  murmel: murmelBlatt as unknown as AtlasManifest,
+  erdmaennchen: erdmaennchenBlatt as unknown as AtlasManifest,
+};
+const sheet = BLAETTER.murmel;
 
 /** Anteil der Zellhöhe, den der Körper der Murmel füllt (0,861 von 1,22). */
 const KOERPER_ANTEIL = 0.861 / 1.22;
@@ -113,34 +126,68 @@ describe('Ausgeliefertes Sprite-Blatt', () => {
  * — die Figur läuft nur wieder seitwärts. Deshalb schreibt der Backvorgang den
  * Winkel ins Blatt, und deshalb steht diese Prüfung hier.
  */
-describe('Das Blatt zeigt die Dreiviertelansicht', () => {
-  it('dreht die Gehpose deutlich aus der Kamera', () => {
-    // Die Jury über sieben Backwinkel hat 42 Grad gewählt; unter 30 Grad ist
-    // der Unterschied in Spielgrösse nicht mehr zu sehen, und dann ist die
-    // ganze Übung umsonst.
-    expect(sheet.clips.walking.dreh ?? 0).toBeGreaterThanOrEqual(30);
+describe('Jedes Blatt sagt, was es zeigt', () => {
+  for (const [figur, blatt] of Object.entries(BLAETTER)) {
+    describe(figur, () => {
+      it('nennt seine Figur', () => {
+        // Ohne diese Angabe wüsste der Renderer nicht, ob er einen Schopf über
+        // den Kopf oder eine Maske ins Gesicht zeichnen soll — und er würde es
+        // still falsch machen.
+        expect(blatt.figur).toBe(figur);
+      });
+
+      it('bedient alle zwölf Zustände mit der vorgeschriebenen Bildzahl', () => {
+        for (const [name, soll] of Object.entries(DEFAULT_MANIFEST.clips)) {
+          const ist = blatt.clips[name];
+          expect(ist, `Zustand ${name} fehlt`).toBeDefined();
+          expect(ist.row, `Zeile von ${name}`).toBe(soll.row);
+          expect(ist.holds, `Haltedauern von ${name}`).toEqual(soll.holds);
+        }
+      });
+
+      it('zeichnet die Figur so hoch, wie die Simulation sie rechnet', () => {
+        expect(blatt.cell.h * KOERPER_ANTEIL).toBeCloseTo(WUSEL_H, 1);
+      });
+
+      it('liefert zu jedem Einzelbild Anker, Zustand und Winkel', () => {
+        for (const [name, clip] of Object.entries(blatt.clips)) {
+          expect(clip.anchors?.length, `Ankerzahl von ${name}`).toBe(clip.holds.length);
+          expect(clip.tuff?.length, `Zustandszahl von ${name}`).toBe(clip.holds.length);
+          expect(clip.dreh, `Backwinkel von ${name}`).toBeDefined();
+        }
+      });
+
+      it('lässt den Blocker frontal stehen', () => {
+        // Bei beiden Figuren aus demselben Grund: Seine ganze Aussage ist „bis
+        // hierher und nicht weiter", und die richtet sich an den Betrachter.
+        expect(blatt.clips.blocking.dreh ?? 0).toBe(0);
+      });
+    });
+  }
+
+  /**
+   * Die Drehung ist **figurabhängig**, und das ist keine Nachlässigkeit.
+   *
+   * Die Murmel ist ein spiegelsymmetrischer Kiesel mit mittigen Augen; sie hat
+   * kein Vorderende. Ihre Laufrichtung entsteht ausschliesslich daraus, dass das
+   * Modell weit genug weggedreht gebacken wird — unter 30 Grad liest man sie in
+   * Spielgrösse nicht, und genau das war die Beschwerde.
+   *
+   * Das Erdmännchen hat eine Schnauze. Sie bricht die Silhouette nach vorn, und
+   * damit ist die Richtung schon gesagt. Gedreht wird nur noch so weit, dass der
+   * Körper Tiefe bekommt — mehr wäre hier Verlust ohne Gewinn.
+   */
+  it('dreht die Murmel weit, das Erdmännchen wenig', () => {
+    expect(BLAETTER.murmel.clips.walking.dreh ?? 0).toBeGreaterThanOrEqual(30);
+    expect(BLAETTER.erdmaennchen.clips.walking.dreh ?? 0).toBeGreaterThan(0);
+    expect(BLAETTER.erdmaennchen.clips.walking.dreh ?? 0).toBeLessThan(30);
   });
 
-  it('lässt den Blocker frontal stehen', () => {
-    // Seine ganze Aussage ist „bis hierher und nicht weiter". Eine weggedrehte
-    // Figur sagt das Gegenteil.
-    expect(sheet.clips.blocking.dreh ?? 0).toBe(0);
-  });
-
-  it('dreht jede Pose mit einer Richtung, aber keine über die Schulter', () => {
-    for (const [name, clip] of Object.entries(sheet.clips)) {
-      expect(clip.dreh, `${name} hat keinen Winkel im Blatt`).toBeDefined();
-      expect(clip.dreh, `${name} dreht zu weit`).toBeLessThanOrEqual(55);
-      expect(clip.dreh, `${name} dreht in die falsche Richtung`).toBeGreaterThanOrEqual(0);
-    }
-  });
-
-  it('hält die Rückfallebene auf demselben Profil wie das Blatt', () => {
-    // Die Rückfallebene hat kein Modell; sie stellt die Drehung aus ihren zwei
-    // sichtbaren Folgen nach (schmalerer Umriss, wandernde Augen) und braucht
-    // dafür den Sinus des Backwinkels. Laufen die beiden auseinander, sieht man
-    // es erst, wenn das Blatt einmal nicht lädt — also nie, bis es zählt.
-    for (const [name, clip] of Object.entries(sheet.clips)) {
+  it('hält die Rückfallebene auf dem Profil der Murmel', () => {
+    // Die Rückfallebene zeichnet eine Murmel — sie ist der Notausgang, wenn
+    // *kein* Blatt lädt, und dann gibt es auch keine Figurenangabe. Ihr Profil
+    // muss deshalb zum Murmelblatt passen.
+    for (const [name, clip] of Object.entries(BLAETTER.murmel.clips)) {
       const soll = Math.sin(((clip.dreh ?? 0) * Math.PI) / 180);
       expect(PROFIL[name] ?? 0, `Profil von ${name}`).toBeCloseTo(soll, 1);
     }

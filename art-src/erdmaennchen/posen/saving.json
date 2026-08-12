@@ -1,0 +1,491 @@
+{
+  "_warum": "Aufgerichtet, Vorderpfoten hoch — und dabei schrumpfend. Das Schrumpfen steht hier im Blatt und **nicht** zusaetzlich im Zeichner; bei der Murmel stand es in beidem, und dann sah man den Sprung ins Tor nicht mehr.",
+  "frames": [
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 1.0
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 0.82
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 0.64
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 0.46
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 0.28
+    },
+    {
+      "winkel": {
+        "Wirbel": [
+          -8,
+          0,
+          0
+        ],
+        "Hals": [
+          12,
+          0,
+          0
+        ],
+        "Kopf": [
+          10,
+          0,
+          0
+        ],
+        "L_Arm": [
+          -8,
+          0,
+          -152
+        ],
+        "R_Arm": [
+          -8,
+          0,
+          152
+        ],
+        "L_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "R_Ellbogen": [
+          8,
+          0,
+          0
+        ],
+        "L_Bein": [
+          -6,
+          0,
+          4
+        ],
+        "R_Bein": [
+          -6,
+          0,
+          -4
+        ],
+        "L_Knie": [
+          16,
+          0,
+          0
+        ],
+        "R_Knie": [
+          16,
+          0,
+          0
+        ],
+        "Schwanz1": [
+          100,
+          34,
+          0
+        ],
+        "Schwanz2": [
+          -6,
+          8,
+          0
+        ],
+        "Schwanz3": [
+          -6,
+          5,
+          0
+        ],
+        "Schwanz4": [
+          -6,
+          3,
+          0
+        ]
+      },
+      "maske": 3,
+      "skala": 0.1
+    }
+  ]
+}
