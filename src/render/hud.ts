@@ -63,6 +63,11 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.fillStyle = COL.panel;
   ctx.fillRect(b.x, b.y, b.w, b.h);
 
+  const w = s.world;
+  // Rechter Rand ergibt sich aus den Knöpfen, nicht aus einem festen Abstand —
+  // quer sind sie schmaler und rücken zusammen.
+  const timeRight = L.soundBtn.x - 12;
+
   ctx.textBaseline = 'top';
   ctx.textAlign = 'left';
   ctx.fillStyle = COL.dim;
@@ -70,13 +75,22 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.fillText(s.level.chapter.toUpperCase(), 10, 7);
   ctx.fillStyle = COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
-  ctx.fillText(s.level.name, 10, 20);
+  // Der Name endet, wo die Mitte-Spalte beginnt — gemessen, nicht gehofft.
+  // „Unter dem Deckel" plus „0/14" wurde auf dem Handy zu „Unter dem Decke0/14";
+  // die Spalten wussten nichts voneinander. Gekuerzt wird mit Ellipse, Zeichen
+  // fuer Zeichen: Bei zehn Levelnamen lohnt keine binaere Suche.
+  const midX = Math.min(b.w * 0.52, timeRight - 70);
+  const nameMax = midX - ctx.measureText(`${w.saved}/${w.needed}`).width / 2 - 14;
+  let name = s.level.name;
+  if (ctx.measureText(name).width > nameMax - 10) {
+    while (name.length > 1 && ctx.measureText(`${name}…`).width > nameMax - 10) {
+      name = name.slice(0, -1).trimEnd();
+    }
+    name += '…';
+  }
+  ctx.fillText(name, 10, 20);
 
-  const w = s.world;
   ctx.textAlign = 'right';
-  // Rechter Rand ergibt sich aus den Knöpfen, nicht aus einem festen Abstand —
-  // quer sind sie schmaler und rücken zusammen.
-  const timeRight = L.soundBtn.x - 12;
   const timeLeft = w.timeLeftTicks;
   const urgent = timeLeft < 15 * TICK_HZ;
   ctx.fillStyle = urgent ? COL.bad : COL.text;
@@ -89,7 +103,6 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   }
 
   ctx.textAlign = 'center';
-  const midX = Math.min(b.w * 0.52, timeRight - 70);
   ctx.fillStyle = COL.dim;
   ctx.font = '600 10px system-ui, sans-serif';
   if (b.h > 48) ctx.fillText('GERETTET', midX, 7);

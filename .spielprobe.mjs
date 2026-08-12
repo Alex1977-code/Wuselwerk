@@ -46,10 +46,16 @@ const knopf = async (id) => {
   await page.mouse.click(rect.x + b.x + b.w / 2, rect.y + b.y + b.h / 2);
   return true;
 };
+// Erst der ehrliche Weg ueber die Karte; ist das Level dort gesperrt, der
+// Haken daran vorbei — die Probe prueft das Aussehen, nicht die Freischaltung.
 const kp = await page.evaluate((l) => window.__wuselwerk?.debugKartePunkt(l) ?? null, level);
-if (kp) await page.mouse.click(rect.x + kp.x, rect.y + kp.y);
-await sleep(300);
-await knopf('start');
+if (kp?.offen) {
+  await page.mouse.click(rect.x + kp.x, rect.y + kp.y);
+  await sleep(300);
+  await knopf('start');
+} else {
+  await page.evaluate((l) => window.__wuselwerk?.debugLoadLevel(l), level);
+}
 await sleep(Number(warten) * 1000);
 // Beruf vergeben ueber den Haken des Spiels. Ueber die Bedienung sind manche
 // Posen kaum herzustellen, und geprueft werden soll das Aussehen, nicht das Zielen.
