@@ -14,10 +14,12 @@ rgb = im.convert('RGB'); alp = im.split()[3]
 A = list(alp.get_flattened_data()) if hasattr(alp, 'get_flattened_data') else list(alp.getdata())
 
 # Zu stellende Werte — dieselben Zahlen wie in band.ts.
-HOEHE = float(sys.argv[1]) if len(sys.argv) > 1 else 0.85
-BREITE = float(sys.argv[2]) if len(sys.argv) > 2 else 3.4
+HOEHE = float(sys.argv[1]) if len(sys.argv) > 1 else 1.5
+BREITE = float(sys.argv[2]) if len(sys.argv) > 2 else 2.03   # in Kopfachsen
 VORN = float(sys.argv[3]) if len(sys.argv) > 3 else 0.5
-BOGEN = float(sys.argv[4]) if len(sys.argv) > 4 else 1.5
+BOGEN = float(sys.argv[4]) if len(sys.argv) > 4 else 0.8     # in Kopfachsen
+ZIPFEL_GRAD = float(sys.argv[5]) if len(sys.argv) > 5 else -40
+ZIPFEL_LANG = float(sys.argv[6]) if len(sys.argv) > 6 else 1.4
 
 def art(x, y):
     """Was an dieser Zellstelle liegt: Haar, Haut, sonst Figur, oder nichts."""
@@ -48,14 +50,24 @@ for name, c in m['clips'].items():
         L = math.hypot(dx, dy) or 2
         neig = math.atan2(dy, dx) + math.pi/2
         bg = math.radians(c.get('dreh', 0))
-        b = BREITE * math.cos(bg); bv = b * VORN
+        b = BREITE * L * math.cos(bg); bv = b * VORN
+        bo = BOGEN * L
         versatz = -math.sin(bg) * 1.1
         oben = -HOEHE * L
-        p0 = (versatz - b, oben + BOGEN*0.16)
-        p1 = (versatz - b*0.15, oben - BOGEN)
-        p2 = (versatz + bv, oben - BOGEN*0.28)
-        for i in range(13):
-            lx, ly = bez(p0, p1, p2, i/12)
+        p0 = (versatz - b, oben + bo*0.16)
+        p1 = (versatz - b*0.15, oben - bo)
+        p2 = (versatz + bv, oben - bo*0.28)
+        # Der Zipfel — dieselbe Kurve wie in band.ts, nur die Mittellinie.
+        zw = math.radians(ZIPFEL_GRAD)
+        lang = ZIPFEL_LANG * L
+        wx_, wy_ = versatz - b*0.92, oben + bo*0.12
+        z0 = (wx_, wy_)
+        z1 = (wx_ - math.cos(zw)*lang*0.55 - math.sin(zw)*0.5,
+              wy_ - math.sin(zw)*lang*0.55 + math.cos(zw)*0.5)
+        z2 = (wx_ - math.cos(zw)*lang, wy_ - math.sin(zw)*lang)
+        punkte = [bez(p0, p1, p2, i/12) for i in range(13)]
+        punkte += [bez(z0, z1, z2, i/6) for i in range(7)]
+        for lx, ly in punkte:
             wx = gx + lx*math.cos(neig) - ly*math.sin(neig)
             wy = gy + lx*math.sin(neig) + ly*math.cos(neig)
             ix, iy = int(round(wx*ppl)), int(round(wy*ppl))

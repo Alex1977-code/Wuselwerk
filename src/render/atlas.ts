@@ -464,11 +464,15 @@ export class SpriteAtlas {
       const px = (a[0] - this.manifest.anchor.x) * s;
       const py = (a[1] - this.manifest.anchor.y) * s;
       const auftrag = schopfAuftrag(w);
-      // Alle drei Figuren teilen die Berufspalette und die Warnlampe; nur der
-      // Grundton ohne Auftrag ist figurabhaengig. Bei der Murmel liegt er dicht
-      // am Koerper (unauffaellig ist dort richtig), beim Erdmaennchen ist er ein
-      // dunkles Naturbraun — die Augenringe sind sein Kennzeichen —, beim
-      // Wuselwerker ein dunkles Leder gegen das kraeftige Blau des Haars.
+      // Alle drei Figuren teilen die Berufspalette und die Warnlampe; was
+      // **ohne** Auftrag geschieht, ist figurabhaengig — und zwar wesentlich.
+      //
+      // Die Murmel traegt ihren Schopf dicht am Koerperton: unauffaellig. Das
+      // Erdmaennchen behaelt seine Augenmaske in dunklem Naturbraun, weil sie
+      // sein Kennzeichen ist — ohne sie steht dort ein beliebiges braunes Tier.
+      // Der Wuselwerker bekommt **gar nichts**: Er ist an blauem Haar und
+      // gruener Tunika ohnehin zu erkennen, und ein Band auf diesem Haar sieht
+      // ohne Farbe nach einem Zweig darin aus. Genau so ist es gemeldet worden.
       const figur = this.manifest.figur;
       const grund =
         figur === 'erdmaennchen'
@@ -476,7 +480,7 @@ export class SpriteAtlas {
           : figur === 'wuselwerker'
             ? bandFarbe(auftrag)
             : schopfFarbe(auftrag);
-      const farbe = schopfPuls(grund, w.fuse);
+      const farbe = grund === null ? null : schopfPuls(grund, w.fuse);
       // Dieselbe Mechanik, drei Zeichner: Der Anker sagt wo, das Zustandsfeld
       // sagt wie, und die Figur sagt was. Ein Schopf ueber dem Kopf, eine Maske
       // im Gesicht, ein Band im Haar — alle drei tragen die Berufsfarbe.
@@ -484,7 +488,10 @@ export class SpriteAtlas {
       // Maske und Band bekommen zusaetzlich den Backwinkel dieser Pose: Sie
       // liegen am Kopf und muessen der Drehung folgen, waehrend ein Schopf
       // ueber dem Kopf sitzt und es nicht muss.
-      if (figur === 'erdmaennchen') {
+      if (farbe === null) {
+        // Kein Auftrag, kein Band. Nur der Wuselwerker kommt hier an — die
+        // anderen beiden liefern immer einen Grundton.
+      } else if (figur === 'erdmaennchen') {
         // Das Halstuch nur bei einem Auftrag: Wer eines traegt, arbeitet.
         drawMaske(ctx, px, py, zustand, farbe, s, false, clip.dreh ?? 0, auftrag !== null);
       } else if (figur === 'wuselwerker') {

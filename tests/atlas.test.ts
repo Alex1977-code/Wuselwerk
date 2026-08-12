@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_MANIFEST } from '../src/render/atlas';
 import { PROFIL } from '../src/render/sprites';
 import { fuehrtWerkzeug, werkzeugAnsatz } from '../src/render/werkzeug';
+import { bandFarbe } from '../src/render/band';
+import { maskeFarbe } from '../src/render/maske';
+import { schopfFarbe } from '../src/render/schopf';
 import type { AtlasManifest } from '../src/render/atlas';
 import { WUSEL_H } from '../src/core/constants';
 // Als Modul geladen, nicht über das Dateisystem: Das Projekt hat bewusst keine
@@ -407,5 +410,46 @@ describe('Der Schirm', () => {
     for (const figur of ['murmel', 'erdmaennchen', 'wuselwerker']) {
       expect(werkzeugAnsatz('floating', 2, -8, 12, figur), figur).not.toBeNull();
     }
+  });
+});
+
+/**
+ * Ohne Auftrag kein Band — und warum das eine Prüfung wert ist.
+ *
+ * Der Wuselwerker hat zuerst auch ohne Beruf ein dunkles Lederband getragen,
+ * gedacht als Kleidungsstück. Im Spiel kam zurück: „irgendetwas ist am Haar,
+ * was dort nicht hingehört." Ein dunkelbrauner Bogen auf kräftig blauem Haar
+ * liest sich bei sechsundzwanzig Bildschirmpixeln nicht als Band, sondern als
+ * Zweig.
+ *
+ * Bemerkenswert daran ist, dass **jede Messung zufrieden war**: Das Band saß zu
+ * 98 Prozent im Haar. Geprüft war, ob es sitzt, nie, ob es dort hingehört. Die
+ * Prüfung unten kann das auch nicht — aber sie hält die Regel fest, die daraus
+ * folgt, damit sie nicht beim nächsten Umbau wieder verlorengeht.
+ *
+ * Die Zündschnur fällt nicht darunter: `schopfAuftrag` liefert bei `fuse > 0`
+ * immer `bomber`, vor jeder anderen Regel. Wer gleich hochgeht, trägt ein Band.
+ */
+describe('Die Signalschicht ohne Auftrag', () => {
+  it('lässt beim Wuselwerker nichts übrig', () => {
+    expect(bandFarbe(null)).toBeNull();
+  });
+
+  it('zeigt bei jedem Beruf eine Farbe, und dieselbe wie die anderen Figuren', () => {
+    for (const skill of ['digger', 'basher', 'miner', 'builder', 'blocker', 'climber',
+      'floater', 'bomber'] as const) {
+      const f = bandFarbe(skill);
+      expect(f, `${skill} ohne Bandfarbe`).not.toBeNull();
+      // Eine Figur zu wechseln darf einen Beruf nicht anders einfärben.
+      expect(f, `${skill} weicht vom Schopf ab`).toBe(schopfFarbe(skill));
+    }
+  });
+
+  it('behält bei den beiden anderen Figuren einen Grundton', () => {
+    // Sie brauchen ihn: Der Schopf der Murmel ist ihr einziges Merkmal, und die
+    // Augenringe machen das Erdmännchen zum Erdmännchen. Der Wuselwerker ist
+    // auch ohne Band an blauem Haar und grüner Tunika zu erkennen.
+    expect(schopfFarbe(null)).toBeTruthy();
+    expect(maskeFarbe(null)).toBeTruthy();
   });
 });

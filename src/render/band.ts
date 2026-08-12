@@ -32,13 +32,22 @@ import { schopfFarbe } from './schopf';
  * uebereinander; was oben liegt, bleibt sichtbar. Dasselbe Argument hat schon
  * bei Schopf und Maske entschieden.
  *
- * ## Das Band bricht die Silhouette
+ * ## Es bleibt im Haar — und das war eine Korrektur
  *
- * Der Schwachpunkt der Maske war, dass sie **innerhalb** des Umrisses liegt und
- * damit gegen jeden Hintergrund flach wirkt. Das Band laeuft deshalb ein wenig
- * ueber das Haar hinaus und bekommt hinten ein loses Ende, das nachschwingt.
- * Der Zipfel ist nicht Zierrat: Er haengt entgegen der Blickrichtung und ist
- * damit derselbe zweite Richtungshinweis, den das Halstuch dem Tier gibt.
+ * Der Schwachpunkt der Maske ist, dass sie **innerhalb** des Umrisses liegt und
+ * damit gegen jeden Hintergrund flach wirkt. Daraus war zuerst der Schluss
+ * gezogen, das Band solle ein Stueck ueber das Haar hinauslaufen. Das war
+ * falsch, und es hat die Rueckmeldung „irgendetwas ist am Haar, was dort nicht
+ * hingehoert" gekostet: Bei sechsundzwanzig Bildschirmpixeln Figurenhoehe ist
+ * ein Strich neben dem Kopf kein Band, sondern ein Zweig.
+ *
+ * Das Band bleibt jetzt vollstaendig im Haar (`ZIPFEL_LANG`), und die
+ * Sichtbarkeit traegt allein die **Farbe** — acht Pixel kraeftiges Blau, auf
+ * denen ein Berufston steht. Das reicht; es musste dafuer nichts herausragen.
+ *
+ * Das lose Ende bleibt, kuerzer. Es ist kein Zierrat: Es haengt entgegen der
+ * Blickrichtung und ist damit derselbe zweite Richtungshinweis, den das
+ * Halstuch dem Tier gibt.
  */
 
 /**
@@ -81,6 +90,30 @@ const FORM: readonly (readonly [number, number, number, number])[] = [
 const VORN = 0.5;
 
 /**
+ * Wie lang das lose Ende ist, in Kopfachsen.
+ *
+ * **Gemessen, nachdem es aufgefallen war.** Die erste Fassung stand auf 1,4 und
+ * war damit als „Bruch der Silhouette" gemeint: Ein Band, das ein wenig ueber
+ * das Haar hinauslaeuft, ist gegen jeden Hintergrund zu sehen. Auf dem Papier
+ * stimmte das. Im Spiel ragte das Ende bei sechsundzwanzig Bildschirmpixeln
+ * Figurenhoehe als brauner Strich neben dem Kopf heraus, und ein Strich neben
+ * einem Kopf ist kein Band, sondern ein Zweig.
+ *
+ * `.bandsitz.py` misst inzwischen auch das Ende, nicht nur den Bogen. Der Anteil
+ * der Mittellinie, der **neben** der Figur landet:
+ *
+ * | Laenge | daneben |
+ * |---|---|
+ * | 1,4 | 7 % |
+ * | 1,0 | 1 % |
+ * | **0,8** | **0 %** |
+ *
+ * Dass die erste Messung davon nichts wusste, war kein Zufall: Sie tastete nur
+ * den Bogen ab. Der Bogen sass die ganze Zeit richtig.
+ */
+const ZIPFEL_LANG = 0.8;
+
+/**
  * Wie hoch ueber dem Gesichtspunkt das Band liegt, als Anteil des Abstands
  * zwischen Gesichts- und Stirnpunkt.
  *
@@ -118,19 +151,38 @@ const VORN = 0.5;
 const HOEHE = 1.5;
 
 /**
- * Das Band einer Figur **ohne** Auftrag.
+ * Ohne Auftrag **kein Band**.
  *
- * Ein dunkles Leder. Nicht der blasse Ton des Schopfs — dort hiess „kein
- * Auftrag" gleich „unauffaellig", und ein Schopf dicht am Koerperton war
- * richtig. Hier liegt das Band auf kraeftigem Blau; ein blasser Ton darauf
- * saehe nach Fleck aus statt nach Kleidungsstueck. Unbunt genug, um keinen
- * Beruf vorzutaeuschen, dunkel genug, um gegen das Haar zu stehen.
+ * ## Der Fehler, und warum er keiner Messung aufgefallen ist
+ *
+ * Die erste Fassung gab einer Figur ohne Auftrag ein dunkles Lederband —
+ * gedacht als Kleidungsstueck, das immer da ist. Im Spiel sah das so aus:
+ *
+ * > „irgendetwas ist am haar was dort nicht hingehoert"
+ *
+ * Und genau so war es. Ein dunkelbrauner Bogen auf kraeftig blauem Haar, bei
+ * sechsundzwanzig Bildschirmpixeln Figurenhoehe — das liest niemand als Band,
+ * das liest man als Zweig im Haar. Alle Messungen sagten „98 Prozent im Haar",
+ * und alle waren richtig: Sie haben geprueft, ob das Band **sitzt**, nie, ob es
+ * dort **hingehoert**.
+ *
+ * ## Die Regel, die die anderen beiden Figuren schon hatten
+ *
+ * Der Schopf der Murmel liegt ohne Auftrag dicht am Koerperton — unauffaellig.
+ * Das Halstuch des Erdmaennchens erscheint ueberhaupt nur mit Auftrag: Wer
+ * eines traegt, arbeitet. Beide sagen dasselbe, und das Band hat es als
+ * einziges nicht getan.
+ *
+ * Es bleibt also weg. Das kostet nichts: Der Wuselwerker ist auch ohne Band
+ * unverwechselbar — blaues Haar, gruene Tunika —, waehrend das Erdmaennchen
+ * sandbraun auf sandbraun war und seine Augenmaske als Kennzeichen brauchte.
+ *
+ * Die Zuendschnur faellt nicht darunter. `schopfAuftrag` liefert bei `fuse > 0`
+ * immer `bomber`, in jedem Zustand und vor jeder anderen Regel — wer gleich
+ * hochgeht, traegt ein Band, auch wenn er sonst nur laeuft.
  */
-const OHNE_AUFTRAG = '#4b3a2a';
-
-/** Welche Farbe das Band traegt. Dieselbe Berufspalette wie Schopf und Maske. */
-export function bandFarbe(skill: SkillId | null): string {
-  return skill ? schopfFarbe(skill) : OHNE_AUFTRAG;
+export function bandFarbe(skill: SkillId | null): string | null {
+  return skill ? schopfFarbe(skill) : null;
 }
 
 /** Dieselbe Warnlampe wie bei Schopf und Maske. */
@@ -205,7 +257,7 @@ export function drawBand(
   const zw = (zipfelWinkel * Math.PI) / 180;
   const wurzelX = versatz - b * 0.92;
   const wurzelY = oben + bo * 0.12;
-  const laenge = 1.4 * laengeAchse;
+  const laenge = ZIPFEL_LANG * laengeAchse;
   ctx.lineWidth = d * 1.5;
   ctx.beginPath();
   ctx.moveTo(wurzelX, wurzelY);

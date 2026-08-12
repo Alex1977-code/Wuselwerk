@@ -61,10 +61,10 @@ dazutut:
 | | Schnitt |
 |---|---|
 | blosses Blatt | 74,3 % |
-| mit Geraet und Stirnband | **59,7 %** |
+| mit Geraet und Stirnband | **60,0 %** |
 
 Vierzehn Punkte, und sie liegen genau dort, wo sie gebraucht werden: Die drei
-grabenden Berufe stehen bei 69 bis 76 Prozent statt bei 74 bis 82.
+grabenden Berufe stehen bei 70 bis 76 Prozent statt bei 74 bis 82.
 
 ## Die Geraete
 
@@ -147,6 +147,41 @@ Spitzen an einem Bogen liest das Auge bei zwoelf Pixeln als Pfeil. Ein Strich
 mit runden Enden und fester Dicke kann das nicht — er ist ueberall gleich breit,
 und genau das macht ein Band aus.
 
+### Der Fehler, den keine Messung gesehen hat
+
+Das Band trug zuerst auch **ohne Auftrag** eine Farbe: ein dunkles Leder,
+gedacht als Kleidungsstueck, das immer da ist. Aus dem Spiel kam zurueck:
+
+> „irgendetwas ist am haar was dort nicht hingehoert"
+
+Und so war es. Ein dunkelbrauner Bogen auf kraeftig blauem Haar liest sich bei
+sechsundzwanzig Bildschirmpixeln Figurenhoehe nicht als Band, sondern als Zweig
+im Haar. Dazu ragte das lose Ende aus der Silhouette — auch das war Absicht
+gewesen („bricht den Umriss") und auch das war falsch.
+
+Bemerkenswert ist, dass **jede Messung zufrieden war**. Das Band sass zu 98
+Prozent im Haar; die Zahl stimmte. Geprueft hatte ich, ob es **sitzt**, nie, ob
+es dort **hingehoert**. Und der Zipfel war ueberhaupt nicht vermessen — das
+Abtastskript kannte nur den Bogen. Nachgetragen ergab es:
+
+| Zipfellaenge (in Kopfachsen) | neben der Figur |
+|---|---|
+| 1,4 | 7 % |
+| 1,0 | 1 % |
+| **0,8** | **0 %** |
+
+Zwei Aenderungen daraus: Das Band bleibt vollstaendig im Haar, und ohne Auftrag
+gibt es **gar keines**. Das ist die Regel, die die beiden anderen Figuren schon
+hatten — das Halstuch des Erdmaennchens erscheint nur bei einem Auftrag, der
+Schopf der Murmel liegt sonst dicht am Koerperton. Es kostet nichts: Der
+Wuselwerker ist an blauem Haar und gruener Tunika ohnehin zu erkennen, waehrend
+das Erdmaennchen sandbraun auf sandbraun war und seine Augenmaske als
+Kennzeichen brauchte.
+
+Die Zuendschnur faellt nicht darunter. `schopfAuftrag` liefert bei `fuse > 0`
+immer `bomber`, vor jeder anderen Regel — wer gleich hochgeht, traegt ein Band,
+auch wenn er sonst nur laeuft.
+
 ### Warum alle Masse in Kopfachsen stehen
 
 Weil die Figur nicht immer gleich gross ist. `saving` schrumpft sie beim
@@ -205,5 +240,6 @@ nicht die Welt. Alle dreizehn tragen die Marke jetzt.
 | `.ueberdeckung.py` | Ueberdeckung der Silhouetten, bloss gegen gezeichnet |
 | `.bandsitz.py` | wo die Mittellinie des Bandes landet: Haar, Haut, daneben |
 | `.koepfe.py` | Kopfausschnitte aus der Spielprobe |
+| `.spielprobe.mjs` | Bildschirmabzug aus dem **echten Spiel**, Handygroesse, mit Beruf |
 | `src/render/band.ts` | das Stirnband |
 | `src/render/werkzeug.ts` | Keil, Spaten, Planke, Krallen, Schirm |
