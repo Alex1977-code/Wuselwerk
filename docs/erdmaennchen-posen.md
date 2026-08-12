@@ -17,7 +17,7 @@ aufgetragen hat.
 
 | Pose | Bilder | Haltung | Was sie sagt |
 |---|---|---|---|
-| `walking` | 8 | auf allen vieren, Sprunggalopp, 80° Profil | unterwegs |
+| `walking` | 8 | auf allen vieren, Sprunggalopp, 72° | unterwegs |
 | `falling` | 4 | aufrecht, Arme aus | fällt — bleibt senkrecht, damit die Fallhöhe lesbar bleibt |
 | `floating` | 4 | aufrecht, Arme weit | hängt am Schirm |
 | `climbing` | 4 | aufrecht, Arme hoch | an der Wand |
@@ -42,9 +42,34 @@ Die beiden Beine eines Paares laufen sieben Hundertstel Zyklus versetzt. Ganz
 gleich wäre ein Kaninchen, und bei zwölf Pixeln wäre die Silhouette dann in der
 Hälfte aller Bilder ein Klotz aus zwei übereinanderliegenden Beinen.
 
-Der **Schwanz liegt tief** und lang nach hinten. Aufgerollt war er ein Sparmodell
-gegen die Zellbreite und sah aus wie ein Eichhörnchen; hoch trägt ein Erdmännchen
-ihn im Stehen, nicht im Lauf.
+Der **Schwanz liegt tief** und lang nach hinten (Spitze 24°). Aufgerollt war er
+ein Sparmodell gegen die Zellbreite und sah aus wie ein Eichhörnchen; bei 54°
+Spitze las er sich als Rattenschwanz. Hoch trägt ein Erdmännchen ihn im Stehen,
+nicht im Lauf.
+
+### Hals, Kopf und Blickwinkel hängen zusammen
+
+Drei Zahlen, die einzeln keinen Sinn haben. Nach der Telefonprobe steckte der
+Kopf zwischen den Schultern; mein erster Griff — Hals steiler **und** Kopfwinkel
+höher — hat es verschlimmert, das Gesicht kippte unter den Körper und war ganz
+weg. Erst ein Durchlauf über beide gemeinsam hat das Fenster gefunden:
+
+| | | |
+|---|---|---|
+| Hals 30° / Kopf 150 | Kopf bleibt zwischen den Schultern | — |
+| **Hals 50° / Kopf 154** | Kopf über der Schulterlinie, Maske und Schnauze sichtbar | **so** |
+| Hals 70° / Kopf 170 | Kopf dreht weg | — |
+| Hals 85° / Kopf 182–206 | kein Gesicht mehr | — |
+
+Der **Blickwinkel** ist ein Kompromiss und war zuerst falsch begründet. Achtzig
+Grad standen dort, weil ein Vierfüßler „nur im Profil liest". Für den *Körper*
+stimmt das. Für das *Gesicht* ist es das Gegenteil — im reinen Profil ist die
+Augenmaske ein Strich. Durchprobiert wurden 56, 64, 72 und 80; bei **72** bleibt
+der Körper lang und die Maske sichtbar.
+
+Bei zwölf logischen Pixeln bleibt der Kopf klein, und was ihn lesbar macht, ist
+die zur Laufzeit gezeichnete **Augenmaske**, nicht die Geometrie. Das ist die
+Grenze dieses Modells auf allen vieren.
 
 ## Zwei Quellen von Flimmern, beide behoben
 
@@ -127,15 +152,15 @@ Jede Zeile meldet beim Backen ihr Maß:
 
 - **Breite** in logischen Pixeln. Die Simulation stößt mit *einer* Spalte an; was
   seitlich darüber hinaussteht, kann in einer Wand stecken, ohne dass sie davon
-  weiß. Auf allen vieren sind es 15,1 gegen eine Zellbreite von 17,0 — der
+  weiß. Auf allen vieren sind es 15,4 gegen eine Zellbreite von 17,0 — der
   Schrittausschlag der Beine ist an dieser Grenze bemessen und nicht an der
   Anatomie.
-- **Höhe.** Auf allen vieren 9,0 statt 12,1 — die Figur füllt ihren
+- **Höhe.** Auf allen vieren 7,8 statt 12,1 — die Figur füllt ihren
   Kollisionskasten nicht mehr ganz aus. Das ist die bewusst hingenommene
   Ungenauigkeit: Sie ist *konservativ*, die Figur meidet Decken, unter die sie
   passen würde, statt durch welche zu rutschen.
 - **Standfläche.** Die Breite des Umrisses im untersten Streifen. Daran hängt der
   Kontaktschatten: Der Rammer steht auf 4,3 logischen Pixeln, der Gräber auf 8,4,
-  der Läufer auf allen vieren auf 9,2. Ein Schatten, der das nicht weiß, ist beim
+  der Läufer auf allen vieren auf 9,4. Ein Schatten, der das nicht weiß, ist beim
   einen ein Nebel und beim anderen ein Fleck neben den Pfoten.
 - **Sohle über Grund.** Wie weit die Figur schwebt oder einsinkt.
