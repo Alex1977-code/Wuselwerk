@@ -17,7 +17,7 @@ aufgetragen hat.
 
 | Pose | Bilder | Haltung | Was sie sagt |
 |---|---|---|---|
-| `walking` | 8 | auf allen vieren, 80° Profil | unterwegs |
+| `walking` | 8 | auf allen vieren, Sprunggalopp, 80° Profil | unterwegs |
 | `falling` | 4 | aufrecht, Arme aus | fällt — bleibt senkrecht, damit die Fallhöhe lesbar bleibt |
 | `floating` | 4 | aufrecht, Arme weit | hängt am Schirm |
 | `climbing` | 4 | aufrecht, Arme hoch | an der Wand |
@@ -29,6 +29,43 @@ aufgetragen hat.
 | `blocking` | 2 | aufrecht, frontal | bis hierher und nicht weiter |
 | `saving` | 6 | aufrecht, Arme hoch | gerettet |
 | `dying` | 8 | frontal | verloren |
+
+## Der Gang ist ein Sprunggalopp, kein Trab
+
+Der erste Anlauf lief im **Trab**: diagonale Paare, gleichmäßig. Das ist die
+Gangart von Hund und Pferd, und die Rückmeldung war zu Recht „so läuft kein
+Erdmännchen". Eine kleine Schleichkatzenverwandtschaft **bündelt**: Vorderbeine
+zusammen, Hinterbeine zusammen, eine halbe Phase versetzt, dazwischen federt der
+Rücken — und einmal je Zyklus hebt der Körper ab, nicht zweimal.
+
+Die beiden Beine eines Paares laufen sieben Hundertstel Zyklus versetzt. Ganz
+gleich wäre ein Kaninchen, und bei zwölf Pixeln wäre die Silhouette dann in der
+Hälfte aller Bilder ein Klotz aus zwei übereinanderliegenden Beinen.
+
+Der **Schwanz liegt tief** und lang nach hinten. Aufgerollt war er ein Sparmodell
+gegen die Zellbreite und sah aus wie ein Eichhörnchen; hoch trägt ein Erdmännchen
+ihn im Stehen, nicht im Lauf.
+
+## Zwei Quellen von Flimmern, beide behoben
+
+**1. Die Blickrichtung kippte zwanzig Mal je Sekunde.** In einem Schacht, dessen
+Wände höher sind als `MAX_STEP`, läuft eine Figur gegen die eine Wand, dreht um,
+läuft gegen die andere und dreht wieder — und `stepWalking` kommt alle drei Ticks
+dran. Die Simulation ist im Recht: Eine eingesperrte Figur läuft auf und ab.
+Gezeichnet sprang dabei ein dreizehn Pixel breiter waagerechter Körper von links
+nach rechts, und in einer Grube voller Figuren flimmerte das halbe Bild.
+
+`src/render/blick.ts` zeichnet deshalb die Richtung, in die sich die Figur
+**zuletzt wirklich bewegt hat**. Wer läuft, ändert seine Stelle — dann folgt das
+Bild sofort. Wer nur auf der Stelle umdreht, ändert nichts, und dann bleibt auch
+das Bild stehen. Das ist reiner Ansichtszustand; die Simulation weiß nichts davon
+und bleibt deterministisch.
+
+**2. Die Figur rastete auf ganze Bildpunkte ein, das Gelände nicht.** Für ein
+Pixelblatt ist das Runden richtig. Für ein gemaltes ist es ein sichtbarer Fehler:
+Das Gelände gleitet beim Scrollen weich, die Figur sprang daneben in ganzen
+Schritten — kein Springen, ein Zittern auf dem Boden. Gerundet wird jetzt nur
+noch, wenn das Blatt tatsächlich ein Pixelraster ist (`ppl <= 1`).
 
 ## Die drei Grabberufe arbeiten mit den Pfoten
 
@@ -90,13 +127,15 @@ Jede Zeile meldet beim Backen ihr Maß:
 
 - **Breite** in logischen Pixeln. Die Simulation stößt mit *einer* Spalte an; was
   seitlich darüber hinaussteht, kann in einer Wand stecken, ohne dass sie davon
-  weiß. Auf allen vieren sind es 12,7 statt 11,6 aufrecht.
-- **Höhe.** Auf allen vieren 10,3 statt 12,3 — die Figur füllt ihren
+  weiß. Auf allen vieren sind es 15,1 gegen eine Zellbreite von 17,0 — der
+  Schrittausschlag der Beine ist an dieser Grenze bemessen und nicht an der
+  Anatomie.
+- **Höhe.** Auf allen vieren 9,0 statt 12,1 — die Figur füllt ihren
   Kollisionskasten nicht mehr ganz aus. Das ist die bewusst hingenommene
   Ungenauigkeit: Sie ist *konservativ*, die Figur meidet Decken, unter die sie
   passen würde, statt durch welche zu rutschen.
 - **Standfläche.** Die Breite des Umrisses im untersten Streifen. Daran hängt der
   Kontaktschatten: Der Rammer steht auf 4,3 logischen Pixeln, der Gräber auf 8,4,
-  der Läufer auf allen vieren auf 9,7. Ein Schatten, der das nicht weiß, ist beim
+  der Läufer auf allen vieren auf 9,2. Ein Schatten, der das nicht weiß, ist beim
   einen ein Nebel und beim anderen ein Fleck neben den Pfoten.
 - **Sohle über Grund.** Wie weit die Figur schwebt oder einsinkt.

@@ -184,8 +184,13 @@ const FUSS_PX = 3;
  * aus (beim Hochziehen 2,8 Pixel, beim Sterben 0,3), und die Figur spraenge beim
  * Wechsel der Pose seitwaerts. Der Versatz gehoert zur Figur, also gilt er
  * ueberall gleich.
+ *
+ * Bemessen wird er an der Pose, die am weitesten nach vorn reicht — das ist der
+ * Gang auf allen vieren mit vorgestreckter Vorderpfote. Die Gegenprobe ist die
+ * linke Seite: Nach der Verschiebung darf auch die weiteste Pose dort die
+ * Zellhaelfte von 8,5 nicht ueberschreiten (weitester Wert: Rettung, 7,0).
  */
-const SEITENVERSATZ = 1.6;
+const SEITENVERSATZ = 2.2;
 const ARM_LAENGE = 0.21;
 /** Zulaessige Abweichung der gemessenen Figurenhoehe, in Modelleinheiten. */
 const HOEHE_TOLERANZ = 0.02;
@@ -816,7 +821,8 @@ for (const z of zeilen) {
     );
     process.stdout.write(
       `  ${z.name} (${z.holds.length})${tabelle ? '' : ' — Ruhelage'}  ` +
-        `${drehGrad}gr  breit ${(links + rechts).toFixed(1)}px, hoch ${hoch.toFixed(1)}px, ` +
+        `${drehGrad}gr  breit ${(links + rechts).toFixed(1)}px ` +
+        `(li ${links.toFixed(1)}/re ${rechts.toFixed(1)}), hoch ${hoch.toFixed(1)}px, ` +
         `Stand ${Math.max(...masse.map((m) => inPx(m.fuss))).toFixed(1)}px, ` +
         `Sohle ${Math.min(...sohle).toFixed(2)}..${Math.max(...sohle).toFixed(2)}px ueber Grund\n`,
     );

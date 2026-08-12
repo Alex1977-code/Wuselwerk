@@ -124,6 +124,7 @@ export function drawWusel(
   v: View,
   w: Wusel,
   tick: number,
+  blick: -1 | 1 = w.dir,
   platz = Infinity,
 ): void {
   if (w.state === State.DEAD || w.state === State.SAVED) return;
@@ -166,7 +167,7 @@ export function drawWusel(
   ctx.save();
   ctx.globalAlpha = deckung;
   ctx.translate(fx, fy);
-  ctx.scale(w.dir < 0 ? -s : s, s);
+  ctx.scale(blick < 0 ? -s : s, s);
   // Haltung **und** Neigung in die Laufrichtung. Die Haltung sagt, was die Figur
   // gerade tut; die Neigung sagt, wohin sie will — und genau die fehlte, weshalb
   // eine gehende Murmel seitwaerts zu rutschen schien statt zu laufen. Dieselbe

@@ -8,6 +8,7 @@ import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
 import { clipForWusel, type SpriteAtlas } from './atlas';
+import { blickVergessen, blickrichtung } from './blick';
 import type { TerrainView } from './terrainView';
 import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
 
@@ -82,6 +83,10 @@ export class Scene {
   ) {
     this.palette = paletteFor(level.theme);
     this.buildHills();
+    // Der gezeichnete Blick ist Ansichtszustand je Figurennummer. Ein neues
+    // Level bringt neue Figuren mit denselben Nummern — ohne dieses Vergessen
+    // erbten sie die Blickrichtung ihrer Vorgaenger.
+    blickVergessen();
   }
 
   private buildHills(): void {
@@ -362,11 +367,14 @@ export class Scene {
       // halbe Koerper und steckte deshalb in jeder Wand, an der eine Murmel
       // entlanglief — die Simulation kennt nur die zwoelf Pixel Koerperhoehe.
       // Siehe `schopfPlatz`.
+      // Die **gezeichnete** Blickrichtung, nicht die der Simulation. Siehe
+      // `blick.ts`: In einer Grube kippt `w.dir` zwanzig Mal je Sekunde.
+      const blick = blickrichtung(w);
       const platz = schopfPlatz(
         (px, py) => world.terrain.solid(px, py),
         w.x,
         w.y - WUSEL_H,
-        w.dir,
+        blick,
       );
 
       const fx = sx(v, w.x);
@@ -387,7 +395,7 @@ export class Scene {
       if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
       // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
-      if (!this.atlas?.drawWusel(ctx, v, w, platz)) drawWusel(ctx, v, w, tick, platz);
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz)) drawWusel(ctx, v, w, tick, blick, platz);
       if (w.fuse > 0) drawWarnlicht(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       ctx.restore();
     }

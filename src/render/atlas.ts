@@ -351,7 +351,13 @@ export class SpriteAtlas {
    * Zeichnet eine Figur. Gespiegelt wird um den Fusspunkt: Weil der Anker auf
    * halber Zellbreite sitzt, genügt dafür `scale(-1, 1)` ohne Versatzausgleich.
    */
-  drawWusel(ctx: CanvasRenderingContext2D, v: View, w: Wusel, platz = Infinity): boolean {
+  drawWusel(
+    ctx: CanvasRenderingContext2D,
+    v: View,
+    w: Wusel,
+    blick: -1 | 1 = w.dir,
+    platz = Infinity,
+  ): boolean {
     const name = clipForWusel(w);
     if (!name) return false;
     const clip = this.manifest.clips[name];
@@ -366,8 +372,17 @@ export class SpriteAtlas {
     const frame = frameFor(clip, w.timer);
     const s = v.scale;
 
-    const footX = Math.round(sx(v, w.x));
-    const footY = Math.round(standY(v, w.y));
+    // Auf ganze Bildpunkte einrasten — aber **nur** bei Pixelgrafik.
+    //
+    // Fuer ein Pixelblatt ist das Runden richtig: Ein logischer Pixel ist dort
+    // ein Bildpunkt, und ein halber Bildpunkt Versatz waere ein verwaschener
+    // Rand. Fuer ein gemaltes Blatt ist es ein Fehler, und zwar ein sichtbarer:
+    // Das Gelaende wird ungerundet gezeichnet und gleitet beim Scrollen weich,
+    // die Figur springt daneben in ganzen Schritten. Man sieht keine Figur, die
+    // springt — man sieht eine, die auf dem Boden **zittert**.
+    const raster = ppl <= 1;
+    const footX = raster ? Math.round(sx(v, w.x)) : sx(v, w.x);
+    const footY = raster ? Math.round(standY(v, w.y)) : standY(v, w.y);
 
     ctx.save();
     // Pixelgrafik wird hart vergrössert, Gemaltes weich verkleinert. Beides
@@ -375,7 +390,7 @@ export class SpriteAtlas {
     // beim weichen Verkleinern wäre ihr Fehlen ein Flimmern.
     ctx.imageSmoothingEnabled = ppl > 1;
     ctx.translate(footX, footY);
-    if (w.dir < 0) ctx.scale(-1, 1);
+    if (blick < 0) ctx.scale(-1, 1);
     // Erst spiegeln, dann neigen — dadurch ist „vorn" in beiden Blickrichtungen
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     const lehne = clip.lehne ?? LEHNE[name] ?? 0;
