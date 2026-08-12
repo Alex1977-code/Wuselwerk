@@ -131,11 +131,15 @@ export interface WorldEvent {
     | 'died'
     | 'spawn'
     | 'fuse-tick'
-    // Nur fuer Ton und Bild: Ein Kletterschritt und der Moment, in dem sich der
-    // Schirm oeffnet. Beide aendern nichts am Weltzustand und gehen deshalb
-    // auch nicht in `hash()` ein — die Simulation bleibt bitgleich.
+    // Nur fuer Ton und Bild: Ein Kletterschritt, der Moment, in dem sich der
+    // Schirm oeffnet, der Schreckensruf beim Zuenden, der Schrei im freien
+    // Fall und das Aufkommen danach. Keines davon aendert den Weltzustand,
+    // und keines geht in `hash()` ein — die Simulation bleibt bitgleich.
     | 'climb'
-    | 'float';
+    | 'float'
+    | 'oh-no'
+    | 'scream'
+    | 'land';
   x: number;
   y: number;
   skill?: SkillId;

@@ -1,8 +1,8 @@
 import { State, type SkillId, type Wusel } from '../core/types';
 import { standY, sx, type View } from './camera';
-import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
+import { drawSchopf, schopfFarbe } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
-import { drawBand, bandFarbe } from './band';
+import { drawBand, drawHaarZacken, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
 
 /**
@@ -409,6 +409,23 @@ export class SpriteAtlas {
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     const lehne = clip.lehne ?? LEHNE[name] ?? 0;
     if (lehne) ctx.rotate(lehne);
+    // Die Haarzacken des Wuselwerkers — **vor** dem Bild gezeichnet, damit sie
+    // dahinter liegen: Ihre Wurzeln verschwinden unter der gebackenen
+    // Haarkuppel, nur die Spitzen brechen die Silhouette. Warum es sie gibt,
+    // steht bei `drawHaarZacken`.
+    if (this.manifest.figur === 'wuselwerker' && clip.anchors && clip.stirn) {
+      const ha = clip.anchors[frame] ?? clip.anchors[0];
+      const hs = clip.stirn[frame] ?? clip.stirn[0];
+      drawHaarZacken(
+        ctx,
+        (ha[0] - this.manifest.anchor.x) * s,
+        (ha[1] - this.manifest.anchor.y) * s,
+        s,
+        clip.dreh ?? 0,
+        hs[0] - ha[0],
+        hs[1] - ha[1],
+      );
+    }
     ctx.drawImage(
       this.image,
       frame * cw * ppl,
@@ -480,7 +497,10 @@ export class SpriteAtlas {
           : figur === 'wuselwerker'
             ? bandFarbe(auftrag)
             : schopfFarbe(auftrag);
-      const farbe = grund === null ? null : schopfPuls(grund, w.fuse);
+      // Kein Puls mehr auf der Berufsfarbe: Beim Sprengmeister sagen Uhr und
+      // Schein die Restzeit an (scene.ts), das Band bleibt ruhig Bombenrot.
+      // Der Puls war Teil der "flackernden Figur" aus der Rueckmeldung.
+      const farbe = grund;
       // Dieselbe Mechanik, drei Zeichner: Der Anker sagt wo, das Zustandsfeld
       // sagt wie, und die Figur sagt was. Ein Schopf ueber dem Kopf, eine Maske
       // im Gesicht, ein Band im Haar — alle drei tragen die Berufsfarbe.

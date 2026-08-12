@@ -6,7 +6,7 @@ import { mulberry32 } from '../levels/paint';
 import { standY, sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
-import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
+import { drawWarnschein, drawZuendUhr, schopfPlatz } from './schopf';
 import { clipForWusel, type SpriteAtlas } from './atlas';
 import { SPAEHEN, ansicht, ansichtVergessen } from './ansicht';
 import type { TerrainView } from './terrainView';
@@ -392,14 +392,17 @@ export class Scene {
       const sprung = this.rettungsSprung(w, world);
       if (sprung) ctx.translate(sprung.dx * v.scale, sprung.dy * v.scale);
 
-      // Die Warnlampe des Sprengmeisters: Schein dahinter, Licht darauf.
+      // Die Warnung des Sprengmeisters: ruhiger Schein dahinter, die Uhr
+      // darueber. Das fruehere Licht **auf** der Figur ist ersatzlos weg — es
+      // pulste, und eine pulsend beleuchtete Figur ist eine flackernde Figur.
+      // Die Restzeit sagt jetzt die Ziffer an, nicht die Helligkeit.
       if (w.fuse > 0) drawWarnschein(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       // Je Figur entscheiden: Was das Blatt nicht bedienen kann, zeichnet der
       // prozedurale Weg. So bleibt auch halbfertige Grafik spielbar.
       if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, sicht.takt)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
-      if (w.fuse > 0) drawWarnlicht(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
+      if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
       ctx.restore();
     }
     this.drawParticles(ctx, v);

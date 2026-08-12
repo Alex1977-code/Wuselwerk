@@ -41,18 +41,17 @@ import { schopfFarbe } from './schopf';
  * hingehoert" gekostet: Bei sechsundzwanzig Bildschirmpixeln Figurenhoehe ist
  * ein Strich neben dem Kopf kein Band, sondern ein Zweig.
  *
- * Das Band bleibt jetzt vollstaendig im Haar (`ZIPFEL_LANG`), und die
+ * Das Band ist deshalb **nur noch der Bogen**, vollstaendig im Haar; die
  * Sichtbarkeit traegt allein die **Farbe** — acht Pixel kraeftiges Blau, auf
- * denen ein Berufston steht. Das reicht; es musste dafuer nichts herausragen.
- *
- * Das lose Ende bleibt, kuerzer. Es ist kein Zierrat: Es haengt entgegen der
- * Blickrichtung und ist damit derselbe zweite Richtungshinweis, den das
- * Halstuch dem Tier gibt.
+ * denen ein Berufston steht. Das lose Ende, das hier zweimal verteidigt und
+ * zweimal fuer unauffaellig erklaert worden war, ist gestrichen: Die Messung,
+ * die es freisprach, kannte nur die Mittellinie; flaechig gemessen hing es in
+ * zwoelf von dreizehn Posen aus der Silhouette, beim Schirmspringer zu
+ * 61 Prozent. Warum die Zahl beim Bogen steht, steht dort.
  */
 
 /**
- * Form je Zustand: halbe Breite, halbe Dicke, Bogen nach oben, Winkel des
- * losen Endes in Grad (0 = waagerecht nach hinten, positiv = nach oben).
+ * Form je Zustand: halbe Breite, halbe Dicke, Bogen nach oben.
  *
  * **Alle Laengen als Vielfaches der gemessenen Kopfachse**, nicht in logischen
  * Pixeln. Die Achse ist der Abstand Gesicht → Stirn aus dem Blatt und misst in
@@ -66,12 +65,12 @@ import { schopfFarbe } from './schopf';
  * Feld der Posentabelle — ein Band kann nicht blinzeln, aber es kann rutschen
  * und flattern, und das ist bei dieser Groesse dieselbe Bandbreite.
  */
-const FORM: readonly (readonly [number, number, number, number])[] = [
-  [2.03, 0.26, 0.8, -40], // 0 ruhe — Band gewoelbt, Ende haengt
-  [1.97, 0.28, 0.72, -16], // 1 kniff — die Arbeit: flacher, Ende zurueck
-  [2.09, 0.25, 0.91, 34], // 2 weit — Schreck, Fall, Wache: Ende steht ab
-  [2.06, 0.26, 0.96, 66], // 3 freude — das Ende fliegt
-  [1.91, 0.3, 0.53, -66], // 4 zu — der Tod: verrutscht, Ende faellt
+const FORM: readonly (readonly [number, number, number])[] = [
+  [2.03, 0.26, 0.8], // 0 ruhe — Band ruhig gewoelbt
+  [1.97, 0.28, 0.72], // 1 kniff — die Arbeit: flacher, tiefer gezogen
+  [2.09, 0.25, 0.91], // 2 weit — Schreck, Fall, Wache: staerker gewoelbt
+  [2.06, 0.26, 0.96], // 3 freude — am weitesten auf
+  [1.91, 0.3, 0.53], // 4 zu — der Tod: verrutscht und flach
 ];
 
 /**
@@ -88,30 +87,6 @@ const FORM: readonly (readonly [number, number, number, number])[] = [
  * ein Band statt einer Maske vermeiden sollte.
  */
 const VORN = 0.5;
-
-/**
- * Wie lang das lose Ende ist, in Kopfachsen.
- *
- * **Gemessen, nachdem es aufgefallen war.** Die erste Fassung stand auf 1,4 und
- * war damit als „Bruch der Silhouette" gemeint: Ein Band, das ein wenig ueber
- * das Haar hinauslaeuft, ist gegen jeden Hintergrund zu sehen. Auf dem Papier
- * stimmte das. Im Spiel ragte das Ende bei sechsundzwanzig Bildschirmpixeln
- * Figurenhoehe als brauner Strich neben dem Kopf heraus, und ein Strich neben
- * einem Kopf ist kein Band, sondern ein Zweig.
- *
- * `.bandsitz.py` misst inzwischen auch das Ende, nicht nur den Bogen. Der Anteil
- * der Mittellinie, der **neben** der Figur landet:
- *
- * | Laenge | daneben |
- * |---|---|
- * | 1,4 | 7 % |
- * | 1,0 | 1 % |
- * | **0,8** | **0 %** |
- *
- * Dass die erste Messung davon nichts wusste, war kein Zufall: Sie tastete nur
- * den Bogen ab. Der Bogen sass die ganze Zeit richtig.
- */
-const ZIPFEL_LANG = 0.8;
 
 /**
  * Wie hoch ueber dem Gesichtspunkt das Band liegt, als Anteil des Abstands
@@ -189,6 +164,95 @@ export function bandFarbe(skill: SkillId | null): string | null {
 export { schopfPuls as bandPuls } from './schopf';
 
 /**
+ * Die gemessenen Haartoene des Blatts: Licht, Grundton, Schatten.
+ *
+ * Dieselben Werte wie in `docs/grafikbedarf.md` §1.2 — gemessen am
+ * ausgelieferten Blatt, nicht erfunden. Die Zacken muessen aus demselben Haar
+ * sein wie die Kuppel, sonst sind sie ein zweites Kleidungsstueck.
+ */
+const HAAR_LICHT = '#3D59C8';
+const HAAR_GRUND = '#3851B6';
+const HAAR_SCHATTEN = '#284098';
+
+/**
+ * Die Haarzacken am Scheitel — **hinter** dem Koerper gezeichnet.
+ *
+ * ## „Die Haare wirken wie eine Kappe"
+ *
+ * So die Rueckmeldung, und sie stimmt: Am Scheitel ist die gebackene Haarmasse
+ * eine glatte Kuppel, und eine glatte Kuppel auf einem Kopf ist per Silhouette
+ * eine Muetze. Der Unterschied zwischen Muetze und Haar liegt bei
+ * sechsundzwanzig Bildschirmpixeln nicht in der Flaeche — die ist bei beiden
+ * blau —, sondern im **Umriss**: Haar franst, eine Kappe nicht.
+ *
+ * Vier Straehnenspitzen dicht an dicht brechen deshalb die Kuppel — ein
+ * ausgefranster Kamm, kein Hoernerpaar. Die erste Fassung hatte drei hohe,
+ * weit auseinander; im Bild waren das zwei Teufelshoernchen, weil die mittlere
+ * in der Kuppel verschwand und nur die aeusseren Spitzen herausragten. Fransen
+ * entstehen aus **Ueberlappung**: kurz, breit, die Nachbarn beruehren sich.
+ *
+ * Sie stehen hinter dem Koerper, ihre Wurzeln verschwinden unter dem
+ * gebackenen Haar, nur die Spitzen ragen heraus — dadurch mischen sie sich
+ * mit der Kuppel, statt auf ihr zu kleben. Die hintere liegt im Schatten, die
+ * vordere im Licht, derselben Lichtregel folgend wie der Backvorgang (warm
+ * von links vorn).
+ *
+ * Verankert an der Kopfachse (Gesicht → Stirn), wie das Band: Die Zacken
+ * nicken mit, wenn der Kopf sich senkt, und schrumpfen mit, wenn `saving` die
+ * Figur halbiert. Alle Masse in Kopfachsen.
+ */
+export function drawHaarZacken(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  s: number,
+  dreh = 0,
+  stirnX = 0,
+  stirnY = -2,
+): void {
+  const L = Math.hypot(stirnX, stirnY) || 2;
+  const neigung = Math.atan2(stirnY, stirnX) + Math.PI / 2;
+  const bg = (dreh * Math.PI) / 180;
+  // Wie beim Band, nur staerker: Der Kamm sitzt auf dem **Scheitel der
+  // Haarmasse**, und die liegt bei gedrehter Figur deutlich hinter dem
+  // Gesichtspunkt. Mit zu wenig Versatz stand die hintere Zacke beim Laeufer
+  // als einzelnes Faehnchen neben der Kuppel.
+  const versatz = -Math.sin(bg) * 1.6;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.rotate(neigung);
+
+  // [quer zur Achse, Neigung in Grad, Hoehe, halbe Breite], alles in Kopfachsen.
+  const zacken: readonly (readonly [number, number, number, number, string])[] = [
+    [versatz - 1.3 * L, -24, 0.62 * L, 0.46 * L, HAAR_SCHATTEN],
+    [versatz - 0.5 * L, -8, 0.88 * L, 0.5 * L, HAAR_GRUND],
+    [versatz + 0.35 * L, 10, 0.8 * L, 0.48 * L, HAAR_GRUND],
+    [versatz + 1.15 * L, 32, 0.6 * L, 0.42 * L, HAAR_LICHT],
+  ];
+  // Die Wurzel liegt knapp unter dem Scheitel — tief genug, dass die Flanken
+  // in der Kuppel verschwinden, hoch genug, dass mehr als die Spitze zu sehen
+  // ist.
+  const wurzel = -2.25 * L;
+  for (const [zx, grad, hoch, halb, farbe] of zacken) {
+    const b = (grad * Math.PI) / 180;
+    const tx = zx + Math.sin(b) * hoch;
+    const ty = wurzel - Math.cos(b) * hoch;
+    ctx.fillStyle = farbe;
+    ctx.beginPath();
+    ctx.moveTo(zx - halb, wurzel);
+    // Beide Flanken gebogen, die Spitze leicht eingedreht — eine gerade Zacke
+    // ist ein Dorn, eine gebogene eine Straehne.
+    ctx.quadraticCurveTo(zx - halb * 0.5 + (tx - zx) * 0.35, wurzel + (ty - wurzel) * 0.55, tx, ty);
+    ctx.quadraticCurveTo(zx + halb * 0.55 + (tx - zx) * 0.3, wurzel + (ty - wurzel) * 0.5, zx + halb, wurzel);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+/**
  * Das Stirnband zeichnen.
  *
  * @param x Gesichtspunkt auf dem Bildschirm — der Anker aus dem Manifest.
@@ -212,7 +276,7 @@ export function drawBand(
   stirnY = -2,
 ): void {
   const i = Math.max(0, Math.min(FORM.length - 1, Math.round(zustand)));
-  const [breite, dicke, bogen, zipfelWinkel] = FORM[i];
+  const [breite, dicke, bogen] = FORM[i];
   const bg = (dreh * Math.PI) / 180;
   // Perspektive: Was sich wegdreht, wird schmaler. Der Versatz geht hier —
   // anders als bei der Maske — **nach hinten**. Die Maske sitzt im Gesicht und
@@ -250,33 +314,22 @@ export function drawBand(
   ctx.strokeStyle = farbe;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = d * 2;
 
-  // Das lose Ende, zuerst — das Band soll darueber liegen. Es haengt nach
-  // hinten, also entgegen der Blickrichtung: Die Figur schaut in +x.
-  const zw = (zipfelWinkel * Math.PI) / 180;
-  const wurzelX = versatz - b * 0.92;
-  const wurzelY = oben + bo * 0.12;
-  const laenge = ZIPFEL_LANG * laengeAchse;
-  ctx.lineWidth = d * 1.5;
-  ctx.beginPath();
-  ctx.moveTo(wurzelX, wurzelY);
-  ctx.quadraticCurveTo(
-    wurzelX - Math.cos(zw) * laenge * 0.55 - Math.sin(zw) * 0.5,
-    wurzelY - Math.sin(zw) * laenge * 0.55 + Math.cos(zw) * 0.5,
-    wurzelX - Math.cos(zw) * laenge,
-    wurzelY - Math.sin(zw) * laenge,
-  );
-  ctx.stroke();
-
-  // Das Band selbst: ein Bogen ueber den Haaransatz, hinten lang, vorn kurz.
+  // Das Band: ein Bogen ueber den Haaransatz, hinten lang, vorn kurz.
   //
   // **Gewoelbt und nicht gerade.** Eine Sehne quer durch die Haarmasse schneidet
   // sie in zwei Haelften; ein Bogen, der ihrer Rundung folgt, liegt darauf. Bei
   // zwoelf Pixeln entscheidet dieser Unterschied darueber, ob man ein
-  // Kleidungsstueck sieht oder einen Strich. Die Woelbung geht am hinteren Ende
-  // in die Silhouette hinaus — das ist der Bruch des Umrisses, den die Maske
-  // des Erdmaennchens nicht leisten konnte.
+  // Kleidungsstueck sieht oder einen Strich.
+  //
+  // **Nur der Bogen — das lose Ende ist weg.** Es war als zweiter
+  // Richtungshinweis gedacht und zweimal „gemessen in Ordnung": Die Messung
+  // tastete die Mittellinie ab und uebersah, dass Strichbreite und runde Kappe
+  // eine Flaeche zeichnen. Flaechig nachgemessen lagen beim Schirmspringer
+  // 61 Prozent der Zipfeltinte **ausserhalb** der Silhouette — ein rosa Haken
+  // im Himmel —, und im Zustand „weit" zeigte er nach oben aus dem Scheitel.
+  // Der Bogen dagegen misst 0 bis 1,4 Prozent daneben, in jeder Pose. Die
+  // Richtung zeigt die Figur selbst; das Band muss es nicht.
   ctx.lineWidth = d * 2;
   ctx.beginPath();
   ctx.moveTo(versatz - b, oben + bo * 0.16);

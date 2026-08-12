@@ -29,6 +29,17 @@ export const FLOAT_INTERVAL = 3; // 20 px/s unter dem Schirm
 export const FLOAT_DEPLOY = 10;
 /** Ab dieser Fallhoehe zerschellt eine Figur ohne Schirm. */
 export const FALL_DEATH_PX = 78;
+/**
+ * Ab dieser Fallhoehe schreit eine Figur — nur fuer den Ton.
+ *
+ * Groesser als `FLOAT_DEPLOY`, mit Absicht: Der Schirm oeffnet frueher, ein
+ * Schirmspringer kommt also nie zum Schreien. Und klein gegen `FALL_DEATH_PX`
+ * — der Schrei ist Schreck, kein Todesurteil; die meisten, die schreien,
+ * landen heil.
+ */
+export const SCHREI_AB = 12;
+/** Ab dieser Fallhoehe macht das Aufkommen ein Geraeusch — nur fuer den Ton. */
+export const LAND_LAUT = 5;
 /** Maximale Stufenhoehe, die ein Laeufer erklimmt. Darueber: umdrehen. */
 export const MAX_STEP = 5;
 /** Maximaler Absatz, den ein Laeufer hinuntersteigt, ohne zu fallen. */

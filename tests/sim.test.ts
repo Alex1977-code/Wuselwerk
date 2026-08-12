@@ -390,3 +390,110 @@ describe('Selbstzerstörung', () => {
     expect(b.state).toBe(State.DYING);
   });
 });
+
+/**
+ * Der letzte Abgang wird zu Ende gespielt.
+ *
+ * Mit dem Sprung ins Tor ist eine Figur „nicht mehr aktiv", und wenn sie die
+ * letzte war, kippte die Phase **im selben Tick** — `tick()` kehrt bei
+ * gekippter Phase sofort zurück, und die Sprunganimation blieb auf Bild null
+ * stehen. Im Spiel stand die letzte Retterin den ganzen Vorhang lang reglos
+ * vor dem Tor, der letzte Sprengmeister hockte neben seinem Krater. Der
+ * Zeitpunkt, an dem das Ende feststeht, und der Zeitpunkt, an dem es
+ * eintritt, sind zweierlei.
+ */
+describe('Das Ende wartet auf den Abgang', () => {
+  it('lässt die letzte Gerettete zu Ende springen', () => {
+    const w = testWorld();
+    // Die Falltür bleibt zu — sonst fällt mittendrin noch jemand heraus, und
+    // „die letzte" stimmt nicht mehr.
+    w.released = w.total;
+    const a = place(w, 193, 79);
+    w.exit.x = 188;
+    w.exit.y = 70;
+    w.exit.w = 10;
+    w.exit.h = 20;
+    run(w, 2);
+    expect(w.saved).toBe(1);
+    // Ab hier ist niemand mehr aktiv — aber sie springt noch.
+    expect(a.state).toBe(State.SAVING);
+    expect(w.phase).toBe('running');
+    run(w, C.SAVING_TICKS + 2);
+    expect(a.state).toBe(State.SAVED);
+    expect(w.phase).toBe('won');
+  });
+
+  it('lässt den letzten Sterbenden zu Ende sterben', () => {
+    const w = testWorld();
+    w.released = w.total;
+    const a = place(w, 50, 0, State.FALLING);
+    // Zerschellen: Fallhöhe jenseits der Grenze.
+    run(w, C.FALL_DEATH_PX + 5);
+    expect(a.state === State.DYING || a.state === State.DEAD).toBe(true);
+    if (a.state === State.DYING) {
+      expect(w.phase).toBe('running');
+      run(w, C.DYING_TICKS + 2);
+    }
+    expect(a.state).toBe(State.DEAD);
+    expect(w.phase).toBe('lost');
+  });
+});
+
+/**
+ * Die drei neuen Laute der Figuren — als Weltereignisse.
+ *
+ * Alle drei sind reine Ton-und-Bild-Ereignisse: Sie ändern keinen Zustand und
+ * gehen nicht in `hash()` ein. Geprüft wird, **wann** sie fallen — die
+ * Schwellen tragen die Aussage: Der Schrei kommt erst hinter dem Schirm
+ * (`SCHREI_AB` > `FLOAT_DEPLOY`, ein Schirmspringer schreit nie), das
+ * Aufkommen erst ab `LAND_LAUT` (das Absacken hinter einem Gräber ist kein
+ * Sturz).
+ */
+describe('Rufe und Aufkommen', () => {
+  it('schreit im freien Fall genau einmal, ab der Schwelle', () => {
+    const w = testWorld();
+    w.released = w.total;
+    place(w, 50, 20, State.FALLING);
+    run(w, 60);
+    const schreie = w.drainEvents().filter((e) => e.type === 'scream');
+    expect(schreie.length).toBe(1);
+  });
+
+  it('schreit nicht mit Schirm — der öffnet früher', () => {
+    expect(C.SCHREI_AB).toBeGreaterThan(C.FLOAT_DEPLOY);
+    const w = testWorld();
+    w.released = w.total;
+    place(w, 50, 20, State.FALLING, 1, { hasFloater: true });
+    run(w, 200);
+    expect(w.drainEvents().some((e) => e.type === 'scream')).toBe(false);
+  });
+
+  it('meldet das Aufkommen mit der Fallhöhe', () => {
+    const w = testWorld();
+    w.released = w.total;
+    place(w, 50, 40, State.FALLING);
+    run(w, 60);
+    const land = w.drainEvents().filter((e) => e.type === 'land');
+    expect(land.length).toBe(1);
+    // Von y=40 bis zur Standhöhe 79 sind es 39 Fallpixel.
+    expect(land[0].n).toBe(39);
+  });
+
+  it('bleibt beim Absacken um wenige Pixel still', () => {
+    const w = testWorld();
+    w.released = w.total;
+    place(w, 50, 76, State.FALLING);
+    run(w, 30);
+    expect(w.drainEvents().some((e) => e.type === 'land')).toBe(false);
+  });
+
+  it('ruft oh-no, wenn ein Sprengmeister einzeln gezündet wird', () => {
+    const w = testWorld();
+    w.released = w.total;
+    const a = place(w, 50, 79);
+    run(w, 1);
+    w.drainEvents();
+    w.assign(a.id, 'bomber');
+    expect(w.drainEvents().some((e) => e.type === 'oh-no')).toBe(true);
+  });
+});

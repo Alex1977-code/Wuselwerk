@@ -219,6 +219,15 @@ export class Sfx {
         case 'float':
           this.schirm();
           break;
+        case 'oh-no':
+          this.ohNoKlein();
+          break;
+        case 'scream':
+          this.schrei();
+          break;
+        case 'land':
+          this.plumps(e.n ?? 6);
+          break;
       }
     }
   }
@@ -335,6 +344,66 @@ export class Sfx {
         delay: 0.2 + spaeter, farbe: 4, oeffnung: 0.45, fest: true, pan: wo * 0.7,
       });
     }
+  }
+
+  /**
+   * Der Ruf des **einzeln** gezuendeten Sprengmeisters: eine Stimme, zwei
+   * fallende Silben.
+   *
+   * Dieselbe Geste wie der Chor beim Weltuntergang, aber solo — es geht ja
+   * auch nur einer hoch. Der Abstand zum Chor ist Absicht und traegt
+   * Bedeutung: Eine Stimme heisst „dieser da", fuenf heissen „alle".
+   */
+  private ohNoKlein(): void {
+    if (!this.darf('oh-no', 2)) return;
+    this.engine.duck(0.2);
+    const s0 = 4 + stufenStreuung();
+    const unten = ton(s0 - 2);
+    this.silbe({ freq: ton(s0), dur: 0.15, gain: 0.11, farbe: 2.45, oeffnung: 0.75, fest: true });
+    this.silbe({
+      freq: unten, dur: 0.3, gain: 0.12, slide: ton(s0 - 4) / unten,
+      delay: 0.19, farbe: 3.6, oeffnung: 0.45, fest: true,
+    });
+  }
+
+  /**
+   * Der Schrei im freien Fall: eine lange Silbe, die mit der Figur faellt.
+   *
+   * Eine einzige, nicht zwei — ein Schrei hat keine Silbengrenze. Sie beginnt
+   * offen und hoch und faellt eine Quinte, waehrend der Vokal sich schliesst:
+   * Das ist die Bewegung des Fallens selbst, in Ton uebersetzt. Leise genug,
+   * dass zehn Fallende ein Rufen ergeben und kein Konzert; die Stimmenbremse
+   * laesst ohnehin nur zwei je Bild durch.
+   */
+  private schrei(): void {
+    if (!this.darf('schrei', 2)) return;
+    const s0 = 9 + stufenStreuung();
+    this.silbe({
+      freq: ton(s0), dur: 0.42, gain: 0.075, slide: ton(s0 - 4) / ton(s0),
+      farbe: 2.8, oeffnung: 0.5, pan: (streuung() - 1) * 3,
+    });
+  }
+
+  /**
+   * Das Aufkommen nach einem Sturz: ein weicher Plumps.
+   *
+   * Der kleine Bruder von `aufprall` — der gehoert dem Tod und bleibt der
+   * schwerste Schlag. Dieser hier skaliert mit der Fallhoehe: Fuenf Bildpunkte
+   * sind ein Tap, vierzig ein Rumms. Die Hoehe steckt im Ereignis (`n`), nicht
+   * in einer Schaetzung des Tons.
+   */
+  private plumps(fallHoehe: number): void {
+    if (!this.darf('plumps')) return;
+    const t = Math.min(1, fallHoehe / 40);
+    const s = streuung();
+    this.engine.tone({
+      freq: (340 - t * 80) * s, dur: 0.09 + t * 0.05, type: 'sine',
+      gain: 0.08 + t * 0.12, slide: 0.6, attack: 0.004,
+    });
+    this.engine.noise({
+      dur: 0.04 + t * 0.04, gain: 0.03 + t * 0.05, filter: 'bandpass',
+      freq: 800 * s, q: 1.1, sweep: 0.5,
+    });
   }
 
   /**

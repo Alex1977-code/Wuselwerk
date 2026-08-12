@@ -142,6 +142,11 @@ export class World {
         break;
       case 'bomber':
         w.fuse = C.BOMB_FUSE_TICKS;
+        // Die Figur weiss, was sie da traegt. Nur beim einzeln gezuendeten
+        // Sprengmeister — beim Weltuntergang ruft der Knopf selbst, einmal
+        // (siehe game.ts): Zwanzig Rufe uebereinander sind keine Panik mehr,
+        // sondern Brei.
+        this.emit({ type: 'oh-no', x: w.x, y: w.y });
         break;
       case 'blocker':
         w.isBlocker = true;
@@ -231,6 +236,18 @@ export class World {
     const timeUp = this.timeLimitTicks > 0 && this.tickCount >= this.timeLimitTicks;
     const allGone = this.released >= this.total && this.activeCount === 0;
     if (!timeUp && !allGone) return;
+    // Wer noch springt oder stirbt, darf zu Ende springen und sterben.
+    //
+    // Ohne diese Zeile fror die **letzte** Figur mitten in der Bewegung ein,
+    // und zwar immer: Mit dem Sprung ins Tor ist sie nicht mehr aktiv, damit
+    // war `activeCount` null, die Phase kippte im selben Tick — und `tick()`
+    // kehrt bei gekippter Phase sofort zurueck. Der Zeitpunkt, an dem das
+    // Ende feststeht, und der Zeitpunkt, an dem es eintritt, sind zweierlei:
+    // Die Retterin stand den ganzen Vorhang lang reglos vor dem Tor, der
+    // Sprengmeister hockte neben seinem eigenen Krater. Das Ende wartet jetzt
+    // die knappe halbe Sekunde, die ein Abgang dauert — am Ausgang aendert
+    // das nichts, nur am Bild.
+    if (this.wusels.some((w) => w.state === State.SAVING || w.state === State.DYING)) return;
     this.phase = this.saved >= this.needed ? 'won' : 'lost';
   }
 
@@ -473,6 +490,13 @@ export class World {
         this.die(w, DeathCause.SPLAT);
         return;
       }
+      // Das Aufkommen. Erst ab ein paar Bildpunkten — das Absacken hinter
+      // einem Graeber ist kein Sturz — und nicht am Schirm: Wer schwebt,
+      // landet weich, und weich ist still. `n` traegt die Fallhoehe, damit
+      // der Ton weiss, wie schwer er sein darf.
+      if (!floating && w.fallDist >= C.LAND_LAUT) {
+        this.emit({ type: 'land', x: w.x, y: w.y, n: w.fallDist });
+      }
       this.setState(w, w.isBlocker ? State.BLOCKING : State.WALKING);
       return;
     }
@@ -484,6 +508,12 @@ export class World {
     // den Umschlag an Ton und Bild.
     if (w.hasFloater && w.fallDist === C.FLOAT_DEPLOY) {
       this.emit({ type: 'float', x: w.x, y: w.y });
+    }
+    // Der Schrei im freien Fall. Die Schwelle liegt **hinter** dem Schirm
+    // (`FLOAT_DEPLOY` ist 10): Ein Schirmspringer schreit nie, sein Schirm ist
+    // schneller. Alle anderen wissen ab hier, dass das kein Absacken mehr ist.
+    if (w.fallDist === C.SCHREI_AB && !w.hasFloater) {
+      this.emit({ type: 'scream', x: w.x, y: w.y });
     }
     if (w.y - C.WUSEL_H > this.terrain.height) {
       this.die(w, DeathCause.ABYSS);

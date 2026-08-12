@@ -168,6 +168,12 @@ export function schopfPuls(basis: string, fuse: number): string {
  * Figur selbst im Gewuehl steckt. Gezeichnet wird er vor der Figur, damit er
  * hinter ihr liegt — ein Schein ueber dem Koerper waere Nebel.
  *
+ * **Er pulst nicht mehr.** Frueher hing er an `zuenderGlut` und blinkte im
+ * Lampentakt — zusammen mit dem Licht auf der Figur und dem pulsenden Band
+ * war das „eine flackernde Figur", und genau so wurde es gemeldet. Seit die
+ * Uhr ueber dem Kopf die Zeit ansagt (`drawZuendUhr`), muss der Schein nichts
+ * mehr ansagen; er waechst nur noch ruhig mit der Naehe zum Knall.
+ *
  * @param x Fusspunkt auf dem Bildschirm.
  * @param koerperH Figurenhoehe in logischen Pixeln.
  * @param s Bildpunkte je logischem Pixel.
@@ -180,15 +186,15 @@ export function drawWarnschein(
   s: number,
   fuse: number,
 ): void {
-  const glut = zuenderGlut(fuse);
-  if (glut <= 0.02) return;
+  if (fuse <= 0) return;
+  // Ruhige Rampe statt Puls: von einem Drittel beim Zuenden auf voll am Knall.
+  const nah = 1 - Math.min(1, fuse / (5 * TICK_HZ));
+  const glut = 0.34 + 0.66 * nah;
   const my = y - koerperH * 0.55 * s;
-  // Der Radius atmet mit. Eine Lampe, die nur heller wird, ist ein Regler; eine,
-  // deren Hof mitwaechst, ist Licht.
-  const r = koerperH * s * (0.9 + 0.85 * glut);
+  const r = koerperH * s * (0.9 + 0.55 * glut);
   const schein = ctx.createRadialGradient(x, my, 0, x, my, r);
-  schein.addColorStop(0, `rgba(255, 122, 48, ${0.5 * glut})`);
-  schein.addColorStop(0.45, `rgba(255, 90, 34, ${0.22 * glut})`);
+  schein.addColorStop(0, `rgba(255, 122, 48, ${0.4 * glut})`);
+  schein.addColorStop(0.45, `rgba(255, 90, 34, ${0.18 * glut})`);
   schein.addColorStop(1, 'rgba(255, 80, 30, 0)');
   ctx.save();
   ctx.fillStyle = schein;
@@ -199,18 +205,29 @@ export function drawWarnschein(
 }
 
 /**
- * Das Licht **auf** der Figur.
+ * Die Zuendschnur-Uhr ueber dem Kopf: die Sekunde als Ziffer, darum ein
+ * Ring, der sich im Lauf der Sekunde leert.
  *
- * Hier liegt die Antwort auf „die Murmel soll deutlich die Farbe wechseln",
- * ohne die Regel zu brechen, dass ihr Koerper nie eingefaerbt wird: Das ist
- * keine Farbe, das ist **Beleuchtung**. Der Kiesel bleibt derselbe Kiesel, er
- * steht nur in orangem Licht — genau das, was eine Lampe auf dem Kopf mit ihrem
- * Traeger macht.
+ * ## Warum eine Uhr und kein Blinken
  *
- * Technisch ein additiver Auftrag, auf die Koerperflaeche beschnitten. Ohne den
- * Beschnitt waere es ein zweiter Schein und damit doppelt gemoppelt.
+ * Die erste Fassung sagte die Restzeit ueber Licht an: pulsendes Band,
+ * pulsender Schein, pulsendes Licht auf dem Koerper. Das war dreimal dieselbe
+ * Aussage, und zusammen ergab es keine Lampe, sondern eine flackernde Figur —
+ * so stand es in der Rueckmeldung. Eine Ziffer sagt dasselbe ohne ein
+ * einziges Blinken, und sie sagt es genauer: „3" liest sich schneller als
+ * drei Pulse zaehlen.
+ *
+ * Der Ring ist die stetige Haelfte der Aussage: Er leert sich im Uhrzeigersinn
+ * einmal je Sekunde und macht sichtbar, dass die Zeit **laeuft** — eine nackte
+ * Ziffer, die sekundenlang stillsteht, saehe angehalten aus. Beides ist rein
+ * aus `fuse` gerechnet, also deterministisch und je Figur ihre eigene.
+ *
+ * @param x Fusspunkt auf dem Bildschirm.
+ * @param y Fusspunkt auf dem Bildschirm (Unterkante der Figur).
+ * @param koerperH Figurenhoehe in logischen Pixeln.
+ * @param s Bildpunkte je logischem Pixel.
  */
-export function drawWarnlicht(
+export function drawZuendUhr(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -218,20 +235,44 @@ export function drawWarnlicht(
   s: number,
   fuse: number,
 ): void {
-  const glut = zuenderGlut(fuse);
-  if (glut <= 0.02) return;
-  const b = koerperH * 0.42 * s;
-  const h = koerperH * s;
+  if (fuse <= 0) return;
+  const sek = Math.ceil(fuse / TICK_HZ);
+  // Anteil der laufenden Sekunde, der noch uebrig ist: 1 direkt nach dem
+  // Umspringen, gegen 0 kurz davor.
+  const rest = (fuse - (sek - 1) * TICK_HZ) / TICK_HZ;
+  // Ueber dem Scheitel, mit Luft — beim Wuselwerker ragt das Haar gut einen
+  // Pixel ueber die Koerperhoehe hinaus.
+  const mx = x;
+  const my = y - (koerperH + 4.2) * s;
+  const r = 2.1 * s;
+
   ctx.save();
+  // Die letzte Sekunde wechselt von Signalorange auf Weissglut — dieselben
+  // zwei Farben, mit denen vorher die Lampe endete. Ein Wechsel, kein Puls.
+  const heiss = sek <= 1;
+  const farbe = heiss ? WARN_KERN : WARN_ORANGE;
+
+  // Dunkler Teller, damit die Ziffer auf jedem Untergrund steht. Leicht
+  // durchscheinend: Die Uhr gehoert zur Szene, nicht zur Bedienoberflaeche.
+  ctx.fillStyle = 'rgba(20, 22, 28, 0.72)';
   ctx.beginPath();
-  ctx.ellipse(x, y - h * 0.5, b, h * 0.54, 0, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.globalCompositeOperation = 'lighter';
-  const licht = ctx.createRadialGradient(x, y - h * 0.62, 0, x, y - h * 0.45, h * 0.8);
-  licht.addColorStop(0, `rgba(255, 138, 62, ${0.62 * glut})`);
-  licht.addColorStop(1, `rgba(210, 60, 20, ${0.2 * glut})`);
-  ctx.fillStyle = licht;
-  ctx.fillRect(x - b, y - h * 1.1, b * 2, h * 1.2);
+  ctx.arc(mx, my, r, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Der Ring: beginnt oben und leert sich im Uhrzeigersinn.
+  ctx.strokeStyle = farbe;
+  ctx.lineWidth = Math.max(1, 0.42 * s);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(mx, my, r, -Math.PI / 2, -Math.PI / 2 + rest * Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = farbe;
+  ctx.font = `700 ${(2.6 * s).toFixed(1)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Ein Hauch tiefer als die Mitte — Ziffern haengen optisch hoch.
+  ctx.fillText(String(sek), mx, my + 0.14 * s);
   ctx.restore();
 }
 

@@ -55,6 +55,9 @@ if (kp?.offen) {
   await knopf('start');
 } else {
   await page.evaluate((l) => window.__wuselwerk?.debugLoadLevel(l), level);
+  await sleep(300);
+  // Auch der Direktlader landet erst im Vorspann.
+  await knopf('start');
 }
 await sleep(Number(warten) * 1000);
 // Beruf vergeben ueber den Haken des Spiels. Ueber die Bedienung sind manche
