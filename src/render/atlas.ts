@@ -1,6 +1,7 @@
 import { State, type SkillId, type Wusel } from '../core/types';
 import { sx, sy, type View } from './camera';
-import { drawSchopf, schopfFarbe } from './schopf';
+import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
+import { drawWerkzeug } from './werkzeug';
 
 /**
  * Sprite-Atlas für die Figuren.
@@ -23,27 +24,20 @@ import { drawSchopf, schopfFarbe } from './schopf';
  */
 
 /**
- * Zellmass. Es folgt der Mähne, nicht dem Körper.
+ * Das Zellmass der **Rückfallebene**, nicht des ausgelieferten Blattes.
  *
- * Der Körper ist 12 logische Pixel hoch und 8 breit — dafür genügte die alte
- * Zelle 24 × 24. Das Ankermodell (`art-src/wuselwerker-v4.glb`) hat die
- * Haarmasse aber vom Zierrat zur Hauptsache gemacht. `npm run modell:messen`
- * misst sie am Modell selbst und rechnet sie auf Figurenhöhe 12 um:
+ * Das ist seit der Murmel eine wichtige Unterscheidung. Diese vier Zahlen
+ * beschreiben nur noch `DEFAULT_MANIFEST` — das Ersatzblatt, das aus dem
+ * prozeduralen Zeichner entsteht. Das echte Blatt bringt sein Mass in
+ * `murmel.atlas.json` selbst mit, und dort ist es **aus der Figurenhöhe
+ * zurückgerechnet** statt festgeschrieben (siehe `scripts/bake-murmel.mjs`):
+ * Der Körper der Murmel füllt einen festen Anteil der Zelle, also folgt die
+ * Zelle aus `WUSEL_H` und nicht umgekehrt.
  *
- *     Haar über dem Scheitel   5,4
- *     Haar neben der Mitte     7,5
- *
- * Daraus die Zelle, mit ausdrücklicher Zugabe für Bewegung, die das Modell in
- * seiner Ruhepose nicht zeigen kann:
- *
- * - **Höhe:** im Fall steht das Haar senkrecht, also rund die Hälfte höher
- *   → 8 über dem Scheitel, 20 über dem Fusspunkt, plus 1 Umriss und 1 Reserve
- *   → **22 Zeilen**. Die 6 darunter tragen Staub und Squash.
- * - **Breite:** im Lauf weht es nach hinten, ebenfalls rund die Hälfte weiter
- *   → 11, plus 1 Umriss und 2 Reserve → **14 Spalten je Seite**.
- *
- * Das Messwerkzeug prüft diese Zelle gegen das Modell und schlägt Alarm, wenn
- * ein neues Modell nicht mehr hineinpasst.
+ * Der Renderer liest ausschliesslich `manifest.cell` und `manifest.anchor` —
+ * diese Konstanten hier erreichen ihn nie. Wer sie ändert, ändert das
+ * Ersatzblatt; wer die Figurengrösse ändern will, ändert `WUSEL_H` und bäckt
+ * neu.
  *
  * Die Breite bleibt gerade und der Anker auf halber Zellbreite — sonst
  * verliert die Spiegelung ihre Versatzfreiheit (siehe `drawWusel`).
@@ -72,6 +66,8 @@ export interface ClipDef {
   anchors?: [number, number][];
   /** Zustand des Schopfs je Einzelbild — Index in `SCHOPF_ZUSTAND`. */
   tuff?: number[];
+  /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
+  hands?: [number, number][];
 }
 
 export interface AtlasManifest {
@@ -296,6 +292,28 @@ export class SpriteAtlas {
       ch * s,
     );
 
+    // Das Werkzeug — vor dem Koerper, hinter dem Schopf.
+    //
+    // Die Reihenfolge ist Vorgabe und hat einen Grund: Der Schopf soll beim
+    // Bohren **vor** dem Keil durchschwingen koennen. Laege er darunter,
+    // verschwaende er hinter dem Geraet genau in dem Moment, in dem er am
+    // meisten ausschlaegt.
+    if (clip.hands) {
+      const h = clip.hands[frame] ?? clip.hands[0];
+      // Die Koerperhoehe steckt im Blatt: Der Koerper fuellt einen festen
+      // Anteil der Zelle, und die Zelle ist aus genau dieser Hoehe
+      // zurueckgerechnet worden (siehe `scripts/bake-murmel.mjs`).
+      const koerperH = this.manifest.cell.h * 0.706;
+      drawWerkzeug(
+        ctx,
+        name,
+        h[0] - this.manifest.anchor.x,
+        h[1] - this.manifest.anchor.y,
+        koerperH,
+        s,
+      );
+    }
+
     // Der Schopf, falls das Blatt einen kennt.
     //
     // Er wird hier gezeichnet und nicht daneben, weil er im selben gekippten
@@ -318,7 +336,7 @@ export class SpriteAtlas {
         (a[0] - this.manifest.anchor.x) * s,
         (a[1] - this.manifest.anchor.y) * s,
         zustand,
-        schopfFarbe(schopfAuftrag(w)),
+        schopfPuls(schopfFarbe(schopfAuftrag(w)), w.fuse),
         s,
       );
     }

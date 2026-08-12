@@ -948,6 +948,14 @@ export class Game {
     return true;
   }
 
+  /** Holt das ausgelieferte Blatt zurueck — Gegenstueck zu den beiden darueber. */
+  async debugReloadAtlas(): Promise<boolean> {
+    this.atlas = null;
+    await this.initArt();
+    if (this.scene) this.scene.atlas = this.atlas;
+    return this.atlas !== null;
+  }
+
   debugClearAtlas(): void {
     this.atlas = null;
     if (this.scene) this.scene.atlas = null;

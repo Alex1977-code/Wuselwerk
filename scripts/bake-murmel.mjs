@@ -79,6 +79,17 @@ const REIHEN = anker.reihenfolge;
 const SICHT = 1.22;
 /** Die Fusslinie liegt drei Bildpunkte ueber der Zellunterkante. */
 const FUSS_PX = 3;
+/**
+ * Wie weit die Hand vom Armknochen entfernt liegt, in Modelleinheiten.
+ *
+ * Das Rig hat keinen Handknochen — der Arm ist ein einzelner Knochen bei
+ * y = 0,455, und alles davor ist nur Haut. Gemessen an der Figurenhoehe von
+ * 0,861 reicht ein Arm etwa ein Viertel davon nach aussen. Die Zahl muss nicht
+ * genau sein: Laut Vorlage liest der Spieler die **Achse** des Werkzeugs, nicht
+ * seine Ansatzstelle. Ein paar Hundertstel daneben sieht niemand, eine falsche
+ * Achse jeder.
+ */
+const ARM_LAENGE = 0.21;
 
 /** Zulaessige Abweichung der nachgerechneten Ankerpunkte, in Bildpunkten. */
 const TOLERANZ = 1.5;
@@ -137,6 +148,7 @@ const ZELLE = ${ZELLE};
 const SS = ${SS};
 const SICHT = ${SICHT};
 const FUSS_PX = ${FUSS_PX};
+const ARM_LAENGE = ${ARM_LAENGE};
 const GROESSE = ZELLE * SS;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -171,6 +183,7 @@ camera.lookAt(0, 0, 0);
 let mixer = null;
 let wurzel = null;
 let crown = null;
+const arme = [];
 const clips = {};
 
 window.laden = async (url) => {
@@ -179,6 +192,7 @@ window.laden = async (url) => {
   scene.add(wurzel);
   wurzel.traverse((o) => {
     if (o.isBone && o.name === 'Crown') crown = o;
+    if (o.isBone && (o.name === 'L_Arm' || o.name === 'R_Arm')) arme.push(o);
     if (o.isMesh) {
       o.frustumCulled = false;
       const m = o.material;
@@ -213,13 +227,29 @@ window.bild = (pose, zeit) => {
 
   renderer.render(scene, camera);
 
+  const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELLE];
+
   const p = new THREE.Vector3();
   crown.getWorldPosition(p);
-  // Von Welt- in Zellkoordinaten: x von der Mitte aus, y von oben nach unten.
-  const ax = (p.x / SICHT + 0.5) * ZELLE;
-  const ay = ((oben - p.y) / SICHT) * ZELLE;
 
-  return { bild: renderer.domElement.toDataURL('image/png'), anker: [ax, ay] };
+  // Der Werkzeugansatz: die **vordere** Hand.
+  //
+  // Das Rig hat keinen Handknochen, nur die beiden Arme. Genommen wird die
+  // Spitze des Armes, der weiter vorn steht — also der, mit dem gearbeitet
+  // wird. Die Spitze ist der Armknochen, entlang seiner eigenen Achse
+  // verlaengert; ein Knochenursprung allein saesse an der Schulter, und ein
+  // Werkzeug aus der Schulter sieht aus wie ein Pfeil im Ruecken.
+  let hand = null;
+  for (const a of arme) {
+    const t = a.localToWorld(new THREE.Vector3(0, ARM_LAENGE, 0));
+    if (!hand || t.x > hand.x) hand = t;
+  }
+
+  return {
+    bild: renderer.domElement.toDataURL('image/png'),
+    anker: zelle(p),
+    hand: zelle(hand),
+  };
 };
 window.bereit = true;
 </script>`;
@@ -261,6 +291,7 @@ if (!geladen.crown) throw new Error('Ohne den Knochen Crown laesst sich der Scho
 
 // --- Backen ------------------------------------------------------------------
 const bilder = [];
+const haende = [];
 const abweichungen = [];
 for (const a of AUFTRAG) {
   for (let i = 0; i < a.zeiten.length; i++) {
@@ -269,6 +300,7 @@ for (const a of AUFTRAG) {
       [a.name, a.zeiten[i]],
     );
     bilder.push({ pose: a.name, reihe: a.reihe, spalte: i, png: r.bild });
+    haende.push({ pose: a.name, bild: i, hand: r.hand });
     const soll = a.anker[i];
     const dx = r.anker[0] - soll[0];
     const dy = r.anker[1] - soll[1];
@@ -363,6 +395,16 @@ if (probe) {
             Number(((f.anchor_px[1] / ZELLE) * LOGISCH).toFixed(2)),
           ]),
           tuff: anker.posen[name].frames.map((f) => f.tuff),
+          // Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem
+          // Modell gemessen. Der Zeichner entscheidet anhand der Pose, ob und
+          // welches Geraet daraus waechst.
+          hands: haende
+            .filter((h) => h.pose === name)
+            .sort((a, b) => a.bild - b.bild)
+            .map((h) => [
+              Number(((h.hand[0] / ZELLE) * LOGISCH).toFixed(2)),
+              Number(((h.hand[1] / ZELLE) * LOGISCH).toFixed(2)),
+            ]),
         },
       ]),
     ),

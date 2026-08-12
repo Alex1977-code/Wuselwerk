@@ -361,6 +361,15 @@ async function main() {
   await page.evaluate(() => window.__wuselwerk.debugUseTemplateAtlas());
   const back = await page.evaluate(() => window.__wuselwerk.debugArt());
   check('Blatt lässt sich zur Laufzeit wieder einsetzen', back.atlas === true);
+  // **Das echte Blatt zurueckholen.** Ohne diese Zeile lief der ganze Rest der
+  // Probe mit dem Ersatzblatt aus dem prozeduralen Zeichner weiter — und jeder
+  // spaetere Bildabzug zeigte die falsche Figur. Das ist genau die Sorte
+  // Fehler, die man fuer einen Fehler im Spiel haelt und an der falschen Stelle
+  // sucht.
+  await page.evaluate(() => window.__wuselwerk.debugReloadAtlas());
+  await sleep(400);
+  const echt = await page.evaluate(() => window.__wuselwerk.debugArt());
+  check('Das ausgelieferte Blatt ist danach wieder aktiv', echt.atlas === true && echt.clips === 12);
 
   // --- Steuerung: einhändig schwenken und Übersichtskarte (GDD §3.5) --------
   const cam0 = await page.evaluate(() => window.__wuselwerk.debugCamera());

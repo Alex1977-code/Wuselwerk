@@ -70,6 +70,26 @@ export function schopfFarbe(skill: SkillId | null): string {
 }
 
 /**
+ * Der Sprengcountdown — als Pulsen der Schopffarbe, nicht als Ziffer.
+ *
+ * Die Vorgabe ist hier ausdruecklich: kein Zaehler ueber dem Kopf. Der Schopf
+ * wechselt im Sekundentakt zwischen Akzentfarbe und Weiss, und der Takt
+ * verdoppelt sich in den letzten zwei Sekunden. Das ist ohne Text lesbar,
+ * funktioniert bei jeder Figurengroesse und passt zu einer Figur, die kein
+ * Gesicht hat.
+ *
+ * Getaktet wird an der **Zuendschnur selbst**, nicht an einer Bilduhr. Die
+ * zaehlt in Simulationsschritten herunter und ist damit fuer jede Figur die
+ * richtige Uhr: Zwei Sprengmeister, die nacheinander gezuendet wurden, pulsen
+ * gegeneinander statt im Gleichschritt — und man sieht, wer zuerst hochgeht.
+ */
+export function schopfPuls(basis: string, fuse: number): string {
+  if (fuse <= 0) return basis;
+  const takt = fuse < 120 ? 15 : 30;
+  return Math.floor(fuse / takt) % 2 === 0 ? '#FFFFFF' : basis;
+}
+
+/**
  * Eine Zacke: die Grundform von acht der neun Zustaende.
  *
  * Gezeichnet wird vom Ansatz aus nach oben, in logischen Pixeln. Zwei
