@@ -199,7 +199,18 @@ export class World {
         this.setState(w, State.BUILDING);
         break;
       case 'basher':
-        this.setState(w, State.BASHING);
+        // Keine Wand in Reichweite? Dann wird nicht gearbeitet, sondern
+        // vorgemerkt: Die Figur laeuft und faengt von selbst an, wenn die
+        // Wand kommt. Vorher verpuffte der Auftrag im ersten Arbeitstick
+        // („durchgebrochen", ohne je zugeschlagen zu haben).
+        //
+        // Wer dabei gerade etwas anderes arbeitet, hoert damit auf — die
+        // Umwidmung ist eine Entscheidung des Spielers, keine Empfehlung.
+        if (this.wandInReichweite(w)) this.setState(w, State.BASHING);
+        else {
+          w.vormerk = 'basher';
+          if (w.state !== State.WALKING) this.setState(w, State.WALKING);
+        }
         break;
       case 'miner':
         this.setState(w, State.MINING);
@@ -347,6 +358,7 @@ export class World {
       hasFloater: false,
       isBlocker: false,
       fuse: 0,
+      vormerk: null,
       cause: DeathCause.NONE,
       bornTick: this.tickCount,
     };
@@ -502,6 +514,18 @@ export class World {
     this.die(w, DeathCause.EXPLOSION);
   }
 
+  /**
+   * Steht in Blickrichtung eine Wand nah genug fuer den Rammer?
+   *
+   * Dieselbe Pruefung, mit der der Rammer sein Ende erkennt („durchgebrochen"),
+   * nur andersherum gelesen: Was ihn aufhoeren laesst, laesst die Vormerkung
+   * anfangen. Eine dritte, eigene Reichweite gaebe nur eine dritte Wahrheit.
+   */
+  private wandInReichweite(w: Wusel): boolean {
+    const lx = this.aheadX(w, 1, C.BASH_LOOK);
+    return this.terrain.hasSolid(lx, w.y - C.WUSEL_H + 1, C.BASH_LOOK, C.WUSEL_H);
+  }
+
   /** Passt der Koerper (eine Spalte hoch WUSEL_H) an diese Stelle? */
   private bodyFits(x: number, y: number): boolean {
     for (let r = y - C.WUSEL_H + 1; r <= y; r++) {
@@ -561,6 +585,13 @@ export class World {
       // Nur fuer den Ton: der haeufigste sichtbare Abprall des Spiels war
       // stumm (Kritik S4). Kein Zustand, nicht im Hash.
       this.emit({ type: 'bounce', x: w.x, y: w.y });
+      return;
+    }
+
+    // Die Vormerkung greift, sobald ihre Gelegenheit da ist.
+    if (w.vormerk === 'basher' && this.wandInReichweite(w)) {
+      w.vormerk = null;
+      this.setState(w, State.BASHING);
       return;
     }
 
@@ -884,7 +915,12 @@ export class World {
       mix(w.fallDist);
       mix(w.bricks);
       mix(w.fuse);
-      mix((w.hasClimber ? 1 : 0) | (w.hasFloater ? 2 : 0) | (w.isBlocker ? 4 : 0));
+      mix(
+        (w.hasClimber ? 1 : 0) |
+          (w.hasFloater ? 2 : 0) |
+          (w.isBlocker ? 4 : 0) |
+          (w.vormerk ? 8 : 0),
+      );
     }
     for (const s of SKILLS) mix(this.skills[s]);
     const m = this.terrain.mat;

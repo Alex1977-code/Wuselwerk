@@ -48,6 +48,7 @@ function makeWusel(setup: Setup, timer: number): Wusel {
     hasFloater: false,
     isBlocker: false,
     fuse: 0,
+    vormerk: null,
     cause: DeathCause.NONE,
     bornTick: 0,
     ...setup.extra,

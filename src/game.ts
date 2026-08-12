@@ -170,6 +170,11 @@ export class Game {
    * niemanden festhalten).
    */
   private nachspiel = -1;
+  /** Wo die Lupe hinsieht, in logischen Koordinaten — weich gefuehrt. */
+  private lupeX: number | null = null;
+  private lupeY = 0;
+  /** Kurzlebige Leerringe an Fehltipp-Stellen. */
+  private fehltipps: { x: number; y: number; bis: number }[] = [];
   /** Wann die aktuelle Phase begann — fuer Einblendungen und Sternauftritte. */
   private phaseSeitMs = 0;
   private zuletztGezeichnetePhase: Phase | null = null;
@@ -508,6 +513,7 @@ export class Game {
   // --- Zielen (GDD §3.3) ---------------------------------------------------
 
   private clearAim(): void {
+    this.lupeX = null;
     this.aim = null;
     this.fan = null;
     this.fanIndex = 0;
@@ -562,6 +568,15 @@ export class Game {
     if (this.target && this.selected) {
       this.world.assign(this.target.id, this.selected);
       this.dispatchEvents();
+    } else if (this.selected && this.aim && this.phase === 'running') {
+      // Der Fehltipp bekommt eine Quittung (Kritik F3b). Vorher verpuffte er
+      // voellig stumm — man wusste nicht, ob man daneben lag oder der Beruf
+      // ungueltig war. Jetzt: ein kurzer Leerring an der Stelle und ein sehr
+      // leiser Holzblock. Kein Fehlerton — falsch gemacht hat niemand etwas,
+      // es war nur niemand da.
+      const p = toLogical(this.camera.view(this.layout.play), this.aim.x, this.aim.y);
+      this.fehltipps.push({ x: p.x, y: p.y, bis: performance.now() + 420 });
+      this.audio.daneben();
     }
     this.aim = null;
     this.fan = null;
@@ -974,6 +989,21 @@ export class Game {
       );
     }
 
+    // Die Leerringe der Fehltipps: kurz aufblitzend, auslaufend.
+    if (this.fehltipps.length > 0) {
+      const jetzt = performance.now();
+      const v2 = this.camera.view(this.layout.play);
+      this.fehltipps = this.fehltipps.filter((f) => f.bis > jetzt);
+      for (const f of this.fehltipps) {
+        const t = (f.bis - jetzt) / 420;
+        ctx.strokeStyle = `rgba(255, 255, 255, ${0.5 * t})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(sx(v2, f.x), sy(v2, f.y), 8 + (1 - t) * 10, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
     drawTopBar(ctx, this.layout, this.hudState());
     drawControls(ctx, this.layout, this.hudState());
     if (!this.camera.follow) drawRecenter(ctx, this.layout);
@@ -983,10 +1013,23 @@ export class Game {
       const c = magnifierCenter(this.aim.x, this.aim.y, this.layout.play);
       // Im Fächer ist die Zugbewegung eine Auswahl, kein Zielen: die Lupe bleibt
       // auf der Figur, die gerade gewählt ist, statt dem Finger in den Himmel zu folgen.
-      const p =
-        this.fan && this.target
+      //
+      // Und mit gefangenem Ziel folgt sie **dem Ziel**, nicht dem Finger. Die
+      // Kritik (F3a) zeigte eine Lupe voll leeren Grases bei gueltigem Ziel:
+      // Der Finger stand still, die Figur lief aus dem Ausschnitt. Weich
+      // gefuehrt, damit ein Zielwechsel ein Schwenk ist und kein Schnitt.
+      const wunsch =
+        this.target
           ? { x: this.target.x, y: this.target.y - WUSEL_H / 2 }
           : toLogical(this.camera.view(this.layout.play), this.aim.x, this.aim.y);
+      if (this.lupeX === null) {
+        this.lupeX = wunsch.x;
+        this.lupeY = wunsch.y;
+      } else {
+        this.lupeX += (wunsch.x - this.lupeX) * 0.28;
+        this.lupeY += (wunsch.y - this.lupeY) * 0.28;
+      }
+      const p = { x: this.lupeX, y: this.lupeY };
       drawMagnifier(
         ctx,
         this.scene,

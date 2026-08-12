@@ -135,6 +135,11 @@ export class GameAudio {
     this.sfx.stern(i);
   }
 
+  /** Fehltipp: kein Fehlerton, nur ein leiser Holzblock — niemand war da. */
+  daneben(): void {
+    this.sfx.daneben();
+  }
+
   werkzeugGewaehlt(skill: SkillId): void {
     this.sfx.werkzeugGewaehlt(skill);
   }

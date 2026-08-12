@@ -269,6 +269,9 @@ export function cycleTicks(clip: ClipDef): number {
  */
 export function schopfAuftrag(w: Wusel): SkillId | null {
   if (w.fuse > 0) return 'bomber';
+  // Die Vormerkung zaehlt als Auftrag: Wer einen Rammer bestellt hat, soll die
+  // Figur wiederfinden, waehrend sie noch auf ihre Wand zulaeuft.
+  if (w.vormerk) return w.vormerk;
   switch (w.state) {
     case State.BLOCKING:
       return 'blocker';

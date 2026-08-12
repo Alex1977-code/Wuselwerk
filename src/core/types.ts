@@ -101,6 +101,15 @@ export interface Wusel {
   isBlocker: boolean;
   /** Restticks des Sprengcountdowns, 0 = kein Countdown. */
   fuse: number;
+  /**
+   * Ein vorgemerkter Beruf, der auf seine Gelegenheit wartet.
+   *
+   * Der Rammer greift nur mit Wand in Reichweite — das Zeitfenster dafuer
+   * nannte das Projekt selbst „wenige Pixel" (Kritik F3c). Wer ihn frueher
+   * vergibt, verliert den Auftrag nicht mehr: Die Figur traegt ihn als
+   * Vormerkung und beginnt von selbst, sobald die Wand in Reichweite kommt.
+   */
+  vormerk: SkillId | null;
   cause: DeathCause;
   /** Tick, in dem die Figur die Falltuer verlassen hat. */
   bornTick: number;

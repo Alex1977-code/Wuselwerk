@@ -269,7 +269,11 @@ describe('Skill-Gültigkeit (Grundlage des intelligenten Zielens)', () => {
     const a = place(w, 50, 79, State.DIGGING);
     expect(w.canAssignTo(a, 'basher')).toBe(true);
     w.assign(a.id, 'basher');
-    expect(a.state).toBe(State.BASHING);
+    // Ohne Wand in Reichweite hoert sie mit dem Graben auf und traegt den
+    // Rammer als Vormerkung — siehe „Rammer-Vormerkung" unten. Mit Wand
+    // begaenne sie sofort.
+    expect(a.state).toBe(State.WALKING);
+    expect(a.vormerk).toBe('basher');
   });
 
   it('verweigert alles, was das Kontingent nicht hergibt', () => {
@@ -575,5 +579,43 @@ describe('Zeitrücklauf', () => {
     expect(w.zurueck()).toBe(true);
     expect(w.phase).toBe('running');
     expect(w.wusels.some((x) => isActive(x))).toBe(true);
+  });
+});
+
+/**
+ * Die Vormerkung des Rammers — Kritikpunkt F3c und sein prüfbares Soll:
+ * „Tipp 20 Pixel vor der Wand führt zum Durchbruch."
+ *
+ * Vorher verpuffte der Auftrag im ersten Arbeitstick: keine Wand in
+ * Reichweite, „durchgebrochen", zurück ins Laufen — Werkzeug weg, nichts
+ * passiert. Jetzt trägt die Figur den Auftrag als Vormerkung und beginnt von
+ * selbst, sobald die Wand kommt.
+ */
+describe('Rammer-Vormerkung', () => {
+  it('führt einen Tipp 20 Pixel vor der Wand zum Durchbruch', () => {
+    const w = testWorld();
+    w.released = w.total;
+    w.terrain.fillRect(80, 60, 8, 20, MAT.EARTH);
+    const a = place(w, 60, 79);
+    run(w, 2);
+    expect(w.assign(a.id, 'basher')).toBe(true);
+    // Er läuft erst — vorgemerkt, nicht arbeitend.
+    expect(a.state).toBe(State.WALKING);
+    expect(a.vormerk).toBe('basher');
+    run(w, 500);
+    // Durchgebrochen und auf der anderen Seite weitergelaufen.
+    expect(a.x).toBeGreaterThan(88);
+    expect(a.vormerk).toBeNull();
+  });
+
+  it('beginnt sofort, wenn die Wand schon in Reichweite steht', () => {
+    const w = testWorld();
+    w.released = w.total;
+    w.terrain.fillRect(66, 60, 8, 20, MAT.EARTH);
+    const a = place(w, 62, 79);
+    run(w, 2);
+    w.assign(a.id, 'basher');
+    expect(a.state).toBe(State.BASHING);
+    expect(a.vormerk).toBeNull();
   });
 });

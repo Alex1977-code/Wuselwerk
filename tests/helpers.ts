@@ -50,6 +50,7 @@ export function place(
     hasFloater: false,
     isBlocker: false,
     fuse: 0,
+    vormerk: null,
     cause: DeathCause.NONE,
     bornTick: 0,
     ...extra,

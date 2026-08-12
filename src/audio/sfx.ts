@@ -1031,6 +1031,11 @@ export class Sfx {
     });
   }
 
+  /** Der Fehltipp: ein einzelner, sehr leiser Holzblock. */
+  daneben(): void {
+    woodblock(this.engine, { freq: 900 * streuung(), gain: 0.045, bus: 'sfx', fest: false });
+  }
+
   werkzeugGewaehlt(skill?: SkillId): void {
     const i = skill ? Math.max(0, SKILLS.indexOf(skill)) : 0;
     pling(this.engine, { freq: ton(i), dur: 0.24, gain: 0.12, bus: 'sfx', fest: false });
