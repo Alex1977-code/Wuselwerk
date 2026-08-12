@@ -8,6 +8,9 @@
  * liest sich beinahe wie Gehen. Bei einer Figur von zwoelf logischen Pixeln
  * ist eine Neigung von zwanzig Grad kein Unterschied, den man im Pulk erkennt.
  *
+ * Das gilt fuer die **Murmel**. Beim Erdmaennchen hat sich die Lage geaendert,
+ * und weiter unten bei `FUEHRT_TIER` steht, woran das gemessen wurde.
+ *
  * ## Die eine Regel, aus der alles folgt
  *
  * **Der Spieler liest die Achse, nicht das Geraet.** Nicht die Form des Keils
@@ -37,7 +40,7 @@ const EISEN = '#3A3430';
 const HOLZ = '#6B5A46';
 
 /** Welche Pose welches Geraet fuehrt, und in welchem Winkel. */
-type Geraet = 'keil' | 'spaten' | 'planke';
+type Geraet = 'keil' | 'spaten' | 'planke' | 'krallen';
 
 interface Fuehrung {
   geraet: Geraet;
@@ -57,6 +60,60 @@ const FUEHRT: Record<string, Fuehrung> = {
   // Steigend: Die Planke zeigt dorthin, wo die naechste Stufe entsteht.
   building: { geraet: 'planke', winkel: -22, laenge: 7.0 },
 };
+
+/**
+ * Womit das Erdmaennchen arbeitet: mit dem, was es hat.
+ *
+ * ## Warum die drei Geraete hier verschwinden
+ *
+ * Weil sie eine Luecke fuellten, die es nicht mehr gibt — und das ist gemessen,
+ * nicht behauptet. Als Mass dient die Ueberdeckung der Silhouetten der drei
+ * grabenden Berufe: Je hoeher, desto aehnlicher sehen sie sich.
+ *
+ * | | Ueberdeckung |
+ * |---|---|
+ * | alte Posen, ohne jedes Geraet | 69,2 % |
+ * | alte Posen mit Keil und Spaten | 50,3 % |
+ * | neue Posen, ohne jedes Geraet | 53,7 % |
+ *
+ * Neunundsechzig Prozent — die alten Posen waren fast dasselbe Bild, und das
+ * Geraet trug den Unterschied allein. Es war die richtige Antwort auf die
+ * Lage. Inzwischen stehen die drei bei 14, 40 und 60 Grad Rumpfneigung und
+ * unterscheiden sich in der Haltung des ganzen Tieres; die nackte Silhouette
+ * liegt damit fast dort, wo frueher nur das Geraet hinkam.
+ *
+ * ## Was die Krallen leisten — und was nicht
+ *
+ * **Nicht** die Unterscheidbarkeit. Mit ihnen misst dieselbe Ueberdeckung 54,3
+ * statt 53,7 Prozent; dafuer sind sie zu klein. Wer sie fuer den Ersatz des
+ * Spatens haelt, taeuscht sich, und ich habe genau das zuerst geglaubt.
+ *
+ * Sie bleiben aus einem anderen Grund: Diese Figur ist sandbraun auf sandbraun,
+ * und „Farbe fehlt" stand schon einmal im Rueckmeldebogen. Ein dunkler Fleck an
+ * der arbeitenden Pfote ist der Akzent, den ihr fehlt — und er ist kein
+ * Fremdkoerper, sondern das, was ein Erdmaennchen zum Graben tatsaechlich
+ * benutzt.
+ *
+ * Die **Planke** bleibt. Sie ist kein Werkzeug, sondern das Material: Aus ihr
+ * wird die Stufe, die gleich im Gelaende liegt. Sie wegzunehmen hiesse, den
+ * Brueckenbauer beim Bauen von nichts zu zeigen.
+ */
+const KRALLE = '#33251a';
+
+/**
+ * Die Abweichungen des Erdmaennchens. Die Winkel bleiben, nur das Mittel wechselt
+ * — der Spieler liest weiterhin die Achse, sie kommt jetzt nur aus der Pfote.
+ */
+const FUEHRT_TIER: Record<string, Fuehrung> = {
+  bashing: { geraet: 'krallen', winkel: 0, laenge: 3.1 },
+  mining: { geraet: 'krallen', winkel: 45, laenge: 3.0 },
+  digging: { geraet: 'krallen', winkel: 90, laenge: 2.8 },
+};
+
+function fuehrung(pose: string, figur: string): Fuehrung | undefined {
+  if (figur === 'erdmaennchen' && FUEHRT_TIER[pose]) return FUEHRT_TIER[pose];
+  return FUEHRT[pose];
+}
 
 /** Fuehrt diese Pose ein Werkzeug? */
 export function fuehrtWerkzeug(pose: string): boolean {
@@ -97,6 +154,37 @@ function spaten(ctx: CanvasRenderingContext2D, l: number): void {
   ctx.lineTo(l * 0.66, d * 1.5);
   ctx.closePath();
   ctx.fill();
+}
+
+/**
+ * Grabkrallen: drei gespreizte Spitzen, die aus der Pfote in Wirkungsrichtung
+ * zeigen.
+ *
+ * Gespreizt und nicht parallel — drei parallele Striche sind bei dieser Groesse
+ * ein Balken, und ein Balken ist wieder ein Geraet. Der Faecher liest sich als
+ * Hand, und weil er in der Mitte am laengsten ist, hat er trotzdem eine
+ * eindeutige Achse.
+ */
+function krallen(ctx: CanvasRenderingContext2D, l: number): void {
+  ctx.fillStyle = KRALLE;
+  for (const [winkel, anteil] of [
+    [-22, 0.82],
+    [0, 1],
+    [22, 0.86],
+  ] as const) {
+    const b = (winkel * Math.PI) / 180;
+    const cx = Math.cos(b);
+    const cy = Math.sin(b);
+    const len = l * anteil;
+    // Ein Keil vom Pfotenballen zur Spitze, leicht nach aussen gebogen.
+    const d = l * 0.15;
+    ctx.beginPath();
+    ctx.moveTo(-cy * d - cx * l * 0.35, cx * d - cy * l * 0.35);
+    ctx.quadraticCurveTo(cx * len * 0.6 - cy * d * 0.7, cy * len * 0.6 + cx * d * 0.7, cx * len, cy * len);
+    ctx.quadraticCurveTo(cx * len * 0.55 + cy * d * 0.5, cy * len * 0.55 - cx * d * 0.5, cy * d - cx * l * 0.35, -cx * d - cy * l * 0.35);
+    ctx.closePath();
+    ctx.fill();
+  }
 }
 
 /** Eine Planke: gerader Balken, an beiden Enden gleich. */
@@ -199,12 +287,18 @@ export function werkzeugAnsatz(
   koerperH: number,
   figur = 'murmel',
 ): { x: number; y: number; bogen: number } | null {
-  const f = FUEHRT[pose];
+  const f = fuehrung(pose, figur);
   if (!f) return null;
   const k = KOERPER[figur] ?? KOERPER.murmel;
   const bogen = (f.winkel * Math.PI) / 180;
   const cx = Math.cos(bogen);
   const cy = Math.sin(bogen);
+  // Krallen wachsen aus der Pfote und werden nicht aus dem Koerper geschoben.
+  //
+  // Der Austritt berichtigt einen **geschaetzten** Ansatz, der im Bauch landet.
+  // Eine Kralle sitzt dort, wo die Pfote ist — auch wenn die gerade unter dem
+  // Bauch durchzieht und man sie halb nicht sieht. Genau das soll man sehen.
+  if (f.geraet === 'krallen') return { x: hx, y: hy, bogen };
   const hy2 = hy + koerperH * k.handab;
   // Der Koerper als Ellipse. Ihr Mittelpunkt liegt ueber dem Fusspunkt,
   // deshalb wird der Ansatz vorher dorthin umgerechnet.
@@ -235,7 +329,7 @@ export function drawWerkzeug(
 ): void {
   const a = werkzeugAnsatz(pose, hx, hy, koerperH, figur);
   if (!a) return;
-  const f = FUEHRT[pose];
+  const f = fuehrung(pose, figur)!;
 
   ctx.save();
   ctx.translate(a.x * s, a.y * s);
@@ -243,6 +337,7 @@ export function drawWerkzeug(
   ctx.rotate(a.bogen);
   if (f.geraet === 'keil') keil(ctx, f.laenge);
   else if (f.geraet === 'spaten') spaten(ctx, f.laenge);
+  else if (f.geraet === 'krallen') krallen(ctx, f.laenge);
   else planke(ctx, f.laenge);
   ctx.restore();
 }

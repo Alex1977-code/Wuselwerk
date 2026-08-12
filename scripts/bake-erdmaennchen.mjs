@@ -168,6 +168,21 @@ const DREHUNG_GRAD = {
 const FIGUR_EINHEITEN = 0.861;
 const SICHT = 1.22;
 const FUSS_PX = 3;
+/**
+ * Wie weit die ganze Figur in der Zelle nach hinten rueckt, in logischen Pixeln.
+ *
+ * Eine Eigenschaft des **Modells**, nicht der Pose: Sein Nullpunkt sitzt im
+ * Becken, ein gutes Stueck hinter der Koerpermitte. Ungerueckt steht deshalb
+ * jede Pose rechtslastig in der Zelle — beim Rammen 4,7 Pixel links gegen 8,9
+ * rechts —, und was ueber 8,5 hinausgeht, schneidet die Zelle ab.
+ *
+ * **Ein** Wert fuer alle Posen, und das ist der Punkt. Jede Pose einzeln zu
+ * mitteln waere naheliegend und falsch: Die Verschiebung fiele je Pose anders
+ * aus (beim Hochziehen 2,8 Pixel, beim Sterben 0,3), und die Figur spraenge beim
+ * Wechsel der Pose seitwaerts. Der Versatz gehoert zur Figur, also gilt er
+ * ueberall gleich.
+ */
+const SEITENVERSATZ = 1.6;
 const ARM_LAENGE = 0.21;
 /** Zulaessige Abweichung der gemessenen Figurenhoehe, in Modelleinheiten. */
 const HOEHE_TOLERANZ = 0.02;
@@ -285,12 +300,30 @@ window.laden = async (url) => {
   // Ruhelage festhalten: die Eigendrehung jedes Knochens und seine **Achse**,
   // also die Richtung zu seinem Kind im eigenen Raum. Ohne diese Achse laesst
   // sich keine Zielrichtung ausrechnen — sie ist das, was gedreht wird.
+  //
+  // Das Kind wird nach **Abstand** gewaehlt und nicht nach Reihenfolge. Dieses
+  // Rig haengt an mehrere Gelenke einen Verdrehknochen, der an genau derselben
+  // Stelle sitzt wie sein Elternteil — bei fuenf Knochen steht so einer an
+  // erster Stelle. Sein Abstand ist 0,0001; normalisiert ergibt das den
+  // Nullvektor, und setFromUnitVectors bekommt eine Achse, die keine ist.
+  //
+  // Der Fehler war vollkommen still. Er meldet nichts, er stuerzt nicht ab, die
+  // Pose sieht nur nicht so aus wie ihre Tabelle: Nahseitiger Oberarm,
+  // nahseitiger Oberschenkel und **beide** Unterarme haben ihre Zielrichtung in
+  // allen zwoelf Posen verworfen und sind in Ruhelage stehengeblieben. Man
+  // haelt das fuer eine schlecht getroffene Pose und stellt an den Zahlen
+  // nach — die richtig waren.
+  const ohneAchse = [];
   for (const [name, b] of Object.entries(knochen)) {
-    const kind = b.children.find((c) => c.isBone);
-    const achse = kind
-      ? kind.position.clone().normalize()
-      : new THREE.Vector3(0, 1, 0);
-    ruhe[name] = { q: b.quaternion.clone(), achse, hatKind: !!kind };
+    let kind = null;
+    for (const c of b.children) {
+      if (!c.isBone) continue;
+      if (!kind || c.position.lengthSq() > kind.position.lengthSq()) kind = c;
+    }
+    const brauchbar = !!kind && kind.position.length() > 1e-3;
+    if (kind && !brauchbar) ohneAchse.push(name);
+    const achse = brauchbar ? kind.position.clone().normalize() : new THREE.Vector3(0, 1, 0);
+    ruhe[name] = { q: b.quaternion.clone(), achse, hatKind: brauchbar };
   }
   // Nach Tiefe sortieren: Eltern zuerst. Die Weltdrehung eines Kindes haengt an
   // der schon gesetzten Drehung seines Elternteils.
@@ -298,7 +331,7 @@ window.laden = async (url) => {
     const tiefe = (o) => { let n = 0; for (let p = o; p; p = p.parent) n++; return n; };
     return tiefe(knochen[x]) - tiefe(knochen[y]);
   });
-  return { knochen: Object.keys(knochen).length, netz: !!netz };
+  return { knochen: Object.keys(knochen).length, netz: !!netz, ohneAchse };
 };
 
 /**
@@ -602,6 +635,16 @@ const geladen = await page.evaluate((u) => window.laden(u), `/${GLB}`);
 console.log(`Modell geladen — ${geladen.knochen} Knochen, Netz ${geladen.netz ? 'da' : 'FEHLT'}`);
 if (!geladen.netz) throw new Error('Kein gehaeutetes Netz im Modell');
 
+// Wer keine brauchbare Achse hat, kann keine Zielrichtung annehmen. Das laut zu
+// sagen ist der ganze Unterschied: Ohne diese Zeile bleibt so ein Knochen
+// stumm in Ruhelage stehen, und man sucht den Fehler in der Posentabelle.
+const stumm = geladen.ohneAchse.filter((n) =>
+  Object.values(posen).some((p) => p.frames?.some((f) => f.richtung?.[n])),
+);
+if (stumm.length) {
+  console.log(`  ! ohne brauchbare Achse, Richtung wird verworfen: ${stumm.join(', ')}`);
+}
+
 // --- Probe 1: die Figurenhoehe ----------------------------------------------
 //
 // Geeicht statt nachgerechnet. Was danach noch schiefgehen kann, ist ein Modell,
@@ -643,7 +686,7 @@ for (const z of zeilen) {
 
   // Eine Pose, die ihren Platz in der Zelle selbst sucht. Siehe `window.platz`.
   let grund = 0;
-  let seite = 0;
+  let seite = -(SEITENVERSATZ / LOGISCH) * SICHT;
   if (tabelle?.boden) {
     const umrisse = [];
     for (let i = 0; i < z.holds.length; i++) {
