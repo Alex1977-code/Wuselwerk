@@ -3,7 +3,7 @@ import { DeathCause, State, type Wusel, type WorldEvent } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
 import { mulberry32 } from '../levels/paint';
-import { sx, sy, type View } from './camera';
+import { standY, sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnlicht, drawWarnschein, schopfPlatz } from './schopf';
@@ -370,7 +370,7 @@ export class Scene {
       );
 
       const fx = sx(v, w.x);
-      const fy = sy(v, w.y);
+      const fy = standY(v, w.y);
 
       // Der Kontaktschatten. Er kommt vor allem anderen, weil er unter allem
       // liegt.
@@ -444,16 +444,22 @@ export class Scene {
     const hoehe = tiefe / SCHATTEN_REICHWEITE;
     // Je hoeher die Figur, desto breiter und blasser — so verhaelt sich ein
     // Schatten unter einer weichen Lichtquelle.
-    const breit = WUSEL_H * (0.34 + hoehe * 0.5) * v.scale;
-    const flach = breit * 0.3;
-    const deckung = 0.42 * (1 - hoehe) ** 1.6;
+    // Enger und dunkler als der erste Versuch. Gemessen lag der bei gut acht
+    // logischen Pixeln Breite — fast doppelt so breit wie die Figur — und bei
+    // sechs Prozent Verdunklung. Ein Schatten, der breiter ist als sein
+    // Koerper, liest sich als Dunst; einer mit sechs Prozent liest sich gar
+    // nicht. Ein stehendes Tier wirft einen Fleck von etwa seiner eigenen
+    // Breite, und zwar einen deutlichen.
+    const breit = WUSEL_H * (0.24 + hoehe * 0.45) * v.scale;
+    const flach = breit * 0.34;
+    const deckung = 0.62 * (1 - hoehe) ** 1.6;
     if (deckung < 0.02) return;
 
     const x = sx(v, w.x);
     const y = sy(v, w.y + tiefe);
     const g = ctx.createRadialGradient(x, y, 0, x, y, breit);
-    g.addColorStop(0, `rgba(24, 18, 12, ${deckung})`);
-    g.addColorStop(0.55, `rgba(24, 18, 12, ${deckung * 0.5})`);
+    g.addColorStop(0, `rgba(20, 14, 9, ${deckung})`);
+    g.addColorStop(0.5, `rgba(20, 14, 9, ${deckung * 0.55})`);
     g.addColorStop(1, 'rgba(24, 18, 12, 0)');
     ctx.save();
     ctx.translate(x, y);

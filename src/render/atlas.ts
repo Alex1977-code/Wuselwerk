@@ -1,5 +1,5 @@
 import { State, type SkillId, type Wusel } from '../core/types';
-import { sx, sy, type View } from './camera';
+import { standY, sx, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
 import { drawWerkzeug } from './werkzeug';
@@ -349,7 +349,7 @@ export class SpriteAtlas {
     const s = v.scale;
 
     const footX = Math.round(sx(v, w.x));
-    const footY = Math.round(sy(v, w.y));
+    const footY = Math.round(standY(v, w.y));
 
     ctx.save();
     // Pixelgrafik wird hart vergrössert, Gemaltes weich verkleinert. Beides

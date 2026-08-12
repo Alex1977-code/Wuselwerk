@@ -46,6 +46,30 @@ export function sy(v: View, ly: number): number {
   return v.box.y + (ly - v.oy) * v.scale;
 }
 
+/**
+ * Die Bildschirmzeile, auf der die **Sohle** einer Figur steht.
+ *
+ * ## Der Fehler, den diese Funktion abschafft
+ *
+ * `w.y` ist die *unterste Koerperzeile*, nicht die Standlinie — der Boden liegt
+ * bei `y + 1` (siehe `Wusel.y`, und so fragt die Simulation auch: `solid(x, y+1)`).
+ * Eine logische Zeile belegt auf dem Schirm die Spanne von `sy(ly)` bis
+ * `sy(ly+1)`. Wer die Sohle auf `sy(w.y)` setzt, setzt sie an die **Oberkante**
+ * der letzten Koerperzeile — und die Figur schwebt genau einen logischen Pixel
+ * ueber dem Grund.
+ *
+ * Das war seit der ersten Figur so. Es faellt nicht als Fehler auf, weil ein
+ * Pixel nach nichts aussieht; es faellt als Gefuehl auf, und das Gefuehl hiess
+ * „die Figur ist nicht eins mit dem Boden". Aufgeflogen ist es erst, als der
+ * Kontaktschatten dazukam: Der rechnet mit `w.y + tiefe`, sass also richtig —
+ * und lag damit sichtbar **unter** den Fuessen.
+ *
+ * Wer eine Figur zeichnet, nimmt diese Funktion. Wer den Boden meint, auch.
+ */
+export function standY(v: View, ly: number): number {
+  return sy(v, ly + 1);
+}
+
 export function toLogical(v: View, screenX: number, screenY: number): { x: number; y: number } {
   return {
     x: v.ox + (screenX - v.box.x) / v.scale,

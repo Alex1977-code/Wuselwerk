@@ -1,6 +1,6 @@
 import { SAVING_TICKS, WUSEL_H } from '../core/constants';
 import { State, type Wusel } from '../core/types';
-import { sx, sy, type View } from './camera';
+import { standY, sx, type View } from './camera';
 import { drawSchopf, schopfFarbe, schopfPuls } from './schopf';
 import { drawWerkzeug } from './werkzeug';
 import { LEHNE, clipForWusel } from './atlas';
@@ -134,7 +134,7 @@ export function drawWusel(
 
   const s = v.scale;
   const fx = Math.round(sx(v, w.x));
-  const fy = Math.round(sy(v, w.y));
+  const fy = Math.round(standY(v, w.y));
 
   // Die beiden einmaligen Ablaeufe schrumpfen beziehungsweise flachen ab. Der
   // Fortschritt kommt aus der Uhr der Figur, nicht aus einem globalen Takt.
