@@ -1,11 +1,14 @@
 /**
- * Baut das App-Icon aus dem echten Figurenblatt.
+ * Baut das App-Icon aus dem Modell.
  *
  * Kein zweites Artwork: Das Icon ist der Wusel selbst — die Späher-Pose
- * (fast frontal, Reihe 12) vor dem Tageslicht der Grasland-Welt, auf dem
- * Boden aus Grasnarbe und Erde, der das Spiel ausmacht. Gerendert wird im
- * Browser (Playwright), weil dort dasselbe Zeichnen zur Verfügung steht wie
- * im Spiel; Node hat keine Leinwand.
+ * (fast frontal) vor dem Tageslicht der Grasland-Welt, auf dem Boden aus
+ * Grasnarbe und Erde, der das Spiel ausmacht.
+ *
+ * Die Figur kommt aus `art-src/icon/figur-gross.png` — einer 1344-px-Zelle,
+ * die `bake-figur.mjs --icon` direkt aus dem gerigten Modell rendert. Die
+ * erste Fassung skalierte das 112er-Spielblatt hoch und war sichtbar
+ * verwaschen; das Modell gibt jede Groesse her.
  *
  * Ergebnis in `art-src/icon/`:
  *   icon-1024.png  Meister, für Stores und alles Weitere
@@ -14,14 +17,22 @@
  *
  * `build-single.mjs` bettet 180 und 64 als Data-URIs in den Seitenkopf ein.
  *
- *   node scripts/make-icon.mjs [--nah]   (--nah: Kopfporträt statt Ganzfigur)
+ *   node scripts/bake-figur.mjs wuselwerker --icon   (einmalig: die Figur)
+ *   node scripts/make-icon.mjs [--ganz]              (--ganz: stehende Figur)
+ *
+ * Standard ist das **Kopfporträt**: Bei sechzig Bildpunkten Kantenlaenge
+ * traegt ein Gesicht, eine Ganzfigur wird zum Fleck. Die stehende Fassung
+ * bleibt als Variante fuer Stellen mit mehr Platz.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
 
-const atlas = JSON.parse(readFileSync('src/art/wuselwerker.atlas.json', 'utf8'));
-const webp = readFileSync('src/art/wuselwerker.webp').toString('base64');
-const nah = process.argv.includes('--nah');
+// Zellgeometrie der gerenderten Figur (bake-figur.mjs): Fusslinie und
+// Koerperanteil der Zelle.
+const figurPng = readFileSync('art-src/icon/figur-gross.png').toString('base64');
+const FUSS_ANTEIL = (112 - 3) / 112;
+const KOERPER_ANTEIL = 0.861 / 1.22;
+const nah = !process.argv.includes('--ganz');
 
 const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -29,9 +40,9 @@ const browser = await chromium.launch({
 const page = await browser.newPage({ viewport: { width: 1100, height: 1100 } });
 
 const bilder = await page.evaluate(
-  async ({ atlas, webp, nah }) => {
+  async ({ figurPng, FUSS_ANTEIL, KOERPER_ANTEIL, nah }) => {
     const img = new Image();
-    img.src = `data:image/webp;base64,${webp}`;
+    img.src = `data:image/png;base64,${figurPng}`;
     await img.decode();
 
     const S = 1024;
@@ -101,21 +112,16 @@ const bilder = await page.evaluate(
     ctx.fillStyle = '#63b23f';
     ctx.fillRect(0, bodenY, S, S * 0.01);
 
-    // --- Die Figur: Späher-Pose, Bild 0 ------------------------------------
-    const cw = atlas.cell.w;
-    const ch = atlas.cell.h;
-    const ppl = atlas.ppl;
-    const clip = atlas.clips.spaehen;
-    // Ganzfigur: Fuss auf dem Boden, Figur füllt gut zwei Drittel.
+    // --- Die Figur: Späher-Pose aus dem Modell ------------------------------
+    // Ganzfigur: Fuss auf dem Boden, Figur füllt gut vier Fünftel.
     // Porträt: Fuss weit unter dem Rand, der Kopf füllt das Bild.
-    // 0,82 Bildhöhen Figur: gross genug, dass der Kopf auch bei sechzig
-    // Bildpunkten Kantenlänge traegt, klein genug, dass das Blatt (112 px je
-    // Zelle) nicht sichtbar verschwimmt — die Nahfassung tat genau das.
-    const s = nah ? (S * 1.55) / 15 : (S * 0.82) / 15;
+    const zielHoehe = nah ? S * 1.5 : S * 0.82;
+    const massstab = zielHoehe / (img.height * KOERPER_ANTEIL);
     // Ein Hauch rechts der Mitte: Die Späher-Pose traegt ihre Masse links
     // des Ankers, rein mittig stand die Figur sichtbar links.
-    const fx = S * 0.52;
-    const fy = nah ? S * 1.52 : bodenY + S * 0.012;
+    const fx = nah ? S * 0.505 : S * 0.52;
+    const fy = nah ? S * 1.46 : bodenY + S * 0.012;
+    const s = zielHoehe / 15; // nur noch fuer den Schattenradius
 
     // Weicher Schlagschatten unter der Figur, sonst klebt sie auf dem Bild.
     if (!nah) {
@@ -136,14 +142,10 @@ const bilder = await page.evaluate(
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(
       img,
-      0,
-      clip.row * ch * ppl,
-      cw * ppl,
-      ch * ppl,
-      fx - atlas.anchor.x * s,
-      fy - atlas.anchor.y * s,
-      cw * s,
-      ch * s,
+      fx - (img.width / 2) * massstab,
+      fy - img.height * FUSS_ANTEIL * massstab,
+      img.width * massstab,
+      img.height * massstab,
     );
 
     // --- Ausgaben -----------------------------------------------------------
@@ -171,7 +173,7 @@ const bilder = await page.evaluate(
     };
     return { g1024: c.toDataURL('image/png'), g180: skaliert(180), g64: skaliert(64) };
   },
-  { atlas, webp, nah },
+  { figurPng, FUSS_ANTEIL, KOERPER_ANTEIL, nah },
 );
 
 await browser.close();
@@ -179,7 +181,7 @@ await browser.close();
 mkdirSync('art-src/icon', { recursive: true });
 const speichern = (name, dataUrl) =>
   writeFileSync(`art-src/icon/${name}`, Buffer.from(dataUrl.split(',')[1], 'base64'));
-const suffix = nah ? '-nah' : '';
+const suffix = nah ? '' : '-ganz';
 speichern(`icon-1024${suffix}.png`, bilder.g1024);
 speichern(`icon-180${suffix}.png`, bilder.g180);
 speichern(`icon-64${suffix}.png`, bilder.g64);

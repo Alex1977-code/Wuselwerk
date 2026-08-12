@@ -114,8 +114,17 @@ const variante = args.includes('--variante') ? args[args.indexOf('--variante') +
 const weit = args.includes('--weit') ? Number(args[args.indexOf('--weit') + 1]) : 1;
 if (weit !== 1 && !probe) throw new Error('--weit gibt es nur mit --probe: es verstellt den Massstab.');
 
+/**
+ * Icon-Modus: rendert **nur** die Spaeher-Pose, Bild 0, in hoher Aufloesung
+ * nach `art-src/icon/figur-gross.png` — die Quelle fuer das App-Icon
+ * (`scripts/make-icon.mjs`). Kein Blatt, kein Manifest: Das Blatt aus dem
+ * 112er-Raster hochzuskalieren war sichtbar verwaschen; das Modell selbst
+ * gibt jede Groesse her.
+ */
+const icon = args.includes('--icon');
+
 /** Ueberabtastung je Achse. Runde Kanten und duenne Arme brauchen sie. */
-const SS = 6;
+const SS = icon ? 12 : 6;
 const ZELLE = 112;
 const SPALTEN = 8;
 
@@ -810,6 +819,25 @@ if (eichung.faktor < 0.6 || eichung.faktor > 1.7) {
     `Eichfaktor ${eichung.faktor.toFixed(2)} — die Proportionen des Modells liegen so weit ` +
       `daneben, dass die Eichung sie ausgleichen muesste. Das ist keine Groessenfrage mehr.`,
   );
+}
+
+// --- Icon-Modus: eine Pose, ein Bild, hohe Aufloesung -------------------------
+if (icon) {
+  const tabelle = posen.spaehen;
+  const drehGrad = tabelle?.dreh ?? DREHUNG_GRAD.spaehen ?? 0;
+  const dreh = (drehGrad * Math.PI) / 180;
+  const seite = -(SEITENVERSATZ / LOGISCH) * SICHT;
+  const bild0 = tabelle?.frames?.[0] ?? null;
+  const r = await page.evaluate(
+    ([b, d, g, s, w]) => window.bild(b, d, g, s, w),
+    [bild0, dreh, 0, seite, 1],
+  );
+  mkdirSync('art-src/icon', { recursive: true });
+  writeFileSync('art-src/icon/figur-gross.png', Buffer.from(r.bild.split(',')[1], 'base64'));
+  console.log(`Icon-Figur: Spaeher-Pose, ${ZELLE * SS} px Zelle -> art-src/icon/figur-gross.png`);
+  await browser.close();
+  server.close();
+  process.exit(0);
 }
 
 // --- Backen ------------------------------------------------------------------
