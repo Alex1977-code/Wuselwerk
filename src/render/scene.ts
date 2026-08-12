@@ -897,12 +897,60 @@ export class Scene {
     ctx.fillRect(x + w * 0.2, y + h * 0.3, w * 0.6, h * 0.7);
     ctx.restore();
 
+    // Fugen im Rahmen: kurze Querstriche, die aus dem Band einzelne
+    // Bogensteine machen. Ohne sie ist der Rahmen bei Zoom 3 ein
+    // strukturloser Streifen — genau die Stelle, die die Kritik meinte.
+    ctx.strokeStyle = 'rgba(58, 44, 30, 0.5)';
+    ctx.lineWidth = Math.max(0.8, v.scale * 0.4);
+    ctx.beginPath();
+    for (const t of [0.22, 0.5, 0.78]) {
+      // Seitliche Fugen, waagerecht.
+      ctx.moveTo(x - rand, y + h * t);
+      ctx.lineTo(x, y + h * t);
+      ctx.moveTo(x + w, y + h * t);
+      ctx.lineTo(x + w + rand, y + h * t);
+    }
+    // Fugen im Bogen, radial zum Scheitel.
+    for (const seite of [-1, 1]) {
+      const fx = mx + seite * w * 0.3;
+      ctx.moveTo(fx, y - rand);
+      ctx.lineTo(fx + seite * rand * 0.4, y + rand * 0.6);
+    }
+    ctx.stroke();
+
     // Schlussstein im Scheitel und Schwelle am Fuss. Zwei kleine Teile, die
     // aus einem Loch mit Rahmen ein gebautes Tor machen.
     ctx.fillStyle = '#cbb89c';
     ctx.fillRect(mx - rand * 0.7, y - rand * 1.5, rand * 1.4, rand * 1.1);
     ctx.fillStyle = '#6d5c46';
     ctx.fillRect(x - rand * 1.4, y + h - rand * 0.5, w + rand * 2.8, rand * 0.9);
+
+    // Zwei Lampen am Rahmen. Sie sind das Erkennungszeichen aus der
+    // Entfernung: Auch zu zwei Dritteln verdeckt liest sich ein Paar warmer
+    // Lichter neben einem Bogen als „das Ziel". Sie pulsen gegeneinander
+    // versetzt — zwei Flammen brennen nie im Takt.
+    for (const seite of [-1, 1]) {
+      const lx = mx + seite * (w / 2 + rand * 0.55);
+      const ly = y + h * 0.3;
+      const lp = 0.6 + 0.4 * Math.sin(tick / 17 + (seite < 0 ? 0 : 1.9));
+      const lr = Math.max(1.4, rand * 0.62);
+      // Halterung.
+      ctx.fillStyle = '#4a3c2c';
+      ctx.fillRect(lx - lr * 0.28, ly - lr * 1.7, lr * 0.56, lr * 1.2);
+      // Schein.
+      const lschein = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr * 4.2);
+      lschein.addColorStop(0, `rgba(255, 214, 130, ${0.4 * lp})`);
+      lschein.addColorStop(1, 'rgba(255, 214, 130, 0)');
+      ctx.fillStyle = lschein;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lr * 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      // Der Leuchtkoerper selbst.
+      ctx.fillStyle = `rgba(255, 236, 178, ${0.75 + 0.25 * lp})`;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lr, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   /**
@@ -988,11 +1036,15 @@ export class Scene {
     for (const seite of [-1, 1]) {
       const anschlag = mx + seite * w * 0.16;
       const spitzeX = anschlag + seite * (kl - fall);
-      const spitzeY = y + h * 0.66 + auf * tief * 1.5;
+      // Weiter herunter als vorher: „offen und geschlossen unterscheiden sich
+      // kaum" stand in der Kritik, und der Winkel war der Grund — die Klappen
+      // kippten um ein Drittel und blieben im Umriss des Kastens. Jetzt
+      // haengen sie offen sichtbar **unter** ihm.
+      const spitzeY = y + h * 0.66 + auf * tief * 2.6;
       ctx.beginPath();
       ctx.moveTo(anschlag, y + h * 0.66);
       ctx.lineTo(spitzeX, spitzeY);
-      ctx.lineTo(spitzeX, spitzeY + tief * (1 - auf * 0.55));
+      ctx.lineTo(spitzeX, spitzeY + tief * (1 - auf * 0.45));
       ctx.lineTo(anschlag, y + h * 0.66 + tief);
       ctx.closePath();
       ctx.fill();
@@ -1004,6 +1056,29 @@ export class Scene {
     ctx.moveTo(x + w * 0.16, y + h * 0.66);
     ctx.lineTo(x + w * 0.84, y + h * 0.66);
     ctx.stroke();
+
+    // Die Warnlampe am Gehaeuse. Sie ist der Unterschied aus dem Augenwinkel:
+    // Zu heisst dunkel, offen heisst Blinklicht — das erste Ereignis jeder
+    // Runde bekommt damit ein Signal, das man nicht uebersehen kann.
+    const lx = mx;
+    const ly = y + h * 0.2;
+    const lr = Math.max(1.2, h * 0.14);
+    if (world.hatchOpen) {
+      const blink = 0.5 + 0.5 * Math.sin(world.tickCount / 9);
+      const bs = ctx.createRadialGradient(lx, ly, 0, lx, ly, lr * 5);
+      bs.addColorStop(0, `rgba(255, 176, 64, ${0.5 * blink})`);
+      bs.addColorStop(1, 'rgba(255, 176, 64, 0)');
+      ctx.fillStyle = bs;
+      ctx.beginPath();
+      ctx.arc(lx, ly, lr * 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(255, ${170 + Math.round(70 * blink)}, 70, ${0.6 + 0.4 * blink})`;
+    } else {
+      ctx.fillStyle = '#5a4736';
+    }
+    ctx.beginPath();
+    ctx.arc(lx, ly, lr, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   private drawParticles(ctx: CanvasRenderingContext2D, v: View): void {
