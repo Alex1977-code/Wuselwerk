@@ -43,6 +43,14 @@ const MAX_PARTICLES = 320;
  */
 const BOGEN_ANTEIL = 0.62;
 
+/**
+ * Wie weit unter der Figur nach Boden gesucht wird, in logischen Pixeln.
+ *
+ * Weiter zu suchen kostet nichts und bringt nichts: Ab etwa zwei Figurenhoehen
+ * ist der Schatten ohnehin verblasst.
+ */
+const SCHATTEN_REICHWEITE = 26;
+
 /** Alles, was im Spielfeld gezeichnet wird — Hintergrund, Terrain, Figuren, Partikel. */
 export class Scene {
   readonly palette: Palette;
@@ -364,6 +372,10 @@ export class Scene {
       const fx = sx(v, w.x);
       const fy = sy(v, w.y);
 
+      // Der Kontaktschatten. Er kommt vor allem anderen, weil er unter allem
+      // liegt.
+      this.drawBodenschatten(ctx, v, w, world);
+
       ctx.save();
       // Der Sprung ins Tor sitzt als Bildschirmversatz **um** den Zeichner
       // herum: Beide Wege (Blatt und prozedural) rechnen ihre Stelle aus der
@@ -381,6 +393,76 @@ export class Scene {
     }
     this.drawParticles(ctx, v);
 
+    ctx.restore();
+  }
+
+  /**
+   * Der Kontaktschatten unter einer Figur.
+   *
+   * ## Warum er das Wichtigste an dieser Stelle ist
+   *
+   * „Die Figur muss eins sein mit dem Boden." Ohne Schatten steht eine Figur
+   * **auf** dem Bild, nicht **in** ihm — das Auge hat nichts, was sie mit dem
+   * Grund verbindet, und liest sie deshalb als aufgeklebt. Das ist kein
+   * Feinschliff: Ein Kontaktschatten ist der billigste und wirksamste Griff, den
+   * es in einem zweidimensionalen Bild gibt.
+   *
+   * ## Er misst, statt zu behaupten
+   *
+   * Gesucht wird der Boden **unter** der Figur. Steht sie darauf, ist der
+   * Schatten klein, dunkel und scharf; faellt sie, wandert er nach unten, wird
+   * breiter und blasser. Damit sagt er zwei Dinge auf einmal, die man sonst
+   * nirgends sieht: wo der Boden ist und wie hoch die Figur darueber steht.
+   *
+   * Genau deshalb ist er auch spielerisch nuetzlich — bei einem Sturz sieht man
+   * am Schatten, wo die Figur aufkommen wird.
+   *
+   * ## Warum er weich ist und nicht schwarz
+   *
+   * Ein harter schwarzer Fleck ist ein Loch im Boden. Was hier gebraucht wird,
+   * ist die Verdunklung, die ein Koerper auf eine diffus beleuchtete Flaeche
+   * wirft: in der Mitte am dichtesten, nach aussen auslaufend, und nie ganz
+   * deckend.
+   */
+  private drawBodenschatten(
+    ctx: CanvasRenderingContext2D,
+    v: View,
+    w: Wusel,
+    world: World,
+  ): void {
+    // Wie weit ist der Boden? `w.y` ist die unterste Koerperzeile, also liegt
+    // der Boden bei stehenden Figuren unmittelbar darunter.
+    let tiefe = -1;
+    for (let d = 0; d <= SCHATTEN_REICHWEITE; d++) {
+      if (world.terrain.solid(w.x, w.y + d)) {
+        tiefe = d;
+        break;
+      }
+    }
+    if (tiefe < 0) return;
+
+    const hoehe = tiefe / SCHATTEN_REICHWEITE;
+    // Je hoeher die Figur, desto breiter und blasser — so verhaelt sich ein
+    // Schatten unter einer weichen Lichtquelle.
+    const breit = WUSEL_H * (0.34 + hoehe * 0.5) * v.scale;
+    const flach = breit * 0.3;
+    const deckung = 0.42 * (1 - hoehe) ** 1.6;
+    if (deckung < 0.02) return;
+
+    const x = sx(v, w.x);
+    const y = sy(v, w.y + tiefe);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, breit);
+    g.addColorStop(0, `rgba(24, 18, 12, ${deckung})`);
+    g.addColorStop(0.55, `rgba(24, 18, 12, ${deckung * 0.5})`);
+    g.addColorStop(1, 'rgba(24, 18, 12, 0)');
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(1, flach / breit);
+    ctx.translate(-x, -y);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, breit, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }
 

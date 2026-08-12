@@ -232,6 +232,17 @@ window.laden = async (url) => {
     }
   });
 
+  // Der Kopf einen Hauch groesser.
+  //
+  // Das ist die aelteste Regel der Niedlichkeit und die einzige, die sich an
+  // einem fertigen Modell noch anwenden laesst: Ein grosser Kopf auf einem
+  // kleinen Koerper ist ein Jungtier, und Jungtiere sind das, was Menschen
+  // suess finden. Zwoelf Prozent — genug, dass es wirkt, wenig genug, dass es
+  // niemand als Verzerrung bemerkt.
+  //
+  // Am Knochen und nicht am Netz, damit die Haut sauber mitwaechst.
+  if (knochen.Head) knochen.Head.scale.setScalar(1.12);
+
   // Ruhelage festhalten: die Eigendrehung jedes Knochens und seine **Achse**,
   // also die Richtung zu seinem Kind im eigenen Raum. Ohne diese Achse laesst
   // sich keine Zielrichtung ausrechnen — sie ist das, was gedreht wird.
@@ -275,6 +286,9 @@ function stelle(richtungen, winkel) {
     const b = knochen[name];
     b.quaternion.copy(ruhe[name].q);
   }
+  // Der Kopfmassstab gehoert zur Figur, nicht zur Pose — er ueberlebt jede
+  // Ruecksetzung.
+  if (knochen.Head) knochen.Head.scale.setScalar(1.12);
   wurzel.updateMatrixWorld(true);
   // Knochen **ohne Kind** haben keine Achse, auf die sich eine Zielrichtung
   // beziehen liesse — der Kopf ist der wichtige Fall. Fuer sie gibt es die
@@ -336,7 +350,20 @@ const zelle = (v) => [(v.x / SICHT + 0.5) * ZELLE, ((oben - v.y) / SICHT) * ZELL
 window.bild = (bild, dreh) => {
   stelle(bild && bild.richtung ? bild.richtung : null, bild && bild.winkel ? bild.winkel : null);
   const skala = bild && bild.skala != null ? bild.skala : 1;
-  wurzel.scale.setScalar(eichFaktor * skala);
+  // Stauchen und Strecken — das aelteste Mittel der Zeichentrickbewegung.
+  //
+  // Ein Koerper, der beim Aufsetzen breiter und flacher wird und beim Abstossen
+  // schmaler und hoeher, hat **Gewicht**. Ohne das bewegen sich starre Teile
+  // durch die Gegend, und genau so sah es aus: „alles sehr statisch".
+  //
+  // Die Werte sind winzig — drei bis fuenf Prozent. Mehr macht aus dem Tier
+  // einen Gummiball; weniger sieht man bei zwoelf Bildpunkten nicht.
+  const st = (bild && bild.stauch) || [1, 1, 1];
+  wurzel.scale.set(
+    eichFaktor * skala * st[0],
+    eichFaktor * skala * st[1],
+    eichFaktor * skala * st[2],
+  );
   wurzel.position.y = eichVersatz + (bild && bild.versatz ? bild.versatz : 0) * FIGUR_EINHEITEN;
   wurzel.rotation.set(0, dreh, 0);
   wurzel.updateMatrixWorld(true);
