@@ -39,6 +39,10 @@ const rect = await page.evaluate(() => {
   const r = document.getElementById('spielfeld').getBoundingClientRect();
   return { x: r.left, y: r.top };
 });
+// Der Titelbildschirm: Die ganze Flaeche ist der Knopf, ein Tipp fuehrt zur
+// Karte. Ohne diesen Tipp griffen alle folgenden Klicks ins Leere.
+await page.mouse.click(rect.x + 200, rect.y + 200);
+await sleep(350);
 const knopf = async (id) => {
   const b = await page.evaluate(
     (want) => (window.__wuselwerk?.debugButtons() ?? []).find((x) => x.id === want) ?? null, id);

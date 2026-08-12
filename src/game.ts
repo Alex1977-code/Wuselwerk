@@ -38,6 +38,7 @@ import { gesteGesehen, gesteMerken, loadProgress, recordResult, starConditions, 
 import type { KartenPunkt } from './levels/welten';
 import { wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
+import { drawTitel } from './render/titel';
 import { GameAudio } from './audio';
 import { schopfFarbe } from './render/schopf';
 
@@ -51,7 +52,7 @@ const KARTE_TIPP = 14;
 /** Stationen je Sekunde bei der Wanderung. */
 const KARTE_TEMPO = 1.6;
 
-type Screen = 'menu' | 'play';
+type Screen = 'titel' | 'menu' | 'play';
 type Phase = 'intro' | 'running' | 'paused' | 'result';
 
 /**
@@ -105,7 +106,7 @@ export class Game {
   private layout: Layout;
   private dpr = 1;
 
-  private screen: Screen = 'menu';
+  private screen: Screen = 'titel';
   private phase: Phase = 'intro';
   private progress: Progress;
 
@@ -613,6 +614,16 @@ export class Game {
     this.canvas.setPointerCapture?.(e.pointerId);
     const { x, y } = this.pos(e);
 
+    if (this.screen === 'titel') {
+      // Der ganze Titel ist der Knopf: eine Handlung, keine Auswahl. Die
+      // Geste ist zugleich die erste Nutzergeste — genau der Moment, ab dem
+      // der Browser Ton erlaubt. Die Kartenmusik beginnt also mit dem Tippen.
+      this.screen = 'menu';
+      this.audio.setBesetzung('karte');
+      this.audio.startMusic();
+      return;
+    }
+
     if (this.screen === 'menu') {
       // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
       // Besetzung. Sie kann erst mit der ersten Geste beginnen — vorher laesst
@@ -953,6 +964,12 @@ export class Game {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     ctx.fillStyle = '#05070c';
     ctx.fillRect(0, 0, this.layout.cssW, this.layout.cssH);
+
+    if (this.screen === 'titel') {
+      drawTitel(ctx, this.layout, this.atlas, this.anim);
+      this.buttons = [];
+      return;
+    }
 
     if (this.screen === 'menu') {
       // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
