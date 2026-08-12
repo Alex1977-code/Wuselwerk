@@ -8,7 +8,7 @@ import { paletteFor, type Palette } from './palette';
 import { drawFuseOverlay, drawWusel } from './sprites';
 import type { SpriteAtlas } from './atlas';
 import type { TerrainView } from './terrainView';
-import { SCHUTT_MS, schuttWuerfe } from './schutt';
+import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
 
 interface Particle {
   x: number;
@@ -165,6 +165,13 @@ export class Scene {
     }
   }
 
+  /** Diagnose fuer die Sichtprobe — siehe `Game.debugPartikel`. */
+  get partikelStand(): { anzahl: number; restMs: number } {
+    let rest = 0;
+    for (const p of this.particles) rest = Math.max(rest, p.life);
+    return { anzahl: this.particles.length, restMs: Math.round(rest * 1000) };
+  }
+
   // --- Partikel ------------------------------------------------------------
 
   spawnFromEvents(events: WorldEvent[]): void {
@@ -174,21 +181,38 @@ export class Scene {
           this.schutt(e);
           break;
         case 'brick':
-          this.burst(e.x, e.y, 2, '#c98a52', 18, 30);
+          this.burst(e.x, e.y, 3, '#c98a52', 22, PARTIKEL_MS.bruecke);
           break;
         case 'steel':
-          this.burst(e.x, e.y, 7, '#ffe9a8', 90, 26);
+          this.burst(e.x, e.y, 7, '#ffe9a8', 90, PARTIKEL_MS.stahl);
           break;
         case 'explode':
-          this.burst(e.x, e.y, 26, '#ff9a3c', 150, 90);
-          this.burst(e.x, e.y, 12, '#5a5a5a', 70, 140);
+          // Drei Wolken statt zweier, und alle drei **langsam**.
+          //
+          // Der erste Versuch flog mit 150 logischen Pixeln je Sekunde
+          // auseinander — bei einer halben Sekunde Lebensdauer sind das
+          // fuenfundsiebzig Pixel, ein Drittel des Bildschirms. Uebrig blieb
+          // eine duenne Sprenkelwolke statt eines Balls. Ein Zeichentrick-Bumms
+          // ist **kompakt und dick**: Er bleibt beisammen, und man sieht ihn
+          // als eine Sache.
+          //
+          // Der helle Kern zuerst und sehr kurz — das ist der Blitz. Dann der
+          // Feuerball. Der Rauch zuletzt, langsam, gross und fast schwerelos:
+          // Er ist die Erinnerung an das Ereignis, nicht das Ereignis.
+          // **Reihenfolge ist Zeichenreihenfolge.** Der Rauch zuerst, damit er
+          // hinter dem Feuer liegt: Im ersten Versuch kam er zuletzt und deckte
+          // als grosser grauer Klumpen genau den Feuerball zu, den er umgeben
+          // soll. Rauch gehoert um ein Feuer herum, nicht davor.
+          this.burst(e.x, e.y, 12, '#7d7368', 26, PARTIKEL_MS.explosionRauch, 3.2, 12);
+          this.burst(e.x, e.y, 22, '#ff9a3c', 62, PARTIKEL_MS.explosionFeuer, 2.6, 150);
+          this.burst(e.x, e.y, 9, '#fff0c2', 46, PARTIKEL_MS.explosionFeuer * 0.4, 3.4, 40);
           this.shake = Math.min(1, this.shake + 0.85);
           break;
         case 'saved':
-          this.burst(e.x, e.y - 6, 8, '#ffe98a', 60, 60);
+          this.burst(e.x, e.y - 6, 9, '#ffe98a', 34, PARTIKEL_MS.rettung, 1.8, 60);
           break;
         case 'died':
-          if (e.cause !== DeathCause.EXPLOSION) this.burst(e.x, e.y, 8, '#c8402f', 70, 60);
+          if (e.cause !== DeathCause.EXPLOSION) this.burst(e.x, e.y, 8, '#c8402f', 44, PARTIKEL_MS.tod, 2.2, 150);
           break;
         default:
           break;
@@ -222,6 +246,12 @@ export class Scene {
     }
   }
 
+  /**
+   * Eine Wolke in alle Richtungen.
+   *
+   * @param groesse Korngroesse in logischen Pixeln.
+   * @param gravity Fallbeschleunigung. Rauch braucht fast keine.
+   */
   private burst(
     x: number,
     y: number,
@@ -229,6 +259,8 @@ export class Scene {
     color: string,
     speed: number,
     lifeMs: number,
+    groesse = 2,
+    gravity = 190,
   ): void {
     for (let i = 0; i < n; i++) {
       if (this.particles.length >= MAX_PARTICLES) return;
@@ -242,9 +274,9 @@ export class Scene {
         vy: Math.sin(a) * s - speed * 0.3,
         life,
         max: life,
-        size: 1 + Math.floor(Math.random() * 2),
+        size: Math.max(1, Math.round(groesse * (0.6 + Math.random() * 0.8))),
         color,
-        gravity: 190,
+        gravity,
       });
     }
   }

@@ -1041,6 +1041,26 @@ export class Game {
     this.camera.setZoom(z);
   }
 
+  /**
+   * Wie viele Partikel gerade leben und wie lange der aelteste noch bleibt.
+   *
+   * Fuer die Sichtprobe. Partikel sind zu klein und zu kurz, um sie auf einem
+   * Standbild zu beurteilen — man kann nur zaehlen. Genau daran ist aufgefallen,
+   * dass die Explosion nach acht Bildern vorbei war.
+   */
+  debugPartikel(): { anzahl: number; restMs: number } {
+    return this.scene ? this.scene.partikelStand : { anzahl: 0, restMs: 0 };
+  }
+
+  /** Wo der Sprengmeister mit der kuerzesten Zuendschnur gerade steht. */
+  debugZuender(): { x: number; y: number; fuse: number } | null {
+    let z: Wusel | null = null;
+    for (const w of this.world.wusels) {
+      if (w.fuse > 0 && (!z || w.fuse < z.fuse)) z = w;
+    }
+    return z ? { x: z.x, y: z.y, fuse: z.fuse } : null;
+  }
+
   debugCamera(): { follow: boolean; cx: number; cy: number } {
     return { follow: this.camera.follow, cx: this.camera.cx, cy: this.camera.cy };
   }

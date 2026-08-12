@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCHUTT_MS, schuttWuerfe } from '../src/render/schutt';
+import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from '../src/render/schutt';
 
 /**
  * Der Schutt sagt, welchen Beruf eine Figur ausübt — über die **Richtung**,
@@ -62,5 +62,32 @@ describe('Schuttrichtung je Beruf', () => {
     // Sekunde zwei Bilder. Aus zwei Bildern liest niemand eine Flugrichtung,
     // und damit wäre der ganze Kanal umsonst gebaut.
     expect(SCHUTT_MS).toBeGreaterThanOrEqual(250);
+  });
+
+  describe('Lebensdauern der uebrigen Wolken', () => {
+    /**
+     * Sie waren **allesamt** zu kurz, und niemand hatte es gemerkt: Stahl 26,
+     * Bruecke 30, Rettung 60, Tod 60, Explosion 90, Rauch 140 Millisekunden.
+     * Bei sechzig Bildern je Sekunde sind 26 ms anderthalb Bilder.
+     *
+     * Das faellt deshalb nicht auf, weil ein zu kurzer Partikel nicht falsch
+     * aussieht, sondern **gar nicht**: Man haelt das Bild fuer partikellos und
+     * sucht den Fehler woanders. Diese Pruefung ist die Untergrenze, damit es
+     * nicht ein zweites Mal passiert.
+     */
+    it('laesst jede Wolke mindestens ein Sechstel einer Sekunde stehen', () => {
+      for (const [name, ms] of Object.entries(PARTIKEL_MS)) {
+        expect(ms, `${name} ist zu kurz, um gesehen zu werden`).toBeGreaterThanOrEqual(170);
+      }
+    });
+
+    it('gibt dem groessten Ereignis die laengste Wolke', () => {
+      // Die Explosion ist das lauteste Ereignis des Spiels. Waere ihr Rauch
+      // kuerzer als ein Holzsplitter beim Bruecke legen, stimmte die Rangfolge
+      // nicht — und die Rangfolge ist das, was der Spieler als Gewicht liest.
+      expect(PARTIKEL_MS.explosionRauch).toBeGreaterThan(PARTIKEL_MS.explosionFeuer);
+      expect(PARTIKEL_MS.explosionFeuer).toBeGreaterThan(PARTIKEL_MS.bruecke);
+      expect(PARTIKEL_MS.explosionFeuer).toBeGreaterThan(PARTIKEL_MS.stahl);
+    });
   });
 });

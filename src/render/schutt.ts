@@ -59,6 +59,44 @@ export interface SchuttWurf {
  */
 export const SCHUTT_MS = 380;
 
+/**
+ * Die Lebensdauern aller uebrigen Partikelwolken, in Millisekunden.
+ *
+ * ## Warum sie hier stehen und nicht als Zahl im Aufruf
+ *
+ * Weil sie **alle zu kurz waren**, und niemand es gemerkt hat. Der Reihe nach,
+ * vor dieser Aenderung: Stahlfunken 26, Brueckenstufe 30, Rettung 60, Tod 60,
+ * Explosion 90, Rauch 140. Bei sechzig Bildern je Sekunde sind 26 ms **anderthalb
+ * Bilder**. Selbst die Explosion — das lauteste Ereignis des Spiels — war nach
+ * hoechstens acht Bildern vorbei.
+ *
+ * Das faellt niemandem auf, weil ein zu kurzer Partikel nicht falsch aussieht,
+ * sondern **gar nicht** aussieht: Man haelt das Bild fuer partikellos und sucht
+ * den Fehler woanders. Genau deshalb stehen die Zahlen jetzt beisammen, mit
+ * einer Untergrenze, die ein Test festhaelt.
+ *
+ * ## Die Faustregel
+ *
+ * Etwa ein Drittel einer Sekunde ist die Schwelle, ab der das Auge eine **Bahn**
+ * sieht statt eines Aufblitzens. Alles, dessen Flugrichtung etwas bedeutet, muss
+ * darueber liegen. Rauch darf laenger stehen als das, was ihn erzeugt hat — er
+ * ist die Erinnerung an das Ereignis, nicht das Ereignis.
+ */
+export const PARTIKEL_MS = {
+  /** Der Feuerball. Das groesste Ereignis des Spiels darf man ansehen koennen. */
+  explosionFeuer: 520,
+  /** Der Rauch danach — er steht laenger und sinkt langsamer. */
+  explosionRauch: 1100,
+  /** Funken am Stahl. Kurz, aber nicht unsichtbar: Sie sagen „hier geht es nicht weiter". */
+  stahl: 260,
+  /** Holzsplitter beim Legen einer Stufe. Das kleinste Ereignis, also das kuerzeste. */
+  bruecke: 240,
+  /** Der Glitzer am Ausgang. Er gehoert zum Belohnungsmoment und darf nachhallen. */
+  rettung: 620,
+  /** Der Verlust einer Figur. Lange genug, dass man ihn bemerkt, auch wenn man woanders hinsieht. */
+  tod: 480,
+} as const;
+
 /** Was dieser Beruf in dieser Blickrichtung auswirft. */
 export function schuttWuerfe(skill: SkillId | undefined, dir: -1 | 1): SchuttWurf[] {
   const hinten = (dir === -1 ? 1 : -1) as -1 | 1;
