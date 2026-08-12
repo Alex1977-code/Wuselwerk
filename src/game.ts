@@ -23,7 +23,7 @@ import {
   type Candidate,
 } from './input/targeting';
 import { Camera, standY, sx, sy, toLogical, ZOOM_MAX, ZOOM_MIN, type View } from './render/camera';
-import { COL, drawControls, drawRecenter, drawRewind, drawTopBar, STERN_ABSTAND, STERN_EINSATZ } from './render/hud';
+import { COL, drawControls, drawRecenter, drawRewind, drawTopBar, roundRect, STERN_ABSTAND, STERN_EINSATZ } from './render/hud';
 import { computeLayout, inBox, type Layout } from './render/layout';
 import { drawMagnifier, magnifierCenter } from './render/magnifier';
 import { drawIntro, drawPause, drawResult, type Button } from './render/overlays';
@@ -34,7 +34,7 @@ import { renderTemplateAtlas } from './render/atlasTemplate';
 import { findAtlasSource } from './art';
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
-import { loadProgress, recordResult, starConditions, type Progress } from './storage';
+import { gesteGesehen, gesteMerken, loadProgress, recordResult, starConditions, type Progress } from './storage';
 import type { KartenPunkt } from './levels/welten';
 import { wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
@@ -176,6 +176,12 @@ export class Game {
   private lupeY = 0;
   /** Kurzlebige Leerringe an Fehltipp-Stellen. */
   private fehltipps: { x: number; y: number; bis: number }[] = [];
+  /**
+   * Die Gesten-Hand: pulst ueber einer Figur, bis zum ersten Mal gehalten
+   * wurde. Nur in den ersten Leveln, nur solange die Geste nie gelang, und
+   * nie wieder danach — der Speicher merkt sie sich (Kritik F5).
+   */
+  private handZeigen = false;
   /** Wann die aktuelle Phase begann — fuer Einblendungen und Sternauftritte. */
   private phaseSeitMs = 0;
   private zuletztGezeichnetePhase: Phase | null = null;
@@ -258,6 +264,10 @@ export class Game {
     // mit dem Start kommt das volle Arrangement. Abgerissen wird nicht mehr.
     this.audio.setBesetzung('karte');
     this.selected = null;
+    // Der Gesten-Hinweis gilt in den ersten drei Leveln, solange die
+    // Haltegeste nie gelungen ist.
+    this.handZeigen =
+      ['w1-01', 'w1-02', 'w1-03'].includes(level.id) && !gesteGesehen('halten');
     this.screen = 'play';
     this.phase = 'intro';
     this.simAcc = 0;
@@ -569,6 +579,11 @@ export class Game {
     if (this.target && this.selected) {
       this.world.assign(this.target.id, this.selected);
       this.dispatchEvents();
+      // Die Geste ist angekommen — der Hinweis hat ausgedient, fuer immer.
+      if (this.handZeigen) {
+        this.handZeigen = false;
+        gesteMerken('halten');
+      }
     } else if (this.selected && this.aim && this.phase === 'running') {
       // Der Fehltipp bekommt eine Quittung (Kritik F3b). Vorher verpuffte er
       // voellig stumm — man wusste nicht, ob man daneben lag oder der Beruf
@@ -973,6 +988,7 @@ export class Game {
     const view = this.playView();
     this.scene.draw(ctx, view, this.world, this.anim);
     this.drawBerufsmarken(ctx, view);
+    this.drawGestenHand(ctx, view);
     this.drawAimOverlay(ctx, view);
 
     drawOffscreenMarkers(ctx, this.layout.play, view, this.world);
@@ -1140,6 +1156,48 @@ export class Game {
       ctx.fill();
       ctx.stroke();
     }
+  }
+
+  /**
+   * Der pulsende Zeigefinger — die Texttafel erklaert die Haltegeste, aber
+   * niemand liest Texttafeln (Kritik F5: „Text statt Hand"). Der Hinweis
+   * kommt im Moment des Bedarfs: Ein Beruf ist gewaehlt, und noch nie wurde
+   * gehalten. Er haengt ueber einer laufenden Figur und sagt ein Wort.
+   */
+  private drawGestenHand(ctx: CanvasRenderingContext2D, v: View): void {
+    if (!this.handZeigen || this.phase !== 'running' || !this.selected || this.aim) return;
+    const ziel = this.world.wusels.find((w) => isActive(w) && w.state === State.WALKING);
+    if (!ziel) return;
+    const px = sx(v, ziel.x);
+    const py = standY(v, ziel.y) - (WUSEL_H + 7) * v.scale;
+    const puls = 0.5 + 0.5 * Math.sin(this.anim / 14);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    // Der Ring um die Figur, atmend.
+    ctx.strokeStyle = `rgba(255, 232, 150, ${0.55 + 0.35 * puls})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(px, standY(v, ziel.y) - (WUSEL_H / 2) * v.scale, (9 + puls * 2.5) * v.scale, 0, Math.PI * 2);
+    ctx.stroke();
+    // Die Hand: ein Zeigefinger-Piktogramm aus zwei Formen, leicht nickend.
+    const hy = py - 6 - puls * 3;
+    ctx.fillStyle = 'rgba(255, 244, 214, 0.95)';
+    ctx.beginPath();
+    ctx.ellipse(px + 3, hy, 5.5, 7, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(px - 1.5, hy - 14, 3.6, 13);
+    // Das eine Wort.
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.78)';
+    const label = 'Halten';
+    ctx.font = '600 12px system-ui, sans-serif';
+    const tw = ctx.measureText(label).width;
+    roundRect(ctx, px - tw / 2 - 7, hy - 36, tw + 14, 19, 9);
+    ctx.fill();
+    ctx.fillStyle = '#ffeeb8';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, px, hy - 26);
+    ctx.restore();
   }
 
   private hudState() {

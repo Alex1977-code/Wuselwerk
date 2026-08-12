@@ -12,6 +12,36 @@ export interface LevelResult {
 export type Progress = Record<string, LevelResult>;
 
 const KEY = 'wuselwerk.progress.v1';
+const GESTEN_KEY = 'wuselwerk.gesten.v1';
+
+/**
+ * Welche Gesten-Hinweise schon gesehen wurden.
+ *
+ * Eigener Schluessel statt eines Feldes im Fortschritt: Der Fortschritt ist
+ * nach Level-Id aufgebaut, und ein Hinweis gehoert keinem Level — er gehoert
+ * der Hand, die ihn einmal verstanden hat.
+ */
+export type GesteId = 'halten';
+
+export function gesteGesehen(id: GesteId): boolean {
+  try {
+    const raw = localStorage.getItem(GESTEN_KEY);
+    return raw ? (JSON.parse(raw) as GesteId[]).includes(id) : false;
+  } catch {
+    return true; // Ohne Speicher lieber kein Hinweis als bei jedem Start einer.
+  }
+}
+
+export function gesteMerken(id: GesteId): void {
+  try {
+    const raw = localStorage.getItem(GESTEN_KEY);
+    const liste = raw ? (JSON.parse(raw) as GesteId[]) : [];
+    if (!liste.includes(id)) liste.push(id);
+    localStorage.setItem(GESTEN_KEY, JSON.stringify(liste));
+  } catch {
+    /* Privatmodus — dann eben jedes Mal. */
+  }
+}
 
 export function loadProgress(): Progress {
   try {
