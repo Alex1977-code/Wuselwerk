@@ -248,7 +248,9 @@ export class Game {
     this.scene.atlas = this.atlas;
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
     this.audio.setTheme(level.theme);
-    this.audio.stopMusic();
+    // Die Musik laeuft aus der Karte weiter — im Vorspann in Kartenbesetzung,
+    // mit dem Start kommt das volle Arrangement. Abgerissen wird nicht mehr.
+    this.audio.setBesetzung('karte');
     this.selected = null;
     this.screen = 'play';
     this.phase = 'intro';
@@ -282,7 +284,10 @@ export class Game {
   }
 
   private toMenu(zentrieren = true): void {
-    this.audio.stopMusic();
+    // Zurueck auf der Karte: reduzierte Besetzung, und falls die Musik nach
+    // einem Levelende steht (die Fanfare wollte Platz), faengt sie wieder an.
+    this.audio.setBesetzung('karte');
+    this.audio.startMusic();
     this.progress = loadProgress();
     this.screen = 'menu';
     if (zentrieren) {
@@ -422,6 +427,7 @@ export class Game {
         restSekunden: isFinite(rest) ? rest / TICK_HZ : 999,
         alleGerettet: this.world.saved >= this.world.total && this.phase === 'running',
         pausiert: this.phase === 'paused',
+        fokus: this.aim !== null && this.phase === 'running',
       });
     } else {
       this.audio.update();
@@ -470,7 +476,14 @@ export class Game {
     const events = this.world.drainEvents();
     if (events.length === 0) return;
     this.scene.spawnFromEvents(events);
-    this.audio.handle(events, performance.now());
+    // Die Ortung: Bildschirmstelle des Ereignisses als Panorama, -1 bis 1.
+    // Grabungen links klingen links (Kritik S3). Nur die Tonschicht sieht den
+    // Wert — die Simulation kennt weiterhin keine Kamera.
+    const v = this.camera.view(this.layout.play);
+    const sichtbar = v.box.w / v.scale;
+    const orten = (x: number) =>
+      Math.max(-1, Math.min(1, (((x - v.ox) / sichtbar) * 2 - 1) * 0.9));
+    this.audio.handle(events, performance.now(), orten);
   }
 
   private finish(): void {
@@ -570,6 +583,14 @@ export class Game {
     const { x, y } = this.pos(e);
 
     if (this.screen === 'menu') {
+      // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
+      // Besetzung. Sie kann erst mit der ersten Geste beginnen — vorher laesst
+      // kein Browser Ton zu; genau deshalb steht das hier und nicht beim
+      // Kartenaufbau.
+      if (!this.audio.musicPlaying) {
+        this.audio.setBesetzung('karte');
+        this.audio.startMusic();
+      }
       // Auf der Karte ist jede Berührung erst einmal ein Schub. Ob daraus ein
       // Antippen wird, entscheidet sich beim Loslassen — genauso wie im Spiel
       // beim Schwenken. Wer eine Liste antippen will, darf dabei nicht schon
@@ -702,6 +723,14 @@ export class Game {
     ps.y = y;
 
     if (this.screen === 'menu') {
+      // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
+      // Besetzung. Sie kann erst mit der ersten Geste beginnen — vorher laesst
+      // kein Browser Ton zu; genau deshalb steht das hier und nicht beim
+      // Kartenaufbau.
+      if (!this.audio.musicPlaying) {
+        this.audio.setBesetzung('karte');
+        this.audio.startMusic();
+      }
       // Eins zu eins: Der Punkt unter dem Finger bleibt unter dem Finger. Jede
       // andere Übersetzung fühlt sich nach Gummiband an.
       this.karteZiel = this.karteGrenzen(this.karteZiel - (x - prevX) / this.layout.cssW);
@@ -790,6 +819,14 @@ export class Game {
     if (!ps) return;
 
     if (this.screen === 'menu') {
+      // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
+      // Besetzung. Sie kann erst mit der ersten Geste beginnen — vorher laesst
+      // kein Browser Ton zu; genau deshalb steht das hier und nicht beim
+      // Kartenaufbau.
+      if (!this.audio.musicPlaying) {
+        this.audio.setBesetzung('karte');
+        this.audio.startMusic();
+      }
       // Erst hier entscheidet sich, ob es ein Antippen war. Wer mehr als eine
       // Fingerbreite gezogen hat, wollte scrollen — und ein Level, das man
       // beim Scrollen aus Versehen startet, ist der schlimmste Fehlgriff, den
@@ -842,12 +879,17 @@ export class Game {
         this.phase = 'running';
         this.lastMs = performance.now();
         if (id === 'resume') this.audio.pauseKlang(false);
+        // Kein Neustart, wenn die Karte schon spielt: Die Schleife laeuft
+        // durch, nur Schlagwerk und Lauffigur kommen dazu. Der Uebergang
+        // Karte -> Level ist damit ein Aufblenden statt eines Abrisses.
+        this.audio.setBesetzung('voll');
         this.audio.startMusic();
         break;
       case 'restart':
       case 'retry':
         this.loadLevel(this.level);
         this.phase = 'running';
+        this.audio.setBesetzung('voll');
         this.audio.startMusic();
         break;
       case 'next': {
@@ -882,6 +924,14 @@ export class Game {
     ctx.fillRect(0, 0, this.layout.cssW, this.layout.cssH);
 
     if (this.screen === 'menu') {
+      // Die Karte hat Musik (Kritik S1): das Stueck der Welt in reduzierter
+      // Besetzung. Sie kann erst mit der ersten Geste beginnen — vorher laesst
+      // kein Browser Ton zu; genau deshalb steht das hier und nicht beim
+      // Kartenaufbau.
+      if (!this.audio.musicPlaying) {
+        this.audio.setBesetzung('karte');
+        this.audio.startMusic();
+      }
       const laeuft = this.wanderWeg.length >= 2;
       const stand = this.figurAufDemWeg();
       // Blickrichtung: dorthin, wo es weitergeht. Beim Stehen nach rechts —

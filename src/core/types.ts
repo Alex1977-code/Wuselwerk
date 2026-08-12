@@ -139,7 +139,10 @@ export interface WorldEvent {
     | 'float'
     | 'oh-no'
     | 'scream'
-    | 'land';
+    | 'land'
+    // Die Falltuer klappt auf; eine Figur prallt am Blocker ab.
+    | 'hatch'
+    | 'bounce';
   x: number;
   y: number;
   skill?: SkillId;

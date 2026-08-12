@@ -126,6 +126,11 @@ function seite(weite = 0.55): number {
  * Anschlag verschoben, mit ihr bleibt der Klang erkennbar und wird trotzdem
  * nicht langweilig.
  */
+/** Grenzen fuers Panorama — ganz aussen klingt nach Fehler, nicht nach Rand. */
+function begrenzt(v: number): number {
+  return Math.max(-0.85, Math.min(0.85, v));
+}
+
 function stufenStreuung(): number {
   return Math.floor(Math.random() * 3) - 1;
 }
@@ -142,6 +147,20 @@ function streuung(halbtoene = 2): number {
 
 export class Sfx {
   private saveStep = 0;
+  /**
+   * Die Stelle des gerade verteilten Ereignisses im Panorama, -1 bis 1 —
+   * oder null, wenn niemand sie kennt.
+   *
+   * `docs/klangdesign.md` §7.2 nannte die Ortung „den groessten einzelnen
+   * Gewinn, der hier noch liegt", und die Kritik (S3) hat es wiederholt: Das
+   * Panorama wurde gewuerfelt statt geortet. Jetzt reicht das Spiel je
+   * Ereignisbuendel eine Ortungsfunktion herein (Bildschirmstelle aus der
+   * Kamera), und `verteile` setzt dieses Feld je Ereignis. Klaenge, die einen
+   * Ort haben, holen ihn sich ueber `seiteOrt` — mit einem Rest Streuung,
+   * damit zwei Graeber an derselben Spalte nicht ein Klumpen sind.
+   */
+  private ort: number | null = null;
+  private orten: ((x: number) => number) | null = null;
   private lastSaveMs = -Infinity;
   /** Zeitstempel des laufenden Bildes — siehe `neuesBild`. */
   private bildMs = -Infinity;
@@ -165,8 +184,9 @@ export class Sfx {
     this.brueckeStufe = 0;
   }
 
-  handle(events: WorldEvent[], nowMs: number): void {
+  handle(events: WorldEvent[], nowMs: number, orten?: (x: number) => number): void {
     this.neuesBild(nowMs);
+    this.orten = orten ?? null;
     // Waehrend eines Buendels steht die Bildgrenze fest. Sonst koennte ein
     // Klang, der einen anderen aufruft (`saved` ruft `jubel`), die Zaehlung
     // mitten im Buendel zuruecksetzen; Regel 3 haenge dann daran, dass die
@@ -181,6 +201,7 @@ export class Sfx {
 
   private verteile(events: WorldEvent[], nowMs: number): void {
     for (const e of events) {
+      this.ort = this.orten && typeof e.x === 'number' ? this.orten(e.x) : null;
       switch (e.type) {
         case 'assign':
           this.assign(e.skill);
@@ -228,8 +249,15 @@ export class Sfx {
         case 'land':
           this.plumps(e.n ?? 6);
           break;
+        case 'hatch':
+          this.falltuer();
+          break;
+        case 'bounce':
+          this.abprall();
+          break;
       }
     }
+    this.ort = null;
   }
 
   // --- Dichte (Regel 3) ------------------------------------------------------
@@ -259,6 +287,12 @@ export class Sfx {
    * Instanzen sind genug: Ab der vierten hoert man keine einzelnen Schlaege
    * mehr, sondern nur noch Pegel.
    */
+  /** Geortete Stelle mit Reststreuung — oder gewuerfelt, wenn keine bekannt. */
+  private seiteOrt(weite = 0.55): number {
+    if (this.ort === null) return seite(weite);
+    return begrenzt(this.ort + (Math.random() - 0.5) * 0.16);
+  }
+
   private darf(art: string, max = MAX_GLEICHE): boolean {
     const n = this.zaehler.get(art) ?? 0;
     if (n >= max) return false;
@@ -642,10 +676,11 @@ export class Sfx {
    */
   private grabenErde(): void {
     const s = streuung();
-    // Jeder Graeber an einer anderen Stelle im Panorama — sonst sind zwanzig
-    // Schaufeln ein Klumpen statt einer Baustelle. Beide Koerner an derselben
-    // Stelle: Sie sind ein Ereignis, nicht zwei.
-    const wo = seite();
+    // Geortet, wenn das Spiel die Stelle kennt; sonst gewuerfelt. Der Rest
+    // Streuung bleibt auch geortet — zwei Graeber an derselben Spalte sind
+    // sonst ein Klumpen. Beide Koerner an derselben Stelle: Sie sind ein
+    // Ereignis, nicht zwei.
+    const wo = this.seiteOrt();
     this.engine.noise({ dur: 0.055, gain: 0.11, filter: 'lowpass', freq: 1400 * s, sweep: 0.35, pan: wo });
     this.engine.noise({
       dur: 0.04, gain: 0.07, filter: 'bandpass', freq: 900 * s, q: 0.8, sweep: 0.6,
@@ -664,7 +699,7 @@ export class Sfx {
    * die naechsten Schlaege zudecken.
    */
   private hackenStein(): void {
-    const wo = seite();
+    const wo = this.seiteOrt();
     this.engine.noise({
       dur: 0.045, gain: 0.11, filter: 'bandpass', freq: 3200 * streuung(), q: 1.6, sweep: 0.55,
       pan: wo,
@@ -685,7 +720,7 @@ export class Sfx {
    */
   private bohren(): void {
     const s = streuung();
-    const wo = seite(0.45);
+    const wo = this.seiteOrt(0.45);
     this.engine.noise({ dur: 0.15, gain: 0.1, filter: 'lowpass', freq: 520 * s, sweep: 0.6, pan: wo });
     this.engine.noise({
       dur: 0.022, gain: 0.05, filter: 'bandpass', freq: 2600 * streuung(4), q: 3,
@@ -943,6 +978,43 @@ export class Sfx {
       });
     }
     pling(this.engine, { freq: ton(7), dur: 0.16, gain: 0.08, bus: 'sfx', fest: false, delay: 0.16 });
+  }
+
+  /**
+   * Die Falltuer klappt auf: ein Klack, dann Kettenrasseln.
+   *
+   * Das Rasseln ist eine Handvoll sehr kurzer Metalltupfer in fallender Folge
+   * — eine Kette, die auslaeuft. Alles kurz: Die Tuer ist Auftakt, kein
+   * Ereignisklang.
+   */
+  private falltuer(): void {
+    if (!this.darf('falltuer')) return;
+    const wo = this.seiteOrt(0.3);
+    this.engine.noise({
+      dur: 0.05, gain: 0.14, filter: 'bandpass', freq: 2100 * streuung(), q: 1.4, pan: wo,
+    });
+    this.engine.tone({ freq: 190 * streuung(), dur: 0.09, type: 'square', gain: 0.07, slide: 0.8, pan: wo });
+    for (let i = 0; i < 4; i++) {
+      this.engine.noise({
+        dur: 0.02, gain: 0.045 - i * 0.008, filter: 'highpass', freq: 4600 * streuung(3),
+        delay: 0.09 + i * 0.055 + Math.random() * 0.02, pan: wo,
+      });
+    }
+  }
+
+  /**
+   * Der Abprall am Blocker: ein sehr leiser Gummi-Tup.
+   *
+   * Das haeufigste sichtbare Ereignis des Spiels — es darf auf keinen Fall
+   * nerven. Ein Tup deutlich unter dem Trippelpegel, geortet, mit strenger
+   * Dichtebremse: Bei einem Pulk gegen den Blocker klingen zwei, nicht zwanzig.
+   */
+  private abprall(): void {
+    if (!this.darf('abprall', 2)) return;
+    this.engine.tone({
+      freq: 340 * streuung(), dur: 0.05, type: 'sine', gain: 0.05,
+      slide: 0.72, attack: 0.004, pan: this.seiteOrt(0.5),
+    });
   }
 
   /**

@@ -541,6 +541,12 @@ const RASTER: Record<ThemeId, (Note | null)[]> = {
 
 /** Was die Musik über die Spiellage wissen muss. */
 export interface Lage {
+  /**
+   * Liegt gerade ein Finger auf einer Figur (Fokuszeit)? Die Welt laeuft auf
+   * einem Viertel — die Musik tritt hoerbar einen Schritt zurueck: Tiefpass,
+   * aber deutlich milder als die Pause. Loslassen holt sie zurueck.
+   */
+  fokus?: boolean;
   /** Verbleibende Zeit als Anteil, 1 am Anfang. */
   restAnteil: number;
   /** Verbleibende Zeit in Sekunden. */
@@ -557,7 +563,8 @@ export class Music {
   private notes = 0;
   private theme: ThemeId = 'grass';
   private lage: Lage = { restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false };
-  private gefiltert = false;
+  private gefiltert: 'auf' | 'fokus' | 'zu' = 'auf';
+  private besetzung: 'karte' | 'voll' = 'voll';
   /** Steht die Echozeit schon auf dem Tempo des laufenden Stuecks? */
   private echoGesetzt = false;
   /** Der wievielte Umlauf der Achttaktschleife laeuft — Index in `DURCHGAENGE`. */
@@ -594,6 +601,10 @@ export class Music {
     this.lage = l;
   }
 
+  setBesetzung(b: 'karte' | 'voll'): void {
+    this.besetzung = b;
+  }
+
   start(engine: AudioEngine): void {
     if (this.playing) return;
     this.playing = true;
@@ -616,14 +627,22 @@ export class Music {
     // Pause macht die Musik nicht aus, sondern zu. Ein harter Schnitt fuehlt
     // sich nach Absturz an; ein Tiefpass fuehlt sich an, als traete man einen
     // Schritt zurueck.
-    const zu = this.lage.pausiert;
-    if (zu !== this.gefiltert) {
-      engine.musikFilter(zu ? 400 : 18000);
+    // Drei Stufen statt zwei: offen, Fokuszeit (mild), Pause (zu). Die
+    // Fokuszeit ist das Markenzeichen der Steuerung und hatte keine klangliche
+    // Entsprechung (Kritik S4) — jetzt tritt die Welt hoerbar einen Schritt
+    // zurueck, solange der Finger liegt.
+    const stufe: 'auf' | 'fokus' | 'zu' = this.lage.pausiert
+      ? 'zu'
+      : this.lage.fokus
+        ? 'fokus'
+        : 'auf';
+    if (stufe !== this.gefiltert) {
+      engine.musikFilter(stufe === 'zu' ? 400 : stufe === 'fokus' ? 2600 : 18000);
       // Und der Raum geht auf. Ein Tiefpass allein klingt nach einem Geraet,
       // dem etwas fehlt; Tiefpass plus doppelte Luft klingt nach einem Schritt
       // zurueck — und genau das ist eine Pause.
-      engine.raumWeite(zu ? 2.2 : 1);
-      this.gefiltert = zu;
+      engine.raumWeite(stufe === 'zu' ? 2.2 : 1);
+      this.gefiltert = stufe;
     }
 
     if (!this.playing || !engine.ready || engine.muted) return;
@@ -667,7 +686,7 @@ export class Music {
       // Der Bruch: zwei Takte ohne Schlagwerk. Bass, Flaeche, Figur und Melodie
       // laufen weiter — was fehlt, ist der Antrieb, und genau den hoert man beim
       // Wiederkommen doppelt.
-      const schlagwerk = !endspurt && !(va.bruch && i < TAKT * 2);
+      const schlagwerk = this.besetzung === 'voll' && !endspurt && !(va.bruch && i < TAKT * 2);
 
       // --- Der Motor: Schlag im Dreier-Dreier-Zweier, Bass in die Luecken ----
       //
@@ -758,7 +777,10 @@ export class Music {
       // rutscht um `SCHWUNG` nach hinten. Alles andere im Stueck laeuft auf
       // Achteln oder groesser und bliebe von einem Shuffle unberuehrt — das
       // Lockere entsteht also allein aus dieser einen Zeile.
-      if (!knapp) {
+      // In der Kartenbesetzung schweigt die Figur mit dem Schlagwerk: Was
+      // bleibt, ist Flaeche, Bass und Melodie — das Stueck als Erinnerung an
+      // sich selbst. Der Levelstart bringt beide zurueck, mitten im Takt.
+      if (!knapp && this.besetzung === 'voll') {
         for (const halb of [0, 1]) {
           // Rueckwaerts in jedem zweiten Durchgang: dieselben drei Toene,
           // entgegengesetzte Kontur. Bewegung aendern, ohne einen Ton zu

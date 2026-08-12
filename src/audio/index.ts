@@ -58,6 +58,22 @@ export class GameAudio {
     this.ambiente.start(this.engine);
   }
 
+  /** Laeuft die Musik schon? Die Karte fragt das, bevor sie neu anfaengt. */
+  get musicPlaying(): boolean {
+    return this.music.isPlaying;
+  }
+
+  /**
+   * Besetzung der Musik: `karte` ist das Stueck der Welt in reduzierter
+   * Besetzung (ohne Schlagwerk und Lauffigur), `voll` das ganze Arrangement.
+   * Der Wechsel ist kein Neustart — die Schleife laeuft durch, nur die
+   * Stimmen kommen dazu oder gehen. Genau das macht den Uebergang Karte →
+   * Level nahtlos (Kritik S1).
+   */
+  setBesetzung(b: 'karte' | 'voll'): void {
+    this.music.setBesetzung(b);
+  }
+
   stopMusic(): void {
     this.music.stop();
     this.ambiente.stop();
@@ -172,7 +188,7 @@ export class GameAudio {
     };
   }
 
-  handle(events: WorldEvent[], nowMs: number): void {
+  handle(events: WorldEvent[], nowMs: number, orten?: (x: number) => number): void {
     if (events.length === 0) return;
     // Waehrend der Selbstzerstoerung laeuft schon ein durchgehender Countdown.
     // Jede Figur zaehlt daneben ihre eigene Zuendschnur herunter — bei sechzig
@@ -182,7 +198,7 @@ export class GameAudio {
     const gefiltert =
       nowMs < this.nukeBis ? events.filter((e) => e.type !== 'fuse-tick') : events;
     if (gefiltert.length === 0) return;
-    this.sfx.handle(gefiltert, nowMs);
+    this.sfx.handle(gefiltert, nowMs, orten);
     this.haptics.handle(gefiltert);
   }
 }

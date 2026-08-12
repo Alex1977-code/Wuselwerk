@@ -320,7 +320,11 @@ export class World {
   private updateHatch(): void {
     if (this.releaseCountdown > 0) {
       this.releaseCountdown--;
-      if (this.releaseCountdown === 0) this.hatchOpen = true;
+      if (this.releaseCountdown === 0) {
+        this.hatchOpen = true;
+        // Das erste Ereignis jeder Runde, bisher stumm (Kritik S4).
+        this.emit({ type: 'hatch', x: this.entrance.x, y: this.entrance.y });
+      }
       return;
     }
     if (this.released >= this.total) return;
@@ -554,6 +558,9 @@ export class World {
     }
     if (this.blockedBy(w)) {
       w.dir = (-w.dir) as -1 | 1;
+      // Nur fuer den Ton: der haeufigste sichtbare Abprall des Spiels war
+      // stumm (Kritik S4). Kein Zustand, nicht im Hash.
+      this.emit({ type: 'bounce', x: w.x, y: w.y });
       return;
     }
 
