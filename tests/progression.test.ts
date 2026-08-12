@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SKILLS, type SkillCounts } from '../src/core/types';
 import { LEVELS } from '../src/levels';
 import type { LevelDef } from '../src/levels/types';
-import { WELTEN, bahn, bandBreiteFuer, ids, type Welt } from '../src/levels/welten';
+import { WELTEN, bahn, bandLaengeFuer, ids, type Welt } from '../src/levels/welten';
 import {
   KATALOG,
   figurStand,
@@ -67,7 +67,7 @@ function testLevel(id: string, chapter: string, skills: Partial<SkillCounts>): L
 
 function testWelt(id: string, soll: number, belohnung: Welt['belohnung']): Welt {
   const punkte = bahn(soll);
-  const bandBreite = bandBreiteFuer(soll);
+  const bandLaenge = bandLaengeFuer(soll);
   return {
     id,
     name: `Welt ${id}`,
@@ -77,8 +77,8 @@ function testWelt(id: string, soll: number, belohnung: Welt['belohnung']): Welt 
     soll,
     levelIds: ids(id, soll),
     punkte,
-    bandBreite,
-    torPunkt: { x: bandBreite - 0.1, y: 0.5 },
+    bandLaenge,
+    torPunkt: { x: 0.5, y: bandLaenge - 0.1 },
     belohnung,
   };
 }
@@ -331,38 +331,38 @@ describe('Die Figur auf der Karte', () => {
 // --- Das Band --------------------------------------------------------------
 
 describe('Das Band', () => {
-  it('legt die Punkte streng von links nach rechts', () => {
+  it('legt die Punkte streng von unten nach oben', () => {
     const karte = weltkarte({}, T);
-    const xs = karte.welten.flatMap((w) => w.level.map((l) => l.pos.x));
-    for (let i = 1; i < xs.length; i++) expect(xs[i]).toBeGreaterThan(xs[i - 1]);
+    const ys = karte.welten.flatMap((w) => w.level.map((l) => l.pos.y));
+    for (let i = 1; i < ys.length; i++) expect(ys[i]).toBeGreaterThan(ys[i - 1]);
   });
 
-  it('hält jeden Punkt innerhalb der Bandhöhe', () => {
+  it('hält jeden Punkt innerhalb der Bandbreite', () => {
     for (const w of weltkarte({}, KATALOG).welten) {
       for (const l of w.level) {
-        expect(l.pos.y).toBeGreaterThanOrEqual(0);
-        expect(l.pos.y).toBeLessThanOrEqual(1);
+        expect(l.pos.x).toBeGreaterThanOrEqual(0);
+        expect(l.pos.x).toBeLessThanOrEqual(1);
       }
-      expect(w.tor.y).toBeGreaterThanOrEqual(0);
-      expect(w.tor.y).toBeLessThanOrEqual(1);
+      expect(w.tor.x).toBeGreaterThanOrEqual(0);
+      expect(w.tor.x).toBeLessThanOrEqual(1);
     }
   });
 
   it('setzt die Weltabschnitte lückenlos aneinander', () => {
     const karte = weltkarte({}, T);
-    let x = 0;
+    let y = 0;
     for (const w of karte.welten) {
-      expect(w.bandStart).toBeCloseTo(x, 3);
-      x += w.bandBreite;
+      expect(w.bandStart).toBeCloseTo(y, 3);
+      y += w.bandLaenge;
     }
-    expect(karte.bandBreite).toBeCloseTo(x, 3);
+    expect(karte.bandLaenge).toBeCloseTo(y, 3);
   });
 
   it('stellt das Tor hinter das letzte Level seiner Welt', () => {
     for (const w of weltkarte({}, T).welten) {
       const letztes = w.level[w.level.length - 1];
-      expect(w.tor.x).toBeGreaterThan(letztes.pos.x);
-      expect(w.tor.x).toBeLessThanOrEqual(w.bandStart + w.bandBreite);
+      expect(w.tor.y).toBeGreaterThan(letztes.pos.y);
+      expect(w.tor.y).toBeLessThanOrEqual(w.bandStart + w.bandLaenge);
     }
   });
 
@@ -374,7 +374,7 @@ describe('Das Band', () => {
     // und braucht keinen zusätzlichen Halt.
     expect(halte.filter((h) => h.art === 'rast')).toHaveLength(1);
     for (let i = 1; i < halte.length; i++) {
-      expect(halte[i].pos.x).toBeGreaterThan(halte[i - 1].pos.x);
+      expect(halte[i].pos.y).toBeGreaterThan(halte[i - 1].pos.y);
     }
   });
 

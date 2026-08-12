@@ -132,7 +132,7 @@ export class Game {
   private buttons: Button[] = [];
   // --- Übersichtskarte ------------------------------------------------------
   /** Linke Kante des Kartenausschnitts, in Bildschirmbreiten. */
-  private karteX = 0;
+  private karteLage = 0;
   /** Wohin die Karte gleiten soll. Sie folgt weich, statt zu springen. */
   private karteZiel = 0;
   private karteTreffer: KarteTreffer[] = [];
@@ -309,7 +309,7 @@ export class Game {
     this.screen = 'menu';
     if (zentrieren) {
       this.karteZiel = this.karteMitte();
-      this.karteX = this.karteZiel;
+      this.karteLage = this.karteZiel;
     }
     this.clearAim();
   }
@@ -317,14 +317,14 @@ export class Game {
   /** Der Ausschnitt, in dem die Figur mittig steht — beschnitten aufs Band. */
   private karteMitte(): number {
     const k = weltkarte(this.progress);
-    const ziel = k.figur ? k.figur.pos.x - 0.5 : 0;
+    const ziel = k.figur ? k.figur.pos.y - 0.5 : 0;
     return this.karteGrenzen(ziel);
   }
 
-  /** Hält den Ausschnitt auf dem Band. Rechts ist bei Bandbreite minus eins Schluss. */
-  private karteGrenzen(x: number): number {
+  /** Hält den Ausschnitt auf dem Band. Oben ist bei Bandlänge minus eins Schluss. */
+  private karteGrenzen(y: number): number {
     const k = weltkarte(this.progress);
-    return Math.max(0, Math.min(Math.max(0, k.bandBreite - 1), x));
+    return Math.max(0, Math.min(Math.max(0, k.bandLaenge - 1), y));
   }
 
   /**
@@ -346,15 +346,15 @@ export class Game {
       const f = this.figurAufDemWeg();
       if (f) {
         // Nachziehen erst ausserhalb des mittleren Drittels.
-        const rel = f.x - this.karteX;
-        if (rel > 0.66) this.karteZiel = this.karteGrenzen(f.x - 0.66);
-        else if (rel < 0.34) this.karteZiel = this.karteGrenzen(f.x - 0.34);
+        const rel = f.y - this.karteLage;
+        if (rel > 0.66) this.karteZiel = this.karteGrenzen(f.y - 0.66);
+        else if (rel < 0.34) this.karteZiel = this.karteGrenzen(f.y - 0.34);
       }
     }
     // Weich folgen. Der Faktor ist zeitbezogen, damit die Karte bei jedem
     // Bildtakt gleich schnell ankommt.
     const k = 1 - Math.pow(0.001, dt);
-    this.karteX += (this.karteZiel - this.karteX) * k;
+    this.karteLage += (this.karteZiel - this.karteLage) * k;
   }
 
   /** Wo die Figur gerade steht — auf dem Weg, sonst auf ihrem Punkt. */
@@ -368,7 +368,7 @@ export class Game {
       // statt zu gleiten. Das ist derselbe Grund wie bei allem anderen hier —
       // eine gerade Bewegung liest sich als Diagramm.
       const hoch = Math.sin(t * Math.PI) * 0.055;
-      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t - hoch };
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t + hoch };
     }
     const k = weltkarte(this.progress);
     return k.figur ? k.figur.pos : null;
@@ -619,6 +619,8 @@ export class Game {
       // Geste ist zugleich die erste Nutzergeste — genau der Moment, ab dem
       // der Browser Ton erlaubt. Die Kartenmusik beginnt also mit dem Tippen.
       this.screen = 'menu';
+      this.karteZiel = this.karteMitte();
+      this.karteLage = this.karteZiel;
       this.audio.setBesetzung('karte');
       this.audio.startMusic();
       return;
@@ -774,9 +776,11 @@ export class Game {
         this.audio.startMusic();
       }
       // Eins zu eins: Der Punkt unter dem Finger bleibt unter dem Finger. Jede
-      // andere Übersetzung fühlt sich nach Gummiband an.
-      this.karteZiel = this.karteGrenzen(this.karteZiel - (x - prevX) / this.layout.cssW);
-      this.karteX = this.karteZiel;
+      // andere Übersetzung fühlt sich nach Gummiband an. Das Band ist
+      // senkrecht: Wer nach unten zieht, zieht das Band herunter und sieht,
+      // was weiter oben kommt — die Kamera steigt.
+      this.karteZiel = this.karteGrenzen(this.karteZiel + (y - prevY) / this.layout.cssH);
+      this.karteLage = this.karteZiel;
       return;
     }
 
@@ -949,8 +953,8 @@ export class Game {
         // hat. Der Ausschnitt wird deshalb auf den *alten* Stand gesetzt und
         // die Figur laeuft von dort los — nicht umgekehrt.
         this.toMenu(false);
-        this.karteX = this.karteZiel = this.karteGrenzen(
-          (wanderung(this.standVorher, this.progress).von?.pos.x ?? this.karteMitte() + 0.5) - 0.5,
+        this.karteLage = this.karteZiel = this.karteGrenzen(
+          (wanderung(this.standVorher, this.progress).von?.pos.y ?? this.karteMitte() + 0.5) - 0.5,
         );
         this.starteWanderung();
         break;
@@ -991,7 +995,7 @@ export class Game {
       }
       this.karteTreffer = drawWeltkarte(ctx, this.layout, {
         karte: weltkarte(this.progress),
-        kamera: this.karteX,
+        kamera: this.karteLage,
         figur: stand,
         laeuft,
         richtung,

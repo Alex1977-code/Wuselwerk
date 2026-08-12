@@ -199,6 +199,14 @@ Bezugsmass für alle Zahlen: **640 × 360 logische Bildpunkte**, quer.
 
 ### Das Band
 
+> **Nachtrag (Merkliste „Weltauswahl senkrecht"):** Das Band läuft inzwischen
+> **senkrecht** — die erste Welt unten, der Fortschritt ist ein Aufstieg über
+> Hang-Terrassen, gemessen wird in Bildschirm**höhen** (`welten.ts`,
+> `weltkarte.ts`). Alle Begründungen dieses Abschnitts — ein Band, kein
+> Blättern, Punktabstand aus dem Finger, die Schlangenlinie — gelten
+> unverändert, nur die Achse ist gedreht. Die Zahlen unten beschreiben den
+> ursprünglichen waagerechten Entwurf.
+
 Die Karte ist **ein einziges waagerechtes Band** über alle Welten. Gemessen
 wird in Bildschirmbreiten: `x = 1` ist eine Gerätebreite, `y` läuft von 0
 (oben) bis 1 (unten) der Bandhöhe. Der Zeichner multipliziert mit der

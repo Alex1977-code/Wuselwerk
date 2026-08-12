@@ -3,7 +3,7 @@ import { LEVELS } from './levels';
 import type { LevelDef } from './levels/types';
 import {
   WELTEN,
-  bandBreiteFuer,
+  bandLaengeFuer,
   type Belohnung,
   type KartenPunkt,
   type Welt,
@@ -124,9 +124,9 @@ export interface WeltKarte {
   betreten: boolean;
   belohnung: Belohnung;
   belohnungVerdient: boolean;
-  /** Versatz des Weltabschnitts im Gesamtband, in Bildschirmbreiten. */
+  /** Versatz des Weltabschnitts im Gesamtband, in Bildschirmhöhen. */
   bandStart: number;
-  bandBreite: number;
+  bandLaenge: number;
   /** Weltentor am Ende des Abschnitts. */
   tor: KartenPunkt;
   /** Name der Welt hinter dem Tor, oder null, wenn keine mehr kommt. */
@@ -142,8 +142,8 @@ export interface FigurStand {
 
 export interface Weltkarte {
   welten: WeltKarte[];
-  /** Gesamtbreite des Bandes in Bildschirmbreiten. */
-  bandBreite: number;
+  /** Gesamtlänge des Bandes entlang des Weges, in Bildschirmhöhen. */
+  bandLaenge: number;
   figur: FigurStand | null;
   /** Alle verdienten Belohnungen in der Reihenfolge, in der sie fielen. */
   belohnungen: Belohnung[];
@@ -432,7 +432,7 @@ interface Abschnitt {
   /** Bandpunkte der gebauten Level, schon mit Versatz. */
   punkte: KartenPunkt[];
   bandStart: number;
-  bandBreite: number;
+  bandLaenge: number;
   tor: KartenPunkt;
 }
 
@@ -444,17 +444,17 @@ function abschnitte(k: Katalog): Abschnitt[] {
     // Fehlt der Welt noch etwas, rückt ihr Abschnitt auf das Gebaute zusammen.
     // Sonst klaffte auf dem Band eine Lücke, in der nichts steht — und nichts
     // ist genau das, was niemand scrollen will.
-    const bandBreite = vollstaendig ? welt.bandBreite : bandBreiteFuer(defs.length);
+    const bandLaenge = vollstaendig ? welt.bandLaenge : bandLaengeFuer(defs.length);
     const punkte = defs.map((_, i) => {
-      const lokal = welt.punkte[i] ?? { x: 0.26, y: 0.5 };
-      return { x: rund(bandStart + lokal.x), y: lokal.y };
+      const lokal = welt.punkte[i] ?? { x: 0.5, y: 0.22 };
+      return { x: lokal.x, y: rund(bandStart + lokal.y) };
     });
     const letzter = punkte[punkte.length - 1];
     const tor: KartenPunkt = vollstaendig
-      ? { x: rund(bandStart + welt.torPunkt.x), y: welt.torPunkt.y }
-      : { x: rund(bandStart + bandBreite - 0.1), y: rund((letzter.y + 0.5) / 2) };
-    out.push({ welt, defs, punkte, bandStart: rund(bandStart), bandBreite, tor });
-    bandStart = rund(bandStart + bandBreite);
+      ? { x: welt.torPunkt.x, y: rund(bandStart + welt.torPunkt.y) }
+      : { x: rund((letzter.x + 0.5) / 2), y: rund(bandStart + bandLaenge - 0.1) };
+    out.push({ welt, defs, punkte, bandStart: rund(bandStart), bandLaenge, tor });
+    bandStart = rund(bandStart + bandLaenge);
   }
   return out;
 }
@@ -482,7 +482,7 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
   let vorigeWeltFertig = true;
 
   for (let wi = 0; wi < teile.length; wi++) {
-    const { welt, defs, punkte, bandStart, bandBreite, tor } = teile[wi];
+    const { welt, defs, punkte, bandStart, bandLaenge, tor } = teile[wi];
 
     const level: LevelKarte[] = defs.map((def, i) => {
       lauf++;
@@ -550,7 +550,7 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
       belohnung: welt.belohnung,
       belohnungVerdient: fertig,
       bandStart,
-      bandBreite,
+      bandLaenge,
       tor,
       torZiel: teile[wi + 1] ? teile[wi + 1].welt.name : null,
     });
@@ -560,7 +560,7 @@ export function weltkarte(p: Progress, k: Katalog = KATALOG): Weltkarte {
   const letzterTeil = teile[teile.length - 1];
   return {
     welten,
-    bandBreite: letzterTeil ? rund(letzterTeil.bandStart + letzterTeil.bandBreite) : 0,
+    bandLaenge: letzterTeil ? rund(letzterTeil.bandStart + letzterTeil.bandLaenge) : 0,
     figur: figurStand(p, k),
     belohnungen: verdienteBelohnungen(p, k),
     geschafft: geschafftGesamt,

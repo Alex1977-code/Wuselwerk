@@ -11,22 +11,27 @@ import type { ThemeId } from './types';
  *
  * ## Das Band
  *
- * Die Übersichtskarte ist **ein einziges waagerechtes Band** über alle Welten.
- * Es wird nicht geblättert, es wird gescrollt (Begründung in
- * `docs/weltkarte-entwurf.md`).
+ * Die Übersichtskarte ist **ein einziges senkrechtes Band** über alle Welten.
+ * Es wird nicht geblättert, es wird gescrollt — und zwar **nach oben**: Die
+ * erste Welt liegt unten, der Fortschritt ist ein Aufstieg. Das ist die
+ * natürliche Leserichtung eines Weges auf einem hochkant gehaltenen Gerät,
+ * und „weiterkommen heisst höher kommen" erzählt dieselbe Geschichte wie die
+ * Sterne und Tore am Weg. (Das Band war zuerst waagerecht — der Wechsel steht
+ * auf der Merkliste, die Begründung des Scrollens in
+ * `docs/weltkarte-entwurf.md` gilt unverändert.)
  *
- * Gemessen wird in **Bildschirmbreiten**: `x = 1` ist genau eine Breite des
- * quer gehaltenen Geräts, `y` läuft von 0 (oben) bis 1 (unten) der Bandhöhe.
- * Damit ist die Karte auflösungsfrei — der Zeichner multipliziert mit der
- * tatsächlichen Breite und muss nichts umrechnen, wenn ein Gerät schmaler ist.
- * `x` ist hier **weltlokal**; den Versatz im Gesamtband legt `progression.ts`
- * darauf.
+ * Gemessen wird in **Bildschirmhöhen**: `y = 1` ist genau eine Höhe des
+ * Geräts, gezählt **entlang des Weges** ab Anfang des Weltabschnitts.
+ * `x` läuft von 0 bis 1 quer über die Bandbreite. Damit ist die Karte
+ * auflösungsfrei — der Zeichner multipliziert mit der tatsächlichen Höhe und
+ * muss nichts umrechnen, wenn ein Gerät kürzer ist. `y` ist hier
+ * **weltlokal**; den Versatz im Gesamtband legt `progression.ts` darauf.
  */
 
 export interface KartenPunkt {
-  /** Bildschirmbreiten ab Anfang des Weltabschnitts. */
+  /** 0 = linke Kante des Bandes, 1 = rechte. */
   x: number;
-  /** 0 = Oberkante des Bandes, 1 = Unterkante. */
+  /** Bildschirmhöhen ab Anfang des Weltabschnitts, entlang des Weges. */
   y: number;
 }
 
@@ -99,8 +104,8 @@ export interface Welt {
    * da sind. Hoechstens eines je Welt; mehr waeren Schranken statt Tore.
    */
   sternTor?: { vorIndex: number; sterne: number };
-  /** Breite des Weltabschnitts in Bildschirmbreiten. */
-  bandBreite: number;
+  /** Länge des Weltabschnitts entlang des Weges, in Bildschirmhöhen. */
+  bandLaenge: number;
   /** Das Weltentor am Ende des Abschnitts. */
   torPunkt: KartenPunkt;
   belohnung: Belohnung;
@@ -109,19 +114,19 @@ export interface Welt {
 // --- Bandgeometrie ---------------------------------------------------------
 
 /**
- * Abstand zweier Levelpunkte in Bildschirmbreiten.
+ * Abstand zweier Levelpunkte in Bildschirmhöhen.
  *
- * 0,24 ist keine Geschmacksfrage, sondern folgt aus dem Finger: Bei 640
- * logischen Bildpunkten Breite sind das rund 154 Bildpunkte Abstand. Ein
- * Tippziel braucht 44, die drei Sterne darüber noch einmal 40 — bei engerem
- * Abstand berühren sich die Punkte, bei weiterem sieht man zu wenig Weg auf
- * einmal. So stehen **gut vier Punkte gleichzeitig im Bild**: einer hinter der
- * Figur, die Figur, und zwei, auf die man sich freut.
+ * 0,2 ist keine Geschmacksfrage, sondern folgt aus dem Finger: Bei 844
+ * Bildpunkten Höhe (hochkant) sind das rund 170 Bildpunkte Abstand, quer bei
+ * 390 noch 78 — ein Tippziel braucht 44, die drei Sterne darunter noch einmal
+ * 40, und die Schlangenlinie schiebt Nachbarn zusätzlich quer auseinander.
+ * So stehen hochkant **gut vier Punkte gleichzeitig im Bild**: einer unter
+ * der Figur, die Figur, und zwei, auf die man sich freut.
  */
-export const PUNKT_ABSTAND = 0.24;
+export const PUNKT_ABSTAND = 0.2;
 
 /** Luft vor dem ersten und hinter dem letzten Punkt. */
-const RAND = 0.26;
+const RAND = 0.22;
 
 /**
  * Wellenlänge der Schlangenlinie in Leveln.
@@ -133,7 +138,7 @@ const RAND = 0.26;
  */
 const WELLE = 7;
 
-/** Ausschlag nach oben und unten um die Bandmitte. */
+/** Ausschlag nach links und rechts um die Bandmitte. */
 const AUSSCHLAG = 0.26;
 
 function rund(v: number): number {
@@ -152,15 +157,15 @@ export function bahn(n: number, phase = 0): KartenPunkt[] {
   const out: KartenPunkt[] = [];
   for (let i = 0; i < n; i++) {
     out.push({
-      x: rund(RAND + i * PUNKT_ABSTAND),
-      y: rund(0.5 + AUSSCHLAG * Math.sin(((i + phase) * 2 * Math.PI) / WELLE)),
+      x: rund(0.5 + AUSSCHLAG * Math.sin(((i + phase) * 2 * Math.PI) / WELLE)),
+      y: rund(RAND + i * PUNKT_ABSTAND),
     });
   }
   return out;
 }
 
-/** Breite des Abschnitts, die zu `bahn(n)` passt. */
-export function bandBreiteFuer(n: number): number {
+/** Länge des Abschnitts entlang des Weges, die zu `bahn(n)` passt. */
+export function bandLaengeFuer(n: number): number {
   return rund(RAND * 2 + (n - 1) * PUNKT_ABSTAND);
 }
 
@@ -172,19 +177,19 @@ export function ids(praefix: string, n: number): string[] {
 }
 
 function welt(
-  w: Omit<Welt, 'levelIds' | 'punkte' | 'bandBreite' | 'torPunkt'> & { phase?: number },
+  w: Omit<Welt, 'levelIds' | 'punkte' | 'bandLaenge' | 'torPunkt'> & { phase?: number },
 ): Welt {
   const punkte = bahn(w.soll, w.phase ?? 0);
-  const breite = bandBreiteFuer(w.soll);
+  const laenge = bandLaengeFuer(w.soll);
   const letzter = punkte[punkte.length - 1];
   return {
     ...w,
     levelIds: ids(w.id, w.soll),
     punkte,
-    bandBreite: breite,
-    // Das Tor sitzt hinter dem letzten Punkt, auf halber Höhe zwischen ihm und
-    // der Bandmitte: Es soll am Ende des Weges stehen, aber nicht daran kleben.
-    torPunkt: { x: rund(breite - 0.1), y: rund((letzter.y + 0.5) / 2) },
+    bandLaenge: laenge,
+    // Das Tor sitzt hinter dem letzten Punkt, quer auf halbem Weg zwischen ihm
+    // und der Bandmitte: am Ende des Weges, aber nicht daran klebend.
+    torPunkt: { x: rund((letzter.x + 0.5) / 2), y: rund(laenge - 0.1) },
   };
 }
 

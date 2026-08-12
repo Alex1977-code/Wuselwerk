@@ -10,20 +10,24 @@ import { paletteFor } from './palette';
  *
  * ## Was sie ist
  *
- * **Ein einziges waagerechtes Band** über alle Welten, kein Blättern. Man
- * scrollt daran entlang wie an einem Weg, und genau das ist der Sinn: Der
- * Fortschritt soll als **Strecke** erfahrbar sein, nicht als Liste. Eine Liste
- * sagt „Level 7 von 15"; ein Band sagt „so weit bist du gekommen, und da vorne
- * geht es weiter".
+ * **Ein einziges senkrechtes Band** über alle Welten, kein Blättern. Man
+ * scrollt daran entlang wie an einem Weg — **nach oben**: Die erste Welt
+ * liegt unten, der Fortschritt ist ein Aufstieg (Merkliste „Weltauswahl
+ * senkrecht"). Der Grund ist derselbe wie beim alten waagerechten Band, nur
+ * konsequenter erzählt: Der Fortschritt soll als **Strecke** erfahrbar sein,
+ * nicht als Liste — und auf einem hochkant gehaltenen Gerät ist die lange
+ * Achse die Hochachse. „Weiter" heisst hier „höher", und das passt zu allem,
+ * was das Spiel sonst sagt: Sterne sammeln, Tore öffnen, aufsteigen.
  *
- * ## Warum in Bildschirmbreiten gerechnet wird
+ * ## Wie gerechnet wird
  *
- * Die Punkte in `progression.ts` liegen in **Bildschirmbreiten** (x) und
- * Anteilen der Bandhöhe (y), nicht in Bildpunkten. Damit ist die Karte
- * auflösungsfrei: Ein schmaleres Gerät zeigt denselben Ausschnitt, nur kleiner,
- * und niemand muss umrechnen. Ein Punktabstand von 0,24 Breiten heisst, dass
- * immer gut vier Stationen gleichzeitig im Bild sind — genug, um zu sehen,
- * woher man kommt und wohin es geht, ohne dass es zur Landkarte wird.
+ * Die Punkte in `progression.ts` liegen in **Bildschirmhöhen** (y, entlang
+ * des Weges) und Anteilen der Bandbreite (x, 0 bis 1 quer). Die Kamera
+ * (`kamera`) ist die Band-Höhe an der **Unterkante** des Bildes; ein Punkt
+ * mit `y === kamera` steht also ganz unten, einer mit `y === kamera + 1`
+ * ganz oben. Quer wird nicht auf die volle Gerätebreite gespannt, sondern
+ * auf eine **Spur** von höchstens 0,62 Bildhöhen: Im Querformat zöge die
+ * volle Breite die Schlangenlinie zu einem flachen Zickzack auseinander.
  *
  * ## Was hier bewusst *nicht* gezeichnet wird
  *
@@ -44,7 +48,7 @@ export interface KarteTreffer extends Box {
 /** Was der Zeichner über den Zustand der Karte wissen muss. */
 export interface KarteAnsicht {
   karte: Weltkarte;
-  /** Linke Kante des Ausschnitts, in Bildschirmbreiten. */
+  /** Band-Höhe an der Unterkante des Ausschnitts, in Bildschirmhöhen. */
   kamera: number;
   /** Stelle der Figur. Weicht während der Wanderung von `karte.figur` ab. */
   figur: KartenPunkt | null;
@@ -57,17 +61,24 @@ export interface KarteAnsicht {
   atlas: SpriteAtlas | null;
 }
 
-/** Oberer und unterer Rand des Bandes im Bild. */
-const BAND_OBEN = 0.3;
-const BAND_UNTEN = 0.86;
-
-function bandY(L: Layout, y: number): number {
-  return L.cssH * (BAND_OBEN + y * (BAND_UNTEN - BAND_OBEN));
+/** Die Querspur des Weges als Anteil der kürzeren sinnvollen Achse. */
+function spurBreite(L: Layout): number {
+  return Math.min(L.cssW * 0.9, L.cssH * 0.62);
 }
 
-/** Radius eines Levelpunktes. Er haengt an der Breite, nicht an der Hoehe. */
+/** Band-x (0..1) auf den Bildschirm. */
+function bx(L: Layout, x: number): number {
+  return L.cssW / 2 + (x - 0.5) * spurBreite(L);
+}
+
+/** Band-y (Bildschirmhöhen entlang des Weges) auf den Bildschirm: unten ist 0. */
+function by(L: Layout, a: KarteAnsicht, y: number): number {
+  return L.cssH * (1 - (y - a.kamera));
+}
+
+/** Radius eines Levelpunktes. Er haengt an der Spur, nicht am Geraet. */
 function punktR(L: Layout): number {
-  return Math.max(13, Math.min(26, L.cssW * 0.032));
+  return Math.max(13, Math.min(26, spurBreite(L) * 0.062));
 }
 
 function kreisRunde(
@@ -114,67 +125,47 @@ function stern(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): 
 }
 
 /**
- * Der Hintergrund: je Welt ihr eigener Himmel.
+ * Der Hintergrund: je Welt ihr eigener Himmel, gestapelt.
  *
  * Jeder Weltabschnitt bekommt den Verlauf seiner eigenen Palette, beschnitten
- * auf seinen Streifen. Beim Scrollen wandert man dadurch sichtbar **von einer
- * Welt in die naechste** — das ist billiger und wirksamer als jede Beschriftung.
- * Welten ohne eigene Palette bekommen die der Wiese; sie sind noch nicht
- * gebaut, und ein Platzhalterhimmel waere eine Ankuendigung ohne Deckung.
+ * auf seinen Streifen. Beim Hochscrollen steigt man dadurch sichtbar **von
+ * einer Welt in die naechste** — das ist billiger und wirksamer als jede
+ * Beschriftung. Der Weg laeuft durch ein **Tal**: Links und rechts rahmen
+ * Huegelzuege die Spur, mit derselben Luftperspektive wie im Spiel (hinten
+ * heller, vorn dunkler). Damit ist die Karte derselbe Ort wie das Spielfeld
+ * und nicht dessen Inhaltsverzeichnis.
+ *
+ * Am **oberen Rand** jedes Abschnitts liegt ein Huegelkamm quer — der
+ * Horizont dieser Welt. Was darueber kommt, ist die naechste; die Naht
+ * zwischen zwei Himmeln bekommt so eine Form, statt eine Kante zu sein.
  */
 function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void {
   ctx.fillStyle = '#0a0e16';
   ctx.fillRect(0, 0, L.cssW, L.cssH);
   for (const w of a.karte.welten) {
-    const x0 = (w.bandStart - a.kamera) * L.cssW;
-    const breite = w.bandBreite * L.cssW;
-    if (x0 + breite < -8 || x0 > L.cssW + 8) continue;
+    const yU = by(L, a, w.bandStart);
+    const yO = by(L, a, w.bandStart + w.bandLaenge);
+    if (yU < -8 || yO > L.cssH + 8) continue;
     const p = paletteFor(w.welt.kartenTheme);
-    const g = ctx.createLinearGradient(0, 0, 0, L.cssH);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, yO, L.cssW, yU - yO);
+    ctx.clip();
+    const g = ctx.createLinearGradient(0, yO, 0, yU);
     g.addColorStop(0, p.skyTop);
     g.addColorStop(0.55, p.skyMid);
     g.addColorStop(1, p.skyBottom);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(x0, 0, breite, L.cssH);
-    ctx.clip();
     ctx.fillStyle = g;
-    ctx.fillRect(x0, 0, breite, L.cssH);
-    // Hügel hinter dem Band.
-    //
-    // Ohne sie schwebt der Weg im Himmel und die Karte liest sich als
-    // Diagramm — eine Kette von Kreisen auf einer blauen Fläche. Zwei
-    // gestaffelte Hügelzüge geben ihm einen Grund, auf dem er liegen kann, und
-    // dieselbe Luftperspektive wie im Spiel: was weiter weg ist, ist heller und
-    // blasser. Damit ist die Karte derselbe Ort wie das Spielfeld und nicht
-    // dessen Inhaltsverzeichnis.
-    //
-    // Die Form kommt aus dem Bandanfang, ist also je Welt fest, ohne dass
-    // irgendwo eine Zahl gespeichert wäre.
-    const kette = (tiefe: number, farbe: string, phase: number): void => {
-      ctx.fillStyle = farbe;
-      ctx.beginPath();
-      const yBasis = bandY(L, 0.72 + tiefe * 0.34);
-      const hub = L.cssH * (0.075 - tiefe * 0.03);
-      ctx.moveTo(x0, L.cssH);
-      const schritt = Math.max(24, L.cssW * 0.06);
-      for (let px = x0 - schritt; px <= x0 + breite + schritt; px += schritt) {
-        const t = (px - x0) / L.cssW + phase + w.bandStart;
-        const y = yBasis - Math.sin(t * 2.1) * hub - Math.sin(t * 0.83 + 1.7) * hub * 0.6;
-        ctx.lineTo(px, y);
-      }
-      ctx.lineTo(x0 + breite, L.cssH);
-      ctx.closePath();
-      ctx.fill();
-    };
-    // Wolken vor den Huegeln: weiche Ballen, je Welt an festen Stellen (die
-    // Form kommt aus dem Bandanfang). Ein Himmel ohne irgendetwas darin ist
-    // eine Farbflaeche — genau das nannte die Kritik „leerer Himmel".
-    for (let i = 0; i < 5; i++) {
+    ctx.fillRect(0, yO, L.cssW, yU - yO);
+
+    // Wolken: weiche Ballen, je Welt an festen Stellen im **oberen** Drittel
+    // des Abschnitts — da, wo der Himmel frei bleibt. Ein Himmel ohne
+    // irgendetwas darin ist eine Farbflaeche.
+    for (let i = 0; i < 4; i++) {
       const wt = w.bandStart * 7.3 + i * 1.37;
-      const wx = x0 + ((wt * 137.5) % 100) / 100 * breite;
-      const wy = L.cssH * (0.24 + (((wt * 61.8) % 100) / 100) * 0.3);
-      const wr = L.cssW * (0.05 + (((wt * 29.7) % 100) / 100) * 0.04);
+      const wy = by(L, a, w.bandStart + w.bandLaenge * (0.72 + (((wt * 137.5) % 100) / 100) * 0.24));
+      const wx = L.cssW * (0.1 + (((wt * 61.8) % 100) / 100) * 0.8);
+      const wr = spurBreite(L) * (0.09 + (((wt * 29.7) % 100) / 100) * 0.07);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.beginPath();
       ctx.arc(wx, wy, wr, 0, Math.PI * 2);
@@ -183,31 +174,92 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
       ctx.fill();
     }
 
-    kette(0, p.hills[1], 0.4);
+    // Der Hang: **Terrassen** aus quer laufenden Huegelkaemmen, die den
+    // Abschnitt fuellen. Man blickt einen Hang hinauf — jede Terrasse ist ein
+    // Kamm, dahinter beginnt die naechste, und je hoeher, desto blasser
+    // (dieselbe Luftperspektive wie im Spiel). Der Weg steigt ueber die
+    // Terrassen; „weiter" heisst sichtbar „hoeher". Der erste Entwurf rahmte
+    // den Weg mit Talwaenden an den Kanten — das las sich als Schlucht aus
+    // Papier, nicht als Landschaft.
+    const stufen = Math.max(3, Math.round(w.bandLaenge / 0.4));
+    // Die Kaemme fuellen nur die unteren drei Viertel des Abschnitts: Oben
+    // bleibt Himmel mit Wolken — die Atempause, bevor die naechste Welt
+    // beginnt, und der Ort, an dem ihr Farbverlauf ueberhaupt zu sehen ist.
+    const kammBandY = (k: number): number =>
+      w.bandStart + w.bandLaenge * (0.06 + (0.68 * (k + 0.5)) / stufen);
+    const kammY = (k: number, px: number): number => {
+      const t = px / L.cssW;
+      const amp = L.cssH * 0.02;
+      const ph = w.bandStart * 9.1 + k * 2.7;
+      return (
+        by(L, a, kammBandY(k)) +
+        Math.sin(t * 5.3 + ph) * amp +
+        Math.sin(t * 11.7 + ph * 1.7) * amp * 0.35
+      );
+    };
+    const stufeFarbe = (k: number): [string, string] => {
+      const i = k === 0 ? 2 : k === 1 ? 1 : k % 2 === 0 ? 0 : 1;
+      return [p.hills[i], p.hillsDeep[i]];
+    };
+    const schritt = Math.max(16, L.cssW * 0.05);
+    for (let k = stufen - 1; k >= 0; k--) {
+      // Am Kamm der Hangton, nach unten der Fusston — ohne den Verlauf stand
+      // die unterste Terrasse als flacher Farbblock im Bild.
+      const [oben, unten] = stufeFarbe(k);
+      const ky = kammY(k, L.cssW / 2);
+      const g2 = ctx.createLinearGradient(0, ky, 0, ky + L.cssH * 0.55);
+      g2.addColorStop(0, oben);
+      g2.addColorStop(1, unten);
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.moveTo(-4, yU + 50);
+      for (let px = -4; px <= L.cssW + schritt; px += schritt) {
+        ctx.lineTo(px, kammY(k, Math.min(px, L.cssW)));
+      }
+      ctx.lineTo(L.cssW + 4, yU + 50);
+      ctx.closePath();
+      ctx.fill();
+      // Lichtsaum auf dem Kamm — die Kante, an der das Auge die Terrassen
+      // trennt. Dieselbe Geste wie an den Huegeln im Spiel.
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-4, kammY(k, 0));
+      for (let px = -4; px <= L.cssW + schritt; px += schritt) {
+        ctx.lineTo(px, kammY(k, Math.min(px, L.cssW)));
+      }
+      ctx.stroke();
+    }
 
-    // Die Falltuer-Maschine am Horizont — das Wahrzeichen dieser Welt, als
-    // Silhouette zwischen den Huegelzuegen. Sie erzaehlt, worum es hier geht:
-    // Irgendwo haengt so ein Ding, und aus ihm fallen die, die man rettet.
-    {
-      const mx = x0 + breite * 0.62;
-      const my = bandY(L, 0.72 + 0.17);
-      const mw = L.cssW * 0.075;
+    // Die Falltuer-Maschine auf einer hinteren Terrasse — das Wahrzeichen
+    // dieser Welt. Sie erzaehlt, worum es hier geht: Irgendwo haengt so ein
+    // Ding, und aus ihm fallen die, die man rettet.
+    if (stufen >= 3) {
+      const mx = L.cssW * 0.82;
+      const my = kammY(stufen - 2, mx);
+      const mw = spurBreite(L) * 0.11;
       ctx.fillStyle = p.hills[2];
-      ctx.globalAlpha = 0.75;
+      ctx.globalAlpha = 0.55;
       ctx.fillRect(mx - mw * 0.06, my - mw * 1.4, mw * 0.12, mw * 1.1);
       ctx.fillRect(mx + mw * 0.4 - mw * 0.06, my - mw * 1.4, mw * 0.12, mw * 1.1);
       ctx.fillRect(mx - mw * 0.28, my - mw * 0.34, mw * 0.96, mw * 0.34);
       ctx.globalAlpha = 1;
     }
-
-    kette(1, p.hills[2], 1.9);
-
-    // Der Boden ganz unten schliesst das Bild ab.
-    ctx.fillStyle = `#${(p.earth >>> 0).toString(16).padStart(6, '0')}`;
-    ctx.fillRect(x0, bandY(L, 1.16), breite, L.cssH);
-    ctx.fillStyle = `#${(p.crust >>> 0).toString(16).padStart(6, '0')}`;
-    ctx.fillRect(x0, bandY(L, 1.16), breite, Math.max(2, L.cssH * 0.014));
     ctx.restore();
+  }
+
+  // Unter dem Anfang des Bandes liegt Erde: Hier beginnt der Weg, und ein
+  // Weg beginnt auf einem Boden, nicht im Nichts.
+  const w1 = a.karte.welten[0];
+  if (w1) {
+    const p = paletteFor(w1.welt.kartenTheme);
+    const y0 = by(L, a, 0);
+    if (y0 < L.cssH + 8) {
+      ctx.fillStyle = `#${(p.earth >>> 0).toString(16).padStart(6, '0')}`;
+      ctx.fillRect(0, y0, L.cssW, L.cssH - y0 + 8);
+      ctx.fillStyle = `#${(p.crust >>> 0).toString(16).padStart(6, '0')}`;
+      ctx.fillRect(0, y0, L.cssW, Math.max(2, L.cssH * 0.012));
+    }
   }
 }
 
@@ -234,8 +286,8 @@ function weg(
 ): void {
   if (punkte.length < 2) return;
   const p = punkte.map((k) => ({
-    x: (k.x - a.kamera) * L.cssW,
-    y: bandY(L, k.y),
+    x: bx(L, k.x),
+    y: by(L, a, k.y),
   }));
   ctx.save();
   ctx.strokeStyle = farbe;
@@ -263,8 +315,8 @@ function levelPunkt(
   lv: LevelKarte,
 ): KarteTreffer {
   const r = punktR(L);
-  const x = (lv.pos.x - a.kamera) * L.cssW;
-  const y = bandY(L, lv.pos.y);
+  const x = bx(L, lv.pos.x);
+  const y = by(L, a, lv.pos.y);
 
   if (lv.zustand === 'gesperrt') {
     // Gesperrtes bleibt klein und stumpf. Es soll zu sehen sein, damit man
@@ -378,8 +430,8 @@ function laterne(
   pos: KartenPunkt,
   brennt: boolean,
 ): void {
-  const x = (pos.x - a.kamera) * L.cssW;
-  const y = bandY(L, pos.y);
+  const x = bx(L, pos.x);
+  const y = by(L, a, pos.y);
   const h = punktR(L) * 1.5;
   if (brennt) {
     const puls = 0.6 + 0.4 * Math.sin(a.anim / 21);
@@ -409,8 +461,8 @@ function tor(
   a: KarteAnsicht,
   w: WeltKarte,
 ): KarteTreffer | null {
-  const x = (w.tor.x - a.kamera) * L.cssW;
-  const y = bandY(L, w.tor.y);
+  const x = bx(L, w.tor.x);
+  const y = by(L, a, w.tor.y);
   const r = punktR(L) * 1.35;
   const offen = w.fertig;
 
@@ -449,25 +501,26 @@ function tor(
 
 /** Der Name der Welt, gross ueber ihrem Abschnitt. */
 function weltName(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht, w: WeltKarte): void {
-  const x0 = (w.bandStart - a.kamera) * L.cssW;
-  const breite = w.bandBreite * L.cssW;
-  // Die Beschriftung bleibt im Bild, solange ihr Abschnitt es tut: Sie klebt an
-  // der linken Kante, statt mit dem Abschnitt hinauszuwandern. Sonst weiss man
-  // mitten in einer Welt nicht mehr, in welcher man ist.
-  const x = Math.min(Math.max(x0 + 16, 16), Math.max(16, x0 + breite - 16));
+  const yU = by(L, a, w.bandStart);
+  const yO = by(L, a, w.bandStart + w.bandLaenge);
+  // Die Beschriftung bleibt im Bild, solange ihr Abschnitt es tut: Sie haengt
+  // oben, statt mit dem Abschnitt hinauszuwandern. Sonst weiss man mitten in
+  // einer Welt nicht mehr, in welcher man ist.
+  const zeile = L.cssH * 0.055;
+  const y = Math.min(Math.max(yO + 14, L.cssH * 0.05), yU - zeile * 2.6);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillStyle = 'rgba(10, 16, 26, 0.5)';
-  ctx.font = `800 ${Math.round(L.cssH * 0.055)}px system-ui, sans-serif`;
-  ctx.fillText(w.welt.name, x + 1.5, L.cssH * 0.075 + 1.5);
+  ctx.font = `800 ${Math.round(zeile)}px system-ui, sans-serif`;
+  ctx.fillText(w.welt.name, 17.5, y + 1.5);
   ctx.fillStyle = w.betreten ? COL.text : COL.dim;
-  ctx.fillText(w.welt.name, x, L.cssH * 0.075);
+  ctx.fillText(w.welt.name, 16, y);
   ctx.font = `600 ${Math.round(L.cssH * 0.028)}px system-ui, sans-serif`;
   ctx.fillStyle = 'rgba(234, 242, 255, 0.72)';
   ctx.fillText(
     `${w.geschafft}/${w.level.length} · ${w.sterne}/${w.sterneMoeglich} ★`,
-    x,
-    L.cssH * 0.075 + L.cssH * 0.062,
+    16,
+    y + L.cssH * 0.062,
   );
 }
 
@@ -488,8 +541,9 @@ export function drawWeltkarte(
   const treffer: KarteTreffer[] = [];
 
   for (const w of a.karte.welten) {
-    const x0 = (w.bandStart - a.kamera) * L.cssW;
-    if (x0 + w.bandBreite * L.cssW < -60 || x0 > L.cssW + 60) continue;
+    const yU = by(L, a, w.bandStart);
+    const yO = by(L, a, w.bandStart + w.bandLaenge);
+    if (yU < -60 || yO > L.cssH + 60) continue;
 
     // Der Weg dieser Welt: alle Levelpunkte, dann das Tor.
     const punkte: KartenPunkt[] = [...w.level.map((l) => l.pos), w.tor];
@@ -506,8 +560,8 @@ export function drawWeltkarte(
 
   // Die Figur.
   if (a.figur) {
-    const fx = (a.figur.x - a.kamera) * L.cssW;
-    const fy = bandY(L, a.figur.y);
+    const fx = bx(L, a.figur.x);
+    const fy = by(L, a, a.figur.y);
     // Die Groesse haengt am Punkt, nicht am Bildschirm. Der erste Versuch
     // rechnete sie aus der Bildschirmhoehe — im Hochformat wurde die Figur
     // dadurch groesser als die Station, auf der sie steht, und verdeckte genau
