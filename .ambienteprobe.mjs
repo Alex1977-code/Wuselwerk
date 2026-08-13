@@ -6,11 +6,14 @@
  * der 0,6-s-Scheduler wird ueber suspend()-Checkpoints nachgefuettert.
  *
  * Eine Besonderheit hat das Bett: Es steht absichtlich 17 bis 22 dB unter
- * der Melodie — pur waere die Aufnahme fast unhoerbar. Deshalb werden alle
- * Welten erst roh gerendert und dann um einen **gemeinsamen** Faktor
- * angehoben (lauteste Datei auf 0,7 Spitze). Gemeinsam, nicht je Datei:
- * So bleibt hoerbar, dass der Schlot satter steht als die Hoehenluft der
- * Klamm — je Datei normalisiert waere dieses Verhaeltnis weg.
+ * der Melodie — pur waere die Aufnahme fast unhoerbar. Fuer die Hoerprobe
+ * wird deshalb **je Datei** normalisiert (Ziel-RMS -20 dBFS, Spitze
+ * hoechstens 0,85), und zwar **vor** der 16-Bit-Quantisierung — ein nach
+ * der Quantisierung angehobenes Fluesterbett hoebe sein eigenes
+ * Quantisierungsrauschen mit an. Der erste Wurf normalisierte alle Welten
+ * gemeinsam auf die lauteste; die Wiese (rohes RMS -60 dBFS, das
+ * leiseste Bett) blieb dabei unhoerbar. Die je-Datei-Anhebung wird
+ * ausgegeben, damit die echten Verhaeltnisse benennbar bleiben.
  *
  * Der Ausgangs-Schimmer bleibt weg: Er gehoert zum Torbogen, nicht zur Welt.
  *
@@ -88,15 +91,21 @@ for (const w of WELTEN) {
     const L = buf.getChannelData(0);
     const R = buf.getChannelData(1);
     const n = buf.length;
-    const pcm = new Int16Array(n * 2);
     let peak = 0;
     let sum = 0;
     for (let i = 0; i < n; i++) {
-      const l = Math.max(-1, Math.min(1, L[i]));
-      const r = Math.max(-1, Math.min(1, R[i]));
-      if (Math.abs(l) > peak) peak = Math.abs(l);
-      if (Math.abs(r) > peak) peak = Math.abs(r);
-      sum += l * l + r * r;
+      if (Math.abs(L[i]) > peak) peak = Math.abs(L[i]);
+      if (Math.abs(R[i]) > peak) peak = Math.abs(R[i]);
+      sum += L[i] * L[i] + R[i] * R[i];
+    }
+    const rms = Math.sqrt(sum / (n * 2));
+    // Je Datei auf Ziel-RMS anheben, Spitze gedeckelt — auf den Floats,
+    // vor der Quantisierung.
+    const faktor = Math.min(0.85 / Math.max(peak, 1e-9), 0.1 / Math.max(rms, 1e-9));
+    const pcm = new Int16Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const l = Math.max(-1, Math.min(1, L[i] * faktor));
+      const r = Math.max(-1, Math.min(1, R[i] * faktor));
       pcm[i * 2] = Math.round(l * (l < 0 ? 32768 : 32767));
       pcm[i * 2 + 1] = Math.round(r * (r < 0 ? 32768 : 32767));
     }
@@ -106,20 +115,16 @@ for (const w of WELTEN) {
     for (let i = 0; i < bytes.length; i += CH) {
       bin += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + CH, bytes.length)));
     }
-    return { b64: btoa(bin), sr, n, peak, rms: Math.sqrt(sum / (n * 2)), events: amb.state.events };
+    return { b64: btoa(bin), sr, n, peak, rms, faktor, events: amb.state.events };
   }, { theme: w.theme, dauerMusik, tail: TAIL });
   roh.push({ ...w, ...ergebnis });
   console.log(
     `${w.name}: roh Spitze ${ergebnis.peak.toFixed(4)}, RMS ${ergebnis.rms.toFixed(4)}, ` +
+      `angehoben um ${(20 * Math.log10(ergebnis.faktor)).toFixed(1)} dB, ` +
       `${ergebnis.events} geplante Einsaetze`,
   );
 }
 await browser.close();
-
-// --- Gemeinsame Anhebung ----------------------------------------------------
-const maxPeak = Math.max(...roh.map((r) => r.peak));
-const faktor = 0.7 / maxPeak;
-console.log(`gemeinsamer Faktor x${faktor.toFixed(2)} (${(20 * Math.log10(faktor)).toFixed(1)} dB)`);
 
 const lameSrc = readFileSync('node_modules/lamejs/lame.all.js', 'utf8');
 const lame = new Function(`${lameSrc}\nreturn lamejs;`)();
@@ -129,9 +134,6 @@ for (const r of roh) {
   const ausgerichtet = new Uint8Array(pcmBuf.length);
   ausgerichtet.set(pcmBuf);
   const pcm = new Int16Array(ausgerichtet.buffer);
-  for (let i = 0; i < pcm.length; i++) {
-    pcm[i] = Math.max(-32768, Math.min(32767, Math.round(pcm[i] * faktor)));
-  }
 
   const basis = `art-src/proben/ambiente-${r.name}`;
   const daten = Buffer.from(pcm.buffer);
