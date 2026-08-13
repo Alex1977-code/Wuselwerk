@@ -74,7 +74,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 320 },
     exit: { x: 620, y: 360, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,
@@ -163,11 +164,13 @@ export const WELT3_LEVELS: LevelDef[] = [
     // geerbten w1-04-Plan).
     exit: { x: 80, y: 450, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 62,
     releaseRate: 30,
     minReleaseRate: 20,
-    skills: sk({ floater: 7, blocker: 1 }),
+    // +1 Schirm (Paket 0): Ein Fehltipp verbrannte sonst die letzte Gabe.
+    skills: sk({ floater: 8, blocker: 1 }),
     par: 8,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
@@ -220,7 +223,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 280 },
     exit: { x: 140, y: 380, w: 32, h: 26 },
     total: 16,
-    needed: 12,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 11,
     timeLimitSec: 150,
     releaseRate: 50,
     minReleaseRate: 25,
@@ -249,7 +253,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 470 },
     exit: { x: 650, y: 232, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 180,
     releaseRate: 35,
     minReleaseRate: 20,
@@ -304,7 +309,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     // Schirm hinueber, je acht im Vorrat — die Quote fordert jetzt alle
     // acht Paare, nicht sechs mit zwei Fehlern Luft. Par folgt der
     // vollen Musterloesung (8 Paare + Brueckenkette).
-    needed: 8,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 6,
     timeLimitSec: 150,
     releaseRate: 45,
     minReleaseRate: 25,

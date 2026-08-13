@@ -1149,6 +1149,155 @@ function planRost5(): Plan {
   };
 }
 
+/**
+ * w1-08 „Die Weiche" (Mini-B8): Zwei Schirme fuer den Ost-Schnellweg,
+ * dann der Blocker als Weiche — der Pulk nimmt die Weststufen.
+ */
+function planWeiche(): Plan {
+  let schirme = 0;
+  let weiche = false;
+  return (w) => {
+    if (schirme < 2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && !x.hasFloater && x.x >= 380 && x.x <= 460,
+      );
+      if (c && w.assign(c.id, 'floater')) schirme++;
+      return;
+    }
+    if (!weiche) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && !x.hasFloater && x.x >= 380 && x.x <= 440,
+      );
+      if (c && w.assign(c.id, 'blocker')) weiche = true;
+    }
+  };
+}
+
+/**
+ * w2-03 „Der Kamin" (B7-Einfuehrung): Sechs Kletterer nehmen den Kamin,
+ * einer von ihnen graebt oben auf der Platte die Kammer auf.
+ */
+function planKamin(): Plan {
+  let kletterer = 0;
+  let grab = false;
+  return (w) => {
+    if (kletterer < 6) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && x.x < 400 && w.skills.climber > 0,
+      );
+      if (c && w.assign(c.id, 'climber')) kletterer++;
+      return;
+    }
+    if (!grab) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 180 && x.y < 240 && x.x >= 560 && x.x <= 620,
+      );
+      if (c && w.assign(c.id, 'digger')) grab = true;
+    }
+  };
+}
+
+/**
+ * w2-04 „Die hohle Mauer" (B4-Schleife): Ein Kletterer, zwei Grabungen —
+ * aussen die Schale (der Senkenstahl stoppt die Grabung auf Bodenhoehe),
+ * dann klettert dieselbe Figur den Kern hinauf und graebt ihn bis zur
+ * Galerie durch. Der Pulk faellt durch die geoeffnete Mauer zur Tuer.
+ */
+function planMauer(): Plan {
+  let kletter = false;
+  let grabA = false;
+  let grabB = false;
+  return (w) => {
+    if (!kletter) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && x.y > 380 && x.x > 320,
+      );
+      if (c && w.assign(c.id, 'climber')) kletter = true;
+      return;
+    }
+    if (!grabA) {
+      const c = w.wusels.find(
+        (x) =>
+          x.hasClimber && x.state === State.WALKING && x.y < 340 && x.x >= 560 && x.x <= 563,
+      );
+      if (c && w.assign(c.id, 'digger')) grabA = true;
+      return;
+    }
+    if (!grabB) {
+      // Direkt an Schacht A anschliessen: Bei 565..570 ueberlappt das
+      // Grabfenster den ersten Schacht — kein Erdpfeiler bleibt stehen.
+      const c = w.wusels.find(
+        (x) =>
+          x.hasClimber && x.state === State.WALKING && x.y < 340 && x.x >= 565 && x.x <= 570,
+      );
+      if (c && w.assign(c.id, 'digger')) grabB = true;
+    }
+  };
+}
+
+/**
+ * w2-06 „Durch zwei Boeden" (B1 im Kleinen): Zwei Grabungen im Versatz —
+ * die Stahlkappen beider Etagen erzwingen den Zickzack.
+ */
+function planZweiBoeden(): Plan {
+  let loch1 = false;
+  let loch2 = false;
+  return (w) => {
+    if (!loch1) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 310 && x.x >= 440 && x.x <= 480,
+      );
+      if (c && w.assign(c.id, 'digger')) loch1 = true;
+      return;
+    }
+    if (!loch2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 330 && x.y < 360 && x.x >= 530 && x.x <= 560,
+      );
+      if (c && w.assign(c.id, 'digger')) loch2 = true;
+    }
+  };
+}
+
+/**
+ * w2-07 „Ueber den Deckel": Sechs Kletterer — die Krone liegt auf
+ * Deckelhoehe, der Rest ist Laufen und der Lichtschacht.
+ */
+function planUeberDenDeckel(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 6) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x < 150 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/**
+ * w2-08 „Gegenstrom" (der Wender): Der Blocker dreht den Strom vor der
+ * Ostsenke, ein Gewendeter rammt westwaerts durch den Riegel.
+ */
+function planGegenstrom(): Plan {
+  let wender = false;
+  let stollen = false;
+  return (w) => {
+    if (!wender) {
+      const c = walkerNear(w, 500, 560, 1);
+      if (c && w.assign(c.id, 'blocker')) wender = true;
+      return;
+    }
+    if (!stollen) {
+      // Der Rammer greift nur mit der Wand in Schlagweite (wie planLevel2):
+      // hoechstens fuenf Punkte vor der Riegel-Ostflanke.
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 400 && x.x >= 105 && x.x <= 109,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -1157,17 +1306,21 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-05': planLevel5,
   'w1-06': planLevel6,
   'w1-07': planLevel7,
-  'w1-08': planLevel8,
+  // Paket 1 (Level-Konzept): w1-08 und die W2-Fruehspiel-Level haben neue
+  // Geometrien und neue Plaene; die Altplaene bleiben stehen, weil Welt 5
+  // die alten Geometrien als Kopien weiterbenutzt und die Rot-Tests sie
+  // als Gegenprobe brauchen.
+  'w1-08': planWeiche,
   'w1-09': planLevel9,
   'w1-10': planLevel10,
   'w2-01': planKlamm1,
   'w2-02': planKlamm2,
-  'w2-03': planKlamm3,
-  'w2-04': planLevel3,
+  'w2-03': planKamin,
+  'w2-04': planMauer,
   'w2-05': planKlamm5v2,
-  'w2-06': planKlamm6,
-  'w2-07': planLevel4,
-  'w2-08': planKlamm8,
+  'w2-06': planZweiBoeden,
+  'w2-07': planUeberDenDeckel,
+  'w2-08': planGegenstrom,
   'w2-09': planKlamm9,
   'w2-10': planLevel9,
   'w2-11': planKlamm11,
@@ -1340,17 +1493,32 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   it('w5-14: der geerbte Pruefungsplan greift ins Leere', () => {
     erwarteRot('w5-14', planLevel10);
   });
-  it('w2-06: die Naht liegt woanders als in w1-07', () => {
+  it('w2-06: der alte Naht-Plan hat keine Bombe mehr und keine Naht', () => {
     erwarteRot('w2-06', planLevel7);
+    erwarteRot('w2-06', planKlamm6);
   });
-  it('w2-08: der einzelne Bauer endet mitten ueber dem 44er-Spalt', () => {
+  it('w2-08: ohne Wender und Stollen bleibt der Brueckenplan stumm', () => {
     erwarteRot('w2-08', planLevel8);
+    erwarteRot('w2-08', planKlamm8);
   });
   it('w2-12: die verschobene Schlucht laesst die alte Bruecke zu kurz', () => {
     erwarteRot('w2-12', planLevel10);
   });
   it('w3-05: ohne Ostwache frisst der Pendelweg die Uhr', () => {
     erwarteRot('w3-05', planLevel4);
+  });
+  // Paket 1 (Level-Konzept): Die Fruehspiel-Umbauten gegen ihre Altplaene.
+  it('w1-08: der alte Bruecken-Plan findet weder Schlucht noch Bauer', () => {
+    erwarteRot('w1-08', planLevel8);
+  });
+  it('w2-03: Klettern allein endet auf der Platte — die Tuer liegt darunter', () => {
+    erwarteRot('w2-03', planKlamm3);
+  });
+  it('w2-04: der geerbte Brueckenplan hat keine Bauer und keine Kante', () => {
+    erwarteRot('w2-04', planLevel3);
+  });
+  it('w2-07: der alte Schirmregen hat keine Schirme mehr', () => {
+    erwarteRot('w2-07', planLevel4);
   });
 });
 
@@ -1371,7 +1539,12 @@ describe('Levelaufbau', () => {
       const w = createWorld(level);
       // 20 Sekunden reichen, um die ersten Figuren landen zu sehen.
       for (let i = 0; i < 60 * 20 && w.released < 2; i++) w.tick();
-      for (let i = 0; i < 60 * 10; i++) w.tick();
+      // Sechs Sekunden nach der Landung: Das prueft den Falltuerfall und
+      // den Landeplatz. Nicht mehr zehn — seit der Weiche (w1-08) gibt es
+      // Level, deren ferne Kanten absichtlich toedlich sind; die erreicht
+      // ein Laeufer erst nach dieser Frist, und sie zu pruefen ist Sache
+      // der Musterloesung, nicht dieses Spawntests.
+      for (let i = 0; i < 60 * 6; i++) w.tick();
       expect(w.dead, level.id).toBe(0);
     }
   });

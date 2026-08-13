@@ -43,6 +43,19 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   w2-03 und w2-10 sind bewusst Zweitübersetzungen ohne Rot-Test:
   Klettern ist dauerhaft, jede Geometrie, die den geerbten Kletterplan
   schlüge, schlüge jeden Plan — dort schärft der Werkzeugschnitt.
+- ✅ **Mehrebenen-Konzept, Paket 0+1** (`docs/level-konzept.md`):
+  Paket 0 — 16 Margen-Heilungen (Quote = Messung − 2, w2-05 als
+  dokumentierte Taktgeber-Ausnahme), Niederlagen-Tafel mit
+  Fortschritts-Ansage, Startklappe/Lesemodus ab Weltmitte (Karte frei,
+  Uhr steht, „Los" öffnet), Minimap im Lesemodus antippbar. Paket 1 —
+  w1-08 „Die Weiche" als Mini-B8 (E48/E96 auf dem Normraster, schwebende
+  Platten), w2-03 „Der Kamin" (B7 + Grabungs-Finale), w2-04 „Die hohle
+  Mauer" (B4-Schleife, climber+digger-Debüt, zwei Grabungen derselben
+  Figur), w2-06 „Durch zwei Böden" (B1 im Kleinen, Stahl erzwingt den
+  Versatz), w2-07 „Über den Deckel" (man läuft AUF dem Deckel zur Tür),
+  w2-08 „Gegenstrom" (Wender, blocker+basher-Debüt). Vier neue
+  Rot-Tests, alle Werte aus dem Messlauf. w1-10 trug die beschlossene
+  Fassung 2 bereits. Pakete 2–5 stehen aus.
 
 ## Grafik
 

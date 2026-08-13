@@ -91,60 +91,92 @@ export const WELT2_LEVELS: LevelDef[] = [
     id: 'w2-03',
     name: 'Der Kamin',
     chapter: 'Abstieg',
-    hint: 'Die Wand trägt eine Stahlhaut — kein Stollen hilft. Der Kletterer nimmt den Kamin.',
+    hint: 'Die Wand trägt eine Stahlhaut — kein Stollen hilft. Der Kletterer nimmt den Kamin, und hinter der Krone geht es in Stufen hinab. Ganz unten liegt die Tür begraben.',
     theme: 'crystal',
     width: 720,
     height: 540,
     seed: 21003,
     entrance: { x: 90, y: 380 },
-    exit: { x: 620, y: 166, w: 32, h: 26 },
+    exit: { x: 590, y: 254, w: 32, h: 26 },
     total: 10,
-    needed: 6,
-    timeLimitSec: 110,
+    needed: 3,
+    // Messlauf: letzte Rettung 58,2 s x 2,0 (W2-Faktor) = 115.
+    // Quote 3 = Messung 6 minus Marge 3.
+    timeLimitSec: 115,
     releaseRate: 40,
     minReleaseRate: 25,
-    // Zweituebersetzung von w1-06, bewusst ohne Rot-Test: Klettern ist
-    // dauerhaft - jede Geometrie, die den geerbten Kletterplan schluege,
-    // schluege jeden Plan. Die eigene Pointe der Klamm sind Deckel und
-    // Stahlflanke; geschaerft wird der Vorrat: sieben Kletterer fuer
-    // sechs Gerettete, einer Reserve.
-    skills: sk({ climber: 7 }),
-    // Der Kletterer ist eine persönliche Gabe: sechs Gerettete, sechs Gaben.
-    par: 6,
+    // B7-Einfuehrung (Level-Konzept, Paket 1): der Kaminzug als reiner
+    // Baustein — Wand hinauf, unterm Deckel ueber die Krone, drueben in
+    // sicheren Stufen hinab. Neu gegen die Zweituebersetzung von frueher:
+    // Unten wartet ein zweiter Schritt, den Klettern allein nicht leistet —
+    // die Tuer liegt unter der Platte, ein Kletterer muss zum Graeber
+    // werden. Genau daran scheitert der geerbte Nur-Kletter-Plan (Rot-Test).
+    skills: sk({ climber: 7, digger: 2 }),
+    // Sechs Kletterer plus die eine Grabung: sieben Zuege.
+    par: 7,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
       { t: 'ground', x: 0, w: 420, y: 430, h: 110, mat: MAT.ROCK, rough: 2 },
-      // Der Block, auf dem der Ausgang steht. Seine Stirnseite ist Stahl —
-      // die Lehre aus dem Grasland, hier als Bauteil der Klamm.
-      { t: 'rect', x: 420, y: 190, w: 300, h: 350, mat: MAT.ROCK },
-      { t: 'rect', x: 420, y: 190, w: 10, h: 240, mat: MAT.STEEL },
+      // Die Wand: Krone bei 150, Spalt zum Deckel 66 — genug zum
+      // Darueberlaufen. Die Westflanke traegt Stahl: kein Stollen.
+      { t: 'rect', x: 420, y: 150, w: 26, h: 390, mat: MAT.ROCK },
+      { t: 'rect', x: 420, y: 150, w: 8, h: 280, mat: MAT.STEEL },
+      // Die Zwischenplatte hinter der Krone: 64 hinab — die freundliche
+      // Stufe der Klamm. Unter ihr die Kammer mit der Tuer.
+      { t: 'rect', x: 446, y: 214, w: 274, h: 24, mat: MAT.ROCK },
+      { t: 'rect', x: 446, y: 238, w: 274, h: 302, mat: MAT.ROCK },
+      // Die Kammer: 42 hoch, ihr Boden 66 unter der Platte. Wer oben
+      // graebt, faellt weich; wer nur klettert, laeuft oben auf und ab.
+      { t: 'rect', x: 540, y: 238, w: 150, h: 42, mat: MAT.EMPTY },
     ],
   },
   {
     id: 'w2-04',
-    name: 'Kristallspalt',
+    name: 'Die hohle Mauer',
     chapter: 'Abstieg',
-    hint: 'Der Spalt ist tief und sein Grund eine Falle ohne Ausgang. Ein Blocker hält den Pulk, die Brücke trägt ihn.',
+    hint: 'Die Mauer sperrt die Senke, und ihr Boden ist Stahl. Aber die Mauer hat einen weichen Kern: Wer sie erklimmt und zweimal gräbt, macht aus der Sperre den Durchlass — erst die Schale, dann den Kern.',
     theme: 'crystal',
-    width: 960,
+    width: 720,
     height: 540,
     seed: 21004,
-    entrance: { x: 120, y: 320 },
-    exit: { x: 800, y: 356, w: 32, h: 28 },
-    total: 20,
-    needed: 14,
-    timeLimitSec: 150,
+    entrance: { x: 120, y: 290 },
+    exit: { x: 610, y: 438, w: 32, h: 26 },
+    total: 12,
+    needed: 9,
+    // Messlauf: letzte Rettung 77,9 s x 2,0 = 155. Quote 9 = Messung 12
+    // minus Marge 3 — die Schleife rettet alle, die Marge ist Komfort.
+    timeLimitSec: 155,
     releaseRate: 40,
     minReleaseRate: 25,
-    skills: sk({ builder: 6, blocker: 2, bomber: 2, digger: 1, basher: 1 }),
-    par: 4,
+    // B4-Einfuehrung, die Umweg-Schleife (Level-Konzept, Paket 1): Der
+    // direkte Weg ist sichtbar versperrt, ein Kletterer oeffnet ihn von
+    // oben — climber+digger, das erste Mal, dass Gabe und Arbeit verkettet
+    // sind. Der Pulk wartet sichtbar vor der Mauer. Beide Grabungen macht
+    // dieselbe Figur: Nach der ersten steht sie unten im eigenen Schacht,
+    // klettert den Kern wieder hinauf und setzt innen nach.
+    skills: sk({ climber: 2, digger: 3 }),
+    // Ein Kletterer, zwei Grabungen — drei Zuege, eine Schleife.
+    par: 3,
     paint: [
-      { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 368, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 392, w: 568, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
-      // Der Grund des Spalts, knapp unter der Überlebensgrenze erreichbar:
-      // Wer fällt, lebt — und läuft unten zwischen zwei Wänden.
-      { t: 'rect', x: 368, y: 434, w: 24, h: 106, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
+      // Westplateau mit dem Fenster; die Kante wirft alle in die Senke.
+      { t: 'rect', x: 0, y: 340, w: 300, h: 200, mat: MAT.ROCK },
+      // Der Senkenboden ist Stahl: Von hier graebt niemand nach unten —
+      // und genau derselbe Stahl stoppt spaeter die Aussengrabung auf
+      // Bodenhoehe, sodass eine begehbare Stufe in die Mauer stehen bleibt.
+      { t: 'rect', x: 300, y: 400, w: 260, h: 10, mat: MAT.STEEL },
+      // Der Fels unter allem; die Galerie wird spaeter hineingeschnitten.
+      { t: 'rect', x: 300, y: 410, w: 420, h: 130, mat: MAT.ROCK },
+      // Die Mauer: Erdkern, Felsschale nach Westen, Felskappe obenauf.
+      // Krone 70 ueber dem Senkenboden — eine Kletterwand, kein Huepfer.
+      { t: 'rect', x: 560, y: 336, w: 36, h: 124, mat: MAT.EARTH },
+      { t: 'rect', x: 560, y: 330, w: 36, h: 6, mat: MAT.ROCK },
+      { t: 'rect', x: 560, y: 336, w: 6, h: 64, mat: MAT.ROCK },
+      // Ostseite: massiver Fels bis zur Mauer.
+      { t: 'rect', x: 596, y: 400, w: 124, h: 140, mat: MAT.ROCK },
+      // Die Galerie unter der Mauer — Ziel der Kerngrabung, Heim der Tuer.
+      // Ihr Boden liegt 64 unter dem Senkenniveau: weicher Fall fuer alle.
+      { t: 'rect', x: 520, y: 430, w: 180, h: 34, mat: MAT.EMPTY },
     ],
   },
   {
@@ -159,6 +191,12 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 560, y: 240 },
     exit: { x: 150, y: 454, w: 32, h: 26 },
     total: 12,
+    // Von der Marge-Heilung (Paket 0) ausgenommen — die eine dokumentierte
+    // Ausnahme der Welt: Beim Taktgeber IST die Marge-0 das Raetsel. Die
+    // Uhr liegt zwischen gemuetlichem Weg (Quote bei 73,8 s) und getaktetem
+    // (67,1 s); mit Quote 6 raettet der gemuetliche Weg schon bei 59 s und
+    // die Pointe fiele. Verlieren kann man hier nur an die Uhr, und eine
+    // Uhr-Niederlage kostet dank Herzschutz kein Leben.
     needed: 8,
     // Der Taktgeber (Design-Runde, Blaupause 2): Die Uhr ist am Messlauf
     // so bemessen, dass der gemuetliche Weg scheitert — Quote ohne
@@ -181,91 +219,130 @@ export const WELT2_LEVELS: LevelDef[] = [
   },
   {
     id: 'w2-06',
-    name: 'Die Naht',
+    name: 'Durch zwei Böden',
     chapter: 'Stollen',
-    hint: 'Unter dem Staub liegt eine Stahlplatte mit einer Naht. Nur der Sprengmeister öffnet sie.',
+    hint: 'Zwei Etagen, zwei Grabungen — aber der Stahl deckt jede Etage an anderer Stelle. Wo eben noch gegraben wurde, geht es diesmal nicht.',
     theme: 'crystal',
     width: 720,
     height: 540,
     seed: 21006,
-    entrance: { x: 110, y: 300 },
-    exit: { x: 420, y: 386, w: 32, h: 26 },
-    total: 20,
-    // 17 statt 14 (Messregel): Die Musterloesung rettet 19, Marge 2.
-    needed: 17,
-    timeLimitSec: 110,
+    entrance: { x: 600, y: 250 },
+    exit: { x: 80, y: 394, w: 32, h: 26 },
+    total: 12,
+    needed: 8,
+    // Messlauf: letzte Rettung 119,5 s x 2,0 = 240 — der Zickzack durch
+    // zwei Ebenen kostet Marschweg, die Uhr respektiert das Gesetz.
+    timeLimitSec: 240,
     releaseRate: 45,
     minReleaseRate: 25,
-    // Zwei Bomben (ein Irrtum erlaubt), ein Graeber als Koeder — die
-    // Naht ist der Weg, alles andere steht auf Stahl.
-    skills: sk({ bomber: 2, digger: 1 }),
-    par: 1,
+    // Ersatzbau (Level-Konzept, Paket 1): Die Naht war achtmal im Spiel —
+    // sie bleibt Zutat, nie mehr Hauptgericht. Stattdessen der Etagenturm
+    // im Kleinen (B1): zwei Boeden uebereinander, die Stahlkappen zwingen
+    // die Loecher in den Versatz — der Weg wird ein Zickzack durch die
+    // Ebenen, und genau das verlangte der Auftrag: mehr als eine.
+    skills: sk({ digger: 4 }),
+    // Zwei Grabungen, zwei Reserven.
+    par: 2,
     paint: [
-      { t: 'rect', x: 0, y: 80, w: 720, h: 24, mat: MAT.ROCK },
-      { t: 'rect', x: 0, y: 339, w: 720, h: 2, mat: MAT.ROCK },
-      { t: 'rect', x: 0, y: 341, w: 720, h: 3, mat: MAT.STEEL },
-      // Die Naht sitzt weiter links als im Grasland — wer sie dort sucht, wo
-      // sie beim letzten Mal war, sucht falsch.
-      { t: 'rect', x: 287, y: 341, w: 4, h: 3, mat: MAT.EARTH },
-      { t: 'ground', x: 0, w: 720, y: 405, h: 135, mat: MAT.ROCK, rough: 2 },
+      { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
+      // Etage 1: von der Westwand bis zum Rand, unterm Spawn liegt Stahl —
+      // der naheliegende Grabpunkt ist der falsche.
+      { t: 'rect', x: 120, y: 300, w: 600, h: 24, mat: MAT.ROCK },
+      { t: 'rect', x: 520, y: 300, w: 200, h: 6, mat: MAT.STEEL },
+      // Der Westpfeiler haelt Etage 1 und sperrt ihre Westkante — niemand
+      // stuerzt am Ende der Etage in den Tod. Er endet 30 ueber dem Boden:
+      // Unten ist er Torbogen, nicht Sperre — die Tuer liegt dahinter.
+      { t: 'rect', x: 96, y: 230, w: 24, h: 160, mat: MAT.ROCK },
+      // Etage 2, halb versetzt: Stahl im Westen, grabbar im Osten. Ihre
+      // Ostkante ist mit der Wand an Etage 1 verwachsen — kein Umweg
+      // aussen herum.
+      { t: 'rect', x: 0, y: 348, w: 624, h: 24, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 348, w: 520, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 600, y: 324, w: 24, h: 24, mat: MAT.ROCK },
+      // Der Boden mit der Tuer.
+      { t: 'ground', x: 0, w: 720, y: 420, h: 120, mat: MAT.ROCK, rough: 2 },
     ],
   },
   {
     id: 'w2-07',
-    name: 'Lichtschacht',
+    name: 'Über den Deckel',
     chapter: 'Stollen',
-    hint: 'Der Schacht ist tiefer, als ein Körper aushält. Nur unter dem Schirm kommt man unten an.',
+    hint: 'Die Klamm ist zu — der Weg ist das Dach. Wer die Wand erklimmt, läuft oben über den Deckel und fällt durch den Lichtschacht zur Tür.',
     theme: 'crystal',
     width: 720,
     height: 540,
     seed: 21007,
-    entrance: { x: 80, y: 140 },
-    exit: { x: 620, y: 456, w: 32, h: 26 },
-    total: 12,
-    needed: 6,
+    entrance: { x: 60, y: 250 },
+    exit: { x: 650, y: 100, w: 32, h: 26 },
+    total: 10,
+    needed: 3,
+    // Messlauf: letzte Rettung 59 s x 2,0 = 120. Quote 3 = 6 minus 3.
     timeLimitSec: 120,
-    releaseRate: 30,
-    minReleaseRate: 20,
-    skills: sk({ floater: 8, blocker: 2, builder: 2 }),
+    releaseRate: 40,
+    minReleaseRate: 25,
+    // Ersatzbau (Level-Konzept, Paket 1): Der zweite Schirmregen ist
+    // gestrichen; stattdessen die Weltregel der Klamm woertlich genommen —
+    // die Decke ist ein Weg, man LAEUFT auf ihr. Die Wandkrone liegt genau
+    // auf Deckelhoehe, der Lichtschacht im Osten wirft den Laeufer in die
+    // Grotte mit der Tuer.
+    skills: sk({ climber: 7 }),
     par: 6,
     paint: [
-      { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
-      // Der Vorsprung, auf dem alle ankommen — und von dessen Kante der
-      // Schacht faellt: 280 Bildpunkte, weit jenseits der Grenze. Nur unter
-      // dem Schirm kommt man unten an.
-      { t: 'rect', x: 0, y: 200, w: 500, h: 340, mat: MAT.ROCK },
-      { t: 'ground', x: 500, w: 220, y: 480, h: 60, mat: MAT.ROCK, rough: 2 },
+      // Der Deckel beginnt erst oestlich der Wand — westlich davon faellt
+      // das Licht herein, und ueber ihm ist Platz zum Laufen.
+      { t: 'rect', x: 180, y: 60, w: 420, h: 24, mat: MAT.ROCK },
+      { t: 'rect', x: 640, y: 60, w: 80, h: 24, mat: MAT.ROCK },
+      // Die Wand: ihre Krone liegt auf Deckel-OBERKANTE — wer oben
+      // ankommt, laeuft nahtlos aufs Dach.
+      { t: 'rect', x: 154, y: 60, w: 26, h: 480, mat: MAT.ROCK },
+      // Der Vorhof, in dem alle ankommen. Wer nicht klettert, pendelt hier.
+      { t: 'rect', x: 0, y: 300, w: 154, h: 240, mat: MAT.ROCK },
+      // Das Massiv unter dem Deckel — die Klamm ist wirklich zu. In ihm
+      // die Grotte unterm Lichtschacht, mit der Tuer.
+      { t: 'rect', x: 180, y: 84, w: 540, h: 456, mat: MAT.ROCK },
+      { t: 'rect', x: 600, y: 84, w: 110, h: 42, mat: MAT.EMPTY },
     ],
   },
   {
     id: 'w2-08',
     name: 'Gegenstrom',
     chapter: 'Stollen',
-    hint: 'Rechts führt der Weg bequem in eine Sackgasse. Der Blocker dreht den Strom — links wartet der Spalt.',
+    hint: 'Alle laufen nach Osten — dort wartet die Sackgasse. Der Blocker dreht den Strom, und im Westen braucht der Stollen einen, der schon gewendet hat.',
     theme: 'crystal',
     width: 720,
     height: 540,
     seed: 21008,
-    entrance: { x: 460, y: 340 },
-    exit: { x: 80, y: 360, w: 32, h: 26 },
+    entrance: { x: 460, y: 330 },
+    exit: { x: 12, y: 402, w: 32, h: 26 },
     total: 20,
-    // 15 statt 12 (Messregel): Die Musterloesung rettet 17 - zwei gehen
-    // waehrend des Kettenbaus verloren, das ist der Preis der Bruecke.
-    needed: 15,
-    timeLimitSec: 140,
+    needed: 16,
+    // Messlauf: letzte Rettung 72,7 s x 2,0 = 145. Quote 16 = Messung 19
+    // minus Marge 3 (nur der Wender selbst bleibt zurueck).
+    timeLimitSec: 145,
     releaseRate: 30,
     minReleaseRate: 20,
-    // Entklont (Design-Runde): Der Spalt misst jetzt 44 Punkte - der
-    // einzelne Bauer des geerbten w1-08-Plans endet mitten darueber
-    // (eine Bruecke schafft 2 Punkte je Stein), erst die Kette traegt.
-    // Rot-Test belegt es. Werkzeugschnitt auf die Kette plus Waechter.
-    skills: sk({ blocker: 2, builder: 3 }),
-    par: 3,
+    // Der Wender (Level-Konzept, Paket 1): blocker+basher, nie zuvor
+    // gespielt. Alle starten ostwaerts, die Tuer liegt westlich hinter
+    // einem Riegel — der Rammer muss WESTWAERTS arbeiten, also braucht er
+    // die Umkehr durch den Blocker. Die Kette aus der alten Fassung ist
+    // gestrichen; der Rot-Test belegt, dass der geerbte Brueckenplan
+    // unter der neuen Geometrie scheitert.
+    skills: sk({ blocker: 2, basher: 2 }),
+    // Ein Wender, ein Stollen.
+    par: 2,
     paint: [
       { t: 'rect', x: 0, y: 80, w: 720, h: 24, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 340, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 384, w: 176, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 560, w: 160, y: 440, h: 100, mat: MAT.ROCK, rough: 2 },
+      // Der Startboden. Nach Osten faellt er in die Sackgassen-Senke —
+      // ueberlebbar, aber ohne Rueckweg: Wer nicht wendet, wartet unten.
+      { t: 'ground', x: 180, w: 400, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
+      { t: 'ground', x: 580, w: 140, y: 440, h: 100, mat: MAT.ROCK, rough: 2 },
+      // Nach Westen die freundliche Stufe hinab auf die Sohle. Sie ist
+      // GLATT gemauert: Auf rauem Grund verliert der Rammer nach dem
+      // ersten Schwung den Boden unter den Fuessen und bricht ab — die
+      // Messung hat es gezeigt.
+      { t: 'rect', x: 0, y: 428, w: 180, h: 112, mat: MAT.ROCK },
+      // Der Riegel auf der Sohle: 44 Punkte Fels vor der Tuernische.
+      { t: 'rect', x: 60, y: 300, w: 44, h: 128, mat: MAT.ROCK },
     ],
   },
   {
@@ -312,7 +389,8 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 420 },
     exit: { x: 600, y: 480, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,

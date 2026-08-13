@@ -65,7 +65,8 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 320 },
     exit: { x: 220, y: 436, w: 40, h: 20 },
     total: 10,
-    needed: 8,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 6,
     timeLimitSec: 60,
     releaseRate: 55,
     minReleaseRate: 30,
@@ -261,11 +262,13 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 390 },
     exit: { x: 620, y: 282, w: 32, h: 24 },
     total: 10,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 65,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ climber: 7 }),
+    // +1 Kletterer (Paket 0): Ein Fehltipp verbrannte sonst die letzte Gabe.
+    skills: sk({ climber: 8 }),
     // Sechs Kletterer für sechs Gerettete: Der Kletterer ist eine *persönliche*
     // Gabe, keine Bauleistung. Wer das begriffen hat, löst das Level mit
     // genau so vielen Zuweisungen, wie Figuren durchkommen müssen.
@@ -468,7 +471,8 @@ export const WELT5_LEVELS: LevelDef[] = [
     // Kletterer, acht kommen durch (einer wird am Riegel zum
     // Sprengmeister), sieben muessen heim. Ein Finale darf beissen;
     // die Uhr-Niederlage kostet dank Herzschutz kein Leben.
-    needed: 7,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 6,
     timeLimitSec: 170,
     releaseRate: 60,
     minReleaseRate: 25,

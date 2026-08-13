@@ -68,7 +68,8 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 140 },
     exit: { x: 380, y: 700, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 150,
     releaseRate: 30,
     minReleaseRate: 20,
@@ -178,7 +179,8 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 140 },
     exit: { x: 224, y: 770, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 180,
     releaseRate: 30,
     minReleaseRate: 20,
@@ -370,7 +372,8 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 80, y: 550 },
     exit: { x: 420, y: 390, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 180,
     releaseRate: 40,
     minReleaseRate: 25,

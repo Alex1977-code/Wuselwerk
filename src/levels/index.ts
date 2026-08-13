@@ -56,7 +56,8 @@ export const LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 320 },
     exit: { x: 220, y: 436, w: 40, h: 20 },
     total: 10,
-    needed: 8,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 6,
     timeLimitSec: 90,
     releaseRate: 50,
     minReleaseRate: 30,
@@ -122,7 +123,8 @@ export const LEVELS: LevelDef[] = [
     entrance: { x: 80, y: 150 },
     exit: { x: 520, y: 450, w: 32, h: 28 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 120,
     releaseRate: 30,
     minReleaseRate: 20,
@@ -169,7 +171,8 @@ export const LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 390 },
     exit: { x: 620, y: 282, w: 32, h: 24 },
     total: 10,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 120,
     releaseRate: 40,
     minReleaseRate: 25,
@@ -221,33 +224,44 @@ export const LEVELS: LevelDef[] = [
     id: 'w1-08',
     name: 'Die Weiche',
     chapter: 'Prüfung',
-    hint: 'Rechts geht es abwärts in die Sackgasse. Der Blocker schickt den Pulk nach links — und links wartet der Abgrund aus Level 3.',
+    hint: 'Nach Osten fällt die Kante zu tief — das überlebt nur der Schirm. Der Blocker schickt den Pulk nach Westen über die Stufen; unten treffen sich beide Wege vor der Tür.',
     theme: 'grass',
     width: 720,
     height: 540,
     seed: 8080,
-    entrance: { x: 460, y: 340 },
-    exit: { x: 80, y: 360, w: 32, h: 26 },
+    entrance: { x: 300, y: 280 },
+    exit: { x: 340, y: 402, w: 32, h: 26 },
     total: 20,
-    needed: 12,
-    // 120 statt 150 (Design-Runde, Paket 2): Die Musterloesung rettet die
-    // letzte Figur bei ~69 s — anderthalbfacher Vorhalt statt doppeltem.
-    timeLimitSec: 120,
+    needed: 16,
+    // Messlauf: letzte Rettung 88,7 s x 1,5 (Pruefungs-Vorhalt der
+    // Design-Runde) = 135. Quote 16 = Messung 19 minus Marge 3.
+    timeLimitSec: 135,
     releaseRate: 30,
     minReleaseRate: 20,
-    skills: sk({ blocker: 2, builder: 3, digger: 2, basher: 2, floater: 2 }),
-    // Blocker plus Brücke. Beides muss sitzen, bevor der Pulk da ist — deshalb
-    // ist dieses Level das erste, das zwei Dinge *gleichzeitig* verlangt.
-    par: 2,
+    // Mini-B8 (Level-Konzept, Paket 1): die ueberlebbare Weiche auf dem
+    // Normhoehen-Raster. Zwei Schirme fuer den Schnellweg, ein Blocker als
+    // Weiche, einer Reserve — der Vorrat ist die halbe Aufgabe.
+    skills: sk({ floater: 2, blocker: 2 }),
+    // Zwei Schirme und die Weiche: Das erste Level, in dem eine Kante zwei
+    // Antworten hat — und man beide braucht.
+    par: 3,
     paint: [
-      { t: 'ground', x: 0, w: 340, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
-      { t: 'ground', x: 360, w: 200, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
-      // Rechts fällt der Boden ab — überlebbar, aber ohne Rückweg: sechzig
-      // Bildpunkte hinunter kommt jeder, sechzig hinauf niemand. Wer nicht
-      // eingreift, verliert seine Figuren an eine Sackgasse und nicht an einen
-      // Sturz. Das ist die freundlichere Lehre und die deutlichere: Ein Haufen
-      // Wusel, der unten hin- und herläuft, sagt mehr als ein Todesschrei.
-      { t: 'ground', x: 560, w: 160, y: 440, h: 100, mat: MAT.EARTH, rough: 2 },
+      // Die Startplatte in der Mitte — sie SCHWEBT: Unter ihr bleibt die
+      // Sohle begehbar, sonst wuerde der Inselsockel genau die Vereinigung
+      // zerschneiden, die die Weiche verspricht. Von der Platte geht es
+      // nach beiden Seiten hinab — nur verschieden tief.
+      { t: 'rect', x: 240, y: 332, w: 240, h: 36, mat: MAT.EARTH },
+      // Nach Westen die Treppe: zweimal 48 — jeder kommt heil an, keiner
+      // kommt zurueck. Das Normhoehen-Raster sagt es ohne Worte: 48 ist
+      // die freundliche Stufe. Nach Osten faellt dieselbe Platte 96 — die
+      // Zahl, die nur der Schirm beantwortet. Auch die Stufe SCHWEBT:
+      // Staende sie auf der Sohle, teilte ihr Sockel die Sohle in zwei
+      // Taschen, und die Weiche haette ihr Versprechen gebrochen.
+      { t: 'rect', x: 120, y: 380, w: 120, h: 16, mat: MAT.EARTH },
+      // Die Sohle, auf der beide Wege zusammenlaufen. Die Tuer steht unter
+      // der Platte — wer oben streitet, ob Ost oder West, sieht unten beide
+      // Antworten ankommen.
+      { t: 'ground', x: 0, w: 720, y: 428, h: 112, mat: MAT.EARTH, rough: 2 },
     ],
   },
   {
@@ -262,7 +276,8 @@ export const LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 420 },
     exit: { x: 600, y: 480, w: 32, h: 26 },
     total: 12,
-    needed: 6,
+    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    needed: 4,
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,

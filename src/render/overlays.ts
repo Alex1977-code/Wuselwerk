@@ -76,7 +76,50 @@ export function drawIntro(
   L: Layout,
   level: LevelDef,
   parBekannt = false,
+  lesemodus = false,
 ): Button[] {
+  // Die Startklappe (Level-Konzept, Paket 0): Ab der Weltmitte gibt es
+  // keinen dunklen Vorhang mehr — die Aufgabe IST das Bild. Oben eine
+  // schmale Zeile mit Name, Quote und Hinweis, unten der Los-Knopf; die
+  // Karte dazwischen gehoert dem Spieler zum Schauen. Denken ist gratis,
+  // und die offene Buehne sagt es, bevor irgendeine Regel es erklaeren muss.
+  if (lesemodus) {
+    const bw = Math.min(368, L.cssW - 20);
+    const bx = L.cssW / 2 - bw / 2;
+    const by = L.play.y + 8;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.86)';
+    // Hoch genug fuer drei Hinweiszeilen — die langen Hinweise der
+    // Umbau-Level liefen sonst unter der Bannerkante weiter.
+    roundRect(ctx, bx, by, bw, 78, 12);
+    ctx.fill();
+    ctx.strokeStyle = COL.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = COL.text;
+    ctx.font = '700 14px system-ui, sans-serif';
+    const kopf = parBekannt
+      ? `${level.name} · rette ${level.needed} von ${level.total} · Par ${level.par}`
+      : `${level.name} · rette ${level.needed} von ${level.total}`;
+    ctx.fillText(kopf, bx + bw / 2, by + 9);
+    ctx.fillStyle = COL.dim;
+    ctx.font = '400 11px system-ui, sans-serif';
+    wrap(ctx, level.hint, bx + bw / 2, by + 30, bw - 26, 14);
+    ctx.restore();
+
+    const btn: Button = {
+      id: 'start',
+      x: L.cssW / 2 - 110,
+      y: L.play.y + L.play.h - 60,
+      w: 220,
+      h: 46,
+    };
+    button(ctx, btn, 'Los — Falltür öffnen', true);
+    return [btn];
+  }
+
   // Der Meisterschlüssel (Belohnung von Welt 4) legt die Musterlösungszahl
   // schon vor dem ersten Versuch offen — die Tafel wächst um eine Zeile.
   const b = panel(ctx, L, parBekannt ? 272 : 250);
@@ -171,6 +214,7 @@ export function drawResult(
   hasNext: boolean,
   zeit = Infinity,
   lebenNotiz: string | null = null,
+  verlustAnsage: string | null = null,
 ): Button[] {
   const won = world.saved >= world.needed;
   const b = panel(ctx, L, 356);
@@ -185,6 +229,15 @@ export function drawResult(
   ctx.fillStyle = COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
   ctx.fillText(`${world.saved} von ${world.total} gerettet`, b.x + b.w / 2, b.y + 98);
+
+  // Die Fortschritts-Ansage (Level-Konzept, Paket 0): Wie weit war man,
+  // woran lag es. Aus einer Niederlage mit Grund wird ein Plan — und ein
+  // Plan ist ein Grund, es gleich noch einmal zu versuchen.
+  if (!won && verlustAnsage) {
+    ctx.fillStyle = COL.dim;
+    ctx.font = '500 12px system-ui, sans-serif';
+    ctx.fillText(verlustAnsage, b.x + b.w / 2, b.y + 114);
+  }
 
   // Die drei Sternbedingungen einzeln — sonst rät man, welcher fehlt.
   const parLabel = parKnown ? `Unter Par (${level.par})` : 'Unter Par (?)';

@@ -9,7 +9,7 @@ import {
   WUSEL_H,
 } from './core/constants';
 import { isActive } from './core/skills';
-import { State, type SkillId, type Wusel } from './core/types';
+import { DeathCause, State, type SkillId, type Wusel } from './core/types';
 import type { World } from './core/world';
 import { LEVELS } from './levels';
 import { createWorld } from './levels/createWorld';
@@ -153,6 +153,10 @@ export class Game {
   private lebenVerbucht = false;
   /** Warum diese Niederlage kein Leben kostete — `null` heisst: sie kostete. */
   private lebenNotiz: string | null = null;
+  /** Fortschritts-Ansage der Niederlagen-Tafel (Level-Konzept, Paket 0). */
+  private verlustAnsage: string | null = null;
+  /** Startklappe: Level ab Weltmitte beginnen im Lesemodus. */
+  private lesemodus = false;
   private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
   // Spielerprofil: Name und Avatarfarbe (profil.ts).
@@ -314,6 +318,17 @@ export class Game {
       ['w1-01', 'w1-02', 'w1-03'].includes(level.id) && !gesteGesehen('halten');
     this.screen = 'play';
     this.phase = 'intro';
+    // Die Startklappe (Level-Konzept, Paket 0): Ab der Weltmitte beginnt
+    // jedes Level im Lesemodus — kein dunkler Vorhang, die Karte ist frei
+    // schwenkbar, die Uebersichtskarte antippbar, und erst „Los" oeffnet
+    // Klappe und Uhr gemeinsam. Denken ist gratis, und man sieht es. Die
+    // fruehe Welthaelfte behaelt die Tafel: Dort passt die Aufgabe in einen
+    // Blick, und die Tafel erklaert mehr, als die Karte zeigen koennte.
+    const kennung = /^w(\d+)-(\d+)$/.exec(level.id);
+    const weltNr = kennung ? Number(kennung[1]) : 1;
+    const levelNr = kennung ? Number(kennung[2]) : 1;
+    const weltGroesse = LEVELS.filter((l) => l.id.startsWith(`w${weltNr}-`)).length;
+    this.lesemodus = weltNr >= 2 && levelNr > weltGroesse / 2;
     this.simAcc = 0;
     this.nachspiel = -1;
     this.lebenVerbucht = false;
@@ -967,11 +982,59 @@ export class Game {
             : null
         : null;
     if (!gewonnen && !uhrNiederlage) this.verbucheLeben();
+    this.verlustAnsage = gewonnen ? null : this.baueVerlustAnsage(uhrNiederlage);
     const alle = gewonnen && this.world.saved === this.level.total;
     const bestwert = gewonnen && this.conditions.filter(Boolean).length > (vorher?.stars ?? 0);
     this.audio.levelEnde(gewonnen, alle, bestwert);
     this.phase = 'result';
     this.clearAim();
+  }
+
+  /**
+   * Die Fortschritts-Ansage der Niederlagen-Tafel (Level-Konzept, Paket 0).
+   *
+   * Eine Niederlage, die sagt, wie weit man kam und woran es lag, ist ein
+   * Plan fuer den naechsten Versuch; eine stumme ist nur eine Strafe. Die
+   * Ansage rechnet aus dem Endstand der Simulation: erst der Abstand zur
+   * Quote, dann der groesste Verlustposten in Worten. Sie behauptet nichts,
+   * was sie nicht gezaehlt hat.
+   */
+  private baueVerlustAnsage(uhrNiederlage: boolean): string {
+    const w = this.world;
+    const fehlten = Math.max(0, w.needed - w.saved);
+    const zaehler = new Map<DeathCause, number>();
+    let tote = 0;
+    for (const f of w.wusels) {
+      if (f.state === State.DEAD) {
+        tote++;
+        zaehler.set(f.cause, (zaehler.get(f.cause) ?? 0) + 1);
+      }
+    }
+    const fehltText =
+      fehlten === 1 ? 'Nur eine fehlte zur Quote' : `${fehlten} fehlten zur Quote`;
+    if (uhrNiederlage) {
+      const unterwegs = w.total - w.saved - tote;
+      return unterwegs > 0
+        ? `${fehltText} — ${unterwegs} waren noch unterwegs, als die Uhr ablief.`
+        : `${fehltText}, als die Uhr ablief.`;
+    }
+    const posten: [DeathCause, (n: number) => string][] = [
+      [DeathCause.SPLAT, (n) => (n === 1 ? 'eine stürzte zu tief' : `${n} stürzten zu tief`)],
+      [DeathCause.ABYSS, (n) => (n === 1 ? 'eine fiel aus der Welt' : `${n} fielen aus der Welt`)],
+      [DeathCause.EXPLOSION, (n) => `die Sprengung nahm ${n === 1 ? 'eine' : n} mit`],
+      [DeathCause.CRUSHED, (n) => (n === 1 ? 'eine wurde verschüttet' : `${n} wurden verschüttet`)],
+      [DeathCause.NUKE, (n) => `${n} gingen mit dem Abbruch`],
+    ];
+    let grund = '';
+    let meiste = 0;
+    for (const [ursache, text] of posten) {
+      const n = zaehler.get(ursache) ?? 0;
+      if (n > meiste) {
+        meiste = n;
+        grund = text(n);
+      }
+    }
+    return grund ? `${fehltText} — ${grund}.` : `${fehltText}.`;
   }
 
   // --- Zielen (GDD §3.3) ---------------------------------------------------
@@ -1145,7 +1208,35 @@ export class Game {
 
     if (this.phase !== 'running') {
       const hit = this.buttons.find((b) => inBox(b, x, y));
-      if (hit) this.onOverlayButton(hit.id);
+      if (hit) {
+        this.onOverlayButton(hit.id);
+        return;
+      }
+      // Der Lesemodus (Startklappe, Paket 0): Vor dem „Los" ist die Karte
+      // frei — Uebersichtskarte springt, ein Finger schwenkt, zwei zoomen.
+      // Werkzeuge und Auftraege bleiben zu, die Simulation steht.
+      if (this.phase === 'intro' && this.lesemodus && inBox(this.layout.play, x, y)) {
+        const karte = minimapBox(this.layout, this.level);
+        if (karte && inBox(karte, x, y)) {
+          const p = minimapToLogical(karte, this.level, x, y);
+          this.camera.centerOn(p.x, p.y);
+          this.pointers.set(e.pointerId, { id: e.pointerId, x, y, startX: x, startY: y, role: 'map' });
+          return;
+        }
+        const andere = [...this.pointers.values()].filter(
+          (p) => p.role === 'pan' || p.role === 'pinch',
+        );
+        const ps: PointerState = { id: e.pointerId, x, y, startX: x, startY: y, role: 'pan' };
+        if (andere.length >= 1) {
+          ps.role = 'pinch';
+          andere[0].role = 'pinch';
+          this.pointers.set(e.pointerId, ps);
+          this.pinchDist = Math.hypot(andere[0].x - x, andere[0].y - y);
+          this.pinchZoom = this.camera.zoom;
+          return;
+        }
+        this.pointers.set(e.pointerId, ps);
+      }
       return;
     }
     // Im Nachspiel steht die Simulation schon, das Bild laeuft nur noch aus.
@@ -1625,6 +1716,7 @@ export class Game {
         this.layout,
         this.level,
         schluessel || (this.progress[this.level.id]?.won ?? false),
+        this.lesemodus,
       );
     } else if (this.phase === 'paused') this.buttons = drawPause(ctx, this.layout);
     else if (this.phase === 'result') {
@@ -1643,6 +1735,7 @@ export class Game {
         i + 1 < LEVELS.length,
         seit,
         this.lebenNotiz,
+        this.verlustAnsage,
       );
       // Jeder Stern klingt in dem Moment, in dem er ploppt — dasselbe Pling
       // wie im Spiel, drei Stufen steigend (Kritik G8 und S4 in einem).
