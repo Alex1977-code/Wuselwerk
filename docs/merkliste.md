@@ -28,6 +28,15 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
 - ⬜ **Echte Werbevideos** — erst mit Parental Gate (siehe Entwurf, Warnung 1).
 - ⬜ **Kaufbare Pakete** gegen Geld — braucht Store-Anbindung.
 
+## Leveldesign
+
+- ⬜ **Schwierigkeitskurve nach der Design-Runde** (Auftrag: „zu einfach,
+  wiederholen sich ab Welt 1"): abgestimmter Plan aus Leveldesigner ↔
+  Spielkritiker ↔ Marketing in `docs/leveldesign-runde.md` — vier Pakete
+  (Herzschutzregel zuerst!), fünf Blaupausen, drei offene Entscheidungen
+  des Auftraggebers. Befund: 25 von 64 Leveln teilen wörtlich den
+  Musterlösungsplan; Überschuss bis +14 über Par.
+
 ## Grafik
 
 - ✅ Der **Hintergrund im Spiel**: Anmutung **dreidimensionaler und
