@@ -851,34 +851,46 @@ Haar zusammen mit blauer Tunika.** Die zwölf Kombinationen unten sind so gewäh
 dass diese Paarung gar nicht erst entstehen kann — grünes Haar kommt nur über
 warmen oder neutralen Tuniken vor.
 
+> **Korrektur nach der ersten Lieferung.** Die erste Fassung dieser Liste
+> unterschied die Paare 1/2, 3/4, 5/6 und 7/8 nur an der Tunika — und der
+> Kragen ist im Porträt ein schmaler Saum am Bildrand. Zwei gelieferte
+> Varianten waren praktisch dasselbe Bild („avatargrafiken sehen zu gleich
+> aus", und es stimmte; sie verletzten sogar das eigene Abnahmekriterium,
+> denn Haar- UND Scheibenfarbe waren identisch). Was ein Porträt bei 28
+> Pixeln unterscheidet, sind **Haarfarbe, Haarsilhouette und
+> Scheibenfarbe** — deshalb trägt jetzt jede Variante ihre eigene
+> Silhouette und ihre eigene Scheibe; die Tunika ist nur noch Beiwerk.
+
 **Prompt (zwölf Mal laufen lassen, Kopf und Schultern):**
 
 ```
 A game avatar portrait: head and shoulders of a small chubby cartoon worker,
 seen from the front, tilted very slightly to one side, centred in the frame and
-filling 82% of its height. Very large round head, a huge voluminous mass of
-soft hair covering the top and sides of the head, a short tunic collar visible at
-the bottom, warm tan skin (#D29059 with #B88050 in the shadows), two large
-friendly round eyes, a small mouth, no nose detail, no ears visible under the
-hair. Behind the head a plain flat circular disc in a single colour, filling the
-frame; nothing outside the disc.
+filling 82% of its height. Very large round head, warm tan skin (#D29059 with
+#B88050 in the shadows), two large friendly round eyes, a small mouth, no nose
+detail, no ears visible under the hair, a short tunic collar visible at the
+bottom. Behind the head a plain flat circular disc in a single colour, filling
+the frame; nothing outside the disc.
+The HAIR STYLE named in the variant is the identity of this avatar: exaggerate
+its silhouette so it reads at 28 x 28 pixels, and keep the hair voluminous and
+soft in every style.
 Square, 128 x 128 pixels.
 
-VARIANT (use exactly one per generation) — hair / tunic / disc:
- 1  deep blue #3851B6      / green #486820   / disc #2A3A5E
- 2  deep blue #3851B6      / sand   #CBB89C  / disc #2A3A5E
- 3  violet #A87EBE         / green  #486820  / disc #4A2F55
- 4  violet #A87EBE         / rust   #C07A3A  / disc #4A2F55
- 5  copper red #C4553A     / green  #486820  / disc #5A2A20
- 6  copper red #C4553A     / sand   #CBB89C  / disc #5A2A20
- 7  moss green #6E8F3A     / rust   #C07A3A  / disc #35401E
- 8  moss green #6E8F3A     / sand   #CBB89C  / disc #35401E
- 9  snow white #E4E9EE     / rust   #C07A3A  / disc #46525E
-10  ink black #2A2E36      / amber  #E2B044  / disc #1E222A
-11  amber blonde #E2B044   / green  #486820  / disc #5E4718
-12  teal #3F9E96           / rust   #C07A3A  / disc #1F4A48
+VARIANT (use exactly one per generation) — hair colour / HAIR STYLE / tunic / disc:
+ 1  deep blue #3851B6    / huge rounded cloud of curls           / green #486820 / disc #2A3A5E
+ 2  amber #E2B044        / short tousled crop, wind-swept        / green #486820 / disc #5E4718
+ 3  violet #A87EBE       / two big round side puffs              / green #486820 / disc #4A2F55
+ 4  copper red #C4553A   / tall loose top knot bun               / sand #CBB89C  / disc #7A3A28
+ 5  moss green #6E8F3A   / wavy shoulder-length bob              / rust #C07A3A  / disc #35401E
+ 6  snow white #E4E9EE   / short curly crop with a cowlick       / rust #C07A3A  / disc #46525E
+ 7  ink black #2A2E36    / thick straight fringe, bowl silhouette/ amber #E2B044 / disc #6E5A20
+ 8  teal #3F9E96         / spiky brush-up, flame-like tips       / rust #C07A3A  / disc #1F4A48
+ 9  deep blue #3851B6    / two chunky braids hanging forward     / sand #CBB89C  / disc #204060
+10  copper red #C4553A   / big curly mohawk ridge, shaved sides  / green #486820 / disc #5A2A20
+11  violet #A87EBE       / asymmetric long sweep over one eye    / rust #C07A3A  / disc #38254A
+12  moss green #6E8F3A   / short afro with a zigzag parting      / sand #CBB89C  / disc #2A331A
 HARD RULE: never green hair together with a blue tunic, in any variant, under
-any circumstance.
+any circumstance. No two variants share the same hair style.
 
 STYLE BLOCK — modern hand-painted 2.5D game art, soft matte surfaces, rounded
 volumes, gentle form shading, no visible brush strokes, no outlines, no cel
@@ -904,9 +916,11 @@ wandert nach `localStorage` neben `wuselwerk.progress.v1` (siehe `storage.ts`).
 
 **Abnahmekriterium.**
 - Zwölf Zellen, exakt 128 × 128, Raster ohne Versatz.
-- Auf 28 × 28 verkleinert sind alle zwölf **paarweise** unterscheidbar; Prüfung:
-  Haarfarbe und Scheibenfarbe müssen sich in CIE-L\*a\*b\* je Paar um ΔE ≥ 15
-  unterscheiden.
+- Auf 28 × 28 verkleinert sind alle zwölf **paarweise** unterscheidbar.
+  Prüfung: Jedes Paar unterscheidet sich in mindestens **zwei** der drei
+  Merkmale Haarfarbe (ΔE ≥ 15 in CIE-L\*a\*b\*), Haarsilhouette (benennbar
+  verschieden: Wolke, Schopf, Puschel, Knoten, Bob, Wirbel, Pony, Bürste,
+  Zöpfe, Kamm, Strähne, Scheitel) und Scheibenfarbe (ΔE ≥ 15).
 - Keine Variante trägt grünes Haar über blauer Tunika.
 - Blatt ≤ 26 kB.
 
