@@ -3,12 +3,16 @@
  *
  * ## Was ein Avatar hier ist
  *
- * Kein zweites Figurenblatt. Die Figur ist **ein** Wusel (blaues Haar, grüne
- * Tunika — die Marke), und ein Avatar ist die **Bandfarbe**, die man sich
- * aussucht: derselbe Farbkreis, den die Berufe im Spiel tragen, als
- * persönliches Erkennungszeichen im Ring um das Porträt. Das ist bewusst
- * billig gebaut (kein Umfärben des gebackenen Blatts, keine zweite
- * Bilddatei) und trotzdem eine echte Wahl.
+ * Ein **gemaltes Portraet** vom Avatarblatt (`src/art/ui/avatare.webp`,
+ * grafikbedarf.md §3.9): dieselbe Wusel-Anatomie, aber je Variante eine
+ * eigene Haarfarbe, Haarsilhouette und Scheibenfarbe — das sind die drei
+ * Merkmale, die ein Portraet bei 28 Pixeln noch unterscheiden. Die Liste
+ * hier ist die **Reihenfolge des Blattes**; wer sie aendert, muss den Bau
+ * in `scripts/grafik-aufbereiten.py` mitaendern.
+ *
+ * Vorher war der Avatar nur eine Ringfarbe um das Figurenportraet. Die
+ * `farbe` je Eintrag bleibt dafuer stehen: Sie ist der Rueckfall, wenn das
+ * Blatt fehlt oder noch nicht entschluesselt ist (Haarfarbe der Variante).
  *
  * ## Warum lokal
  *
@@ -25,22 +29,30 @@ export interface Profil {
 
 export interface Avatar {
   id: string;
-  /** Ringfarbe des Porträts — aus dem Berufsfarbkreis. */
+  /** Haarfarbe der Variante — Ringfarbe des Rueckfall-Porträts. */
   farbe: string;
   label: string;
 }
 
 /**
- * Sechs Farben aus der Berufspalette (`schopf.ts`), unter eigenem Namen:
- * Der Avatar sagt „meine Farbe", nicht „mein Beruf".
+ * Die zwoelf Varianten des Blattes, benannt nach ihrer Frisur — sie ist
+ * die Silhouette und damit das, was man auswaehlt. Grünes Haar (Wellenbob,
+ * Lockenkrone) steht laut Vorgabe nie über blauer Tunika; das ist im
+ * Blatt so gemalt und hier nur festgehalten.
  */
 export const AVATARE: Avatar[] = [
-  { id: 'mohn', farbe: '#E8674F', label: 'Mohn' },
-  { id: 'honig', farbe: '#E2B044', label: 'Honig' },
-  { id: 'see', farbe: '#569CB2', label: 'See' },
-  { id: 'moos', farbe: '#80A86C', label: 'Moos' },
-  { id: 'flieder', farbe: '#A87EBE', label: 'Flieder' },
-  { id: 'rose', farbe: '#EE9EB0', label: 'Rose' },
+  { id: 'wolke', farbe: '#3851B6', label: 'Lockenwolke' },
+  { id: 'wirbel', farbe: '#E2B044', label: 'Wirbelkopf' },
+  { id: 'puschel', farbe: '#A87EBE', label: 'Puschel' },
+  { id: 'dutt', farbe: '#C4553A', label: 'Dutt' },
+  { id: 'welle', farbe: '#6E8F3A', label: 'Wellenbob' },
+  { id: 'schnee', farbe: '#E4E9EE', label: 'Schneelocke' },
+  { id: 'topf', farbe: '#2A2E36', label: 'Topfschnitt' },
+  { id: 'stachel', farbe: '#3F9E96', label: 'Stachel' },
+  { id: 'zopf', farbe: '#3851B6', label: 'Zöpfe' },
+  { id: 'kamm', farbe: '#C4553A', label: 'Lockenkamm' },
+  { id: 'schweif', farbe: '#A87EBE', label: 'Schweif' },
+  { id: 'krone', farbe: '#6E8F3A', label: 'Lockenkrone' },
 ];
 
 export const NAME_MAX = 12;
@@ -53,7 +65,9 @@ export function nameSaeubern(roh: string): string {
 }
 
 export function frischesProfil(): Profil {
-  return { name: VORGABE, avatar: 2 };
+  // Die Lockenwolke ist die Vorgabe: blaues Haar — die Figur, wie sie im
+  // Spiel laeuft. Wer nichts waehlt, sieht sich selbst.
+  return { name: VORGABE, avatar: 0 };
 }
 
 // --- Speicher ---------------------------------------------------------------

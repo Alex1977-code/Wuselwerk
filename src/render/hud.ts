@@ -374,7 +374,7 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       // Es traegt eigene Farben, darf also groesser stehen als die
       // einfarbige Form — Zustand sagt die Knopfflaeche, aufgebraucht
       // sagt die Durchsicht.
-      if (!drawSkillBild(ctx, b.id, b.x + b.w * 0.68, symbolY + druck, Math.min(b.w * 0.4, 34), !usable)) {
+      if (!drawSkillBild(ctx, b.id, b.x + b.w * 0.68, symbolY + druck, Math.min(b.w * 0.46, 40), !usable)) {
         drawSkillIcon(
           ctx,
           b.id,
@@ -385,7 +385,7 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
         );
       }
     } else if (
-      !drawSkillBild(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.62, 34), !usable)
+      !drawSkillBild(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.74, 40), !usable)
     ) {
       drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.6, 30), symbolFarbe);
     }

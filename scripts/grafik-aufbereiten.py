@@ -19,7 +19,7 @@ Aufruf: python3 scripts/grafik-aufbereiten.py
 import os
 from collections import deque
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 QUELLE = 'grafik'
 ZIEL = 'src/art/ui'
@@ -205,6 +205,63 @@ blatt = Image.new('RGBA', (96 * 2, 96), (0, 0, 0, 0))
 for i, z in enumerate(zellen):
     blatt.paste(z, (i * 96, 0), z)
 speichere(blatt, 'laternen.webp', 82)
+
+# --- Avatare: ein Blatt, zwoelf Scheiben ------------------------------------
+#
+# Die Lieferung hat die Scheibe vor eine volle Ecke gemalt — mal weiss, mal
+# schwarz. Freigestellt wird wie beim Schachbrett per Flutfuellung von den
+# Raendern, nur dass die Zielfarbe je Bild aus der Ecke gelesen wird; die
+# Scheibe umschliesst das Portraet vollstaendig, also erreicht die Flut nie
+# weisses Haar oder schwarzen Pony im Inneren. Danach frisst ein MinFilter
+# den Antialiasing-Saum, und der Beschnitt auf die Kastengrenze zentriert
+# jede Scheibe unabhaengig von ihrer gelieferten Groesse.
+
+
+def ecken_frei(im: Image.Image, toleranz: int = 30) -> Image.Image:
+    im = im.convert('RGBA')
+    b, h = im.size
+    px = im.load()
+    er, eg, eb = px[2, 2][:3]
+
+    def hintergrund(p) -> bool:
+        return abs(p[0] - er) <= toleranz and abs(p[1] - eg) <= toleranz and abs(p[2] - eb) <= toleranz
+
+    gesehen = bytearray(b * h)
+    schlange = deque()
+    for x in range(b):
+        for y in (0, h - 1):
+            if hintergrund(px[x, y]) and not gesehen[y * b + x]:
+                schlange.append((x, y))
+                gesehen[y * b + x] = 1
+    for y in range(h):
+        for x in (0, b - 1):
+            if hintergrund(px[x, y]) and not gesehen[y * b + x]:
+                schlange.append((x, y))
+                gesehen[y * b + x] = 1
+    while schlange:
+        x, y = schlange.popleft()
+        p = px[x, y]
+        px[x, y] = (p[0], p[1], p[2], 0)
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < b and 0 <= ny < h and not gesehen[ny * b + nx] and hintergrund(px[nx, ny]):
+                gesehen[ny * b + nx] = 1
+                schlange.append((nx, ny))
+    alpha = im.getchannel('A').filter(ImageFilter.MinFilter(5))
+    im.putalpha(alpha)
+    return im
+
+
+zellen = []
+for i in range(1, 13):
+    im = Image.open(f'{QUELLE}/avatar{i}.png').resize((512, 512), Image.LANCZOS)
+    im = ecken_frei(im)
+    zellen.append(quadrat(beschneiden(im, 0), 128))
+blatt = Image.new('RGBA', (128 * 4, 128 * 3), (0, 0, 0, 0))
+for i, z in enumerate(zellen):
+    blatt.paste(z, ((i % 4) * 128, (i // 4) * 128), z)
+# Qualitaet 68 statt 78: bei 78 lag das Blatt bei 40 kB, das Budget aus
+# grafikbedarf §3.9 sagt 26. Bei 64-px-Anzeige traegt die Stufe nichts.
+speichere(blatt, 'avatare.webp', 68)
 
 # --- Wortmarke --------------------------------------------------------------
 im = Image.open(f'{QUELLE}/wortmarke.png').resize((1024, round(Image.open(f'{QUELLE}/wortmarke.png').height * 1024 / Image.open(f'{QUELLE}/wortmarke.png').width)), Image.LANCZOS)

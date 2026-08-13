@@ -714,6 +714,15 @@ export class Scene {
       const sprung = this.rettungsSprung(w, world);
       if (sprung) ctx.translate(sprung.dx * v.scale, sprung.dy * v.scale);
 
+      // Der Kletterer haengt **an** der Wand, nicht in ihr: Die Simulation
+      // steht in der freien Spalte neben dem Fels, aber die Figur ist
+      // breiter als ihre Spalte — mittig gezeichnet steckte die halbe
+      // Silhouette im Stein. Drei Pixel von der Wand weg sitzt der Koerper
+      // draussen und nur die Griffhand am Fels. Dazu die Zug-Treppe, siehe
+      // `kletterZug`.
+      const zug = sicht.pose === 'climbing' ? this.kletterZug(w.y) : null;
+      if (zug) ctx.translate(-blick * 3 * v.scale, zug.dy * v.scale);
+
       // Die Warnung des Sprengmeisters: ruhiger Schein dahinter, die Uhr
       // darueber. Das fruehere Licht **auf** der Figur ist ersatzlos weg — es
       // pulste, und eine pulsend beleuchtete Figur ist eine flackernde Figur.
@@ -727,8 +736,9 @@ export class Scene {
       // zuschlaegt (Wirkungsbild), und duerfen keinen Versatz tragen. Acht
       // Phasen auf 24 Ticks Zyklus: Aus der Marschkolonne wird ein Gewusel,
       // ohne dass die Simulation davon weiss.
-      const takt = sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : sicht.takt;
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt)) {
+      const takt =
+        sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt, zug?.schwung ?? 0)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
@@ -850,6 +860,46 @@ export class Scene {
     ctx.arc(x, y, breit, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  /**
+   * Der Kletterzug — Ansichtssache, keine Simulation.
+   *
+   * Die Simulation klettert einen Bildpunkt je vier Ticks, gleichmaessig wie
+   * ein Aufzug — und genau so sah es aus („eher ruckartig stueck fuer stueck
+   * nach oben"). Ein Kletterer zieht sich aber in **Zuegen** hoch: greifen,
+   * halten, hochreissen. Gezeichnet wird deshalb eine Treppe ueber der
+   * glatten Bewegung: Waehrend der ersten Haelfte eines Sechs-Pixel-Zugs
+   * bleibt die Figur am Absatz haengen (der Zeichenversatz waechst mit der
+   * Simulation mit), dann reisst sie in einem schnellen, abklingenden Ruck
+   * nach oben zum naechsten Griff.
+   *
+   * Drei Dinge haengen an derselben Phase:
+   * - `dy`: der Versatz der Treppe (in logischen Pixeln, nach unten).
+   * - `takt`: die Gliedmassen frieren waehrend des Haltens auf Bild 0 ein
+   *   und spielen den 16-Tick-Zyklus des Blatts im Ruck ab — Zug fuer Zug,
+   *   statt eines Radfahrens neben der Bewegung.
+   * - `schwung`: das Haar haengt dem Ruck nach (`drawWusel`, Stirnvektor),
+   *   staerkster Ausschlag mitten im Zug, in der Ruhe nichts.
+   *
+   * Alles rechnet allein aus `w.y`: deterministisch, zustandslos, und beim
+   * Zeitruecklauf von selbst richtig.
+   */
+  private kletterZug(y: number): { dy: number; takt: number; schwung: number } {
+    const HUB = 6;
+    const HALT = 3;
+    const hoch = -y;
+    const c = ((hoch % HUB) + HUB) % HUB;
+    const zuege = Math.floor(hoch / HUB);
+    const ZUG_TAKT = [0, 0, 0, 4, 9, 14];
+    if (c < HALT) return { dy: c, takt: zuege * 16 + ZUG_TAKT[c], schwung: 0 };
+    const rest = (c - HALT) / (HUB - HALT);
+    const e = 1 - (1 - rest) * (1 - rest);
+    return {
+      dy: c * (1 - e),
+      takt: zuege * 16 + ZUG_TAKT[c],
+      schwung: Math.sin(rest * Math.PI) * 0.26,
+    };
   }
 
   /**

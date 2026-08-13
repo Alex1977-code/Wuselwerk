@@ -39,6 +39,8 @@ import type { KartenPunkt } from './levels/welten';
 import { hatKomfort, wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
 import { drawTitel } from './render/titel';
+import { drawAvatar } from './render/avatare';
+import { uiBild } from './art/ui';
 import { GameAudio } from './audio';
 import { schopfFarbe } from './render/schopf';
 import {
@@ -491,7 +493,13 @@ export class Game {
     }
   }
 
-  /** Ein rundes Porträt: Figur im Kreis, Ring in der Avatarfarbe. */
+  /**
+   * Ein rundes Porträt: das gemalte Avatarbild, sonst Figur im Ring.
+   *
+   * Das Bild vom Blatt traegt seine Scheibenfarbe selbst — ein Ring darum
+   * waere ein zweites Erkennungszeichen ueber dem ersten. Der Ring gehoert
+   * nur zum Rueckfall, wo die Figur allein nichts unterscheidet.
+   */
   private portraetDisc(
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -500,6 +508,7 @@ export class Game {
     farbe: string,
     ringDick: number,
   ): void {
+    if (drawAvatar(ctx, this.profil.avatar, x, y, r * 2)) return;
     ctx.fillStyle = '#0e1420';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -556,11 +565,13 @@ export class Game {
       return;
     }
 
-    // Die Tafel.
+    // Die Tafel. Mit Avatarblatt ist sie hoeher: Zwoelf Portraets brauchen
+    // zwei Reihen, wo vorher sechs Ringe in einer standen.
+    const avBlatt = uiBild('avatare');
     ctx.fillStyle = 'rgba(5, 8, 14, 0.6)';
     ctx.fillRect(0, 0, L.cssW, L.cssH);
     const tw = Math.min(340, L.cssW - 40);
-    const th = 322;
+    const th = avBlatt ? 368 : 322;
     const tx = (L.cssW - tw) / 2;
     const ty = (L.cssH - th) / 2 - L.cssH * 0.03;
     ctx.fillStyle = '#141c2a';
@@ -586,30 +597,61 @@ export class Game {
     ctx.fillText('Namen ändern', bName.x + bName.w / 2, bName.y + 16);
     this.profilKnoepfe.push(bName);
 
-    // Die Farbwahl: sechs Ringe, der gewaehlte traegt zusaetzlich Weiss.
-    const schritt = Math.min(48, (tw - 40) / AVATARE.length);
-    const reiheX = tx + tw / 2 - (schritt * (AVATARE.length - 1)) / 2;
-    const reiheY = ty + 182;
-    for (let i = 0; i < AVATARE.length; i++) {
-      const ax = reiheX + i * schritt;
-      const gewaehlt = i === this.profil.avatar;
-      ctx.fillStyle = '#0e1420';
-      ctx.beginPath();
-      ctx.arc(ax, reiheY, 17, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = AVATARE[i].farbe;
-      ctx.lineWidth = gewaehlt ? 6 : 4;
-      ctx.beginPath();
-      ctx.arc(ax, reiheY, 13, 0, Math.PI * 2);
-      ctx.stroke();
-      if (gewaehlt) {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(ax, reiheY, 17.5, 0, Math.PI * 2);
-        ctx.stroke();
+    // Die Avatarwahl. Mit Blatt: zwoelf Portraets in zwei Sechserreihen,
+    // das gewaehlte im weissen Ring. Ohne Blatt bleibt die alte Farbwahl —
+    // sechs Ringe, mehr Unterschied gibt der Rueckfall nicht her.
+    let bilanzY: number;
+    if (avBlatt) {
+      const schritt = Math.min(46, (tw - 36) / 6);
+      const reiheX = tx + tw / 2 - (schritt * 5) / 2;
+      for (let i = 0; i < AVATARE.length; i++) {
+        const ax = reiheX + (i % 6) * schritt;
+        const ay = ty + 168 + Math.floor(i / 6) * schritt;
+        const gewaehlt = i === this.profil.avatar;
+        drawAvatar(ctx, i, ax, ay, schritt - 8);
+        if (gewaehlt) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(ax, ay, (schritt - 8) / 2 + 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        this.profilKnoepfe.push({
+          id: `avatar-${i}`,
+          x: ax - schritt / 2,
+          y: ay - schritt / 2,
+          w: schritt,
+          h: schritt,
+        });
       }
-      this.profilKnoepfe.push({ id: `avatar-${i}`, x: ax - 21, y: reiheY - 21, w: 42, h: 42 });
+      bilanzY = ty + 274;
+    } else {
+      const anzahl = Math.min(6, AVATARE.length);
+      const schritt = Math.min(48, (tw - 40) / anzahl);
+      const reiheX = tx + tw / 2 - (schritt * (anzahl - 1)) / 2;
+      const reiheY = ty + 182;
+      for (let i = 0; i < anzahl; i++) {
+        const ax = reiheX + i * schritt;
+        const gewaehlt = i === this.profil.avatar;
+        ctx.fillStyle = '#0e1420';
+        ctx.beginPath();
+        ctx.arc(ax, reiheY, 17, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = AVATARE[i].farbe;
+        ctx.lineWidth = gewaehlt ? 6 : 4;
+        ctx.beginPath();
+        ctx.arc(ax, reiheY, 13, 0, Math.PI * 2);
+        ctx.stroke();
+        if (gewaehlt) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(ax, reiheY, 17.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        this.profilKnoepfe.push({ id: `avatar-${i}`, x: ax - 21, y: reiheY - 21, w: 42, h: 42 });
+      }
+      bilanzY = ty + 226;
     }
 
     // Die Bilanz dieses Geraets — die ehrliche kleine Bestenliste.
@@ -619,11 +661,11 @@ export class Game {
     ctx.fillText(
       `${k.geschafft}/${k.gesamt} Level · ${k.sterne}/${k.sterneMoeglich} ★`,
       tx + tw / 2,
-      ty + 226,
+      bilanzY,
     );
     ctx.font = '400 11px system-ui, sans-serif';
     ctx.fillStyle = 'rgba(234, 242, 255, 0.45)';
-    ctx.fillText('Deine Bilanz auf diesem Gerät.', tx + tw / 2, ty + 246);
+    ctx.fillText('Deine Bilanz auf diesem Gerät.', tx + tw / 2, bilanzY + 20);
 
     const bw = tw - 48;
     const bF = { id: 'fertig', x: tx + 24, y: ty + th - 56, w: bw, h: 40 };

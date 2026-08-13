@@ -67,8 +67,12 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   zeigen, dann entscheiden": nimmt Spielfläche).
 - ✅ Die **Posenknöpfe unten**: Symbol trägt die Lesbarkeit, Figur bei der
   Arbeit daneben, wo Platz ist (Rückmeldungsrunde nach der Kritik).
-- ✅ **Avatare** zur Auswahl: sechs Ringfarben um das Porträt
-  (`src/profil.ts`) — bewusst Farbwahl statt zweitem Figurenblatt.
+- ✅ **Avatare** zur Auswahl: **zwölf gemalte Porträts** vom Blatt
+  (`src/art/ui/avatare.webp`, Zeichner `src/render/avatare.ts`, Liste
+  `src/profil.ts`) — je Variante eigene Haarfarbe, Haarsilhouette und
+  Scheibenfarbe nach der korrigierten Prompt-Liste (grafikbedarf §3.9).
+  Die alte Ringfarbwahl bleibt als Rückfall, solange das Blatt nicht
+  entschlüsselt ist.
 - ✅ Grafikbedarf vom Grafik-Subagenten: `docs/grafikbedarf.md`.
 
 ## Spieler und Bestenliste

@@ -99,6 +99,15 @@ const BLATT_REIHE: readonly SkillId[] = [
  * anders gesagt als bei den Vektorformen: aufgebraucht heisst durchscheinend
  * (`gedimmt`), gewaehlt sagt weiterhin die Knopfflaeche. Fehlt das Blatt,
  * zeichnet der Aufrufer die Vektorform — beide Wege bleiben am Leben.
+ *
+ * ## Der helle Teller dahinter
+ *
+ * Die gemalten Miniaturen sind dunkel schattiert — Bombe, Leiter und
+ * Sperre gingen auf der dunklen Knopfflaeche unter („schwer erkennbar").
+ * Ein weicher heller Schein hinter dem Symbol trennt es vom Grund, wie
+ * eine Auslage vor dunklem Filz. Aus demselben Grund ist die Dimmung
+ * aufgebrauchter Berufe milder als zuvor (0,45 statt 0,35): Man soll noch
+ * erkennen, **was** leer ist, nicht nur, dass dort etwas leer ist.
  */
 export function drawSkillBild(
   ctx: CanvasRenderingContext2D,
@@ -114,7 +123,15 @@ export function drawSkillBild(
   const i = BLATT_REIHE.indexOf(id);
   if (i < 0) return false;
   ctx.save();
-  if (gedimmt) ctx.globalAlpha = 0.35;
+  if (gedimmt) ctx.globalAlpha = 0.45;
+  const teller = ctx.createRadialGradient(cx, cy, 0, cx, cy, s * 0.62);
+  teller.addColorStop(0, 'rgba(220, 232, 255, 0.16)');
+  teller.addColorStop(0.7, 'rgba(220, 232, 255, 0.07)');
+  teller.addColorStop(1, 'rgba(220, 232, 255, 0)');
+  ctx.fillStyle = teller;
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.62, 0, Math.PI * 2);
+  ctx.fill();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(blatt, i * zelle, 0, zelle, zelle, cx - s / 2, cy - s / 2, s, s);

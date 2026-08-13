@@ -9,10 +9,12 @@ describe('Spielerprofil', () => {
     expect(nameSaeubern('Mia  und\tPapa')).toBe('Mia und Papa');
   });
 
-  it('kennt sechs Avatarfarben und beginnt mit See', () => {
-    expect(AVATARE).toHaveLength(6);
+  it('kennt zwölf Avatare und beginnt mit der Lockenwolke', () => {
+    // Zwölf wie das Blatt (avatare.webp, 4 x 3) — die Liste ist dessen
+    // Reihenfolge, ein Längenfehler hieße: falsches Porträt beim Antippen.
+    expect(AVATARE).toHaveLength(12);
     const ids = new Set(AVATARE.map((a) => a.id));
-    expect(ids.size).toBe(6);
-    expect(AVATARE[frischesProfil().avatar].id).toBe('see');
+    expect(ids.size).toBe(12);
+    expect(AVATARE[frischesProfil().avatar].id).toBe('wolke');
   });
 });

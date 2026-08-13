@@ -374,6 +374,10 @@ export class SpriteAtlas {
     // Simulation glaetten darf — siehe `ansicht.ts`.
     pose?: string,
     takt?: number,
+    // Haarschwung in Radiant, fuer den Kletterzug (`Scene.kletterZug`): dreht
+    // den Stirnvektor, an dem Zacken, Straehnen und Band haengen — das Haar
+    // nickt dem Ruck nach, der gebackene Koerper bleibt, wie er ist.
+    schwung = 0,
   ): boolean {
     const name = pose ?? clipForWusel(w);
     if (!name) return false;
@@ -401,6 +405,13 @@ export class SpriteAtlas {
     const footX = raster ? Math.round(sx(v, w.x)) : sx(v, w.x);
     const footY = raster ? Math.round(standY(v, w.y)) : standY(v, w.y);
 
+    const dreheStirn = (dx: number, dy: number): [number, number] => {
+      if (!schwung) return [dx, dy];
+      const c = Math.cos(schwung);
+      const s2 = Math.sin(schwung);
+      return [dx * c - dy * s2, dx * s2 + dy * c];
+    };
+
     ctx.save();
     // Pixelgrafik wird hart vergrössert, Gemaltes weich verkleinert. Beides
     // ist hier richtig: Beim harten Vergrössern wäre Glättung ein Verwaschen,
@@ -425,8 +436,7 @@ export class SpriteAtlas {
         (ha[1] - this.manifest.anchor.y) * s,
         s,
         clip.dreh ?? 0,
-        hs[0] - ha[0],
-        hs[1] - ha[1],
+        ...dreheStirn(hs[0] - ha[0], hs[1] - ha[1]),
       );
     }
     ctx.drawImage(
@@ -454,8 +464,7 @@ export class SpriteAtlas {
         (ha[1] - this.manifest.anchor.y) * s,
         s,
         clip.dreh ?? 0,
-        hs[0] - ha[0],
-        hs[1] - ha[1],
+        ...dreheStirn(hs[0] - ha[0], hs[1] - ha[1]),
       );
     }
 
@@ -548,8 +557,7 @@ export class SpriteAtlas {
           s,
           false,
           clip.dreh ?? 0,
-          st ? st[0] - a[0] : 0,
-          st ? st[1] - a[1] : -2,
+          ...dreheStirn(st ? st[0] - a[0] : 0, st ? st[1] - a[1] : -2),
         );
       } else {
         drawSchopf(ctx, px, py, zustand, farbe, s, false, platz);
