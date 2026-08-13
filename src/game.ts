@@ -225,6 +225,8 @@ export class Game {
   private sterneGeklungen = 0;
   private simAcc = 0;
   private anim = 0;
+  /** Hat die Falltuer dieses Anlaufs schon geknarrt? Siehe `frame`. */
+  private knarrte = false;
   /** Zuletzt hoerbar gemachte Raste des Reglers; -1 heisst "noch keine". */
   private rateStufe = -1;
   private lastMs = 0;
@@ -294,6 +296,7 @@ export class Game {
     this.terrainView = new TerrainView(this.world.terrain, level.theme);
     this.scene = new Scene(level, this.terrainView);
     this.scene.atlas = this.atlas;
+    this.knarrte = false;
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
     this.audio.setTheme(level.theme);
     // Die Musik laeuft aus der Karte weiter — im Vorspann in Kartenbesetzung,
@@ -778,6 +781,18 @@ export class Game {
       this.camera.update(dt, this.world);
       this.terrainView.sync();
       this.refreshTarget();
+      // Das Knarren der Falltuer, wenn die Klappen zu schwingen beginnen —
+      // derselbe Vorlauf wie in `drawHatch`. Der Merker heilt sich nach dem
+      // Zeitruecklauf selbst: Liegt der Vorlauf wieder in der Zukunft, wird
+      // er zurueckgesetzt und das Knarren kommt erneut.
+      const vorlauf =
+        this.world.released === 0 && this.world.lukeVorlauf > 0 && this.world.lukeVorlauf <= 40;
+      if (vorlauf && !this.knarrte) {
+        this.knarrte = true;
+        this.audio.knarren();
+      } else if (!vorlauf && !this.world.hatchOpen) {
+        this.knarrte = false;
+      }
     } else {
       this.stepKarte(dt);
     }

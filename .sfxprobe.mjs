@@ -66,9 +66,10 @@ const ergebnis = await page.evaluate(async () => {
 
   // Der Zeitplan. Jede Zeile: [Sekunde, Name (fuer die Ausgabe), Wirkung].
   const KATALOG = [
-    [0.5, 'Falltuer oeffnet', (t) => ev(t, 'hatch')],
-    [1.8, 'Figur erscheint', (t) => ev(t, 'spawn')],
-    [2.6, 'Startruf', () => sfx.startruf()],
+    [0.5, 'Falltuer knarrt auf', () => sfx.knarren()],
+    [1.2, 'Falltuer schlaegt an', (t) => ev(t, 'hatch')],
+    [2.0, 'Figur erscheint', (t) => ev(t, 'spawn')],
+    [2.8, 'Startruf', () => sfx.startruf()],
     [7.0, 'Beruf vergeben: Graeber', (t) => ev(t, 'assign', { skill: 'digger' })],
     [8.0, 'Graben (3 Stiche)', (t) => ev(t, 'dig', { skill: 'digger' })],
     [8.45, '', (t) => ev(t, 'dig', { skill: 'digger' })],

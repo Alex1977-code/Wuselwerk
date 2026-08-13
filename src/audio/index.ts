@@ -140,6 +140,11 @@ export class GameAudio {
     this.sfx.daneben();
   }
 
+  /** Die Falltuer beginnt zu schwingen — das Knarren im Vorlauf. */
+  knarren(): void {
+    this.sfx.knarren();
+  }
+
   werkzeugGewaehlt(skill: SkillId): void {
     this.sfx.werkzeugGewaehlt(skill);
   }

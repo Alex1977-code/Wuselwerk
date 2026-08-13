@@ -552,10 +552,12 @@ export class Scene {
   update(dtSec: number): void {
     this.shake = Math.max(0, this.shake - dtSec * 3.2);
     // Die Klappen der Luke fahren, statt umzuspringen. Ein Schalter, der von
-    // zu auf offen springt, liest sich als Zeichenfehler; eine Bewegung von
-    // einem Drittel Sekunde liest sich als Mechanik.
+    // zu auf offen springt, liest sich als Zeichenfehler; eine Bewegung liest
+    // sich als Mechanik. Das Oeffnen ist deutlich langsamer als das
+    // Schliessen — es traegt das Knarren (~0,65 s, `Sfx.knarren`), und eine
+    // alte Holztuer schwingt auf, sie schnappt nicht.
     const ziel = this.klappeZiel;
-    const schritt = dtSec * 3.4;
+    const schritt = dtSec * (ziel > this.klappe ? 1.55 : 3.4);
     this.klappe += Math.max(-schritt, Math.min(schritt, ziel - this.klappe));
     for (let i = this.blitze.length - 1; i >= 0; i--) {
       this.blitze[i].life -= dtSec;
@@ -1504,7 +1506,13 @@ export class Scene {
    * Detail. Der Warnstreifen sagt, dass hier gleich etwas herausfaellt.
    */
   private drawHatch(ctx: CanvasRenderingContext2D, v: View, world: World): void {
-    this.klappeZiel = world.hatchOpen ? 1 : 0;
+    // Die Klappen schwingen schon im Vorlauf auf — knapp 0,7 s vor dem
+    // ersten Spawn, zusammen mit dem Knarren. Vorher standen Oeffnen und
+    // erster Fall im selben Augenblick, und die Tuer war nie zu sehen zu.
+    this.klappeZiel =
+      world.hatchOpen || (world.released === 0 && world.lukeVorlauf > 0 && world.lukeVorlauf <= 40)
+        ? 1
+        : 0;
     const auf = this.klappe;
     const mx = sx(v, world.entrance.x);
     const uk = sy(v, world.entrance.y - 12);

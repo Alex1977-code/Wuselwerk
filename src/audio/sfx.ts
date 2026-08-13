@@ -981,11 +981,46 @@ export class Sfx {
   }
 
   /**
+   * Die Falltuer schwingt auf: das Knarren.
+   *
+   * Laeuft im **Vorlauf** — das Spiel ruft es an, wenn die Klappen zu
+   * schwingen beginnen (~0,7 s vor dem ersten Spawn), nicht erst am
+   * 'hatch'-Ereignis. Ein Knarren ist Haftgleiten: Das Scharnier reisst sich
+   * in kleinen Ruckern los, jeder Rucker ein kurzer, tiefer Saegezahn mit
+   * fallender Tonhoehe, die Folge unter steigender Spannung. Obenauf ein
+   * duenner, resonanter Pfeifton — Metall unter Last. Den Abschluss macht
+   * `falltuer` (der Klack am Anschlag), wenn die Tuer offen ist.
+   */
+  knarren(): void {
+    this.neuesBild();
+    if (!this.darf('knarren')) return;
+    const wo = this.seiteOrt(0.3);
+    const rucker: readonly (readonly [number, number, number])[] = [
+      [0, 82, 0.16],
+      [0.16, 94, 0.13],
+      [0.3, 74, 0.16],
+      [0.46, 104, 0.12],
+    ];
+    for (const [ab, hz, dauer] of rucker) {
+      this.engine.tone({
+        freq: hz * streuung(1), dur: dauer, type: 'sawtooth', gain: 0.08,
+        slide: 0.82, attack: 0.014, filterHz: 540, filterSweep: 0.6,
+        delay: ab, pan: wo,
+      });
+    }
+    this.engine.noise({
+      dur: 0.5, gain: 0.022, filter: 'bandpass', freq: 1500 * streuung(3), q: 6,
+      sweep: 1.35, delay: 0.05, pan: wo,
+    });
+  }
+
+  /**
    * Die Falltuer klappt auf: ein Klack, dann Kettenrasseln.
    *
    * Das Rasseln ist eine Handvoll sehr kurzer Metalltupfer in fallender Folge
    * — eine Kette, die auslaeuft. Alles kurz: Die Tuer ist Auftakt, kein
-   * Ereignisklang.
+   * Ereignisklang. Seit dem Knarren (`knarren`) ist der Klack der
+   * **Anschlag** am Ende der Bewegung.
    */
   private falltuer(): void {
     if (!this.darf('falltuer')) return;

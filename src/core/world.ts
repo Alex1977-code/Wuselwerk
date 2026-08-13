@@ -130,6 +130,19 @@ export class World {
     return this.total - this.released + this.activeCount;
   }
 
+  /**
+   * Ticks bis zum Oeffnen der Luke — 0, sobald sie offen ist.
+   *
+   * Nur Ansicht: Klappen-Animation und Knarr-Klang beginnen ein Stueck vor
+   * dem ersten Spawn, damit die Tuer sichtbar und hoerbar aufgeht, bevor die
+   * erste Figur faellt. Die Simulation selbst bleibt unberuehrt — jede
+   * Verschiebung des Spawn-Takts wuerde die Uhren aller Musterloesungen
+   * verschieben.
+   */
+  get lukeVorlauf(): number {
+    return this.hatchOpen ? 0 : this.releaseCountdown;
+  }
+
   get timeLeftTicks(): number {
     if (this.timeLimitTicks <= 0) return Number.POSITIVE_INFINITY;
     return Math.max(0, this.timeLimitTicks - this.tickCount);
