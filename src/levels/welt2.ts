@@ -155,10 +155,14 @@ export const WELT2_LEVELS: LevelDef[] = [
     exit: { x: 150, y: 454, w: 32, h: 26 },
     total: 12,
     needed: 8,
-    timeLimitSec: 150,
+    // Der Taktgeber (Design-Runde, Blaupause 2): Die Uhr ist am Messlauf
+    // so bemessen, dass der gemuetliche Weg scheitert — Quote ohne
+    // Rate-Zuege bei 73,8 s, mit sofortiger Drossel und Aufdrehen nach dem
+    // Durchbruch bei 67,1 s. Rate-Zuege kosten kein Par.
+    timeLimitSec: 70,
     releaseRate: 40,
-    minReleaseRate: 25,
-    skills: sk({ miner: 3, digger: 2, blocker: 2 }),
+    minReleaseRate: 15,
+    skills: sk({ miner: 2, blocker: 1 }),
     par: 1,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
@@ -254,25 +258,32 @@ export const WELT2_LEVELS: LevelDef[] = [
     id: 'w2-09',
     name: 'Adern und Deckel',
     chapter: 'Klamm',
-    hint: 'Zwei Adern, versetzt. Wo die obere endet, beginnt der Weg — und die untere trägt den Stollen zur Tür.',
+    hint: 'Die Platte ist dicht — bis auf eine rostige Lücke. Nur dort geht es hinab, und unten nur nach Osten.',
     theme: 'crystal',
     width: 960,
     height: 540,
     seed: 21009,
     entrance: { x: 160, y: 280 },
-    exit: { x: 556, y: 400, w: 32, h: 24 },
+    exit: { x: 480, y: 390, w: 32, h: 24 },
     total: 20,
-    needed: 14,
-    timeLimitSec: 180,
+    // Entklont (Design-Runde, Muster Blaupause 5): Die alte Fassung teilte
+    // Geometrie und Loesung mit w1-05. Jetzt ist die Platte durchgehend
+    // und traegt eine 24 Punkte breite Erdluecke bei x 380 — sichtbar, denn
+    // ueberall sonst steht der Graeber auf Stahl. Unten geht es nur nach
+    // OSTEN zur Tuer; der w1-05-Plan (graben bei 690, rammen nach Westen)
+    // endet auf der Platte und scheitert — der Rot-Test belegt es.
+    needed: 15,
+    timeLimitSec: 120,
     releaseRate: 35,
     minReleaseRate: 20,
-    skills: sk({ digger: 4, basher: 4, miner: 2, blocker: 2, builder: 2 }),
+    skills: sk({ digger: 2, basher: 1, blocker: 1 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
       { t: 'ground', x: 0, w: 960, y: 340, h: 200, mat: MAT.ROCK, rough: 2 },
-      { t: 'rect', x: 120, y: 372, w: 480, h: 14, mat: MAT.STEEL },
-      { t: 'rect', x: 600, y: 408, w: 360, h: 12, mat: MAT.STEEL },
+      { t: 'rect', x: 120, y: 372, w: 820, h: 14, mat: MAT.STEEL },
+      { t: 'rect', x: 380, y: 372, w: 24, h: 14, mat: MAT.EARTH },
+      { t: 'rect', x: 120, y: 408, w: 640, h: 12, mat: MAT.STEEL },
     ],
   },
   {
@@ -352,6 +363,42 @@ export const WELT2_LEVELS: LevelDef[] = [
       { t: 'rect', x: 424, y: 410, w: 20, h: 130, mat: MAT.ROCK },
       { t: 'rect', x: 560, y: 372, w: 300, h: 10, mat: MAT.STEEL },
       { t: 'rect', x: 600, y: 410, w: 360, h: 12, mat: MAT.STEEL },
+    ],
+  },
+  {
+    id: 'w2-13',
+    name: 'Unterm Deckel',
+    chapter: 'Klamm',
+    hint: 'Die Brücke stösst an die Decke — hier baut niemand hinauf. Wer die Wand hoch will, muss klettern.',
+    theme: 'crystal',
+    width: 720,
+    height: 540,
+    seed: 21013,
+    entrance: { x: 90, y: 280 },
+    exit: { x: 660, y: 194, w: 32, h: 26 },
+    total: 10,
+    needed: 6,
+    timeLimitSec: 120,
+    releaseRate: 40,
+    minReleaseRate: 25,
+    // Die Brueckenbauer sind der Koeder: Die sichtbare, falsche Loesung.
+    // Eine Kette aus dreien stoesst an den Deckel und dreht um — sichtbar
+    // verpufft, niemand stirbt. Die Decke verbietet den Bauweg; genau das
+    // ist ihr Debuet als Bauteil (Blaupause 1 der Design-Runde).
+    skills: sk({ climber: 8, builder: 3, blocker: 1 }),
+    par: 8,
+    paint: [
+      // Der Deckel — die Weltregel der Klamm, endlich als Bauteil.
+      { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
+      // Westboden mit dem Pulk.
+      { t: 'ground', x: 0, w: 600, y: 330, h: 210, mat: MAT.ROCK, rough: 2 },
+      // Die Wand: Krone bei y 144, Spalt zum Deckel 60 Punkte — genug zum
+      // Darueberlaufen, zu wenig fuer eine Bruecke von unten.
+      { t: 'rect', x: 600, y: 144, w: 26, h: 396, mat: MAT.ROCK },
+      // Stahlhaut an der Westflanke: kein Stollen, kein Krater.
+      { t: 'rect', x: 600, y: 144, w: 8, h: 396, mat: MAT.STEEL },
+      // Ostboden, 70 Punkte unter der Krone — der Fall ist kurz genug.
+      { t: 'rect', x: 626, y: 214, w: 94, h: 326, mat: MAT.ROCK },
     ],
   },
 ];

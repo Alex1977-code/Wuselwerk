@@ -236,7 +236,7 @@ export const WELTEN: Welt[] = [
     thema: 'Enge Schächte unter Tage. Der Stahl liegt in Adern, das Licht kommt aus der Wand.',
     kartenTheme: 'crystal',
     farbe: '#8aa5e8',
-    soll: 12,
+    soll: 13,
     phase: 2,
     belohnung: {
       art: 'zeit',

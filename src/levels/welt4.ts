@@ -277,7 +277,7 @@ export const WELT4_LEVELS: LevelDef[] = [
     id: 'w4-10',
     name: 'Vier Kanten',
     chapter: 'Tiefe',
-    hint: 'Die mittlere Etage hängt frei: zwei offene Kanten, zwei Wächter — und erst dann der Schacht.',
+    hint: 'Ein Schacht im Osten ist der schnelle Weg — aber wer unten ostwärts läuft, braucht sofort einen Wächter.',
     theme: 'frost',
     width: 480,
     height: 620,
@@ -285,12 +285,19 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 160 },
     exit: { x: 224, y: 270, w: 32, h: 26 },
     total: 16,
-    needed: 9,
-    timeLimitSec: 220,
+    // Die Ostwache (Design-Runde; die Messung schlug die
+    // Doppelfront-Blaupause): Alle spawnen ostwaerts, also ist der
+    // Ost-Schacht der schnelle Weg — Quote in 30,6 s statt 50,9 s ueber
+    // den West-Schacht. Aber ohne sofortigen Waechter an der Ostkante
+    // sterben fuenfzehn (gemessen). Die Tuer faengt alle Westlaeufer von
+    // selbst; eine zweite Front hat keinen Gegner, deshalb ist sie keine.
+    // Die Uhr (45 s) laesst nur den Ostweg zu — der Rot-Test belegt es.
+    needed: 12,
+    timeLimitSec: 45,
     releaseRate: 55,
     minReleaseRate: 30,
-    skills: sk({ digger: 4, blocker: 3 }),
-    par: 4,
+    skills: sk({ digger: 2, blocker: 2 }),
+    par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
       { t: 'rect', x: 0, y: 220, w: 480, h: 58, mat: MAT.ROCK },

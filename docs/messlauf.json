@@ -289,22 +289,22 @@
  {
   "id": "w2-05",
   "name": "Schräg hinab",
-  "planTicks": 5973,
-  "letzteRettungSek": 99.3,
-  "quoteSek": 73.8,
-  "uhrSek": 150,
-  "uhrFaktor": 1.51,
-  "gerettet": 12,
+  "planTicks": 4200,
+  "letzteRettungSek": 67.1,
+  "quoteSek": 67.1,
+  "uhrSek": 70,
+  "uhrFaktor": 1.04,
+  "gerettet": 8,
   "total": 12,
   "quote": 8,
-  "quotenMarge": 4,
+  "quotenMarge": 0,
   "par": 1,
   "vergaben": 1,
   "benutzt": {
    "miner": 1
   },
-  "werkzeuge": 7,
-  "ueberschuss": 6
+  "werkzeuge": 3,
+  "ueberschuss": 2
  },
  {
   "id": "w2-06",
@@ -370,23 +370,23 @@
  {
   "id": "w2-09",
   "name": "Adern und Deckel",
-  "planTicks": 4680,
-  "letzteRettungSek": 77.7,
-  "quoteSek": 64.3,
-  "uhrSek": 180,
-  "uhrFaktor": 2.32,
+  "planTicks": 3716,
+  "letzteRettungSek": 61.6,
+  "quoteSek": 50.5,
+  "uhrSek": 120,
+  "uhrFaktor": 1.95,
   "gerettet": 20,
   "total": 20,
-  "quote": 14,
-  "quotenMarge": 6,
+  "quote": 15,
+  "quotenMarge": 5,
   "par": 2,
   "vergaben": 2,
   "benutzt": {
    "basher": 1,
    "digger": 1
   },
-  "werkzeuge": 14,
-  "ueberschuss": 12
+  "werkzeuge": 4,
+  "ueberschuss": 2
  },
  {
   "id": "w2-10",
@@ -451,6 +451,26 @@
   },
   "werkzeuge": 17,
   "ueberschuss": 14
+ },
+ {
+  "id": "w2-13",
+  "name": "Unterm Deckel",
+  "planTicks": 7200,
+  "letzteRettungSek": 58.7,
+  "quoteSek": 54.5,
+  "uhrSek": 120,
+  "uhrFaktor": 2.04,
+  "gerettet": 8,
+  "total": 10,
+  "quote": 6,
+  "quotenMarge": 2,
+  "par": 8,
+  "vergaben": 8,
+  "benutzt": {
+   "climber": 8
+  },
+  "werkzeuge": 12,
+  "ueberschuss": 4
  },
  {
   "id": "w3-01",
@@ -906,23 +926,23 @@
  {
   "id": "w4-10",
   "name": "Vier Kanten",
-  "planTicks": 13200,
-  "letzteRettungSek": 55.6,
-  "quoteSek": 46.1,
-  "uhrSek": 220,
-  "uhrFaktor": 3.95,
+  "planTicks": 2700,
+  "letzteRettungSek": 35.4,
+  "quoteSek": 30.6,
+  "uhrSek": 45,
+  "uhrFaktor": 1.27,
   "gerettet": 15,
   "total": 16,
-  "quote": 9,
-  "quotenMarge": 6,
-  "par": 4,
+  "quote": 12,
+  "quotenMarge": 3,
+  "par": 2,
   "vergaben": 2,
   "benutzt": {
    "blocker": 1,
    "digger": 1
   },
-  "werkzeuge": 7,
-  "ueberschuss": 3
+  "werkzeuge": 4,
+  "ueberschuss": 2
  },
  {
   "id": "w4-11",
@@ -1070,22 +1090,22 @@
  {
   "id": "w5-04",
   "name": "Heisse Naht",
-  "planTicks": 2948,
-  "letzteRettungSek": 48.8,
-  "quoteSek": 40.9,
+  "planTicks": 4842,
+  "letzteRettungSek": 80.4,
+  "quoteSek": 73.4,
   "uhrSek": 90,
-  "uhrFaktor": 1.84,
+  "uhrFaktor": 1.12,
   "gerettet": 19,
   "total": 20,
-  "quote": 14,
-  "quotenMarge": 5,
+  "quote": 15,
+  "quotenMarge": 4,
   "par": 1,
   "vergaben": 1,
   "benutzt": {
    "bomber": 1
   },
-  "werkzeuge": 11,
-  "ueberschuss": 10
+  "werkzeuge": 4,
+  "ueberschuss": 3
  },
  {
   "id": "w5-05",
@@ -1152,23 +1172,23 @@
  {
   "id": "w5-08",
   "name": "Doppelader",
-  "planTicks": 4315,
-  "letzteRettungSek": 71.6,
-  "quoteSek": 60.1,
-  "uhrSek": 110,
-  "uhrFaktor": 1.54,
+  "planTicks": 3171,
+  "letzteRettungSek": 52.5,
+  "quoteSek": 48.3,
+  "uhrSek": 90,
+  "uhrFaktor": 1.71,
   "gerettet": 20,
   "total": 20,
-  "quote": 14,
-  "quotenMarge": 6,
+  "quote": 17,
+  "quotenMarge": 3,
   "par": 2,
   "vergaben": 2,
   "benutzt": {
    "basher": 1,
    "digger": 1
   },
-  "werkzeuge": 14,
-  "ueberschuss": 12
+  "werkzeuge": 6,
+  "ueberschuss": 4
  },
  {
   "id": "w5-09",

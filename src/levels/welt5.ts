@@ -100,7 +100,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     id: 'w5-04',
     name: 'Heisse Naht',
     chapter: 'Krater',
-    hint: 'Die Platte hat eine Naht, die Zündschnur fünf Sekunden — und du kaum mehr.',
+    hint: 'Zwei Nähte, eine Wahl: Unter der einen liegt Stahl, unter der anderen der Weg. Sieh genau hin.',
     theme: 'magma',
     width: 720,
     height: 540,
@@ -108,22 +108,28 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 300 },
     exit: { x: 420, y: 386, w: 32, h: 26 },
     total: 20,
-    needed: 14,
+    needed: 15,
     timeLimitSec: 90,
-    releaseRate: 55,
+    releaseRate: 50,
     minReleaseRate: 25,
-    skills: sk({ bomber: 3, digger: 2, basher: 2, blocker: 2, builder: 2 }),
-    // Eine einzige Sprengung genügt. Alles andere ist Nachbesserung.
+    // Zwei Bomben fuer zwei Naehte: Ein Irrtum ist erlaubt und kostet nur
+    // den Sprengmeister — die Falschloesung ist angekuendigt, nicht
+    // toedlich (Blaupause 4 der Design-Runde).
+    skills: sk({ bomber: 2, digger: 1, blocker: 1 }),
     par: 1,
     paint: [
-      // Dünne Narbe über einer Stahlplatte: Der Gräber räumt die zwei Zentimeter
-      // Erde ab und steht dann auf Stahl. Der Sprengmeister räumt beides.
+      // Duenne Narbe ueber einer Stahlplatte — wie in w1-07, nur dass die
+      // Platte jetzt ZWEI Naehte traegt und nur eine davon traegt.
       { t: 'rect', x: 0, y: 339, w: 720, h: 2, mat: MAT.EARTH },
       { t: 'rect', x: 0, y: 341, w: 720, h: 3, mat: MAT.STEEL },
-      // Die Naht — vier Bildpunkte Erde in der Platte. Sie liegt im
-      // Sprengradius, aber nicht im Grabungsfenster: Der Gräber räumt neun
-      // Punkte breit und findet darin immer Stahl.
-      { t: 'rect', x: 351, y: 341, w: 4, h: 3, mat: MAT.EARTH },
+      // Naht A — die attraktive Falsche: naeher am Eingang, aber unter ihr
+      // liegt eine sichtbar stahlgraue Sohle. Der Krater oeffnet die
+      // Platte und endet auf Metall; sichtbar verpufft.
+      { t: 'rect', x: 260, y: 341, w: 4, h: 3, mat: MAT.EARTH },
+      { t: 'rect', x: 236, y: 344, w: 52, h: 10, mat: MAT.STEEL },
+      // Naht B — die echte: unter ihr nur Erde, der Krater legt den Weg
+      // zur begrabenen Tuer frei.
+      { t: 'rect', x: 455, y: 341, w: 4, h: 3, mat: MAT.EARTH },
       { t: 'ground', x: 0, w: 720, y: 405, h: 135, mat: MAT.EARTH, rough: 2 },
     ],
   },
@@ -222,18 +228,25 @@ export const WELT5_LEVELS: LevelDef[] = [
     height: 540,
     seed: 51008,
     entrance: { x: 160, y: 280 },
-    exit: { x: 556, y: 400, w: 32, h: 24 },
+    exit: { x: 420, y: 390, w: 32, h: 24 },
     total: 20,
-    needed: 14,
-    timeLimitSec: 110,
-    releaseRate: 45,
-    minReleaseRate: 20,
-    skills: sk({ digger: 4, basher: 4, miner: 2, blocker: 2, builder: 2 }),
+    // Remix statt Kopie (Design-Runde, Blaupause 5): w1-05-Geometrie mal
+    // w3-01-Idee. Die Platte ist durchgehend, nur eine 24 Punkte breite
+    // Rostluecke bei x 520 fuehrt hinab — sichtbar, denn ueberall sonst
+    // steht der Graeber auf Stahl. Unten geht es nur nach WESTEN. Der
+    // w1-05-Plan (graben bei 690) endet auf der Platte; der Rot-Test
+    // belegt es. Der Sprengmeister ist Koeder: Die Platte hat keine Naht.
+    needed: 17,
+    timeLimitSec: 90,
+    releaseRate: 60,
+    minReleaseRate: 30,
+    skills: sk({ digger: 2, basher: 2, blocker: 1, bomber: 1 }),
     par: 2,
     paint: [
       { t: 'ground', x: 0, w: 960, y: 340, h: 200, mat: MAT.EARTH, rough: 2 },
-      { t: 'rect', x: 120, y: 372, w: 480, h: 14, mat: MAT.STEEL },
-      { t: 'rect', x: 600, y: 408, w: 360, h: 12, mat: MAT.STEEL },
+      { t: 'rect', x: 120, y: 372, w: 820, h: 14, mat: MAT.STEEL },
+      { t: 'rect', x: 520, y: 372, w: 24, h: 14, mat: MAT.EARTH },
+      { t: 'rect', x: 360, y: 408, w: 600, h: 12, mat: MAT.STEEL },
     ],
   },
   {

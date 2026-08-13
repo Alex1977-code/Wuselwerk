@@ -233,6 +233,36 @@ function planKlamm5(): Plan {
   };
 }
 
+/**
+ * w2-05 v2 „Taktgeber" — der Rate-Regler ist das Loesungswerkzeug.
+ *
+ * Sofort drosseln (der Pulk bleibt klein, niemand verpendelt Wegzeit vor
+ * der ungeoeffneten Kammer), den Bagger beim ersten Ankoemmling ansetzen,
+ * nach dem Durchbruch voll aufdrehen — die Nachzuegler fallen direkt in
+ * die fertige Schraege. Rate-Zuege kosten kein Par.
+ */
+function planKlamm5v2(): Plan {
+  let miner: number | null = null;
+  let offen = false;
+  return (w) => {
+    if (miner === null) {
+      w.setReleaseRate(w.minReleaseRate);
+      const c = walkerNear(w, 424, 436, -1);
+      if (c && w.assign(c.id, 'miner')) miner = c.id;
+      return;
+    }
+    if (!offen) {
+      const m = w.wuselById(miner);
+      // Durchbruch: Der Bagger ist in der Kammer angekommen (faellt oder
+      // laeuft unterhalb der Kammerdecke) — jetzt voll aufdrehen.
+      if (!m || m.y > 415 || m.state !== State.MINING) {
+        w.setReleaseRate(99);
+        offen = true;
+      }
+    }
+  };
+}
+
 /** Fünf Sekunden Zündschnur — die Naht liegt hier bei 287. */
 function planKlamm6(): Plan {
   let done = false;
@@ -673,7 +703,39 @@ function planFrost9(): Plan {
 }
 
 /** Zwei Wächter für zwei offene Kanten — die Tür liegt dazwischen. */
+/**
+ * w4-10 v2 „Vier Kanten" — die Ostwache.
+ *
+ * Alle spawnen ostwaerts; der Ost-Schacht ist der schnelle Weg. Der erste
+ * Lander, der unten ostwaerts weiterlaeuft, wird SOFORT Waechter vor der
+ * Kante — ohne ihn sterben fuenfzehn (gemessen). Westlaeufer faengt die
+ * Tuer von selbst. Die Uhr laesst den langsamen West-Schacht nicht mehr
+ * zu (Rot-Test mit `planFrost10Alt`).
+ */
 function planFrost10(): Plan {
+  let schacht = false;
+  let wache = false;
+  return (w) => {
+    if (!schacht) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y < 260 && x.x >= 322 && x.x <= 335,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht = true;
+      return;
+    }
+    if (!wache) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === 1 && x.y > 280 && x.y < 300 &&
+          x.x >= 336 && x.x <= 354,
+      );
+      if (c && w.assign(c.id, 'blocker')) wache = true;
+    }
+  };
+}
+
+/** Die alte w4-10-Loesung: West-Schacht mit zwei Waechtern — zu langsam. */
+function planFrost10Alt(): Plan {
   let erster = false;
   let rechts = false;
   let links = false;
@@ -683,9 +745,6 @@ function planFrost10(): Plan {
       if (c && w.assign(c.id, 'digger')) erster = true;
       return;
     }
-    // Der Westwaechter zuerst: Jeder Nachruecker erreicht den Schacht
-    // westwaerts (nach dem Abprall an der Ostwand) und landet mit Blick
-    // nach links — die Westkante ist zuerst dran.
     if (!links) {
       const c = w.wusels.find(
         (x) =>
@@ -784,6 +843,90 @@ function planFrost14(): Plan {
   };
 }
 
+/**
+ * w2-09 v2 „Adern und Deckel" — die Sichtluecke (Muster Blaupause 5).
+ *
+ * Die Platte ist durchgehend, nur bei x 380 liegt eine 24 Punkte breite
+ * Erdluecke. Graben in der Luecke, unten nach OSTEN rammen — der alte
+ * w1-05-Plan (graben bei 690) endet auf Stahl, siehe Rot-Test.
+ */
+function planKlamm9(): Plan {
+  let digger: number | null = null;
+  let bashed = false;
+  return (w) => {
+    if (digger === null) {
+      const c = walkerNear(w, 386, 396, 1);
+      if (c && w.assign(c.id, 'digger')) digger = c.id;
+      return;
+    }
+    if (!bashed) {
+      const d = w.wuselById(digger);
+      if (d && d.state === State.WALKING && d.dir === 1 && d.y > 400) {
+        if (w.assign(d.id, 'basher')) bashed = true;
+      }
+    }
+  };
+}
+
+/**
+ * w2-13 „Unterm Deckel" (Blaupause 1) — acht Kletterer, sonst nichts.
+ *
+ * Die Brueckenbauer im Vorrat sind der Koeder; die Musterloesung fasst
+ * sie nicht an. Acht Kletterer ueber die Stahlwand, ueber die Krone,
+ * der kurze Fall nach Osten, Tuer.
+ */
+function planKlamm13(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 8) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x < 590 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/**
+ * w5-04 v2 „Heisse Naht" (Blaupause 4) — die richtige der zwei Naehte.
+ *
+ * Naht B liegt bei x 455; hundert Punkte Vorhalt fuer die Zuendschnur
+ * heisst: Zuweisung im Fenster 353..356 nach Osten. Naht A waere die
+ * attraktive Falsche — unter ihr liegt sichtbar Stahl.
+ */
+function planSchlot4(): Plan {
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 353, 356, 1);
+    if (c && w.assign(c.id, 'bomber')) done = true;
+  };
+}
+
+/**
+ * w5-08 v2 „Doppelader" (Blaupause 5) — Rostluecke, dann nach Westen.
+ *
+ * Graben in der Luecke bei x 520, am Schachtgrund nach WESTEN zur
+ * begrabenen Tuer rammen. Der Sprengmeister im Vorrat ist Koeder — die
+ * Platte hat keine Naht.
+ */
+function planSchlot8(): Plan {
+  let digger: number | null = null;
+  let bashed = false;
+  return (w) => {
+    if (digger === null) {
+      const c = walkerNear(w, 526, 536, 1);
+      if (c && w.assign(c.id, 'digger')) digger = c.id;
+      return;
+    }
+    if (!bashed) {
+      const d = w.wuselById(digger);
+      if (d && d.state === State.WALKING && d.dir === -1 && d.y > 400) {
+        if (w.assign(d.id, 'basher')) bashed = true;
+      }
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -799,14 +942,15 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w2-02': planKlamm2,
   'w2-03': planKlamm3,
   'w2-04': planLevel3,
-  'w2-05': planKlamm5,
+  'w2-05': planKlamm5v2,
   'w2-06': planKlamm6,
   'w2-07': planLevel4,
   'w2-08': planLevel8,
-  'w2-09': planLevel5,
+  'w2-09': planKlamm9,
   'w2-10': planLevel9,
   'w2-11': planKlamm11,
   'w2-12': planLevel10,
+  'w2-13': planKlamm13,
   'w3-01': planRost1,
   'w3-02': planRost2,
   'w3-03': planRost3,
@@ -839,11 +983,11 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w5-01': planFrost1,
   'w5-02': planLevel1,
   'w5-03': planLevel3,
-  'w5-04': planLevel7,
+  'w5-04': planSchlot4,
   'w5-05': planLevel8,
   'w5-06': planKlamm11,
   'w5-07': planKlamm5,
-  'w5-08': planLevel5,
+  'w5-08': planSchlot8,
   'w5-09': planLevel6,
   'w5-10': planLevel4,
   'w5-11': planRost6,
@@ -943,6 +1087,27 @@ describe('Messlauf', () => {
     });
     writeFileSync('docs/messlauf.json', `${JSON.stringify(bericht, null, 1)}\n`);
     for (const b of bericht) expect(b.gerettet, b.id).toBeGreaterThanOrEqual(b.quote);
+  });
+});
+
+describe('Rot-Tests — der geerbte Altplan scheitert', () => {
+  // Abnahmekriterium der Design-Runde (Leitsatz 3): Ein umgebautes Level
+  // ist erst dann entklont, wenn die Musterloesung seines Vorbilds
+  // nachweislich nicht mehr traegt.
+  it('w2-09: der w1-05-Plan endet auf der durchgehenden Platte', () => {
+    erwarteRot('w2-09', planLevel5);
+  });
+  it('w5-08: der w1-05-Plan endet auf der durchgehenden Platte', () => {
+    erwarteRot('w5-08', planLevel5);
+  });
+  it('w5-04: der w1-07-Plan sprengt, wo keine Naht mehr ist', () => {
+    erwarteRot('w5-04', planLevel7);
+  });
+  it('w2-05: ohne Rate-Zuege verpendelt der Pulk die Uhr', () => {
+    erwarteRot('w2-05', planKlamm5);
+  });
+  it('w4-10: der alte West-Schacht ist zu langsam fuer die Uhr', () => {
+    erwarteRot('w4-10', planFrost10Alt);
   });
 });
 
