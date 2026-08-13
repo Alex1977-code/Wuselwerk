@@ -66,3 +66,19 @@ technisch wie kommunikativ simpler: ein Reset statt einer Timer-Anzeige.
 - Anzeige: Herz-Chip oben rechts auf der Karte; die Tafel erscheint erst,
   wenn ein Level **gestartet** werden soll und der Vorrat leer ist — nicht
   beim blossen Ansehen der Karte.
+
+## Nachtrag: Herzschutzregel und lebensfreier Lehrgang (Leveldesign-Runde)
+
+Beschluss der Design-Runde (`docs/leveldesign-runde.md`, Leitsatz 4 und M2),
+umgesetzt vor jeder Verschärfung der Schwierigkeitskurve:
+
+- **Uhr-Niederlagen kosten kein Leben.** Die geschärften Uhren (Faktor auf
+  die gemessene Musterlösungszeit) machen den ersten Versuch planmäßig zum
+  Lernversuch. Wer an der Uhr scheitert, hat gedacht, nicht versagt — die
+  Ergebnis-Tafel sagt es dazu („Kostet kein Leben — nur die Uhr war
+  schneller."). Eine Niederlage mit Restzeit zahlt weiterhin, der Abbruch
+  nach der Schnupperfrist auch. Entscheidung des Auftraggebers: Reichweite
+  bewusst NUR die Uhr — eindeutig messbar, nicht ausnutzbar.
+- **w1-01 bis w1-07 sind lebensfrei.** Der Lehrgang stellt je ein Konzept
+  vor; ein Lebensabzug dort bestraft das Lernen selbst. Die Grenze liegt
+  vor dem Kapitel „Prüfung" (w1-08), wo das Sterntor die Kurve anzieht.

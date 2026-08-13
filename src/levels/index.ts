@@ -230,7 +230,9 @@ export const LEVELS: LevelDef[] = [
     exit: { x: 80, y: 360, w: 32, h: 26 },
     total: 20,
     needed: 12,
-    timeLimitSec: 150,
+    // 120 statt 150 (Design-Runde, Paket 2): Die Musterloesung rettet die
+    // letzte Figur bei ~69 s — anderthalbfacher Vorhalt statt doppeltem.
+    timeLimitSec: 120,
     releaseRate: 30,
     minReleaseRate: 20,
     skills: sk({ blocker: 2, builder: 3, digger: 2, basher: 2, floater: 2 }),
@@ -264,7 +266,9 @@ export const LEVELS: LevelDef[] = [
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,
-    skills: sk({ climber: 8, floater: 8, blocker: 2, builder: 2 }),
+    // 7/7 statt 8/8 (Design-Runde): Sechs Paare braucht die Quote, das
+    // siebte ist die eine erlaubte Reserve — acht waren zwei Fehler gratis.
+    skills: sk({ climber: 7, floater: 7, blocker: 2, builder: 2 }),
     // Zwei Zuweisungen je geretteter Figur. Die Zahl sieht teuer aus und ist
     // die Lehre: Gaben stapeln sich auf *einer* Figur, sie sind kein Bauwerk
     // für alle.
@@ -288,11 +292,17 @@ export const LEVELS: LevelDef[] = [
     entrance: { x: 120, y: 300 },
     exit: { x: 690, y: 396, w: 36, h: 24 },
     total: 16,
-    needed: 10,
-    timeLimitSec: 240,
+    // 12 statt 10 (Design-Runde): Die Musterloesung rettet 15 — eine
+    // Pruefung, die vier Verluste verzeiht, prueft nichts.
+    needed: 12,
+    // 180 statt 240: letzte Rettung der Musterloesung bei ~79 s.
+    timeLimitSec: 180,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ builder: 4, digger: 3, basher: 3, blocker: 3, miner: 2, floater: 2 }),
+    // Werkzeugschnitt +14 -> +6 ueber Par: Der Vorrat soll zur Loesung
+    // zwingen, nicht jede Idee verzeihen. Der Miner faellt ganz raus — die
+    // Pruefung fragt Bruecke, Schacht, Stollen ab, nicht alles auf einmal.
+    skills: sk({ builder: 2, digger: 2, basher: 2, blocker: 1, floater: 2 }),
     // Brücke, Gräber, Rammer — drei Zuweisungen, jede aus einem früheren Level.
     par: 3,
     paint: [

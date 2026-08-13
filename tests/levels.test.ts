@@ -448,7 +448,9 @@ function planRost10(): Plan {
       }
       return;
     }
-    if (n >= 6) return;
+    // Alle acht Paare — die Quote fordert seit der Design-Runde den vollen
+    // Vorrat, nicht sechs mit zwei Fehlern Luft.
+    if (n >= 8) return;
     const c = w.wusels.find(
       (x) => x.state === State.WALKING && !x.hasClimber && x.x > 460 && x.x < 690,
     );
@@ -505,12 +507,14 @@ function planRost12(): Plan {
 }
 
 /** Sieben Kletterer, eine Naht, ein Riegel — die Grube sortiert den Rest. */
-function planRost13(): Plan {
+function planRost13(anzahl = 9): Plan {
   let n = 0;
   let bombed = false;
   let gerammt = false;
   return (w) => {
-    if (n < 7) {
+    // Neun Kletterer seit der Design-Runde: Acht kommen durch, einer wird
+    // am Riegel zum Sprengmeister — Marge 2 ueber der Quote von 6.
+    if (n < anzahl) {
       const c = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber);
       if (c && w.assign(c.id, 'climber')) n++;
       return;
@@ -815,7 +819,7 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w3-10': planRost10,
   'w3-11': planRost11,
   'w3-12': planRost12,
-  'w3-13': planRost13,
+  'w3-13': () => planRost13(9),
   'w4-01': planFrost1,
   'w4-02': planFrost2,
   'w4-03': planFrost3,
@@ -846,11 +850,26 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w5-12': planRost4,
   'w5-13': planRost11,
   'w5-14': planLevel10,
-  'w5-15': planRost13,
+  'w5-15': () => planRost13(9),
 };
 
 function planFor(level: LevelDef): Plan {
   return PLANS[level.id](level);
+}
+
+/**
+ * Rot-Test: Der geerbte Altplan darf dieses Level NICHT mehr loesen.
+ *
+ * Abnahmekriterium der Entklonung (Design-Runde, Leitsatz 3): Ein Level
+ * gilt erst als eigenstaendig, wenn die Musterloesung seines Vorbilds
+ * nachweislich scheitert. Gruen waere der Beweis, dass sich nur die Farbe
+ * geaendert hat.
+ */
+function erwarteRot(levelId: string, altplan: (level: LevelDef) => Plan): void {
+  const level = levelById(levelId);
+  if (!level) throw new Error(`Level ${levelId} fehlt`);
+  const w = play(level, altplan(level));
+  expect(w.phase, `${levelId}: der Altplan muesste scheitern`).toBe('lost');
 }
 
 describe('Alle Level sind lösbar', () => {
@@ -867,6 +886,63 @@ describe('Alle Level sind lösbar', () => {
       const w = play(level, planFor(level));
       expect(w.skillsUsed, level.id).toBeLessThanOrEqual(level.par);
     }
+  });
+});
+
+describe('Messlauf', () => {
+  // "Kein Wert ohne Messung" (Design-Runde, Leitsatz 2): Der Bericht ist
+  // die Quittung, an der Uhren (Faktor x Planzeit), Quoten (Rettungszahl
+  // minus Marge) und Ueberschuss (Werkzeuge minus Par) kalibriert werden.
+  // Er wird bei jedem Testlauf neu geschrieben und eingecheckt — wer eine
+  // Zahl aendert, sieht im Diff, was sie wirklich bewirkt.
+  it('schreibt docs/messlauf.json — die Quittung jeder Musterlösung', async () => {
+    const { writeFileSync } = await import('node:fs');
+    const bericht = LEVELS.map((level) => {
+      // Wie `play`, aber mit Blick auf die Uhrkalibrierung: Viele Laeufe
+      // enden erst mit der Uhr, weil ein Blocker stehen bleibt — fuer die
+      // Uhr zaehlt die LETZTE RETTUNG, nicht das Laufende.
+      const w = createWorld(level);
+      const plan = planFor(level);
+      const maxTicks = w.timeLimitTicks > 0 ? w.timeLimitTicks + 2 : 60 * 300;
+      let letzteRettungTick = 0;
+      let quoteTick = 0;
+      while (w.phase === 'running' && w.tickCount < maxTicks) {
+        plan(w);
+        const vorher = w.saved;
+        w.tick();
+        if (w.saved > vorher) {
+          letzteRettungTick = w.tickCount;
+          if (vorher < level.needed && w.saved >= level.needed) quoteTick = w.tickCount;
+        }
+      }
+      const werkzeuge = Object.values(level.skills).reduce((a, b) => a + b, 0);
+      const benutzt: Record<string, number> = {};
+      for (const [skill, anzahl] of Object.entries(level.skills)) {
+        const rest = w.skills[skill as keyof typeof w.skills] ?? 0;
+        if (anzahl - rest > 0) benutzt[skill] = anzahl - rest;
+      }
+      return {
+        id: level.id,
+        name: level.name,
+        planTicks: w.tickCount,
+        letzteRettungSek: Number((letzteRettungTick / 60).toFixed(1)),
+        quoteSek: Number((quoteTick / 60).toFixed(1)),
+        uhrSek: w.timeLimitTicks / 60,
+        uhrFaktor:
+          letzteRettungTick > 0 ? Number((w.timeLimitTicks / letzteRettungTick).toFixed(2)) : null,
+        gerettet: w.saved,
+        total: level.total,
+        quote: level.needed,
+        quotenMarge: w.saved - level.needed,
+        par: level.par,
+        vergaben: w.skillsUsed,
+        benutzt,
+        werkzeuge,
+        ueberschuss: werkzeuge - level.par,
+      };
+    });
+    writeFileSync('docs/messlauf.json', `${JSON.stringify(bericht, null, 1)}\n`);
+    for (const b of bericht) expect(b.gerettet, b.id).toBeGreaterThanOrEqual(b.quote);
   });
 });
 

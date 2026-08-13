@@ -148,7 +148,9 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 160 },
     exit: { x: 400, y: 270, w: 32, h: 26 },
     total: 16,
-    needed: 10,
+    // 13 statt 10 (Design-Runde, Messregel): Die Musterloesung rettet
+    // 15 — eine Quote fuenf darunter prueft nichts. Marge 2.
+    needed: 13,
     timeLimitSec: 200,
     releaseRate: 55,
     minReleaseRate: 30,
@@ -388,7 +390,9 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 140 },
     exit: { x: 368, y: 384, w: 32, h: 26 },
     total: 16,
-    needed: 8,
+    // 12 statt 8 (Design-Runde, Messregel): Die Musterloesung rettet 14.
+    // Marge 2 — die Pruefung verlangt jetzt fast alle, nicht die Haelfte.
+    needed: 12,
     timeLimitSec: 260,
     releaseRate: 50,
     minReleaseRate: 25,

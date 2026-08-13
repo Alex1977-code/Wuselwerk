@@ -170,6 +170,7 @@ export function drawResult(
   parKnown: boolean,
   hasNext: boolean,
   zeit = Infinity,
+  lebenNotiz: string | null = null,
 ): Button[] {
   const won = world.saved >= world.needed;
   const b = panel(ctx, L, 356);
@@ -208,7 +209,15 @@ export function drawResult(
     b.y + 192,
   );
   if (!parKnown) {
-    ctx.fillText('Die Par-Zahl erscheint nach dem ersten Sieg.', b.x + b.w / 2, b.y + 208);
+    ctx.fillText('Die Par-Zahl erscheint nach dem ersten Sieg.', b.x + b.w / 2, b.y + 202);
+  }
+  // Die Herzschutzregel sagt es dazu — eine stille Gnade waere keine:
+  // Wer nicht erfaehrt, dass die Uhr-Niederlage nichts gekostet hat,
+  // spielt beim naechsten Mal genauso aengstlich.
+  if (lebenNotiz) {
+    ctx.fillStyle = COL.good;
+    ctx.font = '600 12px system-ui, sans-serif';
+    ctx.fillText(lebenNotiz, b.x + b.w / 2, b.y + 216);
   }
 
   const ids = won && hasNext ? ['next', 'retry', 'menu'] : ['retry', 'menu'];

@@ -17,6 +17,7 @@
     "atlas:backen": "node scripts/bake-atlas.mjs"
   },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "lamejs": "^1.2.1",
     "playwright": "^1.49.0",
     "three": "^0.170.0",

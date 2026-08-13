@@ -127,11 +127,15 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 120, y: 320 },
     exit: { x: 840, y: 360, w: 32, h: 28 },
     total: 20,
-    needed: 14,
-    timeLimitSec: 200,
+    // 17 statt 14 (Design-Runde): Die Musterloesung rettet 18 — hier ist
+    // die eine erlaubte Marge-1-Pruefung der Welt. Uhr 130 statt 200: die
+    // letzte Rettung faellt bei ~108 s, die Sprengung muss ins Fenster
+    // zwischen Bruecke 1 und Pulkankunft, nicht irgendwann.
+    needed: 17,
+    timeLimitSec: 130,
     releaseRate: 70,
     minReleaseRate: 30,
-    skills: sk({ builder: 6, blocker: 2, bomber: 2 }),
+    skills: sk({ builder: 6, blocker: 2, bomber: 1 }),
     par: 6,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
@@ -288,12 +292,16 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 350 },
     exit: { x: 860, y: 400, w: 32, h: 26 },
     total: 16,
-    needed: 6,
-    timeLimitSec: 240,
+    // 8 statt 6 (Design-Runde): Der Stahlkamm laesst nur Kletterer mit
+    // Schirm hinueber, je acht im Vorrat — die Quote fordert jetzt alle
+    // acht Paare, nicht sechs mit zwei Fehlern Luft. Par folgt der
+    // vollen Musterloesung (8 Paare + Brueckenkette).
+    needed: 8,
+    timeLimitSec: 150,
     releaseRate: 45,
     minReleaseRate: 25,
     skills: sk({ builder: 3, climber: 8, floater: 8, blocker: 2 }),
-    par: 14,
+    par: 18,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 960, h: 24, mat: MAT.ROCK },
       { t: 'ground', x: 0, w: 400, y: 420, h: 180, mat: MAT.ROCK, rough: 2 },
@@ -378,11 +386,15 @@ export const WELT3_LEVELS: LevelDef[] = [
     exit: { x: 744, y: 420, w: 32, h: 26 },
     total: 16,
     needed: 6,
-    timeLimitSec: 260,
+    // 140 statt 260 (letzte Rettung bei ~84 s) und Werkzeugschnitt
+    // +10 -> +2: neun Kletterer (acht kommen durch, einer wird am Riegel
+    // zum Sprengmeister), zwei Bomben, zwei Rammer — sonst nichts. Die
+    // Quote bleibt 6, die Marge 2 traegt einen Fehltipp im Pulk.
+    timeLimitSec: 140,
     releaseRate: 55,
     minReleaseRate: 25,
-    skills: sk({ climber: 8, bomber: 3, basher: 2, blocker: 2, floater: 2, builder: 2 }),
-    par: 9,
+    skills: sk({ climber: 9, bomber: 2, basher: 2 }),
+    par: 11,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 960, h: 24, mat: MAT.ROCK },
       // Der Westboden mit der Grube: Sie faengt jeden, der nicht klettert.

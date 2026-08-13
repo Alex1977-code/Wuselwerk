@@ -43,7 +43,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 100,
     releaseRate: 55,
     minReleaseRate: 35,
-    skills: sk({ digger: 2 }),
+    skills: sk({ digger: 1 }),
     par: 0,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
@@ -89,7 +89,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 100,
     releaseRate: 55,
     minReleaseRate: 25,
-    skills: sk({ builder: 6, blocker: 2, bomber: 2, digger: 1, basher: 1 }),
+    skills: sk({ builder: 3, blocker: 1, bomber: 1 }),
     par: 4,
     paint: [
       { t: 'ground', x: 0, w: 368, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
@@ -140,10 +140,10 @@ export const WELT5_LEVELS: LevelDef[] = [
     exit: { x: 80, y: 360, w: 32, h: 26 },
     total: 20,
     needed: 12,
-    timeLimitSec: 100,
+    timeLimitSec: 85,
     releaseRate: 45,
     minReleaseRate: 20,
-    skills: sk({ blocker: 2, builder: 3, digger: 2, basher: 2, floater: 2 }),
+    skills: sk({ blocker: 1, builder: 2 }),
     // Blocker plus Brücke. Beides muss sitzen, bevor der Pulk da ist — deshalb
     // ist dieses Level das erste, das zwei Dinge *gleichzeitig* verlangt.
     par: 2,
@@ -171,10 +171,10 @@ export const WELT5_LEVELS: LevelDef[] = [
     exit: { x: 560, y: 354, w: 36, h: 26 },
     total: 14,
     needed: 10,
-    timeLimitSec: 80,
+    timeLimitSec: 60,
     releaseRate: 65,
     minReleaseRate: 20,
-    skills: sk({ digger: 3, basher: 3, blocker: 1 }),
+    skills: sk({ digger: 2, basher: 1 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
@@ -200,7 +200,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 110,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ miner: 3, digger: 2, blocker: 2 }),
+    skills: sk({ miner: 2 }),
     par: 1,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
@@ -249,10 +249,10 @@ export const WELT5_LEVELS: LevelDef[] = [
     exit: { x: 620, y: 282, w: 32, h: 24 },
     total: 10,
     needed: 6,
-    timeLimitSec: 80,
+    timeLimitSec: 65,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ climber: 8, basher: 2, blocker: 2, builder: 2 }),
+    skills: sk({ climber: 7 }),
     // Sechs Kletterer für sechs Gerettete: Der Kletterer ist eine *persönliche*
     // Gabe, keine Bauleistung. Wer das begriffen hat, löst das Level mit
     // genau so vielen Zuweisungen, wie Figuren durchkommen müssen.
@@ -308,7 +308,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 100,
     releaseRate: 50,
     minReleaseRate: 25,
-    skills: sk({ digger: 3, basher: 3, blocker: 1 }),
+    skills: sk({ digger: 2, basher: 1 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
@@ -339,7 +339,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 140,
     releaseRate: 70,
     minReleaseRate: 30,
-    skills: sk({ builder: 6, blocker: 2, bomber: 2 }),
+    skills: sk({ builder: 5, blocker: 1, bomber: 1 }),
     par: 6,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
@@ -428,12 +428,16 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 80, y: 300 },
     exit: { x: 744, y: 420, w: 32, h: 26 },
     total: 16,
-    needed: 6,
-    timeLimitSec: 240,
+    // Quote 7 statt 6 — die eine Marge-1-Pruefung der Welt: Neun
+    // Kletterer, acht kommen durch (einer wird am Riegel zum
+    // Sprengmeister), sieben muessen heim. Ein Finale darf beissen;
+    // die Uhr-Niederlage kostet dank Herzschutz kein Leben.
+    needed: 7,
+    timeLimitSec: 170,
     releaseRate: 60,
     minReleaseRate: 25,
-    skills: sk({ climber: 8, bomber: 3, basher: 2, blocker: 2, floater: 2, builder: 2 }),
-    par: 9,
+    skills: sk({ climber: 9, bomber: 2, basher: 2 }),
+    par: 11,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 960, h: 24, mat: MAT.ROCK },
       // Der Westboden mit der Grube: Sie faengt jeden, der nicht klettert.

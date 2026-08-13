@@ -10,6 +10,13 @@
  * - **Abzug nur für ein verlorenes Level** — und für einen Abbruch nach der
  *   Schnupperfrist (30 s): Wer ein Level ansieht und gleich wieder geht, hat
  *   nichts verbraucht; wer kurz vor der Niederlage den Stecker zieht, schon.
+ * - **Herzschutzregel** (Leveldesign-Runde, Leitsatz 4): Eine Niederlage,
+ *   bei der die **Uhr** abgelaufen ist, kostet kein Leben. Die geschärften
+ *   Uhren machen den ersten Versuch oft zum Lernversuch — Denkzeit darf
+ *   kein Kennenlern-Leben fressen. Eine Niederlage mit Restzeit (alle
+ *   verloren) zahlt weiterhin. Umgesetzt in `Game.finish`.
+ * - **Lebensfreier Lehrgang**: w1-01 bis w1-07 kosten nie ein Leben, auf
+ *   keinem Weg (`lebensfrei` unten).
  * - **Tagesbudget statt Regeneration.** Kein „nächstes Leben in 27:14", kein
  *   Zurückhol-Wecker: Um Mitternacht (Gerätezeit) ist der Vorrat wieder voll,
  *   vorher nicht. Das ist für Eltern und Kinder transparent und wirkt als
@@ -33,6 +40,21 @@ export const LEBEN_PRO_TAG = 5;
 export const VIDEOS_PRO_TAG = 3;
 /** Schnupperfrist: Abbruch vor dieser Spielzeit kostet nichts, in Sekunden. */
 export const FREI_SEKUNDEN = 30;
+
+/**
+ * Der lebensfreie Lehrgang — w1-01 bis w1-07 kosten nie ein Leben.
+ *
+ * Beschluss der Leveldesign-Runde (Leitsatz 4, `docs/leveldesign-runde.md`):
+ * Haerte darf Denkzeit kosten, nie Kennenlern-Leben. Die sieben
+ * Lehrgangslevel stellen je ein Konzept vor; wer dort scheitert, lernt
+ * gerade — ein Lebensabzug dafuer bestraft das Lernen selbst. Die Grenze
+ * liegt vor dem Kapitel "Pruefung" (w1-08), wo das Sterntor die Kurve
+ * ohnehin anzieht.
+ */
+export function lebensfrei(levelId: string): boolean {
+  const m = /^w1-0([1-7])$/.exec(levelId);
+  return m !== null;
+}
 
 export interface LebenStand {
   /** Kalendertag der Gerätezeit, als `YYYY-MM-DD`. */

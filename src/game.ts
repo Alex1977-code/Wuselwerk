@@ -49,6 +49,7 @@ import {
   heuteTag,
   ladeLeben,
   lebenUnbegrenzt,
+  lebensfrei,
   speichereLeben,
   tagesWechsel,
   videoEinloesen,
@@ -148,6 +149,8 @@ export class Game {
   private readonly ohneLeben = lebenUnbegrenzt();
   private lebenTafel = false;
   private lebenVerbucht = false;
+  /** Warum diese Niederlage kein Leben kostete — `null` heisst: sie kostete. */
+  private lebenNotiz: string | null = null;
   private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
   // Spielerprofil: Name und Avatarfarbe (profil.ts).
@@ -360,9 +363,13 @@ export class Game {
    * Aufgerufen von der Niederlage (`finish`) und vom Abbruch nach der
    * Schnupperfrist (`onOverlayButton`). Wer erst abbricht und dann doch
    * verliert, zahlt trotzdem nur ein Leben.
+   *
+   * Der Lehrgang (w1-01 bis w1-07) ist grundsaetzlich lebensfrei — auf
+   * jedem Weg, auch beim Abbruch. Siehe `lebensfrei` in `leben.ts`.
    */
   private verbucheLeben(): void {
     if (this.ohneLeben || this.lebenVerbucht) return;
+    if (lebensfrei(this.level.id)) return;
     this.lebenVerbucht = true;
     this.leben = abziehen(tagesWechsel(this.leben, heuteTag()));
     speichereLeben(this.leben);
@@ -902,7 +909,22 @@ export class Game {
     recordResult(this.level, this.world);
     this.progress = loadProgress();
     const gewonnen = this.world.saved >= this.world.needed;
-    if (!gewonnen) this.verbucheLeben();
+    // Die Herzschutzregel (Design-Runde, Leitsatz 4): Eine Uhr-Niederlage
+    // kostet kein Leben. Bei den geschaerften Uhren ist der erste Versuch
+    // oft ein Lernversuch — Denkzeit darf kein Kennenlern-Leben fressen.
+    // Eine Niederlage MIT Restzeit (alle verloren, Quote unerreichbar)
+    // zahlt weiterhin; der Abbruch nach der Schnupperfrist auch.
+    const uhrNiederlage =
+      this.world.timeLimitTicks > 0 && this.world.tickCount >= this.world.timeLimitTicks;
+    this.lebenNotiz =
+      !gewonnen && !this.ohneLeben && !this.lebenVerbucht
+        ? lebensfrei(this.level.id)
+          ? 'Lehrgang — kostet kein Leben.'
+          : uhrNiederlage
+            ? 'Kostet kein Leben — nur die Uhr war schneller.'
+            : null
+        : null;
+    if (!gewonnen && !uhrNiederlage) this.verbucheLeben();
     const alle = gewonnen && this.world.saved === this.level.total;
     const bestwert = gewonnen && this.conditions.filter(Boolean).length > (vorher?.stars ?? 0);
     this.audio.levelEnde(gewonnen, alle, bestwert);
@@ -1578,6 +1600,7 @@ export class Game {
         parKnown,
         i + 1 < LEVELS.length,
         seit,
+        this.lebenNotiz,
       );
       // Jeder Stern klingt in dem Moment, in dem er ploppt — dasselbe Pling
       // wie im Spiel, drei Stufen steigend (Kritik G8 und S4 in einem).
