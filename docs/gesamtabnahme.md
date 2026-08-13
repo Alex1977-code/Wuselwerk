@@ -159,6 +159,59 @@ und w5-09 „Kaminzug" ist anstrengend-fair: Die Testperson gewann es im
 fünften Anlauf mit 5/5 unter Par — der Pulk wartete dabei die ganze
 Zeit sicher im ummauerten Vorhof.
 
+### 6b. Zweite Hälfte des Panels: Erstkontakt und Systeme
+
+Die beiden übrigen Testpersonen (frisches Gerät wie ein Kind; und alles
+rund ums Spiel) fanden zwei weitere Blocker und einen echten
+Anzeigefehler.
+
+**Der stumme Tipp.** Der wahrscheinlichste erste Handgriff eines Kindes
+ist, die kleine Figur anzutippen — und der löste nichts aus: kein Ton,
+kein Blinken, nichts. Die einzige Erklärung stand klein am unteren
+Rand. Die Testperson: „tippt drei-, viermal und hält das Spiel für
+kaputt." Ihr erster ehrlicher Anlauf scheiterte genau daran (sie tippte
+auf eine *fallende* Figur — auch das wurde stumm verschluckt) und sie
+sah 90 Sekunden ratlos zu. Jetzt **antwortet die Leiste**: Wer ohne
+Berufswahl ins Spielfeld tippt, sieht die noch vorrätigen Knöpfe warm
+aufleuchten, dazu der leise Quittungston. Und der Griff nach einer
+Figur, die den Beruf gerade nicht annehmen kann, bekommt dasselbe
+sichtbare Nein wie ein Griff ins Leere.
+
+**Das unsichtbare Hindernis.** Ab w1-02 liegt die Aufgabe außerhalb des
+Handybildschirms; die Testperson musste blind wischen, während die Uhr
+lief. In w1-03 „Der Abgrund" scheiterte sie **sechsmal**, meist mit
+20/20 Toten. Zwei Antworten darauf, beide vom Konzept vorgezeichnet:
+*Erstens* heißt die Lesemodus-Regel jetzt nicht mehr „ab Weltmitte",
+sondern **„wer die Aufgabe nicht im Bild hat, darf erst schauen"** —
+jedes Level, das nicht ins Sichtfeld passt, beginnt mit stehender Uhr
+und freier Karte. Marketing hatte diesen Fall vorgesehen (Strittig 3:
+„Fällt w1-08 im Familientest bei Verstehen-vor-Start durch, kommt die
+Klappe auch nach W1"); er ist eingetreten. *Zweitens* bekommt die
+Schlucht in w1-03 einen Grund 72 tief — überlebbar, ohne Rückweg. Wer
+hineinläuft, wartet dort sichtbar, statt zu sterben; die Lehre bleibt,
+denn ohne Brücke kommt niemand hinüber. Nachmessung: kein Toter mehr
+bei Untätigkeit, die Musterlösung rettet weiter 19 von 20.
+
+**Die Niederlagen-Ansage zeigte falsche Zahlen.** Der Satz, der die
+Niederlage erklären soll, wurde einzeilig ohne Umbruch gezeichnet und
+lief auf dem Handy an *beiden* Enden aus dem Bild — aus „15 fehlten"
+wurde sichtbar „5 fehlten". Eine Erklärung, die falsche Zahlen zeigt,
+ist schlimmer als keine. Sie bricht jetzt um, und die Tafel wächst
+mit; alles darunter rückt nach.
+
+**Das stumme Sterntor.** Ein Tipp auf ein gesperrtes Level tat sichtbar
+gar nichts, und die geforderte Sternzahl war ausgerechnet dort von der
+Wanderfigur verdeckt („★12" las sich als „★ 2"). Jetzt antwortet die
+Karte („Noch 6 Sterne — dann öffnet sich das Tor."), und die
+Tor-Plakette wird nach der Figur gezeichnet, liegt also immer oben.
+
+Bestätigt hat dieses Panel-Paar außerdem den ganzen Systemunterbau:
+Leben-Geschenk, Tageswechsel, Video-Nachschlag, Herzschutz samt
+Gegenprobe, Profil-Tafel mit den zwölf Porträts und die Bilanz — alles
+einzeln nachgemessen, alles wie vorgesehen. Und den ersten Moment:
+Titelbild in 300 ms, genau ein goldener Punkt auf der Karte, in w1-01
+genau ein scharfer Knopf.
+
 ## 7. Offene Punkte nach der Abnahme
 
 1. **Familientest mit echten Menschen** — die drei gesetzten Werte
@@ -172,7 +225,12 @@ Zeit sicher im ummauerten Vorhof.
    Raten-Oval verrät seine Ziehfunktion nicht (ein Tipp erhöht nur, das
    Senken geht ausschließlich per Ziehen), und am Desktop fehlt ein
    Zoom per Mausrad — Pinch gibt es nur auf dem Glas.
-5. **Einmal-Werkzeuge und Fehltipps**: Trifft der Sprengmeister in
+5. **Berufe werden nie vorgestellt**: Die Zahl der scharfen Knöpfe
+   springt von 1 (w1-01) auf 4 (w1-02) auf 5 (w1-03), die Knöpfe sind
+   unbeschriftete Bilder, und der Hinweistext nennt den Beruf beim
+   Namen — das Kind muss vom Wort aufs Symbol schließen. Eine einmalige
+   Vorstellung je neuem Beruf fehlt.
+6. **Einmal-Werkzeuge und Fehltipps**: Trifft der Sprengmeister in
    w5-09 die falsche Figur, ist das Level rechnerisch verloren, läuft
    aber stumm weiter. Ein Hinweis „so ist es nicht mehr zu schaffen"
    (oder der Rücklauf-Wink) wäre die freundlichere Antwort.

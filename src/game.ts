@@ -166,6 +166,17 @@ export class Game {
    * den ganzen Lauf. Jetzt schaerft der erste Tipp, der zweite zuendet.
    */
   private nukeScharfBis = 0;
+  /**
+   * Bis wann die Berufsleiste winkt (ms, `performance.now`).
+   *
+   * Der haeufigste erste Handgriff eines Kindes ist, die Figur anzutippen —
+   * und der lief ins Leere, weil ohne gewaehlten Beruf gar nichts geschah
+   * (Spieltest-Runde: „tippt drei-, viermal und haelt das Spiel fuer
+   * kaputt"). Jetzt antwortet das Spiel: Die Leiste hebt sich, die noch
+   * vorraetigen Knoepfe leuchten auf. Der Satz „Erst Beruf waehlen" steht
+   * damit nicht mehr nur klein am Rand, sondern zeigt auf sich selbst.
+   */
+  private leisteWinktBis = 0;
   private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
   // Spielerprofil: Name und Avatarfarbe (profil.ts).
@@ -189,6 +200,9 @@ export class Game {
   /** Wohin die Karte gleiten soll. Sie folgt weich, statt zu springen. */
   private karteZiel = 0;
   private karteTreffer: KarteTreffer[] = [];
+  /** Kurze Antwort auf einen Tipp, der nicht weiterfuehrt (Sterntor). */
+  private karteHinweis = '';
+  private karteHinweisBis = 0;
   /**
    * Die laufende Wanderung der Figur.
    *
@@ -331,14 +345,22 @@ export class Game {
     // Die Startklappe (Level-Konzept, Paket 0): Ab der Weltmitte beginnt
     // jedes Level im Lesemodus — kein dunkler Vorhang, die Karte ist frei
     // schwenkbar, die Uebersichtskarte antippbar, und erst „Los" oeffnet
-    // Klappe und Uhr gemeinsam. Denken ist gratis, und man sieht es. Die
-    // fruehe Welthaelfte behaelt die Tafel: Dort passt die Aufgabe in einen
-    // Blick, und die Tafel erklaert mehr, als die Karte zeigen koennte.
-    const kennung = /^w(\d+)-(\d+)$/.exec(level.id);
-    const weltNr = kennung ? Number(kennung[1]) : 1;
-    const levelNr = kennung ? Number(kennung[2]) : 1;
-    const weltGroesse = LEVELS.filter((l) => l.id.startsWith(`w${weltNr}-`)).length;
-    this.lesemodus = weltNr >= 2 && levelNr > weltGroesse / 2;
+    // Klappe und Uhr gemeinsam. Denken ist gratis, und man sieht es.
+    //
+    // Die Regel heisst seit der Spieltest-Runde nicht mehr „ab Weltmitte",
+    // sondern: **Wer die Aufgabe nicht im Bild hat, darf erst schauen.**
+    // Der Erstkontakt-Test scheiterte genau daran — ab w1-02 liegt das
+    // Hindernis ausserhalb des Handybildschirms, und die Testperson musste
+    // blind wischen, waehrend die Uhr lief und die ersten Figuren in den
+    // Abgrund liefen. Marketing hatte den Fall vorgesehen (Strittig 3:
+    // „Faellt w1-08 im Familientest bei Verstehen-vor-Start durch, kommt
+    // die Klappe auch nach W1") — er ist eingetreten, hier ist die Klappe.
+    // Wo das Level ganz ins Sichtfeld passt (w1-01), bleibt die Tafel: Sie
+    // erklaert dort mehr, als die Karte zeigen koennte.
+    const sicht = this.camera.view(this.layout.play);
+    const sichtbarB = sicht.box.w / sicht.scale;
+    const sichtbarH = sicht.box.h / sicht.scale;
+    this.lesemodus = level.width > sichtbarB + 1 || level.height > sichtbarH + 1;
     this.simAcc = 0;
     this.nachspiel = -1;
     this.lebenVerbucht = false;
@@ -1112,6 +1134,9 @@ export class Game {
         gesteMerken('halten');
       }
     } else if (this.selected && this.aim && this.phase === 'running') {
+      // Auch der Griff nach einer Figur, die den Beruf gerade nicht annehmen
+      // kann (im Fall, schon Blocker, Zuender laeuft), bekommt sein Nein —
+      // vorher war er vom „da war niemand" nicht zu unterscheiden.
       // Der Fehltipp bekommt eine Quittung (Kritik F3b). Vorher verpuffte er
       // voellig stumm — man wusste nicht, ob man daneben lag oder der Beruf
       // ungueltig war. Jetzt: ein kurzer Leerring an der Stelle und ein sehr
@@ -1346,6 +1371,12 @@ export class Game {
         return;
       }
 
+      if (!this.selected && this.phase === 'running') {
+        // Kein Beruf gewaehlt: Der Tipp auf eine Figur ist keine Fehlbedienung,
+        // sondern eine Frage. Die Leiste antwortet.
+        this.leisteWinktBis = performance.now() + 900;
+        this.audio.daneben();
+      }
       const others = [...this.pointers.values()].filter((p) => p.role === 'aim' || p.role === 'pinch');
       const ps: PointerState = { id: e.pointerId, x, y, startX: x, startY: y, role: 'aim' };
       if (others.length >= 1) {
@@ -1487,6 +1518,19 @@ export class Game {
       // ein Kartenbildschirm machen kann.
       const strecke = Math.hypot(ps.x - ps.startX, ps.y - ps.startY);
       if (strecke <= KARTE_TIPP) {
+        // Ein gesperrter Punkt bleibt gesperrt — aber er antwortet
+        // (Spieltest-Runde: Tippen auf ein Sterntor tat sichtbar nichts).
+        const zu = this.karteTreffer.find((t) => !t.offen && inBox(t, ps.x, ps.y));
+        if (zu) {
+          const fehlt = zu.fehlendeSterne ?? 0;
+          this.karteHinweis =
+            fehlt > 0
+              ? `Noch ${fehlt} ${fehlt === 1 ? 'Stern' : 'Sterne'} — dann öffnet sich das Tor.`
+              : 'Erst das Level davor schaffen.';
+          this.karteHinweisBis = performance.now() + 2600;
+          this.audio.werkzeugFehlt();
+          return;
+        }
         const hit = this.karteTreffer.find((t) => t.offen && inBox(t, ps.x, ps.y));
         if (hit) {
           const lv = LEVELS.find((l) => l.id === hit.id);
@@ -1634,6 +1678,7 @@ export class Game {
       });
       this.drawLeben(ctx);
       this.drawProfil(ctx);
+      if (this.karteHinweisBis > performance.now()) this.drawKarteHinweis(ctx);
       this.buttons = [];
       return;
     }
@@ -1868,11 +1913,38 @@ export class Game {
     ctx.restore();
   }
 
+  /**
+   * Die Antwort auf einen Tipp ans verschlossene Tor.
+   *
+   * Eine Fahne quer ueber der Karte, keine Tafel: Sie sagt, was fehlt, und
+   * verschwindet von selbst — niemand muss sie wegtippen.
+   */
+  private drawKarteHinweis(ctx: CanvasRenderingContext2D): void {
+    const L = this.layout;
+    ctx.save();
+    ctx.font = '600 13px system-ui, sans-serif';
+    const tw = Math.min(L.cssW - 32, ctx.measureText(this.karteHinweis).width + 28);
+    const x = L.cssW / 2 - tw / 2;
+    const y = L.cssH * 0.5 - 22;
+    ctx.fillStyle = 'rgba(10, 14, 22, 0.9)';
+    roundRect(ctx, x, y, tw, 36, 10);
+    ctx.fill();
+    ctx.strokeStyle = COL.accent;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = COL.text;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.karteHinweis, L.cssW / 2, y + 19);
+    ctx.restore();
+  }
+
   private hudState() {
     return {
       level: this.level,
       world: this.world,
       selected: this.selected,
+      leisteWinkt: this.leisteWinktBis > performance.now(),
       cameraFollow: this.camera.follow,
       muted: this.audio.muted,
       atlas: this.atlas,

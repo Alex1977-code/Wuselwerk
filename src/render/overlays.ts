@@ -44,6 +44,25 @@ function button(
   ctx.fillText(label, b.x + b.w / 2, b.y + b.h / 2 + 1);
 }
 
+/** Zerlegt einen Satz in Zeilen, ohne zu zeichnen — die Tafel muss ihre
+ *  Hoehe kennen, bevor sie gemalt wird. Der Aufrufer setzt die Schrift. */
+function zeilenFuer(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const words = text.split(' ');
+  const out: string[] = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxW && line) {
+      out.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
+
 function wrap(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -52,20 +71,8 @@ function wrap(
   maxW: number,
   lh: number,
 ): number {
-  const words = text.split(' ');
-  let line = '';
   let cy = y;
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width > maxW && line) {
-      ctx.fillText(line, x, cy);
-      cy += lh;
-      line = word;
-    } else {
-      line = test;
-    }
-  }
-  if (line) {
+  for (const line of zeilenFuer(ctx, text, maxW)) {
     ctx.fillText(line, x, cy);
     cy += lh;
   }
@@ -224,7 +231,12 @@ export function drawResult(
   verlustAnsage: string | null = null,
 ): Button[] {
   const won = world.saved >= world.needed;
-  const b = panel(ctx, L, 356);
+  // Die Tafel waechst mit der Ansage: Ein zweizeiliger Grund darf die
+  // Sternbedingungen nicht aus der Tafel schieben (Spieltest-Runde).
+  ctx.font = '500 12px system-ui, sans-serif';
+  const ansageZeilen =
+    !won && verlustAnsage ? zeilenFuer(ctx, verlustAnsage, L.play.w - 96).length : 0;
+  const b = panel(ctx, L, 356 + Math.max(0, ansageZeilen - 1) * 14 + (parKnown ? 0 : 8));
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = won ? COL.good : COL.bad;
@@ -240,11 +252,20 @@ export function drawResult(
   // Die Fortschritts-Ansage (Level-Konzept, Paket 0): Wie weit war man,
   // woran lag es. Aus einer Niederlage mit Grund wird ein Plan — und ein
   // Plan ist ein Grund, es gleich noch einmal zu versuchen.
+  let ansageEnde = b.y + 114;
   if (!won && verlustAnsage) {
     ctx.fillStyle = COL.dim;
     ctx.font = '500 12px system-ui, sans-serif';
-    ctx.fillText(verlustAnsage, b.x + b.w / 2, b.y + 114);
+    // Umbrechen, nicht ueberlaufen (Spieltest-Runde): Die Uhr-Ansagen sind
+    // laenger als das Handy breit ist, und eine ueberlaufende Zeile wird
+    // an BEIDEN Enden abgeschnitten — aus „15 fehlten" wurde sichtbar
+    // „5 fehlten". Eine Erklaerung, die falsche Zahlen zeigt, ist
+    // schlimmer als keine.
+    ansageEnde = wrap(ctx, verlustAnsage, b.x + b.w / 2, b.y + 114, b.w - 36, 14);
   }
+  // Was unter der Ansage steht, rueckt nach — eine zweizeilige Ansage
+  // schob sich sonst in die Sternbedingungen.
+  const versatz = Math.max(0, ansageEnde - (b.y + 128));
 
   // Die drei Sternbedingungen einzeln — sonst rät man, welcher fehlt.
   const parLabel = parKnown ? `Unter Par (${level.par})` : 'Unter Par (?)';
@@ -252,7 +273,7 @@ export function drawResult(
   ctx.textAlign = 'left';
   ctx.font = '500 12px system-ui, sans-serif';
   rows.forEach((label, i) => {
-    const y = b.y + 128 + i * 19;
+    const y = b.y + 128 + versatz + i * 19;
     ctx.fillStyle = conditions[i] ? COL.accent : '#414c60';
     ctx.fillText(conditions[i] ? '★' : '☆', b.x + 34, y);
     ctx.fillStyle = conditions[i] ? COL.text : COL.dim;
@@ -266,10 +287,15 @@ export function drawResult(
   ctx.fillText(
     `${n} ${n === 1 ? 'Beruf' : 'Berufe'} vergeben`,
     b.x + b.w / 2,
-    b.y + 192,
+    b.y + 192 + versatz,
   );
   if (!parKnown) {
-    ctx.fillText('Die Par-Zahl erscheint nach dem ersten Sieg.', b.x + b.w / 2, b.y + 202);
+    // Vier Punkte Luft mehr: Die Zeilen klebten aneinander (Spieltest).
+    ctx.fillText(
+      'Die Par-Zahl erscheint nach dem ersten Sieg.',
+      b.x + b.w / 2,
+      b.y + 207 + versatz,
+    );
   }
   // Die Herzschutzregel sagt es dazu — eine stille Gnade waere keine:
   // Wer nicht erfaehrt, dass die Uhr-Niederlage nichts gekostet hat,
@@ -277,7 +303,7 @@ export function drawResult(
   if (lebenNotiz) {
     ctx.fillStyle = COL.good;
     ctx.font = '600 12px system-ui, sans-serif';
-    ctx.fillText(lebenNotiz, b.x + b.w / 2, b.y + 216);
+    ctx.fillText(lebenNotiz, b.x + b.w / 2, b.y + 216 + versatz);
   }
 
   const ids = won && hasNext ? ['next', 'retry', 'menu'] : ['retry', 'menu'];
@@ -288,7 +314,7 @@ export function drawResult(
   const bs: Button[] = ids.map((id, i) => ({
     id,
     x: b.x + 30,
-    y: b.y + 232 + i * 42,
+    y: b.y + 232 + versatz + i * 42,
     w: b.w - 60,
     h: 36,
   }));

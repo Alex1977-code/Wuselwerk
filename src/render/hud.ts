@@ -48,6 +48,15 @@ export interface HudState {
    * andere Tipp und drei Sekunden Warten entschaerfen wieder.
    */
   nukeScharf: boolean;
+  /**
+   * Winkt die Berufsleiste gerade?
+   *
+   * Wer eine Figur antippt, ohne einen Beruf gewaehlt zu haben, bekam gar
+   * keine Antwort (Spieltest-Runde — der haeufigste erste Handgriff eines
+   * Kindes lief ins Leere). Jetzt heben sich fuer einen Moment die noch
+   * vorraetigen Knoepfe: Die Leiste zeigt auf sich selbst.
+   */
+  leisteWinkt: boolean;
 }
 
 export function roundRect(
@@ -343,6 +352,16 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
     }
     roundRect(ctx, b.x, b.y, b.w, b.h, 12);
     ctx.fill();
+
+    if (s.leisteWinkt && usable && !selected) {
+      // Der Wink: ein warmer Ring um jeden Knopf, der noch etwas hergibt.
+      ctx.save();
+      ctx.strokeStyle = COL.accent;
+      ctx.lineWidth = 2;
+      roundRect(ctx, b.x + 1, b.y + 1, b.w - 2, b.h - 2, 11);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if (!selected && usable) {
       // Schmale Aufhellung an der Oberkante — das ist, was eine Fläche

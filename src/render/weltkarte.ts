@@ -44,6 +44,15 @@ export interface KarteTreffer extends Box {
   id: string;
   /** Ist er anwählbar? Gesperrte Punkte werden gezeichnet, aber nicht bedient. */
   offen: boolean;
+  /**
+   * Wie viele Sterne noch fehlen, wenn ein Sterntor sperrt.
+   *
+   * Ein gesperrter Punkt bleibt unbedienbar — aber nicht mehr stumm
+   * (Spieltest-Runde: „Ich habe dreimal getippt, es passiert sichtbar
+   * NICHTS. Ein Kind tippt und bleibt ratlos."). Der Aufrufer sagt jetzt,
+   * woran es liegt.
+   */
+  fehlendeSterne?: number;
 }
 
 /** Was der Zeichner über den Zustand der Karte wissen muss. */
@@ -60,6 +69,44 @@ export interface KarteAnsicht {
   /** Zähler für alles Bewegte, in Bildern. */
   anim: number;
   atlas: SpriteAtlas | null;
+}
+
+/**
+ * Die Sterntor-Plakette: Was hier fehlt, sind Sterne, kein Vorgaenger.
+ * Sie macht aus dem grauen Punkt eine Ansage — „ab 12 Sternen" ist ein
+ * Ziel, „gesperrt" ist nur eine Wand.
+ *
+ * Sie wird NACH der Wanderfigur gezeichnet (Spieltest-Runde): Steht die
+ * Figur auf dem Punkt davor, verdeckte ihr Haarschopf genau die Zehner —
+ * aus „★12" wurde sichtbar „★ 2", und zwar ausgerechnet an der einen
+ * Stelle, an der man die Zahl braucht.
+ */
+function torPlakette(
+  ctx: CanvasRenderingContext2D,
+  L: Layout,
+  a: KarteAnsicht,
+  lv: LevelKarte,
+): void {
+  if (lv.zustand !== 'gesperrt' || !lv.sternTor) return;
+  const x = bx(L, lv.pos.x);
+  const y = by(L, a, lv.pos.y);
+  const r = punktR(L) * 0.82;
+  const ty = y - r - 12;
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(10, 14, 22, 0.92)';
+  const text = `${lv.sternTor.sterne}`;
+  ctx.font = `700 ${Math.round(r * 0.62)}px system-ui, sans-serif`;
+  const tw = ctx.measureText(text).width;
+  const bw = tw + r * 1.5;
+  kreisRunde(ctx, x - bw / 2, ty - r * 0.55, bw, r * 1.1, r * 0.55);
+  ctx.fill();
+  ctx.fillStyle = COL.accent;
+  stern(ctx, x - tw / 2 - r * 0.05, ty, r * 0.34);
+  ctx.fillStyle = '#ffe9a0';
+  ctx.fillText(text, x + r * 0.3, ty + 1);
+  ctx.restore();
 }
 
 /** Die Querspur des Weges als Anteil der kürzeren sinnvollen Achse. */
@@ -400,24 +447,6 @@ function levelPunkt(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(lv.nr), x, y + 1);
-    // Die Sterntor-Plakette: Was hier fehlt, sind Sterne, kein Vorgaenger.
-    // Sie macht aus dem grauen Punkt eine Ansage — „ab 12 Sternen" ist ein
-    // Ziel, „gesperrt" ist nur eine Wand.
-    if (lv.sternTor) {
-      const ty = y - r - 12;
-      ctx.fillStyle = 'rgba(10, 14, 22, 0.82)';
-      const text = `${lv.sternTor.sterne}`;
-      ctx.font = `700 ${Math.round(r * 0.62)}px system-ui, sans-serif`;
-      const tw = ctx.measureText(text).width;
-      const bw = tw + r * 1.5;
-      kreisRunde(ctx, x - bw / 2, ty - r * 0.55, bw, r * 1.1, r * 0.55);
-      ctx.fill();
-      stern(ctx, x - tw / 2 - r * 0.05, ty, r * 0.34);
-      ctx.fillStyle = COL.accent;
-      stern(ctx, x - tw / 2 - r * 0.05, ty, r * 0.34);
-      ctx.fillStyle = '#ffe9a0';
-      ctx.fillText(text, x + r * 0.3, ty + 1);
-    }
   } else {
     const fertig = lv.zustand === 'geschafft';
     // Ein Schlagschatten setzt den Punkt auf den Weg, statt ihn hineinzumalen.
@@ -472,6 +501,7 @@ function levelPunkt(
     art: 'level',
     id: lv.id,
     offen: lv.zustand !== 'gesperrt',
+    fehlendeSterne: lv.sternTor?.fehlen,
     x: x - r - 6,
     y: y - r - 6,
     w: r * 2 + 12,
@@ -688,6 +718,12 @@ export function drawWeltkarte(
       kreis(ctx, fx, fy - punktR(L) * 0.9, s * 4);
       ctx.fill();
     }
+  }
+
+  // Zuletzt die Sterntore — sie muessen ueber der Figur liegen, sonst
+  // verdeckt ihr Haarschopf genau die Zahl, die man braucht.
+  for (const w of a.karte.welten) {
+    for (const lv of w.level) torPlakette(ctx, L, a, lv);
   }
 
   return treffer;

@@ -109,6 +109,14 @@ export const LEVELS: LevelDef[] = [
     paint: [
       { t: 'ground', x: 0, w: 368, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
       { t: 'ground', x: 392, w: 568, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
+      // Der Grund der Schlucht (Spieltest-Runde): Vorher fiel, wer hinein
+      // lief, aus der Welt — im dritten Level des Lehrgangs starben so
+      // zwanzig von zwanzig, waehrend der Spieler noch suchte, wo der
+      // Abgrund ueberhaupt liegt. Jetzt faengt ihn ein Boden 72 tief:
+      // ueberlebbar (Grenze 78), aber ohne Rueckweg — er wartet dort
+      // sichtbar, statt zu sterben. Die Lehre bleibt dieselbe, denn ohne
+      // Bruecke kommt niemand hinueber; die Quote sagt es.
+      { t: 'rect', x: 368, y: 452, w: 24, h: 88, mat: MAT.EARTH },
     ],
   },
   {

@@ -158,6 +158,19 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   und Zoomgeste starteten das Level), und der Totenkopf zündete ohne
   Rückfrage neben der Pause — jetzt schärft der erste Tipp, der zweite
   zündet.
+- ✅ **Spieltest-Runde, zweite Hälfte** (Erstkontakt und Systeme,
+  `docs/gesamtabnahme.md` §6b): Der **stumme Tipp** ist behoben — wer
+  ohne Berufswahl ins Spielfeld tippt, sieht die vorrätigen Knöpfe
+  aufleuchten; auch der Griff nach einer Figur, die gerade nicht kann,
+  bekommt sein sichtbares Nein. Der **Lesemodus gilt jetzt für jedes
+  Level, das nicht ins Bild passt** (statt „ab Weltmitte") — der von
+  Marketing vorgesehene Fall Strittig 3 ist eingetreten. **w1-03 „Der
+  Abgrund"** bekommt einen Schluchtgrund 72 tief: überlebbar, ohne
+  Rückweg (die Testperson scheiterte sechsmal mit 20/20 Toten). Die
+  **Niederlagen-Ansage** lief aus dem Bild und zeigte dadurch falsche
+  Zahlen — sie bricht jetzt um, die Tafel wächst mit. Das **Sterntor**
+  antwortet auf einen Tipp („Noch 6 Sterne — dann öffnet sich das
+  Tor."), und seine Plakette liegt über der Wanderfigur statt darunter.
 
 ## Grafik
 
