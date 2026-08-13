@@ -96,8 +96,40 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Sohlen-Stollen). Auch die Raster-Arithmetik des Konzepts war zu
   optimistisch: Ein Bauer steigt 12, ein Kettenglied 10 — „E48 mit zwei
   Bauern" hieße in Wahrheit fünf.
-  Pakete 4–5 stehen aus (Meilenstein-Check nach vier Ersatzbauten,
-  Strittig 1).
+- ✅ **Mehrebenen-Konzept, Paket 4** (Welt 5, das größte Paket): Die
+  Weltregel heißt jetzt wörtlich „Zwei Welten in einem Level". **Acht
+  Ersatzbauten** für die acht verbliebenen Koordinaten-Klone: w5-01
+  „Die Gabel im Krater" (B5+B8), w5-02 „Unter der Kruste" (B1-Krusten +
+  B3-Schräge — das nie gespielte Paar miner+digger), w5-03 „Galerie in
+  der Glut" (Durchatmer: B2 gespiegelt, ein Schirm für jeden, niemand
+  kann sterben), w5-05 „Schacht und Stollen" (B6 in der Urfassung:
+  Schacht kostet Schirm, Stollen hält das Par — beide Routen grün
+  getestet), w5-06 „Der Deckelpfad" (Durchatmer: B7-Deckel), **w5-07
+  „Schleife und Steg"** (Tripel 1 climber+digger+builder: Dreierkette
+  über den Spalt-Pfercht, dann die bewiesene hohle Mauer; die
+  Pfercht-Gefangenen werden per Kletterer geborgen), w5-09 „Kaminzug"
+  (climber+bomber-Debüt: Kaminzug mit gesprengtem Podestdeckel,
+  Blankeis-Rand schützt die Fall-Linie, der Wächter ist der
+  Sprenganker), **w5-11 „Unter der Galerie"** (Tripel 2
+  floater+miner+basher: Schirm, Ostschräge, Sohlen-Stollen — das
+  w3-14-Fenster gespiegelt). **Zwei Umbauten:** w5-12 „Zwei Hände"
+  (Westspalt 44 — die geerbte Zweierkette kippt in den Pfercht), w5-15
+  „Prüfung im Schlot" (gespiegelt plus B6-Zweitzugang: die Firn-Luke
+  im Blech über dem Riegel hält das Par, Naht und Riegel bleiben als
+  bewiesene Zweitroute — zwei Welten enden nicht mehr mit demselben
+  Meisterstück). Die **K1-Abnahme ist nachgeholt**: Jedes W5-Level hat
+  seinen Rot-Test gegen den geerbten Quellplan (zehn neue, fünf
+  bestehende). Der Marketing-Meilenstein-Check nach vier Ersatzbauten
+  (Strittig 1) fiel positiv aus: Margen 4/3/3/3, Uhren auf Faktor 1,4,
+  keine Tode in den Musterlösungen — kein Abbruch auf dreizehn Level
+  nötig. Nebenbei geheilt: w5-14 (Marge 1 → 2) und die Keeper-Uhren
+  w5-04 (Faktor 1,12 → 1,4) und w5-10 (1,13 → 1,4). Neue Messbefunde
+  dokumentiert: der 120er-Kettenfall am offenen Doppelschacht (w5-02,
+  vier Tote im ersten Wurf — Etage 2 darum 48 dünn), der 95er-
+  Kuppensturz der Zweierkette (w5-07, darum Dreierkette und flacher
+  Pfercht) und die Ein-Punkt-Falle der Rammer-Vormerkung über
+  gefrästem Boden (w5-11: nur mit Fuß auf der Stahlsohle).
+  Paket 5 (Gesamtabnahme) steht aus.
 
 ## Grafik
 

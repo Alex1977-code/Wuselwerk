@@ -993,6 +993,403 @@ function planVierKanten(): Plan {
   };
 }
 
+// --- Musterlösungen der Schlot-Ersatzbauten (Paket 4) ----------------------
+
+/**
+ * w5-01 v2 „Die Gabel im Krater" — B5 + B8 (Paket 4).
+ *
+ * Der erste Laeufer rammt den Riegel und oeffnet den sicheren Ost-Ast;
+ * der erste Wandwender wird Waechter und haelt alle von der toedlichen
+ * 96er-Westkante fern. Beide Aeste muenden vor der Tuer.
+ */
+function planGabel(): Plan {
+  let riegel = false;
+  let wache = false;
+  return (w) => {
+    if (!riegel) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 240 && x.y < 260 &&
+          x.x >= 384 && x.x <= 391,
+      );
+      if (c && w.assign(c.id, 'basher')) riegel = true;
+      return;
+    }
+    if (!wache) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 240 && x.y < 260 &&
+          x.x >= 330 && x.x <= 370,
+      );
+      if (c && w.assign(c.id, 'blocker')) wache = true;
+    }
+  };
+}
+
+/**
+ * w5-02 v2 „Unter der Kruste" — B1-Etagen + B3-Schraege (Paket 4).
+ *
+ * Etage 1: die Miner-Schraege taucht am Firn-Ostrand unter die
+ * Stahlkruste und bricht als 1:2-Rampe durch den Block. Etage 2: der
+ * Schacht am Westrand, wo die Kruste endet. miner+digger — das Paar,
+ * das die Kombinationsmatrix dem Turm zuschreibt.
+ */
+function planKruste(): Plan {
+  let schraege = false;
+  let schacht = false;
+  return (w) => {
+    if (!schraege) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 220 && x.x >= 455 && x.x <= 470,
+      );
+      if (c && w.assign(c.id, 'miner')) schraege = true;
+      return;
+    }
+    if (!schacht) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 330 && x.y < 355 &&
+          x.x >= 30 && x.x <= 60,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht = true;
+    }
+  };
+}
+
+/**
+ * w5-03 v2 „Galerie in der Glut" — der Durchatmer: B2 gespiegelt.
+ *
+ * Die Familienloesung woertlich: jedem Laeufer noch auf dem Balkon den
+ * Schirm geben (der Vorrat traegt einen fuer jeden), unten oeffnet ein
+ * Rammer die Mauer. Niemand kann sterben.
+ */
+function planGlutGalerie(): Plan {
+  let stollen = false;
+  return (w) => {
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasFloater && x.y < 200 && w.skills.floater > 0,
+    );
+    if (c && w.assign(c.id, 'floater')) return;
+    if (!stollen) {
+      const b = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 440 && x.x >= 165 && x.x <= 190,
+      );
+      if (b && w.assign(b.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * w5-05 v2 „Schacht und Stollen" — B6 in der Urfassung (Paket 4).
+ *
+ * Die Par-Route: Ostkaskade hinab, dann ein einziger Rammer westwaerts
+ * durch den langen Stollen in die Kammer. Der Schirmschacht ist die
+ * teure zweite Route — `planSchachtOben` beweist sie separat.
+ */
+function planSchachtStollen(): Plan {
+  let stollen = false;
+  return (w) => {
+    if (stollen) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.dir === -1 && x.y > 340 && x.y < 365 &&
+        x.x >= 416 && x.x <= 440,
+    );
+    if (c && w.assign(c.id, 'basher')) stollen = true;
+  };
+}
+
+/**
+ * w5-05 v2, Route zwei — der Schirmschacht („Schacht kostet Schirm").
+ *
+ * Jeder Laeufer bekommt den Schirm schon auf der Hochflaeche, dann
+ * graebt einer den 168er-Schacht hinter der Falltuer: Der Vorraum auf
+ * der Stahlsohle faengt jeden Schacht aus dem Firn-Streifen.
+ */
+function planSchachtOben(): Plan {
+  let schacht = false;
+  return (w) => {
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasFloater && x.y < 220 && w.skills.floater > 0,
+    );
+    if (c && w.assign(c.id, 'floater')) return;
+    if (!schacht) {
+      const g = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 220 && x.x >= 70 && x.x <= 100,
+      );
+      if (g && w.assign(g.id, 'digger')) schacht = true;
+    }
+  };
+}
+
+/**
+ * w5-06 v2 „Der Deckelpfad" — der Durchatmer: B7-Deckel (w2-07-Mechanik).
+ *
+ * Acht Kletterer die Wand hinauf, ueber die Krone auf den Deckel, durch
+ * die Luecke in die Grotte. Wer nicht klettert, wartet sicher im Vorhof.
+ */
+function planDeckelpfad(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 8) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.x > 586 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/**
+ * w5-07 v2 „Schleife und Steg" — Tripel 1: climber+digger+builder.
+ *
+ * Sofort drosseln, die Zweierkette ueber den Spalt, danach die bewiesene
+ * w2-04-Schleife (Kletterer, Schalen- und Kerngrabung — Fenster
+ * woertlich uebernommen). Wer vor fertigem Steg in den Spalt-Pfercht
+ * fiel, wird per Kletterer geborgen; nach dem Steg dreht die Rate auf.
+ */
+function planSchleifeSteg(): Plan {
+  let gedrosselt = false;
+  let bauer: number | null = null;
+  let ketten = 0;
+  let steg = false;
+  let kletterer = false;
+  let grabA = false;
+  let grabB = false;
+  let bergungen = 0;
+  return (w) => {
+    if (!gedrosselt) {
+      w.setReleaseRate(1);
+      gedrosselt = true;
+    }
+    if (bauer === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 350 && x.x >= 226 && x.x <= 234,
+      );
+      if (c && w.assign(c.id, 'builder')) bauer = c.id;
+      return;
+    }
+    const b = w.wuselById(bauer);
+    if (ketten < 2 && b && b.state === State.BUILDING && b.bricks <= 2) {
+      if (w.assign(b.id, 'builder')) ketten++;
+      return;
+    }
+    if (!steg && ketten >= 2 && b && b.state === State.WALKING && b.x > 300) {
+      w.setReleaseRate(99);
+      steg = true;
+    }
+    if (!kletterer) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 380 && x.x > 320 && !x.hasClimber,
+      );
+      if (c && w.assign(c.id, 'climber')) kletterer = true;
+      return;
+    }
+    if (!grabA) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.hasClimber && x.y < 340 && x.x >= 560 && x.x <= 563,
+      );
+      if (c && w.assign(c.id, 'digger')) grabA = true;
+      return;
+    }
+    if (!grabB) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.hasClimber && x.y < 340 && x.x >= 565 && x.x <= 570,
+      );
+      if (c && w.assign(c.id, 'digger')) grabB = true;
+      return;
+    }
+    if (bergungen < 2) {
+      // Pfercht-Grund liegt auf 380 (Fuss 379) — die Bergung greift dort.
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && x.y > 360 && x.x >= 244 && x.x <= 276,
+      );
+      if (c && w.assign(c.id, 'climber')) bergungen++;
+    }
+  };
+}
+
+/**
+ * w5-09 v2 „Kaminzug" — climber+bomber: der gesprengte Podestdeckel.
+ *
+ * Acht Kletterer in den Kamin; auf dem Podest wird einer zum Waechter
+ * oestlich des Blankeisrands gestellt und freigesprengt — der Krater
+ * reisst den Erddeckel auf, alle fallen zur Tuer.
+ */
+function planKaminSprengung(): Plan {
+  let n = 0;
+  let anker: number | null = null;
+  let zuendung = false;
+  return (w) => {
+    if (n < 8) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && x.x < 200 && w.skills.climber > 0,
+      );
+      if (c && w.assign(c.id, 'climber')) n++;
+      return;
+    }
+    if (anker === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 200 && x.y < 220 && x.x >= 255 && x.x <= 275,
+      );
+      if (c && w.assign(c.id, 'blocker')) anker = c.id;
+      return;
+    }
+    if (!zuendung) {
+      if (w.assign(anker, 'bomber')) zuendung = true;
+    }
+  };
+}
+
+/**
+ * w5-11 v2 „Unter der Galerie" — Tripel 2: floater+miner+basher.
+ *
+ * Ein Schirm fuer jeden noch auf dem Balkon, die Ostschraege ab der
+ * Haldenmitte, und am Tiefstpunkt auf der Stahlsohle der Stollen
+ * ostwaerts in die Kammer (das w3-14-Fenster, gespiegelt).
+ */
+function planUnterDerGalerie(): Plan {
+  let schraege = false;
+  let stollen = false;
+  return (w) => {
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasFloater && x.y < 200 && w.skills.floater > 0,
+    );
+    if (c && w.assign(c.id, 'floater')) return;
+    if (!schraege) {
+      const m = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 340 && x.y < 380 &&
+          x.x >= 390 && x.x <= 410,
+      );
+      if (m && w.assign(m.id, 'miner')) schraege = true;
+      return;
+    }
+    if (!stollen) {
+      // Nur mit Fuss AUF der Stahlsohle (y 439, Stand 549..553): Einen
+      // Punkt hoeher zuendet die Vormerkung ueber dem noch gefraesten
+      // Boden, der Rammer faellt den einen Punkt, und der Auftrag ist
+      // verbraucht — die w3-14-Messung, hier ostwaerts wiederholt.
+      const m = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y >= 439 && x.x >= 545,
+      );
+      if (m && w.assign(m.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * w5-12 v2 „Zwei Haende" — vom w3-04-Zwilling getrennt (Paket 4).
+ *
+ * Der Westspalt misst jetzt 44: erst die DREIERkette traegt hinueber
+ * (die geerbte Zweierkette kippt in den Pfercht, K1-Rot-Test). Sonst
+ * der bewiesene Ablauf: Waechter vor dem Spalt, zweite Bruecke ueber
+ * den Ostspalt, Freisprengung nach dem Schlussstein.
+ */
+function planZweiHaende(): Plan {
+  let gedrosselt = false;
+  let bauer: number | null = null;
+  let ketten1 = 0;
+  let blocker: number | null = null;
+  let bruecke2 = false;
+  let kette2 = false;
+  let bombed = false;
+  return (w) => {
+    if (!gedrosselt) {
+      w.setReleaseRate(30);
+      gedrosselt = true;
+    }
+    if (bombed) w.setReleaseRate(99);
+    if (bauer === null) {
+      // Ansatz ab 350: Von 340 endete die Dreierkette bei 410 — zwei vor
+      // dem Gegenufer (412), und der Bauer kippte selbst in den Pfercht.
+      const c = walkerNear(w, 350, 360, 1);
+      if (c && w.assign(c.id, 'builder')) bauer = c.id;
+      return;
+    }
+    const b = w.wuselById(bauer);
+    if (ketten1 < 2 && b && b.state === State.BUILDING && !bruecke2 && b.bricks <= 2) {
+      if (w.assign(b.id, 'builder')) ketten1++;
+      return;
+    }
+    if (blocker === null) {
+      const c = w.wusels.find(
+        (x) => x.id !== bauer && x.state === State.WALKING && x.dir === 1 && x.x >= 296 && x.x <= 322,
+      );
+      if (c && w.assign(c.id, 'blocker')) blocker = c.id;
+      return;
+    }
+    if (!bruecke2 && ketten1 >= 2 && b && b.state === State.WALKING && b.dir === 1 && b.x >= 636 && b.x <= 648) {
+      if (w.assign(b.id, 'builder')) bruecke2 = true;
+      return;
+    }
+    if (bruecke2 && !kette2 && b && b.state === State.BUILDING && b.bricks <= 2) {
+      if (w.assign(b.id, 'builder')) kette2 = true;
+      return;
+    }
+    if (!bombed && kette2 && b && b.state === State.WALKING && b.x > 700) {
+      const bl = w.wuselById(blocker);
+      if (bl && w.assign(bl.id, 'bomber')) bombed = true;
+    }
+  };
+}
+
+/**
+ * w5-15 v2 „Pruefung im Schlot" — die Luken-Route (Paket 4, Par).
+ *
+ * Neun Kletterer ueber Grube und Berg auf den Westfluegel; dort oeffnet
+ * ein Graeber die Firn-Luke im Blech, und der Schacht endet 72 tiefer
+ * auf der Stahl-Tuersohle — mitten in der Tuer.
+ */
+function planPruefungB(): Plan {
+  let n = 0;
+  let luke = false;
+  return (w) => {
+    if (n < 9) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && w.skills.climber > 0,
+      );
+      if (c && w.assign(c.id, 'climber')) n++;
+      return;
+    }
+    if (!luke) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y < 370 && x.x >= 193 && x.x <= 207,
+      );
+      if (c && w.assign(c.id, 'digger')) luke = true;
+    }
+  };
+}
+
+/**
+ * w5-15 v2, Route zwei — Naht und Riegel (die alte Pruefung).
+ *
+ * Zuendung mit hundert Punkten Vorhalt westwaerts auf die Naht, dann
+ * der Stollen ostwaerts durch den Riegel. Kostet eine Vergabe mehr als
+ * die Luke und den Sprengmeister das Leben.
+ */
+function planPruefungA(): Plan {
+  let n = 0;
+  let bombed = false;
+  let gerammt = false;
+  return (w) => {
+    if (n < 9) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && !x.hasClimber && w.skills.climber > 0,
+      );
+      if (c && w.assign(c.id, 'climber')) n++;
+      return;
+    }
+    if (!bombed) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 370 && x.x >= 216 && x.x <= 222,
+      );
+      if (c && w.assign(c.id, 'bomber')) bombed = true;
+      return;
+    }
+    if (!gerammt) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 400 && x.x >= 175 && x.x <= 179,
+      );
+      if (c && w.assign(c.id, 'basher')) gerammt = true;
+    }
+  };
+}
+
 /**
  * w2-09 v2 „Adern und Deckel" — die Sichtluecke (Muster Blaupause 5).
  *
@@ -1580,23 +1977,23 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w4-12': planFrost3,
   'w4-13': planFrost13,
   'w4-14': planFrost14,
-  // Welt 5 beschleunigt bewiesene Geometrien — die Quellplaene gelten
-  // woertlich weiter (die Koordinaten sind identisch).
-  'w5-01': planFrost1,
-  'w5-02': planLevel1,
-  'w5-03': planLevel3,
+  // Paket 4 (Level-Konzept): Die W5-Klone weichen Zwei-Bausteine-
+  // Ersatzbauten; die Quellplaene bleiben als Rot-Test-Gegenprobe (K1).
+  'w5-01': planGabel,
+  'w5-02': planKruste,
+  'w5-03': planGlutGalerie,
   'w5-04': planSchlot4,
-  'w5-05': planLevel8,
-  'w5-06': planKlamm11,
-  'w5-07': planKlamm5,
+  'w5-05': planSchachtStollen,
+  'w5-06': planDeckelpfad,
+  'w5-07': planSchleifeSteg,
   'w5-08': planSchlot8,
-  'w5-09': planLevel6,
+  'w5-09': planKaminSprengung,
   'w5-10': planSchlot10,
-  'w5-11': planRost6,
-  'w5-12': planRost4,
+  'w5-11': planUnterDerGalerie,
+  'w5-12': planZweiHaende,
   'w5-13': planSchlot13,
   'w5-14': planSchlot14,
-  'w5-15': () => planRost13(9),
+  'w5-15': planPruefungB,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -1643,6 +2040,29 @@ describe('Alle Level sind lösbar', () => {
     expect(w.phase).toBe('won');
     expect(w.saved).toBeGreaterThanOrEqual(level.needed);
     expect(w.skillsUsed).toBe(3);
+    expect(w.skillsUsed).toBeGreaterThan(level.par);
+  });
+
+  it('w5-05: auch der Schirmschacht löst Schacht und Stollen — teurer, ohne Opfer', () => {
+    // Die B6-Urfassung des Konzepts: „Schacht kostet Schirm." Ein Schirm
+    // fuer jeden plus der Graeber — dreizehn Vergaben gegen das Par von
+    // eins, aber niemand stirbt.
+    const level = levelById('w5-05')!;
+    const w = play(level, planSchachtOben());
+    expect(w.phase).toBe('won');
+    expect(w.saved).toBeGreaterThanOrEqual(level.needed);
+    expect(w.skillsUsed).toBeGreaterThan(level.par);
+  });
+
+  it('w5-15: auch Naht und Riegel lösen die Prüfung — die alte Route trägt weiter', () => {
+    // Der B6-Zweitzugang des Finales: Die Luke haelt das Par, aber die
+    // geerbte Pruefung (Vorhalt-Zuendung auf die Naht, Stollen durch den
+    // Riegel) bleibt ein voller Loesungsweg — eine Vergabe teurer und um
+    // den Sprengmeister aermer.
+    const level = levelById('w5-15')!;
+    const w = play(level, planPruefungA());
+    expect(w.phase).toBe('won');
+    expect(w.saved).toBeGreaterThanOrEqual(level.needed);
     expect(w.skillsUsed).toBeGreaterThan(level.par);
   });
 });
@@ -1748,6 +2168,38 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
     // West-Schacht-Plan (v1) graebt ins Blankeis.
     erwarteRot('w4-10', planFrost10);
     erwarteRot('w4-10', planFrost10Alt);
+  });
+  // Paket 4 (Level-Konzept): Die K1-Abnahme — jedes W5-Level gegen seinen
+  // geerbten Quellplan.
+  it('w5-01: der geerbte Null-Plan verliert den Pulk an die Westkante', () => {
+    erwarteRot('w5-01', planFrost1);
+  });
+  it('w5-02: der Aschen-Plan gräbt auf die Kruste', () => {
+    erwarteRot('w5-02', planLevel1);
+  });
+  it('w5-03: der Brückenplan kennt weder Balkon noch Schirm', () => {
+    erwarteRot('w5-03', planLevel3);
+  });
+  it('w5-05: der Abzweig-Plan greift ins Leere', () => {
+    erwarteRot('w5-05', planLevel8);
+  });
+  it('w5-06: der Ader-Plan erreicht sein Grabfenster nie', () => {
+    erwarteRot('w5-06', planKlamm11);
+  });
+  it('w5-07: die geerbte Schräge kennt weder Steg noch Mauer', () => {
+    erwarteRot('w5-07', planKlamm5);
+  });
+  it('w5-09: Kletterer ohne Sprengung kreisen im Kamin', () => {
+    erwarteRot('w5-09', planLevel6);
+  });
+  it('w5-11: der Kernbohrungs-Plan hat keinen Schirm für den Balkon', () => {
+    erwarteRot('w5-11', planRost6);
+  });
+  it('w5-12: die geerbte Zweierkette kippt in den breiten Westspalt', () => {
+    erwarteRot('w5-12', planRost4);
+  });
+  it('w5-15: der Zwillingsplan greift gespiegelt überall ins Leere', () => {
+    erwarteRot('w5-15', () => planRost13(9));
   });
   it('w5-10: Schirme ohne Ostwache — die Kante holt die Quote', () => {
     erwarteRot('w5-10', planLevel4);
