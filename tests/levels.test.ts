@@ -1063,6 +1063,92 @@ function planSchlot14(): Plan {
   };
 }
 
+/**
+ * w2-08 v2 „Gegenstrom" — der 44er-Spalt verlangt die Kette.
+ */
+function planKlamm8(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  let geblockt = false;
+  return (w) => {
+    if (builder === null) {
+      // 385..391, nicht breiter: Bei Start jenseits von 391 enden die 24
+      // Kettensteine (2 Punkte je Stein) vor der Westkante 340 - ein
+      // Todesfoerderband statt einer Bruecke (gemessen: 19 Tote).
+      const c = walkerNear(w, 381, 385, -1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+    } else if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+    }
+    if (!geblockt) {
+      const c = walkerNear(w, 500, 540, 1);
+      if (c && w.assign(c.id, 'blocker')) geblockt = true;
+    }
+  };
+}
+
+/**
+ * w2-12 v2 — die um 20 verschobene Schlucht verlangt die Kette am
+ * richtigen Ansatz; Schacht und Stollen bleiben wie gelernt.
+ */
+function planKlamm12(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  let graeber: number | null = null;
+  let gerammt = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 435, 443, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (graeber === null) {
+      const c = walkerNear(w, 876, 882, 1);
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (!gerammt) {
+      const d = w.wuselById(graeber);
+      if (d && d.state === State.WALKING && d.dir === -1 && d.y > 400 && d.x <= 874) {
+        if (w.assign(d.id, 'basher')) gerammt = true;
+      }
+    }
+  };
+}
+
+/**
+ * w3-05 v2 „Fallwerk" — Schirme wie gehabt, dann die Ostwache unten.
+ */
+function planRost5(): Plan {
+  let schirme = 0;
+  let wache = false;
+  return (w) => {
+    if (schirme < 7) {
+      for (const x of w.wusels) {
+        if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {
+          if (w.assign(x.id, 'floater')) schirme++;
+        }
+      }
+    }
+    if (!wache) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 460 && x.x >= 330 && x.x <= 366,
+      );
+      if (c && w.assign(c.id, 'blocker')) wache = true;
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -1081,17 +1167,17 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w2-05': planKlamm5v2,
   'w2-06': planKlamm6,
   'w2-07': planLevel4,
-  'w2-08': planLevel8,
+  'w2-08': planKlamm8,
   'w2-09': planKlamm9,
   'w2-10': planLevel9,
   'w2-11': planKlamm11,
-  'w2-12': planLevel10,
+  'w2-12': planKlamm12,
   'w2-13': planKlamm13,
   'w3-01': planRost1,
   'w3-02': planRost2,
   'w3-03': planRost3,
   'w3-04': planRost4,
-  'w3-05': planLevel4,
+  'w3-05': planRost5,
   'w3-06': planRost6,
   'w3-07': planRost7,
   'w3-08': planRost8,
@@ -1253,6 +1339,18 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   });
   it('w5-14: der geerbte Pruefungsplan greift ins Leere', () => {
     erwarteRot('w5-14', planLevel10);
+  });
+  it('w2-06: die Naht liegt woanders als in w1-07', () => {
+    erwarteRot('w2-06', planLevel7);
+  });
+  it('w2-08: der einzelne Bauer endet mitten ueber dem 44er-Spalt', () => {
+    erwarteRot('w2-08', planLevel8);
+  });
+  it('w2-12: die verschobene Schlucht laesst die alte Bruecke zu kurz', () => {
+    erwarteRot('w2-12', planLevel10);
+  });
+  it('w3-05: ohne Ostwache frisst der Pendelweg die Uhr', () => {
+    erwarteRot('w3-05', planLevel4);
   });
 });
 

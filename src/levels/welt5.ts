@@ -393,8 +393,10 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 330 },
     exit: { x: 600, y: 360, w: 32, h: 26 },
     total: 20,
-    needed: 14,
-    timeLimitSec: 150,
+    // 17 statt 14 (Messregel): Die Drossel-Loesung rettet 19, Marge 2 -
+    // und Vollgas fuellt den Kessel weit unter die Quote (Rot-Test).
+    needed: 17,
+    timeLimitSec: 75,
     releaseRate: 99,
     minReleaseRate: 15,
     skills: sk({ builder: 2 }),
@@ -427,8 +429,11 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 340, y: 150 },
     exit: { x: 224, y: 390, w: 32, h: 26 },
     total: 14,
-    needed: 10,
-    timeLimitSec: 150,
+    // 9 statt 10: Die Musterloesung rettet 10 - eine Figur Vergebung,
+    // mehr gibt der Steg nicht her (Blocker wird gesprengt, und der Bau
+    // kostet, wen die Luecke vor dem Waechter erwischt).
+    needed: 9,
+    timeLimitSec: 135,
     releaseRate: 50,
     minReleaseRate: 25,
     skills: sk({ builder: 2, blocker: 1, bomber: 1 }),

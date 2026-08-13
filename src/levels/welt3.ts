@@ -151,20 +151,24 @@ export const WELT3_LEVELS: LevelDef[] = [
     id: 'w3-05',
     name: 'Fallwerk',
     chapter: 'Werk',
-    hint: 'Vom Sims geht es dreihundert Bildpunkte hinab. Ohne Schirm überlebt das niemand.',
+    hint: 'Ohne Schirm überlebt den Fall niemand — und wer unten ostwärts losläuft, braucht einen Wächter im Rücken.',
     theme: 'rust',
     width: 720,
     height: 540,
     seed: 31005,
     entrance: { x: 100, y: 110 },
-    exit: { x: 600, y: 450, w: 32, h: 26 },
+    // Entklont (Design-Runde): Die Tuer liegt jetzt WESTLICH der
+    // Landestelle. Gelandete laufen ostwaerts los; ohne Waechter kostet
+    // der Pendelweg ueber die halbe Welt die Uhr (Rot-Test gegen den
+    // geerbten w1-04-Plan).
+    exit: { x: 80, y: 450, w: 32, h: 26 },
     total: 12,
     needed: 6,
-    timeLimitSec: 100,
+    timeLimitSec: 62,
     releaseRate: 30,
     minReleaseRate: 20,
-    skills: sk({ floater: 8, blocker: 2 }),
-    par: 6,
+    skills: sk({ floater: 7, blocker: 1 }),
+    par: 8,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
       { t: 'rect', x: 0, y: 170, w: 320, h: 26, mat: MAT.STEEL },

@@ -37,9 +37,12 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   W1–W5, fünf Blaupausen (eine im Messlauf ehrlich widerlegt und durch
   die Ostwache ersetzt), w2-13 neu, drei W5-Ersatzlevel (Glutregen,
   Kessel, Kaskade und Steg), sieben Rot-Tests.
-- ⬜ **Feinentklonung, Rest**: w2-03/06/08/10/12 und w3-05 — je eine
-  tragende Zahl/Position ändern, bis der geerbte Altplan im Rot-Test
-  scheitert (Maßnahmenliste der Design-Runde, Paket 4).
+- ✅ **Feinentklonung, Rest**: w2-06 (Nahtversatz, war schon rot),
+  w2-08 (44er-Spalt verlangt die Kette), w2-12 (Schlucht +20, alte
+  Brücke zu kurz), w3-05 (Tür westlich + Ostwache) — je mit Rot-Test.
+  w2-03 und w2-10 sind bewusst Zweitübersetzungen ohne Rot-Test:
+  Klettern ist dauerhaft, jede Geometrie, die den geerbten Kletterplan
+  schlüge, schlüge jeden Plan — dort schärft der Werkzeugschnitt.
 
 ## Grafik
 

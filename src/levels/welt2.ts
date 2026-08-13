@@ -100,10 +100,15 @@ export const WELT2_LEVELS: LevelDef[] = [
     exit: { x: 620, y: 166, w: 32, h: 26 },
     total: 10,
     needed: 6,
-    timeLimitSec: 120,
+    timeLimitSec: 110,
     releaseRate: 40,
     minReleaseRate: 25,
-    skills: sk({ climber: 8, blocker: 2, builder: 2 }),
+    // Zweituebersetzung von w1-06, bewusst ohne Rot-Test: Klettern ist
+    // dauerhaft - jede Geometrie, die den geerbten Kletterplan schluege,
+    // schluege jeden Plan. Die eigene Pointe der Klamm sind Deckel und
+    // Stahlflanke; geschaerft wird der Vorrat: sieben Kletterer fuer
+    // sechs Gerettete, einer Reserve.
+    skills: sk({ climber: 7 }),
     // Der Kletterer ist eine persönliche Gabe: sechs Gerettete, sechs Gaben.
     par: 6,
     paint: [
@@ -186,11 +191,14 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 300 },
     exit: { x: 420, y: 386, w: 32, h: 26 },
     total: 20,
-    needed: 14,
-    timeLimitSec: 180,
+    // 17 statt 14 (Messregel): Die Musterloesung rettet 19, Marge 2.
+    needed: 17,
+    timeLimitSec: 110,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ bomber: 3, digger: 2, basher: 2, blocker: 2, builder: 2 }),
+    // Zwei Bomben (ein Irrtum erlaubt), ein Graeber als Koeder — die
+    // Naht ist der Weg, alles andere steht auf Stahl.
+    skills: sk({ bomber: 2, digger: 1 }),
     par: 1,
     paint: [
       { t: 'rect', x: 0, y: 80, w: 720, h: 24, mat: MAT.ROCK },
@@ -241,16 +249,22 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 460, y: 340 },
     exit: { x: 80, y: 360, w: 32, h: 26 },
     total: 20,
-    needed: 12,
-    timeLimitSec: 150,
+    // 15 statt 12 (Messregel): Die Musterloesung rettet 17 - zwei gehen
+    // waehrend des Kettenbaus verloren, das ist der Preis der Bruecke.
+    needed: 15,
+    timeLimitSec: 140,
     releaseRate: 30,
     minReleaseRate: 20,
-    skills: sk({ blocker: 2, builder: 3, digger: 2, basher: 2, floater: 2 }),
-    par: 2,
+    // Entklont (Design-Runde): Der Spalt misst jetzt 44 Punkte - der
+    // einzelne Bauer des geerbten w1-08-Plans endet mitten darueber
+    // (eine Bruecke schafft 2 Punkte je Stein), erst die Kette traegt.
+    // Rot-Test belegt es. Werkzeugschnitt auf die Kette plus Waechter.
+    skills: sk({ blocker: 2, builder: 3 }),
+    par: 3,
     paint: [
       { t: 'rect', x: 0, y: 80, w: 720, h: 24, mat: MAT.ROCK },
       { t: 'ground', x: 0, w: 340, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 360, w: 200, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
+      { t: 'ground', x: 384, w: 176, y: 380, h: 160, mat: MAT.ROCK, rough: 2 },
       { t: 'ground', x: 560, w: 160, y: 440, h: 100, mat: MAT.ROCK, rough: 2 },
     ],
   },
@@ -302,7 +316,9 @@ export const WELT2_LEVELS: LevelDef[] = [
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,
-    skills: sk({ climber: 8, floater: 8, blocker: 2, builder: 2 }),
+    // Zweituebersetzung von w1-09, bewusst ohne Rot-Test (siehe w2-03).
+    // Geschaerft wie dort: sieben Paare fuer sechs Gerettete.
+    skills: sk({ climber: 7, floater: 7 }),
     par: 12,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
@@ -350,17 +366,22 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 120, y: 300 },
     exit: { x: 690, y: 396, w: 36, h: 24 },
     total: 16,
-    needed: 10,
-    timeLimitSec: 240,
+    // 12 statt 10 (Messregel): Die Musterloesung rettet 14, Marge 2.
+    needed: 12,
+    timeLimitSec: 160,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ builder: 4, digger: 3, basher: 3, blocker: 3, miner: 2, floater: 2 }),
-    par: 3,
+    // Entklont (Design-Runde): Die Schlucht liegt 20 Punkte weiter
+    // oestlich - der geerbte w1-10-Plan baut seine Bruecke einen Schritt
+    // zu frueh und endet vor der Kante (Rot-Test). Die Loesung braucht
+    // die Kette. Werkzeugschnitt auf +2 ueber Par.
+    skills: sk({ builder: 3, digger: 2, basher: 1 }),
+    par: 4,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 424, y: 340, h: 200, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 444, w: 516, y: 340, h: 200, mat: MAT.ROCK, rough: 2 },
-      { t: 'rect', x: 424, y: 410, w: 20, h: 130, mat: MAT.ROCK },
+      { t: 'ground', x: 0, w: 444, y: 340, h: 200, mat: MAT.ROCK, rough: 2 },
+      { t: 'ground', x: 464, w: 496, y: 340, h: 200, mat: MAT.ROCK, rough: 2 },
+      { t: 'rect', x: 444, y: 410, w: 20, h: 130, mat: MAT.ROCK },
       { t: 'rect', x: 560, y: 372, w: 300, h: 10, mat: MAT.STEEL },
       { t: 'rect', x: 600, y: 410, w: 360, h: 12, mat: MAT.STEEL },
     ],
