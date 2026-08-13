@@ -172,6 +172,25 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   antwortet auf einen Tipp („Noch 6 Sterne — dann öffnet sich das
   Tor."), und seine Plakette liegt über der Wanderfigur statt darunter.
 
+- 🔄 **Auf hundert Level** (Auftrag: „gerne anspruchsvoll und über mehr
+  Ebenen, Ziel sind 100 Level"): Konzept abgenommen und dokumentiert
+  (`docs/welt-6-7-konzept.md`) — zwei neue Welten in der Grasland-Familie,
+  **w6 Sonnenhang** (Terrassen im Nachmittagslicht, Leitbaustein B1
+  Etagenturm, getragen von der aufwärts begehbaren Baggerschräge) und
+  **w7 Wipfelweide** (ein Wald von oben, Leitbaustein B7 Kaminzug, die
+  Decke ist der Gegner), zu je 17 Leveln. Drei Leveldesigner haben
+  unabhängig entworfen, ein Chef-Designer abgenommen — und dabei einen
+  Rechenfehler aller drei Entwürfe korrigiert: **Ein Bauer hebt zwölf
+  Bildpunkte, nicht vierundzwanzig** (im Code nachgerechnet), was jede
+  Kettenlänge im Papier verdoppelte. **Fundament gebaut:** zwei ThemeIds,
+  zwei Paletten (getrennt durch das Licht, nicht die Grundfarbe:
+  Nachmittagssonne von Westen mit Horizont gegen Blattlicht von oben ohne
+  Horizont), zwei Ambiente-Betten, zwei Musikstücke, Kartendekor und
+  Weltregistrierung. **Gebaut und gemessen: die ersten drei Level**
+  (Sonnenhang 1–3, Uhrfaktor 1,41–1,43, Marge 3, Überschuss 4–5) — damit
+  hat das Spiel **69 Level**. Der Rest wird Level für Level nachgezogen;
+  die Karte meldet nur, was gemessen ist.
+
 ## Grafik
 
 - ✅ Der **Hintergrund im Spiel**: Anmutung **dreidimensionaler und

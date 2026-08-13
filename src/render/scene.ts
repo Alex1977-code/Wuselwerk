@@ -304,6 +304,16 @@ export class Scene {
       case 'magma':
         this.sonnePos = { x: W * 0.5, y: refY - 6 };
         break;
+      // Sonnenhang: Nachmittagslicht von WESTEN und tief — daher kommen die
+      // langen Schatten nach Osten, die der Welt ihren Namen geben.
+      case 'sonnenhang':
+        this.sonnePos = { x: W * 0.16, y: refY - 40 };
+        break;
+      // Wipfelweide: Licht von OBEN durchs Laub, kein Horizont. Die Scheibe
+      // steht hoch und mittig; sie ist Blattlicht, keine Abendsonne.
+      case 'wipfel':
+        this.sonnePos = { x: W * 0.5, y: refY - 130 };
+        break;
       default:
         this.sonnePos = { x: W * 0.72, y: refY - 78 };
     }

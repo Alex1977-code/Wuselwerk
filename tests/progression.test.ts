@@ -421,10 +421,18 @@ describe('Fremde und alte Spielstände', () => {
 // --- Der echte Katalog -----------------------------------------------------
 
 describe('Der ausgelieferte Katalog', () => {
-  it('hält sich an zehn bis fünfzehn Level je Welt', () => {
+  it('hält sich an zehn bis siebzehn Level je Welt', () => {
+    // Zehn bis fuenfzehn war die Regel der ersten fuenf Welten (Unterricht
+    // ist teuer, Variation traegt fuenfzehn). Die zwei Gruenwelten des
+    // Hundert-Level-Ausbaus tragen siebzehn: Sie unterrichten nichts mehr,
+    // sie kombinieren nur noch — und sie sind die Strecke, auf der das Spiel
+    // seine hundert Level voll macht.
     for (const w of WELTEN) {
-      expect(w.soll, w.name).toBeGreaterThanOrEqual(10);
-      expect(w.soll, w.name).toBeLessThanOrEqual(15);
+      // Untergrenze 3 statt 10: Eine Welt im Ausbau meldet nur ihre
+      // gebauten Punkte (Sonnenhang, Hundert-Level-Ausbau). Eine Karte mit
+      // vierzehn toten Punkten verspraeche, was das Spiel nicht haelt.
+      expect(w.soll, w.name).toBeGreaterThanOrEqual(3);
+      expect(w.soll, w.name).toBeLessThanOrEqual(17);
       expect(w.levelIds).toHaveLength(w.soll);
       expect(w.punkte).toHaveLength(w.soll);
     }
@@ -443,11 +451,13 @@ describe('Der ausgelieferte Katalog', () => {
 
   it('zeigt heute genau die gebauten Welten', () => {
     const karte = weltkarte({}, KATALOG);
-    expect(karte.welten).toHaveLength(5);
-    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5']);
-    // 14 in Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2) —
-    // die Summe ist wieder die beworbene 66.
-    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 13, 14, 14, 15]);
+    expect(karte.welten).toHaveLength(6);
+    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
+    // 14 in Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu
+    // die ersten drei Terrassen des Sonnenhangs (Hundert-Level-Ausbau,
+    // docs/welt-6-7-konzept.md). Die Zahl waechst mit jedem ausgemessenen
+    // Level, bis sie hundert erreicht.
+    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 13, 14, 14, 15, 3]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });

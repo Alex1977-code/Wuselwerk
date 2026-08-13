@@ -202,6 +202,12 @@ const REQUISITEN: Record<ThemeId, Requisit[]> = {
   rust: ['schrott', 'schrott', 'zaun'],
   frost: ['tanne', 'tanne', 'busch'],
   magma: ['schlot', 'schrott', 'busch'],
+  // Sonnenhang: dieselbe Wiese wie im Grasland, aber bewirtschaftet — mehr
+  // Zaun, weniger Wildwuchs.
+  sonnenhang: ['baum', 'zaun', 'busch', 'zaun'],
+  // Wipfelweide: nur noch Kronen, kein Unterholz. Der Zaun waere hier oben
+  // eine Luege.
+  wipfel: ['baum', 'baum', 'tanne'],
 };
 
 /**

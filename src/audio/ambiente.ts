@@ -223,6 +223,36 @@ const BETTEN: Record<ThemeId, readonly Schicht[]> = {
     { art: 'ruf', pause: [2.2, 6.0], gain: 0.02, hz: [180, 340], toene: [1, 2], rutsch: [0.6, 0.85], dauer: [0.08, 0.16], abstand: [0.1, 0.22], form: 'sine', echos: 0 },
     { art: 'wind', pause: [4.0, 8.0], gain: 0.012, hz: [160, 300], q: 0.5, dauer: [3.0, 6.0], wanderung: [0.9, 1.3] },
   ],
+  // Welt 6 — Sonnenhang. Dieselbe offene Luft wie im Grasland, aber vier
+  // Stunden spaeter: Der Wind steht tiefer und traeger, die Voegel rufen
+  // seltener, und ueber allem liegt das Zirpen der Nachmittagswiese.
+  sonnenhang: [
+    // Grundwind: breit, tief, dauernd. Die Pause ist kuerzer als die Dauer,
+    // dadurch ueberlappen die Boeen und es entsteht eine Flaeche statt eines
+    // Pulses. Genau daran erkennt man sonst geschichtete Einzelklaenge.
+    { art: 'wind', pause: [1.8, 3.6], gain: 0.017, hz: [160, 380], q: 0.5, dauer: [2.6, 5.2], wanderung: [0.7, 1.4] },
+    // Grasrauschen als Kante darueber — bleibt unter 800 Hz, damit die Marimba
+    // freie Bahn hat.
+    { art: 'wind', pause: [2.2, 5.5], gain: 0.012, hz: [430, 760], q: 0.9, dauer: [1.1, 2.4], wanderung: [0.6, 1.1] },
+    // Entfernte Voegel: ueber der Melodie, kurz, selten, mit wechselnder
+    // Tonzahl und wechselnder Rutschrichtung — mal steigt der Ruf, mal faellt er.
+    { art: 'ruf', pause: [7, 18], gain: 0.013, hz: [3100, 4600], toene: [2, 3], rutsch: [0.82, 1.4], dauer: [0.045, 0.095], abstand: [0.05, 0.15], form: 'triangle', echos: 0 },
+  ],
+  // Welt 7 — Wipfelweide. Kein offener Himmel mehr, sondern Laub: Der Wind
+  // steht hoeher und blaettriger, die Rufe sitzen dicht und bekommen ein
+  // kurzes Echo — man hoert, dass ueber einem etwas ist.
+  wipfel: [
+    // Grundwind: breit, tief, dauernd. Die Pause ist kuerzer als die Dauer,
+    // dadurch ueberlappen die Boeen und es entsteht eine Flaeche statt eines
+    // Pulses. Genau daran erkennt man sonst geschichtete Einzelklaenge.
+    { art: 'wind', pause: [1.2, 2.6], gain: 0.016, hz: [340, 900], q: 0.8, dauer: [2.6, 5.2], wanderung: [0.7, 1.4] },
+    // Grasrauschen als Kante darueber — bleibt unter 800 Hz, damit die Marimba
+    // freie Bahn hat.
+    { art: 'wind', pause: [2.2, 5.5], gain: 0.012, hz: [430, 760], q: 0.9, dauer: [1.1, 2.4], wanderung: [0.6, 1.1] },
+    // Entfernte Voegel: ueber der Melodie, kurz, selten, mit wechselnder
+    // Tonzahl und wechselnder Rutschrichtung — mal steigt der Ruf, mal faellt er.
+    { art: 'ruf', pause: [3.4, 9], gain: 0.017, hz: [2600, 4200], toene: [2, 3], rutsch: [0.82, 1.4], dauer: [0.045, 0.095], abstand: [0.05, 0.15], form: 'triangle', echos: 1 },
+  ],
 };
 
 /**
@@ -258,6 +288,12 @@ const RAEUME: Record<ThemeId, { dauer: number; pegel: number; daempfung: number 
   frost: { dauer: 2.4, pegel: 1.05, daempfung: 6500 },
   // Schlot: mittellang und sehr dumpf — heisses Gestein, enger Schacht.
   magma: { dauer: 2.2, pegel: 1.15, daempfung: 1100 },
+  // Sonnenhang: offene Terrassen, aber Trockenmauern werfen etwas zurueck —
+  // eine Spur laenger als die freie Wiese.
+  sonnenhang: { dauer: 1.8, pegel: 0.85, daempfung: 4200 },
+  // Wipfelweide: Laub schluckt die Hoehen, Staemme werfen die Tiefen —
+  // kurz und weich, das Gegenteil der Eisklamm.
+  wipfel: { dauer: 1.6, pegel: 0.9, daempfung: 2200 },
 };
 
 /**

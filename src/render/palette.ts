@@ -88,6 +88,96 @@ const GRASS: Palette = {
   dunst: { rgb: '198, 230, 242', oben: 0.03, unten: 0.24 },
 };
 
+/**
+ * Welt 6 — Sonnenhang.
+ *
+ * Dieselbe Wiese wie im Grasland, vier Stunden spaeter am Tag. Die Trennung
+ * liegt im **Licht**, nicht in der Grundfarbe: Der Himmel geht von Altrosa
+ * ueber Pfirsich zu Dunstweiss am Horizont, die Narbe ist trockenes
+ * Goldgras statt frischem Gruen, die Erde warmer Terrakotta statt kuehlem
+ * Braun. Zwei gruene Welten hintereinander vertragen keine Neufaerbung
+ * derselben Kulisse — sie brauchen eine andere Tageszeit.
+ */
+const SONNENHANG: Palette = {
+  // Heller Tag statt Nacht. Die Helligkeit sitzt im Himmel und in den fernen
+  // Hügeln, nicht in der Erde: Die Figur läuft auf der Erde, und ihr violettes
+  // Haar (L* 49) braucht dort den Helligkeitsabstand nach unten. Eine
+  // aufgehellte Erde hätte die Figur genau da verschluckt, wo sie am längsten
+  // steht — deshalb wird die Erde wärmer und satter, aber nicht heller.
+  skyTop: '#8a5f7a',
+  skyMid: '#e8a86a',
+  skyBottom: '#f4dcc0',
+  // Luftperspektive: Was weit weg ist, ist heller und blasser, nicht dunkler.
+  // Vorher war es umgekehrt, und die Ferne lag als dunkler Wall hinter dem
+  // Spielfeld.
+  // Die nächste Schicht ist deutlich dunkler als die fernen. Nicht nur wegen
+  // der Luftperspektive: Die Figuren laufen direkt davor, und ihr violettes
+  // Haar (L* 49) braucht dort einen Untergrund, der nicht auf derselben
+  // Helligkeit liegt. Ein sattes Mittelgrün wäre hübsch und würde die Figur
+  // verschlucken.
+  hills: ['#e6c9a8', '#c9a37e', '#8a8a44'],
+  hillsDeep: ['#d3b191', '#ac8663', '#5f6330'],
+  earth: 0x8a5330,
+  earthDeep: 0x4e2a17,
+  pebble: 0x93867a,
+  /** Unberührte Oberfläche — Grasnarbe. */
+  crust: 0xc8b23f,
+  crustDark: 0x6b5a1c,
+  crustThickness: 3,
+  rock: 0xb09a78,
+  steel: 0x9aa5b5,
+  brick: 0xc98246,
+  /** Frisch freigelegtes Material ist heller (GDD §6). */
+  freshBoost: 30,
+  glow: '#ffd79a',
+  dunst: { rgb: '240, 200, 160', oben: 0.03, unten: 0.2 },
+};
+
+/**
+ * Welt 7 — Wipfelweide.
+ *
+ * Ein Wald von oben. Der Unterschied zum Sonnenhang ist wieder das Licht,
+ * und diesmal seine RICHTUNG: Hier kommt es von oben durchs Laub statt von
+ * der Seite, und der Blick endet nicht an einem Horizont, sondern in
+ * Nebelbaendern zwischen Staemmen. Darum bleicht der Himmel nach OBEN ins
+ * Milchweiss aus, statt nach unten — und darum ist alles blaugruen: die
+ * Farbe von Schatten unter Blaettern.
+ */
+const WIPFEL: Palette = {
+  // Heller Tag statt Nacht. Die Helligkeit sitzt im Himmel und in den fernen
+  // Hügeln, nicht in der Erde: Die Figur läuft auf der Erde, und ihr violettes
+  // Haar (L* 49) braucht dort den Helligkeitsabstand nach unten. Eine
+  // aufgehellte Erde hätte die Figur genau da verschluckt, wo sie am längsten
+  // steht — deshalb wird die Erde wärmer und satter, aber nicht heller.
+  skyTop: '#eaf4ec',
+  skyMid: '#a9cfc0',
+  skyBottom: '#4d7f6e',
+  // Luftperspektive: Was weit weg ist, ist heller und blasser, nicht dunkler.
+  // Vorher war es umgekehrt, und die Ferne lag als dunkler Wall hinter dem
+  // Spielfeld.
+  // Die nächste Schicht ist deutlich dunkler als die fernen. Nicht nur wegen
+  // der Luftperspektive: Die Figuren laufen direkt davor, und ihr violettes
+  // Haar (L* 49) braucht dort einen Untergrund, der nicht auf derselben
+  // Helligkeit liegt. Ein sattes Mittelgrün wäre hübsch und würde die Figur
+  // verschlucken.
+  hills: ['#b6d3c4', '#7fae99', '#3f7a63'],
+  hillsDeep: ['#9cbfae', '#5f8d79', '#2b5a49'],
+  earth: 0x6b5237,
+  earthDeep: 0x33251a,
+  pebble: 0x93867a,
+  /** Unberührte Oberfläche — Grasnarbe. */
+  crust: 0x3fae86,
+  crustDark: 0x1f5b46,
+  crustThickness: 3,
+  rock: 0x7d6a52,
+  steel: 0x9aa5b5,
+  brick: 0xc98246,
+  /** Frisch freigelegtes Material ist heller (GDD §6). */
+  freshBoost: 30,
+  glow: '#d6f0c8',
+  dunst: { rgb: '190, 220, 205', oben: 0.05, unten: 0.3 },
+};
+
 const CRYSTAL: Palette = {
   // Die Höhle bleibt kühl, aber sie war schwarz. Jetzt leuchtet sie von innen.
   skyTop: '#1b2450',
@@ -197,6 +287,10 @@ export function paletteFor(theme: ThemeId): Palette {
       return FROST;
     case 'magma':
       return MAGMA;
+    case 'sonnenhang':
+      return SONNENHANG;
+    case 'wipfel':
+      return WIPFEL;
     default:
       return GRASS;
   }

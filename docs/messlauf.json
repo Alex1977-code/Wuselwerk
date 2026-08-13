@@ -1368,5 +1368,65 @@
   },
   "werkzeuge": 15,
   "ueberschuss": 5
+ },
+ {
+  "id": "w6-01",
+  "name": "Die vier Wiesen",
+  "planTicks": 5343,
+  "letzteRettungSek": 88.8,
+  "quoteSek": 83,
+  "uhrSek": 125,
+  "uhrFaktor": 1.41,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 1,
+  "vergaben": 1,
+  "benutzt": {
+   "basher": 1
+  },
+  "werkzeuge": 5,
+  "ueberschuss": 4
+ },
+ {
+  "id": "w6-02",
+  "name": "Der versetzte Schacht",
+  "planTicks": 4221,
+  "letzteRettungSek": 70,
+  "quoteSek": 54.4,
+  "uhrSek": 100,
+  "uhrFaktor": 1.43,
+  "gerettet": 14,
+  "total": 14,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 3,
+  "vergaben": 3,
+  "benutzt": {
+   "digger": 3
+  },
+  "werkzeuge": 8,
+  "ueberschuss": 5
+ },
+ {
+  "id": "w6-03",
+  "name": "Zu tief zum Fallen",
+  "planTicks": 7627,
+  "letzteRettungSek": 126.8,
+  "quoteSek": 112.7,
+  "uhrSek": 180,
+  "uhrFaktor": 1.42,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 3,
+  "vergaben": 3,
+  "benutzt": {
+   "miner": 3
+  },
+  "werkzeuge": 8,
+  "ueberschuss": 5
  }
 ]

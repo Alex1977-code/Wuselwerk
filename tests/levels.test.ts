@@ -1974,6 +1974,79 @@ function planHinweg(): Plan {
   };
 }
 
+// --- Musterlösungen des Sonnenhangs (Welt 6) -------------------------------
+//
+// Die Gruenwelt am Ende des Spiels: Jedes Level verbindet mindestens drei
+// Hoehenebenen, und die Baggerschraege traegt als einzige Verbindung in
+// beide Richtungen.
+
+/** w6-01: Die Treppe faellt von selbst — nur die letzte Lippe muss fallen. */
+function planVierWiesen(): Plan {
+  let tor = false;
+  return (w) => {
+    if (tor) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.dir === 1 && x.y > 288 && x.y < 300,
+    );
+    if (c && w.assign(c.id, 'basher')) tor = true;
+  };
+}
+
+/** w6-02: Drei Graeber, je einer im Erdfenster seiner Etage. */
+function planVersetzterSchacht(): Plan {
+  let a = false;
+  let b = false;
+  let c = false;
+  return (w) => {
+    if (!a) {
+      const k = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y < 205 && x.x >= 100 && x.x <= 150,
+      );
+      if (k && w.assign(k.id, 'digger')) a = true;
+      return;
+    }
+    if (!b) {
+      const k = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 260 && x.y < 280 && x.x >= 334 && x.x <= 384,
+      );
+      if (k && w.assign(k.id, 'digger')) b = true;
+      return;
+    }
+    if (!c) {
+      const k = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 332 && x.y < 352 && x.x >= 564 && x.x <= 614,
+      );
+      if (k && w.assign(k.id, 'digger')) c = true;
+    }
+  };
+}
+
+
+/** w6-04: Drei Schraegen durch drei E96-Bloecke — kein Schirm im Vorrat. */
+function planZuTief(): Plan {
+  let miner: number | null = null;
+  let stufen = 0;
+  return (w) => {
+    if (miner === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 185 && x.x >= 110 && x.x <= 160,
+      );
+      if (c && w.assign(c.id, 'miner')) miner = c.id;
+      return;
+    }
+    if (stufen < 2) {
+      const m = w.wuselById(miner);
+      // Sobald er auf dem naechsten Block steht, setzt dieselbe Hand nach.
+      // Nur solange er noch auf einem Block steht — auf der Sohle wuerde
+      // dieselbe Hand den Boden aufschneiden und den Pulk hinterherziehen.
+      if (m && m.state === State.WALKING && m.dir === 1 && m.y < 460) {
+        if (w.assign(m.id, 'miner')) stufen++;
+      }
+    }
+  };
+}
+
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -2050,6 +2123,10 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w5-13': planSchlot13,
   'w5-14': planSchlot14,
   'w5-15': planPruefungB,
+  // Welt 6 — der Sonnenhang (Hundert-Level-Ausbau).
+  'w6-01': planVierWiesen,
+  'w6-02': planVersetzterSchacht,
+  'w6-03': planZuTief,
 };
 
 function planFor(level: LevelDef): Plan {

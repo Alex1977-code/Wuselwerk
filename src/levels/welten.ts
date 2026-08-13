@@ -64,7 +64,11 @@ export type Belohnung =
       /** Anteil auf das Zeitlimit, 0.25 = ein Viertel mehr. */
       anteil: number;
     })
-  | (BelohnungText & { art: 'komfort'; id: 'meisterschluessel' })
+  // Komfort-Belohnungen sagen etwas an, ohne mitzuspielen. Der
+  // Meisterschluessel legt die Par-Zahl offen, das Hoehenband beschriftet die
+  // Kanten — die Welt, die das Normhoehen-Raster lehrt, schenkt am Ende
+  // seine Beschriftung.
+  | (BelohnungText & { art: 'komfort'; id: 'meisterschluessel' | 'hoehenband' })
   | (BelohnungText & { art: 'schmuck'; id: string });
 
 export interface Welt {
@@ -297,6 +301,34 @@ export const WELTEN: Welt[] = [
       text: 'Der ganze Weg wird golden, und die Figur bekommt einen Hut. Sonst nichts — das ist der Witz.',
     },
   }),
+  // --- Der Hundert-Level-Ausbau -------------------------------------------
+  //
+  // Zwei Welten in der Familie von Grasland, aber am anderen Ende des Spiels:
+  // Wer sie erreicht, kennt alle acht Berufe und alle acht Raumbausteine. Der
+  // Reiz ist genau dieser Widerspruch — die freundlichste Kulisse traegt die
+  // haerteste Architektur. Getrennt sind die beiden durch das Licht: der
+  // Sonnenhang bekommt Nachmittagslicht von Westen und einen Horizont, die
+  // Wipfelweide Licht von oben durchs Laub und gar keinen.
+  welt({
+    id: 'w6',
+    name: 'Sonnenhang',
+    thema: 'Terrassen im Nachmittagslicht. Was von weitem wie eine Wiese aussieht, hat vier Stockwerke.',
+    kartenTheme: 'sonnenhang',
+    farbe: '#d9a441',
+    // Drei von siebzehn gebaut. Die Zahl waechst mit jedem ausgemessenen
+    // Level — die Karte verspricht nur, was das Spiel haelt.
+    soll: 3,
+    phase: 3,
+    belohnung: {
+      art: 'komfort',
+      id: 'hoehenband',
+      titel: 'Das Höhenband',
+      text: 'Jede Kante schreibt ab jetzt ihre Normhöhe an, solange der Finger auf dem Glas liegt: 48, 72, 96, 120.',
+    },
+  }),
+  // Welt 7 „Wipfelweide" ist entworfen (docs/welt-6-7-konzept.md), aber noch
+  // nicht gebaut. Sie kommt auf die Karte, sobald ihr erstes Level gemessen
+  // ist — Palette, Ambiente und Musik stehen bereits.
 ];
 
 export function weltById(id: string): Welt | undefined {

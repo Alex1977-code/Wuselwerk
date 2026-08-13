@@ -1,6 +1,19 @@
 import type { Rect, SkillCounts } from '../core/types';
 
-export type ThemeId = 'grass' | 'crystal' | 'rust' | 'frost' | 'magma';
+export type ThemeId =
+  | 'grass'
+  | 'crystal'
+  | 'rust'
+  | 'frost'
+  | 'magma'
+  // Die zwei Gruenwelten des Hundert-Level-Ausbaus. Beide stehen in der
+  // Familie von Grasland — und trennen sich voneinander durch das LICHT,
+  // nicht durch die Grundfarbe: Der Sonnenhang bekommt Nachmittagslicht von
+  // Westen und einen Horizont, die Wipfelweide Licht von oben durchs Laub
+  // und gar keinen. Zwei gruene Welten hintereinander vertragen keine
+  // Neufaerbung derselben Kulisse.
+  | 'sonnenhang'
+  | 'wipfel';
 
 export type PaintOp =
   | { t: 'rect'; x: number; y: number; w: number; h: number; mat: number }

@@ -312,6 +312,110 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     fanfareGrund: 0,
   },
   /**
+   * Welt 6 — Sonnenhang.
+   *
+   * Dasselbe Volkslied wie im Grasland, vier Stunden spaeter am Tag: Die
+   * Melodie bleibt, weil die Welt in derselben Familie steht und der Spieler
+   * das hoeren soll — aber sie steht einen Ganzton tiefer, geht langsamer und
+   * traegt statt der Drehleier die Okarina. So klingt Nachmittag: dieselbe
+   * Wiese, muedere Luft.
+   */
+  sonnenhang: {
+    melodie: [
+      // Kopf, Antwort abwaerts: G G A G E | F E D —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [5, 2], [4, 2], [2, 3], [null, 1],
+      // Kopf, Antwort aufwaerts: G G A G C' | H A G —
+      [7, 2], [7, 1], [9, 1], [7, 2], [12, 2],
+      [11, 2], [9, 2], [7, 4],
+      // Mittelteil, mit dem Fis: C' H A G Fis | G — E D
+      [12, 2], [11, 1], [9, 1], [7, 2], [6, 2],
+      [7, 4], [4, 2], [2, 2],
+      // Kopf zum dritten Mal, Schluss nach Hause: G G A G E | D E C —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [2, 2], [4, 2], [0, 4],
+    ],
+    // Der letzte Takt steht auf der Dominante, waehrend die Melodie schon auf
+    // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
+    // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
+    akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
+    farbe: [4, 7],
+    // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
+    // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
+    //
+    // 1. **Schritttempo.** 120 Viertel je Minute ist der Gang eines Menschen.
+    //    Das Level heisst „Spaziergang", und die Figuren laufen darin herum.
+    // 2. **Rundes Raster.** Eine Achtel dauert damit genau 250 ms. Daran haengt
+    //    mehr, als es aussieht: das Echo (punktierte Achtel, 375 ms) und die
+    //    Trippelschritte, die jetzt auf demselben Achtelraster laufen statt auf
+    //    freien 190 ms (`schrittDauer`).
+    bpm: 104,
+    grund: 233.08,
+    // Drehleier statt Okarina — „zu floetenartig" war eine richtige
+    // Beobachtung ueber den Bau der alten Stimme, nicht ueber ihren Pegel.
+    // Die Begruendung im Einzelnen steht bei `leier` in `instrumente.ts`.
+    melodieStimme: 'okarina',
+    zweitStimme: 'leier',
+    harmonieStimme: 'ukulele',
+    // C-Dur pentatonisch. Jede Stufe kommt in der Melodie oben vor.
+    sfxStufen: [0, 2, 4, 7, 9],
+    fanfareGrund: 0,
+  },
+  /**
+   * Welt 7 — Wipfelweide.
+   *
+   * Das Schlussstueck. Dieselbe Volksliedform, aber eine Quinte TIEFER
+   * gegruendet und leicht beschleunigt: Die Hoehe traegt hier das
+   * Instrument, nicht der Grundton — eine hoch gestimmte Begleitung liefe
+   * der Melodie ins Fenster (800 Hz bis 3 kHz gehoeren ihr allein, und ein
+   * Test besteht darauf). Man ist oben, die Luft ist duenner, und die
+   * Panfloete fuehrt: ein Blasinstrument aus Rohr, das nach Wind zwischen
+   * Halmen klingt, waehrend unten die Kalimba das Blattwerk zupft. Das
+   * Kopfmotiv bleibt erkennbar; das hundertste Level soll klingen wie das
+   * erste, nur hoeher.
+   */
+  wipfel: {
+    melodie: [
+      // Kopf, Antwort abwaerts: G G A G E | F E D —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [5, 2], [4, 2], [2, 3], [null, 1],
+      // Kopf, Antwort aufwaerts: G G A G C' | H A G —
+      [7, 2], [7, 1], [9, 1], [7, 2], [12, 2],
+      [11, 2], [9, 2], [7, 4],
+      // Mittelteil, mit dem Fis: C' H A G Fis | G — E D
+      [12, 2], [11, 1], [9, 1], [7, 2], [6, 2],
+      [7, 4], [4, 2], [2, 2],
+      // Kopf zum dritten Mal, Schluss nach Hause: G G A G E | D E C —
+      [7, 2], [7, 1], [9, 1], [7, 2], [4, 2],
+      [2, 2], [4, 2], [0, 4],
+    ],
+    // Der letzte Takt steht auf der Dominante, waehrend die Melodie schon auf
+    // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
+    // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
+    akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
+    farbe: [4, 7],
+    // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
+    // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
+    //
+    // 1. **Schritttempo.** 120 Viertel je Minute ist der Gang eines Menschen.
+    //    Das Level heisst „Spaziergang", und die Figuren laufen darin herum.
+    // 2. **Rundes Raster.** Eine Achtel dauert damit genau 250 ms. Daran haengt
+    //    mehr, als es aussieht: das Echo (punktierte Achtel, 375 ms) und die
+    //    Trippelschritte, die jetzt auf demselben Achtelraster laufen statt auf
+    //    freien 190 ms (`schrittDauer`).
+    bpm: 126,
+    grund: 196.0,
+    // Drehleier statt Okarina — „zu floetenartig" war eine richtige
+    // Beobachtung ueber den Bau der alten Stimme, nicht ueber ihren Pegel.
+    // Die Begruendung im Einzelnen steht bei `leier` in `instrumente.ts`.
+    melodieStimme: 'panfloete',
+    zweitStimme: 'okarina',
+    harmonieStimme: 'kalimba',
+    // C-Dur pentatonisch. Jede Stufe kommt in der Melodie oben vor.
+    sfxStufen: [0, 2, 4, 7, 9],
+    fanfareGrund: 0,
+  },
+  /**
    * Welt 2 — Hoehle. Derselbe Bau, andere Tonleiter: dorisch auf A.
    *
    * Der Unterschied zu Moll ist ein einziger Ton, die **grosse Sexte** (Fis).
@@ -647,6 +751,8 @@ const RASTER: Record<ThemeId, (Note | null)[]> = {
   rust: aufRaster(STUECKE.rust.melodie),
   frost: aufRaster(STUECKE.frost.melodie),
   magma: aufRaster(STUECKE.magma.melodie),
+  sonnenhang: aufRaster(STUECKE.sonnenhang.melodie),
+  wipfel: aufRaster(STUECKE.wipfel.melodie),
 };
 
 /** Was die Musik über die Spiellage wissen muss. */
