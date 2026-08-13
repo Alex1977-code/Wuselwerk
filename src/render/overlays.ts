@@ -1,4 +1,5 @@
 import type { World } from '../core/world';
+import { minimapBox } from './minimap';
 import type { LevelDef } from '../levels/types';
 import type { Progress } from '../storage';
 import { COL, drawStars, roundRect } from './hud';
@@ -109,11 +110,17 @@ export function drawIntro(
     wrap(ctx, level.hint, bx + bw / 2, by + 30, bw - 26, 14);
     ctx.restore();
 
+    // Der Knopf raeumt der Uebersichtskarte das Feld (Spieltest-Runde: er
+    // ueberdeckte ihren linken Rand, ein Kartentipp startete das Level).
+    // Er sitzt jetzt mittig im freien Band WESTLICH der Karte.
+    const karte = minimapBox(L, level);
+    const frei = karte ? karte.x - L.play.x - 12 : L.play.w;
+    const bw2 = Math.max(150, Math.min(220, frei - 16));
     const btn: Button = {
       id: 'start',
-      x: L.cssW / 2 - 110,
+      x: L.play.x + Math.max(0, (frei - bw2) / 2),
       y: L.play.y + L.play.h - 60,
-      w: 220,
+      w: bw2,
       h: 46,
     };
     button(ctx, btn, 'Los — Falltür öffnen', true);

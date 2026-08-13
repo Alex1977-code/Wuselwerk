@@ -154,7 +154,7 @@ export const WELT3_LEVELS: LevelDef[] = [
     id: 'w3-05',
     name: 'Die Galerie',
     chapter: 'Werk',
-    hint: 'Der Schirm trägt hinunter, und das Ziel liegt sichtbar unter den Füssen — aber die Halle ist zur Tür hin vermauert. Wer gelandet ist, hat noch Arbeit.',
+    hint: 'Erst das Tor in der Balkonlippe, dann trägt der Schirm hinunter — und die Halle ist zur Tür hin vermauert. Wer gelandet ist, hat noch Arbeit.',
     theme: 'rust',
     width: 720,
     height: 540,
@@ -173,13 +173,19 @@ export const WELT3_LEVELS: LevelDef[] = [
     // NACH der Landung (floater+basher, nie zuvor gespielt). Vom Balkon
     // sieht man die Tuerkammer unter den Fuessen: die sichtbare, noch
     // unverstandene Loesung. Rot-Tests gegen beide Altplaene.
-    skills: sk({ floater: 8, basher: 2 }),
-    // Sechs Schirme, ein Stollen.
-    par: 7,
+    skills: sk({ floater: 8, basher: 3 }),
+    // Das Tor in der Lippe, sechs Schirme, ein Stollen.
+    par: 8,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
       // Der Balkon — die Galerie, von der alles faellt.
       { t: 'rect', x: 0, y: 170, w: 320, h: 26, mat: MAT.STEEL },
+      // Die Schuttlippe an der Balkonkante (Spieltest-Runde): Ohne sie
+      // marschiert der unbeaufsichtigte Pulk binnen 18 Sekunden ueber die
+      // Kante und ist nach 44 tot — in der EINFUEHRUNG des Bausteins. Mit
+      // ihr pendelt er sicher, bis der Rammer das Tor schlaegt. Zwoelf hoch
+      // (ueber MAX_STEP, unter BASH_UP): keine Stufe, aber ein Durchgang.
+      { t: 'rect', x: 308, y: 158, w: 12, h: 12, mat: MAT.EARTH },
       // Der Hallenboden, GLATT: Auf rauem Grund verliert der Rammer den
       // Boden unter den Fuessen (Messung aus w2-08).
       { t: 'rect', x: 0, y: 470, w: 720, h: 70, mat: MAT.ROCK },

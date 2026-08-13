@@ -41,6 +41,13 @@ export interface HudState {
    * weiss, was eine Niederlage kostet, nicht erst auf der Karte danach.
    */
   leben: { uebrig: number } | null;
+  /**
+   * Ist der Totenkopf scharf? Der erste Tipp schaerft nur (Spieltest-Runde:
+   * er sass 45 Punkte neben der Pause und zuendete ohne Rueckfrage — ein
+   * Fehlgriff kostete den ganzen Lauf). Der zweite Tipp zuendet, jeder
+   * andere Tipp und drei Sekunden Warten entschaerfen wieder.
+   */
+  nukeScharf: boolean;
 }
 
 export function roundRect(
@@ -137,7 +144,30 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   ctx.fillText(`${w.saved}/${w.needed}`, midX, b.h > 48 ? 20 : 14);
 
   drawSoundButton(ctx, L.soundBtn, s.muted);
-  drawIconButton(ctx, L.nukeBtn, '☢', false);
+  drawIconButton(ctx, L.nukeBtn, '☢', s.nukeScharf);
+  if (s.nukeScharf) {
+    // Die Rueckfrage steht als Fahne UNTER dem Knopf, nicht in einem
+    // Fenster: Wer aufgibt, soll das ohne Dialog tun duerfen — wer
+    // danebentippt, nicht. Unter der Leiste, damit sie der Uhr nicht ins
+    // Wort faellt (erste Fassung ueberdeckte sie).
+    ctx.save();
+    const txt = 'nochmal tippen = alle sprengen';
+    ctx.font = '700 10px system-ui, sans-serif';
+    const tw = ctx.measureText(txt).width + 14;
+    const fx = Math.min(b.x + b.w - tw - 6, L.nukeBtn.x + L.nukeBtn.w / 2 - tw / 2);
+    const fy = b.y + b.h + 6;
+    ctx.fillStyle = 'rgba(24, 10, 14, 0.92)';
+    roundRect(ctx, fx, fy, tw, 20, 6);
+    ctx.fill();
+    ctx.strokeStyle = COL.bad;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = COL.bad;
+    ctx.fillText(txt, fx + tw / 2, fy + 11);
+    ctx.restore();
+  }
   drawIconButton(ctx, L.pauseBtn, '❚❚', false);
 
   // Rettungsquote-Balken (GDD §5)

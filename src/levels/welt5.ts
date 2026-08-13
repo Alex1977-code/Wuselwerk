@@ -127,7 +127,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     // Mauer mit der Tuer im Westen. Sicherer Sieg woertlich: Der Vorrat
     // traegt einen Schirm fuer JEDE Figur — wer allen auf dem Balkon die
     // Gabe gibt, verliert niemanden; die Kuer schirmt nur im Fall.
-    hint: 'Der Balkon endet über der Halle, dreihundert tief. Ein Schirm für jeden — und unten öffnet ein Rammer die Mauer zur Tür.',
+    hint: 'Der Balkon endet über der Halle, dreihundert tief — hinter einer Lippe. Schlage das Tor, gib jedem einen Schirm, und unten öffnet ein Rammer die Mauer.',
     theme: 'magma',
     width: 720,
     height: 540,
@@ -141,12 +141,16 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 100,
     releaseRate: 45,
     minReleaseRate: 20,
-    skills: sk({ floater: 10, basher: 2 }),
-    par: 11,
+    skills: sk({ floater: 10, basher: 3 }),
+    par: 12,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
-      // Der Balkon: Blech, von dessen Westkante der lange Fall beginnt.
+      // Der Balkon: Blech, von dessen Westkante der lange Fall beginnt —
+      // gesperrt durch die Schuttlippe (Spieltest-Runde): Ein Durchatmer
+      // darf den unbeaufsichtigten Pulk nicht in 45 Sekunden verlieren.
+      // Erst das Tor in der Lippe gibt die Kante frei.
       { t: 'rect', x: 400, y: 170, w: 320, h: 26, mat: MAT.STEEL },
+      { t: 'rect', x: 400, y: 158, w: 12, h: 12, mat: MAT.EARTH },
       // Die Mauer mit der Tuer dahinter; der Hallenboden ist glatt, damit
       // der Rammer nach dem 2er-Versatz nie den Boden verliert (Messregel
       // aus w2-08).
@@ -429,7 +433,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     // Todeskanten, und die Laufrichtung der Gelandeten fuehrt geradewegs
     // auf die oestliche zu. Der erste Gelandete muss Waechter werden;
     // Westlaeufer faengt die Tuer von selbst.
-    hint: 'Der Schirm bringt dich auf die Insel — und die Insel hat Kanten. Der Erste unten wird Wächter.',
+    hint: 'Schlage das Tor in der Lippe, dann bringt der Schirm dich auf die Insel — und die Insel hat Kanten. Der Erste unten wird Wächter.',
     theme: 'magma',
     width: 720,
     height: 620,
@@ -445,12 +449,17 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 80,
     releaseRate: 40,
     minReleaseRate: 20,
-    skills: sk({ floater: 10, blocker: 2 }),
-    par: 11,
+    skills: sk({ floater: 10, blocker: 2, basher: 2 }),
+    par: 12,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
-      // Der Startsims: Blech, von dessen Ostkante der lange Fall beginnt.
+      // Der Startsims: Blech, von dessen Ostkante der lange Fall beginnt —
+      // gesperrt durch die Schuttlippe (Spieltest-Runde): Unbeaufsichtigt
+      // war der ganze Pulk nach 41 Sekunden tot, bevor der Spieler die
+      // Insel ueberhaupt gefunden hatte. Jetzt wartet er, bis das Tor
+      // steht; die Lippe liegt ueber der Insel, der Fall trifft sie.
       { t: 'rect', x: 0, y: 170, w: 320, h: 26, mat: MAT.STEEL },
+      { t: 'rect', x: 308, y: 158, w: 12, h: 12, mat: MAT.EARTH },
       // Die Landeinsel — 300 Punkte tiefer, mit zwei offenen Kanten.
       { t: 'rect', x: 200, y: 470, w: 280, h: 150, mat: MAT.ROCK },
       // Der Grund der Schlucht, sichtbar toedlich tief (130 Punkte).
@@ -470,7 +479,7 @@ export const WELT5_LEVELS: LevelDef[] = [
     // Baggers trifft die Stahlsohle, und der Rammer schlaegt den
     // Sohlen-Stollen ostwaerts in die Tuerkammer. Ein Schirm fuer jeden
     // liegt im Vorrat — niemand muss sterben.
-    hint: 'Der Schirm trägt vom Balkon auf die Halde. Dann ostwärts: die Schräge auf die Stahlsohle, der Stollen in die Kammer. Drei Berufe, ein Weg.',
+    hint: 'Erst das Tor in der Balkonlippe, dann trägt der Schirm auf die Halde. Dann ostwärts: die Schräge auf die Stahlsohle, der Stollen in die Kammer.',
     theme: 'magma',
     width: 720,
     height: 620,
@@ -483,12 +492,17 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 150,
     releaseRate: 45,
     minReleaseRate: 20,
-    skills: sk({ floater: 12, miner: 2, basher: 2 }),
-    par: 14,
+    skills: sk({ floater: 12, miner: 2, basher: 3 }),
+    par: 15,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
-      // Der Westbalkon: Blech, von dessen Ostkante der Schirmfall beginnt.
+      // Der Westbalkon: Blech, von dessen Ostkante der Schirmfall beginnt —
+      // gesperrt durch die Schuttlippe (Spieltest-Runde): Unbeaufsichtigt
+      // starb hier der schnellste Totalverlust des Spiels (erster Tod nach
+      // 13 s, alle nach 34) — und das im Meisterstueck mit der haertesten
+      // Quote. Jetzt wartet der Pulk, bis der Rammer das Tor schlaegt.
       { t: 'rect', x: 0, y: 150, w: 240, h: 26, mat: MAT.STEEL },
+      { t: 'rect', x: 228, y: 138, w: 12, h: 12, mat: MAT.EARTH },
       // Die Halde ueber der Stahlsohle; die Tuerkammer im Osten wartet
       // unter dem Hinweg.
       { t: 'ground', x: 0, w: 720, y: 360, h: 260, mat: MAT.EARTH, rough: 0 },

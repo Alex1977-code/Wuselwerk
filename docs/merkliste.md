@@ -145,6 +145,19 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Haarnadel w3-14, Turm w5-02). **Damit ist das Level-Konzept
   vollständig umgesetzt** — offen bleibt nur, was echte Menschen
   brauchen: der Familientest.
+- ✅ **Spieltest-Runde** (Panel bedient den echten Build im Browser,
+  Bericht in `docs/gesamtabnahme.md` §6): Fand einen **Blocker**, den
+  keine Papierprüfung sehen konnte — in vier Balkon-Leveln (w3-05,
+  w5-03, w5-10, w5-11) starb der unbeaufsichtigte Pulk binnen 34–45
+  Sekunden über der Kante, darunter ausgerechnet die Baustein-Einführung
+  und ein ausgewiesener Durchatmer. Geheilt mit der **Schuttlippe** an
+  der Kante (zwölf hoch: über Stufenhöhe, unter Rammtiefe): Der Pulk
+  wartet sicher, bis der Rammer das Tor schlägt — die W4-Pferchtregel,
+  jetzt auch in W2/W3/W5. Dazu zwei Bedienfallen entschärft: Der
+  „Los"-Knopf des Lesemodus überdeckte die Übersichtskarte (Kartentipp
+  und Zoomgeste starteten das Level), und der Totenkopf zündete ohne
+  Rückfrage neben der Pause — jetzt schärft der erste Tipp, der zweite
+  zündet.
 
 ## Grafik
 

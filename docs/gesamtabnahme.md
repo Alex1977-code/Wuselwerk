@@ -108,7 +108,58 @@ Der W2-„Kamin" (w2-03) blieb als Werbebild ungeeignet (Hochkant-Anschnitt
 zeigt Wand oder Kammer, nie beides) — w5-09 trägt dieselbe Silhouette
 besser; das deckt sich mit der Panel-Empfehlung.
 
-## 6. Offene Punkte nach der Abnahme
+## 6. Spieltest-Runde — was Proxys nicht sehen konnten
+
+Nach der Abnahme hat ein Panel aus vier Testpersonen den echten Build im
+Browser **bedient** (statt Silhouetten zu lesen). Das hat drei Dinge
+gefunden, die kein Messlauf und kein Silhouetten-Test hätte finden
+können — und einen davon als Blocker.
+
+**Blocker: der Todesmarsch der Balkon-Level.** In w5-10 „Glutregen" und
+w5-11 „Unter der Galerie" marschierte der unbeaufsichtigte Pulk sofort
+über die Balkonkante: erster Toter nach 18 bzw. 13 Sekunden, alle tot
+nach 41 bzw. 34. Wer las, sich umsah oder die Karte erkundete, hatte
+verloren, bevor er den Arbeitsort gefunden hatte. Die Nachmessung über
+alle 66 Level zeigte dasselbe Muster in **vier** Leveln — darunter
+w3-05, die *Einführung* des Bausteins, und w5-03, der ausgewiesene
+*Durchatmer*: ein Level, das laut Konzept ein sicherer Sieg sein soll,
+verlor unbeaufsichtigt in 45 Sekunden alle zehn Figuren.
+
+Die Heilung ist die W4-Regel des Konzepts, endlich auch in W2/W3/W5
+angewandt („Sackgassen fangen mit Warten, nie mit Sterben"): Alle vier
+Balkone bekommen eine **Schuttlippe** an der tödlichen Kante — zwölf
+Bildpunkte hoch, also über der Stufenhöhe und unter der Rammtiefe. Der
+Pulk pendelt sicher, bis der Spieler mit dem Rammer das Tor schlägt;
+erst dann gibt die Kante den Fall frei. Der Puzzle-Kern jedes Levels
+bleibt unangetastet, es kommt genau ein Zug hinzu (Par +1, ein
+Werkzeug Reserve). Nachmessung: in allen vier Leveln stirbt
+unbeaufsichtigt **niemand** mehr.
+
+Die verbliebenen fünf Level mit tödlicher Untätigkeit (w1-03, w1-04,
+w1-08, w5-01, w5-14) bleiben bewusst so: Dort ist die Gefahr **im
+Startbild sichtbar** und im Hinweis benannt — das ist das Genre, nicht
+die Falle. Die geheilten vier hatten ihren Arbeitsort außerhalb des
+Startbildes.
+
+**Zwei Bedienfallen.** Der „Los"-Knopf des Lesemodus überdeckte den
+linken Rand der Übersichtskarte; ein Kartentipp und sogar eine
+Zoomgeste starteten das Level. Er sitzt jetzt im freien Band westlich
+der Karte, und im Lesemodus löst der zweite Finger einer Geste keinen
+Knopf mehr aus. Der Totenkopf zündete ohne Rückfrage, einen Daumen
+neben der Pause — ein Fehlgriff kostete den ganzen Lauf. Jetzt schärft
+der erste Tipp nur (Fahne „nochmal tippen = alle sprengen"), der
+zweite zündet, jeder andere Griff entschärft wieder.
+
+**Bestätigt hat das Panel außerdem**, was die Papierabnahme nur
+vermuten konnte: Der Lesemodus (stehende Uhr, freies Schwenken,
+Pinch-Zoom, antippbare Karte) trägt, der Zeitrücklauf springt exakt
+zehn Sekunden zurück und rettet sogar aus einer laufenden
+Selbstzerstörung, die Niederlagen-Tafel benennt Grund und Fortschritt,
+und w5-09 „Kaminzug" ist anstrengend-fair: Die Testperson gewann es im
+fünften Anlauf mit 5/5 unter Par — der Pulk wartete dabei die ganze
+Zeit sicher im ummauerten Vorhof.
+
+## 7. Offene Punkte nach der Abnahme
 
 1. **Familientest mit echten Menschen** — die drei gesetzten Werte
    (45-Sekunden-Regel aus Strittig 2, Median-Leben ≤ 2, die
@@ -117,3 +168,11 @@ besser; das deckt sich mit der Panel-Empfehlung.
    „Verstehen vor Start" durchfällt (Strittig 3).
 3. **Grafik-Feinschliff w4-07** gegen die w4-01-Verwechslung (ein
    markantes Zusatzelement am Pfeiler).
+4. **Kleinbefunde der Spieltest-Runde**, nicht blockierend: Das
+   Raten-Oval verrät seine Ziehfunktion nicht (ein Tipp erhöht nur, das
+   Senken geht ausschließlich per Ziehen), und am Desktop fehlt ein
+   Zoom per Mausrad — Pinch gibt es nur auf dem Glas.
+5. **Einmal-Werkzeuge und Fehltipps**: Trifft der Sprengmeister in
+   w5-09 die falsche Figur, ist das Level rechnerisch verloren, läuft
+   aber stumm weiter. Ein Hinweis „so ist es nicht mehr zu schaffen"
+   (oder der Rücklauf-Wink) wäre die freundlichere Antwort.

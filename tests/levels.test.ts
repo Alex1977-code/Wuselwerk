@@ -1081,8 +1081,17 @@ function planKruste(): Plan {
  * Rammer die Mauer. Niemand kann sterben.
  */
 function planGlutGalerie(): Plan {
+  let tor = false;
   let stollen = false;
   return (w) => {
+    // Erst das Tor in der Lippe (Westkante des Balkons), dann die Schirme.
+    if (!tor) {
+      const b = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 172,
+      );
+      if (b && w.assign(b.id, 'basher')) tor = true;
+      return;
+    }
     const c = w.wusels.find(
       (x) => x.state === State.WALKING && !x.hasFloater && x.y < 200 && w.skills.floater > 0,
     );
@@ -1264,9 +1273,17 @@ function planKaminSprengung(): Plan {
  * ostwaerts in die Kammer (das w3-14-Fenster, gespiegelt).
  */
 function planUnterDerGalerie(): Plan {
+  let tor = false;
   let schraege = false;
   let stollen = false;
   return (w) => {
+    if (!tor) {
+      const b = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 152,
+      );
+      if (b && w.assign(b.id, 'basher')) tor = true;
+      return;
+    }
     const c = w.wusels.find(
       (x) => x.state === State.WALKING && !x.hasFloater && x.y < 200 && w.skills.floater > 0,
     );
@@ -1501,9 +1518,17 @@ function planSchlot8(): Plan {
  * weiterlaeuft, wird Waechter vor der Kante. Westlaeufer faengt die Tuer.
  */
 function planSchlot10(): Plan {
+  let tor = false;
   let schirme = 0;
   let wache = false;
   return (w) => {
+    if (!tor) {
+      const b = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 172,
+      );
+      if (b && w.assign(b.id, 'basher')) tor = true;
+      return;
+    }
     if (schirme < 10) {
       for (const x of w.wusels) {
         if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {
@@ -1871,9 +1896,20 @@ function planGegenstrom(): Plan {
  * der Landung.
  */
 function planGalerie(): Plan {
+  let tor = false;
   let schirme = 0;
   let stollen = false;
   return (w) => {
+    // Das Tor in der Balkonlippe (Spieltest-Runde): Bis es steht, pendelt
+    // der Pulk sicher. Die Zuweisung darf frueh fallen — ohne Wand in
+    // Reichweite wird sie vorgemerkt und greift an der Lippe von selbst.
+    if (!tor) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 172,
+      );
+      if (c && w.assign(c.id, 'basher')) tor = true;
+      return;
+    }
     if (schirme < 6) {
       for (const x of w.wusels) {
         if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {

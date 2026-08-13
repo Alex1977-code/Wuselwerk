@@ -157,6 +157,15 @@ export class Game {
   private verlustAnsage: string | null = null;
   /** Startklappe: Level ab Weltmitte beginnen im Lesemodus. */
   private lesemodus = false;
+  /**
+   * Restticks, in denen ein zweiter Tipp den Totenkopf zuendet.
+   *
+   * Die Selbstzerstoerung ist die Kapitulationsgeste und darf schnell
+   * gehen — aber nicht aus Versehen (Spieltest-Runde): Der Knopf liegt
+   * einen Daumen neben der Pause, und ein Fehlgriff sprengte kommentarlos
+   * den ganzen Lauf. Jetzt schaerft der erste Tipp, der zweite zuendet.
+   */
+  private nukeScharfBis = 0;
   private lebenKnoepfe: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
   // Spielerprofil: Name und Avatarfarbe (profil.ts).
@@ -318,6 +327,7 @@ export class Game {
       ['w1-01', 'w1-02', 'w1-03'].includes(level.id) && !gesteGesehen('halten');
     this.screen = 'play';
     this.phase = 'intro';
+    this.nukeScharfBis = 0;
     // Die Startklappe (Level-Konzept, Paket 0): Ab der Weltmitte beginnt
     // jedes Level im Lesemodus — kein dunkler Vorhang, die Karte ist frei
     // schwenkbar, die Uebersichtskarte antippbar, und erst „Los" oeffnet
@@ -911,6 +921,7 @@ export class Game {
     let guard = 0;
     while (this.simAcc >= MS_PER_TICK && guard < 240) {
       this.world.tick();
+      if (this.nukeScharfBis > 0) this.nukeScharfBis--;
       this.simAcc -= MS_PER_TICK;
       guard++;
     }
@@ -1128,6 +1139,9 @@ export class Game {
     this.audio.unlock();
     this.canvas.setPointerCapture?.(e.pointerId);
     const { x, y } = this.pos(e);
+    // Jeder Griff woanders hin entschaerft den Totenkopf wieder — die
+    // Rueckfrage soll den Fehlgriff abfangen, nicht scharf liegen bleiben.
+    if (this.nukeScharfBis > 0 && !inBox(this.layout.nukeBtn, x, y)) this.nukeScharfBis = 0;
 
     if (this.screen === 'titel') {
       // Der ganze Titel ist der Knopf: eine Handlung, keine Auswahl. Die
@@ -1208,7 +1222,11 @@ export class Game {
 
     if (this.phase !== 'running') {
       const hit = this.buttons.find((b) => inBox(b, x, y));
-      if (hit) {
+      // Im Lesemodus liegt der Los-Knopf auf der offenen Buehne: Der zweite
+      // Finger einer Zoomgeste darf ihn nicht ausloesen (Spieltest-Runde —
+      // eine Pinch-Geste startete das Level).
+      const geste = this.phase === 'intro' && this.lesemodus && this.pointers.size > 0;
+      if (hit && !geste) {
         this.onOverlayButton(hit.id);
         return;
       }
@@ -1258,6 +1276,12 @@ export class Game {
       return;
     }
     if (inBox(L.nukeBtn, x, y)) {
+      if (this.nukeScharfBis <= 0) {
+        this.nukeScharfBis = 3 * TICK_HZ;
+        this.audio.werkzeugFehlt();
+        return;
+      }
+      this.nukeScharfBis = 0;
       this.world.nuke();
       // Der Ruf gehoert zum Knopf, nicht zu einem Weltereignis: Er faellt
       // einmal, wenn der Spieler alles aufgibt — nicht je Figur.
@@ -1853,6 +1877,7 @@ export class Game {
       muted: this.audio.muted,
       atlas: this.atlas,
       leben: this.ohneLeben ? null : { uebrig: this.leben.uebrig },
+      nukeScharf: this.nukeScharfBis > 0,
     };
   }
 
