@@ -1947,7 +1947,6 @@ export class Game {
       leisteWinkt: this.leisteWinktBis > performance.now(),
       cameraFollow: this.camera.follow,
       muted: this.audio.muted,
-      atlas: this.atlas,
       leben: this.ohneLeben ? null : { uebrig: this.leben.uebrig },
       nukeScharf: this.nukeScharfBis > 0,
     };
@@ -1977,6 +1976,24 @@ export class Game {
     const v = this.camera.view(this.layout.play);
     const w = this.world.wusels.find(
       (x) => x.state === State.WALKING && x.x >= loX && x.x <= hiX,
+    );
+    if (!w) return null;
+    return { x: sx(v, w.x), y: sy(v, w.y - WUSEL_H / 2) };
+  }
+
+  /**
+   * Bildschirmposition der ersten kletternden Figur.
+   *
+   * Fuer die Sichtprobe des Kletterzugs. Der Zug ist eine reine
+   * Ansichtssache — er steht in keinem Zahlenwert, den ein Test lesen
+   * koennte, und laesst sich nur am Bild beurteilen. Ohne diesen Griff muesste
+   * die Probe raten, wo an der Wand die Figur gerade haengt.
+   */
+  debugKlettererScreenPos(): { x: number; y: number } | null {
+    if (this.screen !== 'play') return null;
+    const v = this.camera.view(this.layout.play);
+    const w = this.world.wusels.find(
+      (x) => x.state === State.CLIMBING || x.state === State.HOISTING,
     );
     if (!w) return null;
     return { x: sx(v, w.x), y: sy(v, w.y - WUSEL_H / 2) };

@@ -40,15 +40,32 @@ export const SKILL_LABEL: Record<SkillId, string> = {
   digger: 'Gräber',
 };
 
-export const SKILL_SHORT: Record<SkillId, string> = {
-  climber: 'KLE',
-  floater: 'SCH',
-  bomber: 'BOM',
-  blocker: 'BLO',
-  builder: 'BRÜ',
-  basher: 'RAM',
-  miner: 'SBG',
-  digger: 'GRÄ',
+/**
+ * Was auf dem Knopf steht.
+ *
+ * Der volle Name gehoert in den Text, nicht auf die Taste. „Schirmspringer"
+ * misst in neun Punkt achtundsiebzig Bildpunkte; ein Berufsknopf ist auf dem
+ * Telefon fuenfundsiebzig breit. Wer den vollen Namen erzwingt, landet bei
+ * acht Punkt und muss zusaetzlich stauchen — und genau das war der Zustand,
+ * den der Spieltest mit „nicht selbsterklaerend" beschrieben hat: Die Leiste
+ * hat es sich so schwer gemacht, dass sie am Ende gar nichts mehr schrieb.
+ *
+ * Die Kurzform loest es andersherum. Sie ist kuerzer, also darf sie GROESSER
+ * stehen — elf Punkt statt acht. Und sie kostet kein zweites Vokabular: Jede
+ * Kurzform ist die Wurzel des vollen Namens (Schirm|springer, Brücke|nbauer,
+ * Schräg|bagger, Spreng|meister), und in dem Moment, in dem man den Knopf
+ * waehlt, schreibt die Hinweiszeile darunter den vollen Namen aus. Man lernt
+ * das Paar also beim ersten Gebrauch, ohne es je gelehrt bekommen zu haben.
+ */
+export const SKILL_KNOPF: Record<SkillId, string> = {
+  climber: 'Kletterer',
+  floater: 'Schirm',
+  bomber: 'Sprengen',
+  blocker: 'Blocker',
+  builder: 'Brücke',
+  basher: 'Rammer',
+  miner: 'Schräge',
+  digger: 'Gräber',
 };
 
 export type SkillCounts = Record<SkillId, number>;

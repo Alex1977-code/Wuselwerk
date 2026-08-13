@@ -30,6 +30,89 @@ import type { SkillId } from '../core/types';
  * andere Silhouette: Leiter, Schirm, Bombe, Sperre, Treppe.
  */
 
+/**
+ * Die Arbeitsrichtung der fuenf Berufe, die die Figur durch die Welt tragen.
+ *
+ * Die drei fehlenden sind nicht vergessen: Sperre, Sprengmeister und
+ * Schirmspringer bringen niemanden woandershin, und **dass** sie keine Marke
+ * tragen, ist selbst eine Aussage.
+ *
+ * Die beiden Schraegen sind keine gerundeten Vierzig-Grad-Pfeile, sondern die
+ * echten Steigungen aus der Simulation: Der Brueckenbauer hebt einen
+ * Bildpunkt je zwei (BUILD_ADVANCE 2), der Schraegbagger senkt einen je zwei
+ * (MINE_DX 2 / MINE_DY 1). Beide sind damit exakt gespiegelt — was im Spiel
+ * ebenso stimmt: Die Rampe des einen ist die Rampe des anderen, nur
+ * andersherum. Ein Symbol, das die Steigung uebertreibt, verspricht eine
+ * steilere Verbindung, als das Werkzeug bauen kann.
+ */
+const RICHTUNG: Partial<Record<SkillId, number>> = {
+  climber: -Math.PI / 2,
+  builder: -Math.atan(1 / 2),
+  basher: 0,
+  miner: Math.atan(1 / 2),
+  digger: Math.PI / 2,
+};
+
+/**
+ * Die Richtungsmarke: eine dunkle Scheibe mit einem hellen Pfeil.
+ *
+ * Sie loest den Befund „die Grafiken der Berufsleiste sind nicht
+ * selbsterklaerend". Das gemalte Blatt zeigt fuer Schraegbagger und Graeber
+ * zwei Schaufeln im Schutt — bei siebenundzwanzig Bildpunkten ist das
+ * dieselbe Schaufel. Die Marke traegt den Unterschied unabhaengig vom Bild:
+ * immer dieselbe Scheibe, immer derselbe Pfeil, nur gedreht.
+ *
+ * Das ist bewusst **eine** Form fuer fuenf Berufe. Wer den Graeber-Pfeil
+ * einmal gelesen hat, liest die anderen vier, ohne sie je gesehen zu haben —
+ * und die Reihe hinauf / schraeg hinauf / geradeaus / schraeg hinab / hinab
+ * ist zugleich der ganze Bewegungsvorrat des Spiels, auf einen Blick.
+ */
+export function drawRichtungsmarke(
+  ctx: CanvasRenderingContext2D,
+  id: SkillId,
+  cx: number,
+  cy: number,
+  aktiv: boolean,
+  gewaehlt: boolean,
+  r = 9,
+): void {
+  const winkel = RICHTUNG[id];
+  if (winkel === undefined) return;
+  ctx.save();
+  ctx.globalAlpha = aktiv ? 1 : 0.42;
+  ctx.translate(cx, cy);
+
+  // Der Teller ist fast undurchsichtig. Er muss auch dann tragen, wenn eine
+  // Ecke des gemalten Symbols unter ihm liegt — ein halbdurchsichtiges
+  // Plaettchen mit Schutt darunter ist keine Marke mehr, sondern Unruhe.
+  ctx.fillStyle = 'rgba(8, 13, 22, 0.86)';
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = gewaehlt ? 'rgba(255, 201, 60, 0.95)' : 'rgba(255, 255, 255, 0.22)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(0, 0, r - 0.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.rotate(winkel);
+  ctx.fillStyle = gewaehlt ? '#ffc93c' : '#e6f0ff';
+  // Schaft und Spitze als eine gefuellte Flaeche — zwei getrennte Teile
+  // zeigen bei krummen Winkeln eine Fuge.
+  const l = r * 0.72;
+  const d = r * 0.2;
+  form(ctx, [
+    [-l, -d],
+    [l * 0.1, -d],
+    [l * 0.1, -d * 2.6],
+    [l, 0],
+    [l * 0.1, d * 2.6],
+    [l * 0.1, d],
+    [-l, d],
+  ]);
+  ctx.restore();
+}
+
 /** Zeichnet einen Streckenzug als gefuellte Flaeche. */
 function form(ctx: CanvasRenderingContext2D, pts: number[][]): void {
   ctx.beginPath();

@@ -1,4 +1,4 @@
-import { SAVING_TICKS, WUSEL_H } from '../core/constants';
+import { CLIMB_INTERVAL, SAVING_TICKS, WUSEL_H } from '../core/constants';
 import { DeathCause, State, type Wusel, type WorldEvent } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
@@ -7,7 +7,7 @@ import { standY, sx, sy, type View } from './camera';
 import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnschein, drawZuendUhr, schopfFarbe, schopfPlatz } from './schopf';
-import { clipForWusel, type SpriteAtlas } from './atlas';
+import { LEHNE, clipForWusel, type SpriteAtlas } from './atlas';
 import { Kulisse } from './kulisse';
 import { SPAEHEN, ansicht, ansichtVergessen } from './ansicht';
 import type { TerrainView } from './terrainView';
@@ -730,8 +730,20 @@ export class Scene {
       // Silhouette im Stein. Drei Pixel von der Wand weg sitzt der Koerper
       // draussen und nur die Griffhand am Fels. Dazu die Zug-Treppe, siehe
       // `kletterZug`.
-      const zug = sicht.pose === 'climbing' ? this.kletterZug(w.y) : null;
-      if (zug) ctx.translate(-blick * 3 * v.scale, zug.dy * v.scale);
+      const zug =
+        sicht.pose === 'climbing'
+          ? kletterZug(w.y, (w.timer % CLIMB_INTERVAL) / CLIMB_INTERVAL)
+          : null;
+      if (zug) {
+        ctx.translate(-blick * 3 * v.scale, zug.dy * v.scale);
+        // Neigen und Strecken um den Fusspunkt — dort, wo die Figur an der
+        // Wand steht. Um die Mitte gedreht wuerde sie beim Zug von der Wand
+        // wegwandern; um den Kopf gestreckt wuerde sie in den Fels sacken.
+        ctx.translate(fx, fy);
+        ctx.rotate(blick * zug.neigung);
+        ctx.scale(1, zug.reck);
+        ctx.translate(-fx, -fy);
+      }
 
       // Die Warnung des Sprengmeisters: ruhiger Schein dahinter, die Uhr
       // darueber. Das fruehere Licht **auf** der Figur ist ersatzlos weg — es
@@ -748,7 +760,8 @@ export class Scene {
       // ohne dass die Simulation davon weiss.
       const takt =
         sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt, zug?.schwung ?? 0)) {
+      const pose = zug?.pose ?? sicht.pose;
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt, zug?.schwung ?? 0)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
@@ -870,46 +883,6 @@ export class Scene {
     ctx.arc(x, y, breit, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-  }
-
-  /**
-   * Der Kletterzug — Ansichtssache, keine Simulation.
-   *
-   * Die Simulation klettert einen Bildpunkt je vier Ticks, gleichmaessig wie
-   * ein Aufzug — und genau so sah es aus („eher ruckartig stueck fuer stueck
-   * nach oben"). Ein Kletterer zieht sich aber in **Zuegen** hoch: greifen,
-   * halten, hochreissen. Gezeichnet wird deshalb eine Treppe ueber der
-   * glatten Bewegung: Waehrend der ersten Haelfte eines Sechs-Pixel-Zugs
-   * bleibt die Figur am Absatz haengen (der Zeichenversatz waechst mit der
-   * Simulation mit), dann reisst sie in einem schnellen, abklingenden Ruck
-   * nach oben zum naechsten Griff.
-   *
-   * Drei Dinge haengen an derselben Phase:
-   * - `dy`: der Versatz der Treppe (in logischen Pixeln, nach unten).
-   * - `takt`: die Gliedmassen frieren waehrend des Haltens auf Bild 0 ein
-   *   und spielen den 16-Tick-Zyklus des Blatts im Ruck ab — Zug fuer Zug,
-   *   statt eines Radfahrens neben der Bewegung.
-   * - `schwung`: das Haar haengt dem Ruck nach (`drawWusel`, Stirnvektor),
-   *   staerkster Ausschlag mitten im Zug, in der Ruhe nichts.
-   *
-   * Alles rechnet allein aus `w.y`: deterministisch, zustandslos, und beim
-   * Zeitruecklauf von selbst richtig.
-   */
-  private kletterZug(y: number): { dy: number; takt: number; schwung: number } {
-    const HUB = 6;
-    const HALT = 3;
-    const hoch = -y;
-    const c = ((hoch % HUB) + HUB) % HUB;
-    const zuege = Math.floor(hoch / HUB);
-    const ZUG_TAKT = [0, 0, 0, 4, 9, 14];
-    if (c < HALT) return { dy: c, takt: zuege * 16 + ZUG_TAKT[c], schwung: 0 };
-    const rest = (c - HALT) / (HUB - HALT);
-    const e = 1 - (1 - rest) * (1 - rest);
-    return {
-      dy: c * (1 - e),
-      takt: zuege * 16 + ZUG_TAKT[c],
-      schwung: Math.sin(rest * Math.PI) * 0.26,
-    };
   }
 
   /**
@@ -1756,4 +1729,139 @@ export class Scene {
 /** Mittelpunkt des Koerpers — Zielpunkt fuer Lupe und Auswahl. */
 export function wuselCenterY(y: number): number {
   return y - WUSEL_H / 2;
+}
+
+/**
+ * Der Kletterzug — Ansichtssache, keine Simulation.
+ *
+ * Die Simulation klettert einen Bildpunkt je vier Ticks, gleichmaessig wie
+ * ein Aufzug. Ein Kletterer zieht sich aber in **Zuegen** hoch: greifen,
+ * halten, hochreissen. Gezeichnet wird deshalb eine Treppe ueber der
+ * glatten Bewegung — zwei Drittel eines Sechs-Pixel-Zugs haengt die Figur
+ * am Absatz (der Zeichenversatz waechst mit der Simulation mit), dann
+ * reisst sie sich in acht Ticks die vollen sechs Punkte hoch.
+ *
+ * ## Warum die erste Fassung nicht reichte
+ *
+ * Sie hatte den Ruck schon, aber niemand sah ihn („beim Hochklettern muss
+ * die Figur sich sichtbar mit einem Ruck Stueck fuer Stueck hochziehen, das
+ * muss angestrengt aussehen"). Drei Gruende, alle drei hier behoben:
+ *
+ * 1. **Zu grob.** Alles rechnete allein aus `y`, und `y` springt nur alle
+ *    vier Ticks. Der Aufschwung bestand aus zwei Bildern. Jetzt traegt
+ *    `phase` den Bruchteil bis zum naechsten Bildpunkt nach.
+ * 2. **Zu glatt.** Eine Bewegung ohne Ueberschwung liest sich als Gleiten.
+ *    Jetzt schiesst die Figur kurz ueber den Griff hinaus und faellt darauf
+ *    zurueck.
+ * 3. **Zu starr.** Verschieben allein ist keine Anstrengung. Jetzt kippt
+ *    der Koerper in den Zug (`neigung`) und laengt sich dabei (`reck`) —
+ *    die Arme ziehen, die Beine kommen nach.
+ *
+ * Fuenf Werte haengen an derselben Phase:
+ * - `dy`: der Versatz der Treppe (in logischen Pixeln, nach unten).
+ * - `takt`: die Gliedmassen frieren waehrend des Haltens auf Bild 0 ein und
+ *   spielen den 16-Tick-Zyklus des Blatts im Ruck ab — Zug fuer Zug, statt
+ *   eines Radfahrens neben der Bewegung.
+ * - `schwung`: das Haar haengt dem Ruck nach (`drawWusel`, Stirnvektor).
+ * - `neigung`: die Neigung des ganzen Koerpers um den Fusspunkt, in Radiant,
+ *   positiv zur Wand hin.
+ * - `reck`: die senkrechte Streckung um den Fusspunkt, 1 ist ungestreckt.
+ *
+ * Alles rechnet aus `w.y` und `w.timer`, beides Simulationszustand:
+ * deterministisch, zustandslos, und beim Zeitruecklauf von selbst richtig.
+ *
+ * Sie steht ausserhalb der Klasse, weil sie nichts von ihr braucht — und
+ * weil eine reine Funktion pruefbar ist. Der Zug ist Bewegung, und Bewegung
+ * beurteilt am Ende das Auge; die Zahlen dahinter (haelt der Halt? traegt
+ * der Ruck den ganzen Hub? schwingt es aus?) darf aber ein Test halten,
+ * damit ein spaeterer Handgriff sie nicht unbemerkt wieder glattbuegelt.
+ */
+export function kletterZug(
+  y: number,
+  phase: number,
+): {
+  dy: number;
+  takt: number;
+  schwung: number;
+  neigung: number;
+  reck: number;
+  pose: string;
+} {
+  const HUB = 6;
+  const HALT = 4;
+  // Der Zwischenschritt macht den Ruck erst zum Ruck.
+  //
+  // Vorher rechnete alles allein aus `y`, und `y` aendert sich beim Klettern
+  // nur alle vier Ticks. Der ganze Aufschwung hatte damit ZWEI Bilder — das
+  // ist kein Ruck, das ist ein Sprung mit Zwischenstopp. `phase` traegt den
+  // Bruchteil bis zum naechsten Bildpunkt nach (`w.timer % CLIMB_INTERVAL`)
+  // und vervierfacht die Aufloesung der Bewegung, ohne die Simulation auch
+  // nur anzufassen: Sie bleibt bei ihrem Bildpunkt je vier Ticks.
+  const hoch = -y + phase;
+  const c = ((hoch % HUB) + HUB) % HUB;
+  const zuege = Math.floor(hoch / HUB);
+
+  // Zeit seit dem Beginn des letzten Rucks, in Bildpunkten (einer = vier
+  // Ticks). Sie laeuft ueber die Zuggrenze hinweg weiter — daran haengt,
+  // dass Haar und Koerper in die Ruhe HINEIN ausschwingen und nicht am Ende
+  // des Zugs abgeschnitten werden.
+  const u = (c - HALT + HUB) % HUB;
+  /** Gedaempfte Nachschwingung: erster Ausschlag stark, Gegenschlag klein. */
+  const nach = (a: number, tau: number, welle: number): number =>
+    a * Math.exp(-u / tau) * Math.sin((Math.PI * u) / welle);
+
+  // Das Haar haengt dem Ruck nach und pendelt aus (`drawWusel`, Stirnvektor).
+  // Deutlich staerker als in der ersten Fassung (0,26 als einzelner Bogen):
+  // Ein Ausschlag von einem Viertel Radiant, der nur waehrend des Zugs
+  // existiert, ist bei sechsundzwanzig Bildschirmpunkten Figurenhoehe
+  // schlicht nicht zu sehen.
+  const schwung = nach(0.72, 1.8, 1.5);
+  // Der Koerper legt sich in den Zug: Beim Hochreissen kippt er zur Wand,
+  // danach federt er zurueck.
+  const neigung = nach(0.22, 1.3, 1.6);
+  // Und er streckt sich dabei. Die Arme ziehen, der Rumpf laengt sich, die
+  // Beine kommen nach — das ist die eine Verformung, die aus einer
+  // Verschiebung eine Anstrengung macht.
+  const reck = 1 + nach(0.3, 1.1, 1.5);
+
+  // Warten: Der Zeichenversatz waechst genau so, wie die Simulation steigt —
+  // die Figur bleibt am Absatz stehen und friert auf Bild 0 ein.
+  if (c < HALT) {
+    return { dy: c, takt: zuege * 16, schwung, neigung, reck, pose: 'climbing' };
+  }
+
+  // Reissen: sechs Bildpunkte in acht Ticks, mit Ueberschwung. Der
+  // Ueberschwung ist der Unterschied zwischen „bewegt sich schnell" und
+  // „reisst sich hoch": r geht kurz ueber eins hinaus, die Figur schiesst
+  // ueber den Griff und faellt darauf zurueck.
+  const t = (c - HALT) / (HUB - HALT);
+  const r = 1 - (1 - t) * (1 - t) * Math.cos(4.5 * t);
+  // Fuer den Ruck leiht sich der Kletterer die Bilder des Hochziehens.
+  //
+  // Das ist keine Spielerei, sondern der Kern: Die vier gebackenen
+  // Kletterbilder unterscheiden sich fast nicht (der Arm wandert um zwei
+  // Bildpunkte) — sie zeigen eine Figur, die an der Wand HAENGT, und aus
+  // vier Haengebildern laesst sich kein Zug bauen. Die sechs Bilder des
+  // Hochziehens dagegen zeigen genau das, was fehlt: einen Arm, der
+  // ausgreift und zieht. Bild 1 bis 3 davon sind der Zug.
+  //
+  // Der Uebergang traegt, weil beide Reihen dieselbe geduckte Haltung an
+  // derselben Wandseite zeigen — und weil er in dem Moment liegt, in dem
+  // die Figur ohnehin am schnellsten ist. Was sich waehrend eines Rucks
+  // aendert, sieht niemand als Sprung; man sieht es als Kraft.
+  return {
+    dy: c - HUB * r,
+    takt: 8 + t * 24,
+    schwung,
+    // Die geliehene Reihe bringt ihre eigene Grundneigung mit (`LEHNE`:
+    // Hochziehen 0,20 gegen Klettern 0,06). Ungerechnet springt der Koerper
+    // beim Wechsel um acht Grad und liegt fuer die Dauer des Zugs halb
+    // waagerecht an der Wand — gemessen an der Bildfolge, nicht vermutet.
+    // Der Unterschied wird deshalb genau hier abgezogen: Die Grundneigung
+    // bleibt ueber den ganzen Zug die des Kletterns, und was man kippen
+    // sieht, ist allein `nach` — eine Bewegung, die anfaengt und aufhoert.
+    neigung: neigung - (LEHNE.hoisting - LEHNE.climbing),
+    reck,
+    pose: 'hoisting',
+  };
 }

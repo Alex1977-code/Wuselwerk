@@ -214,6 +214,43 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   zeigen, dann entscheiden": nimmt Spielfläche).
 - ✅ Die **Posenknöpfe unten**: Symbol trägt die Lesbarkeit, Figur bei der
   Arbeit daneben, wo Platz ist (Rückmeldungsrunde nach der Kritik).
+- ✅ **Berufsleiste neu** (Befund: „die Grafiken der Berufsleiste sind
+  leider nicht selbsterklärend"). Die Ursache war messbar: Acht Knöpfe
+  nebeneinander sind auf einem 390 Punkte breiten Telefon
+  fünfunddreissig breit, und der Name wurde erst ab sechsundfünfzig
+  gezeichnet — die Bedingung war nie erfüllt, seit es die Leiste gibt.
+  Drei Änderungen: **vier mal zwei statt acht nebeneinander** (jeder Knopf
+  fünfundsiebzig breit, Preis rund vierzig Punkte Spielfeldhöhe); auf
+  jedem Knopf steht jetzt der **Name** in einer Grösse für alle
+  (Kurzform `SKILL_KNOPF`, jede die Wurzel des vollen Namens, den die
+  Hinweiszeile beim Wählen ausschreibt); und jeder Beruf, der die Figur
+  durch die Welt trägt, bekommt eine **Richtungsmarke** — dieselbe kleine
+  Scheibe, nur gedreht: Kletterer hinauf, Brückenbauer schräg hinauf,
+  Rammer geradeaus, Schrägbagger schräg hinab, Gräber hinab, und die
+  Steigungen der beiden Schrägen sind die echten aus der Simulation (1:2).
+  Die drei ohne Marke sagen mit dem Fehlen ebenfalls etwas Wahres. Die
+  arbeitende Figur ist vom Knopf verschwunden: Vier Bilder auf
+  fünfundsiebzig Punkten heben sich gegenseitig auf. `layout.ts`,
+  `hud.ts`, `icons.ts`, Abnahme `tests/leiste.test.ts` (jeder Knopf trägt
+  auf jedem Gerät seinen Namen — hoch wie quer, iPhone SE bis Tablett).
+- ✅ **Kletterzug angestrengt** (Befund: „beim Hochklettern muss die Figur
+  sich sichtbar mit einem Ruck Stück für Stück hochziehen, das muss
+  angestrengt aussehen, die Haare müssen mehr im Takt des Rucks
+  wackeln"). Der Ruck war schon da, aber unsichtbar, und die Bildfolge
+  hat gezeigt warum: Die vier gebackenen Kletterbilder unterscheiden sich
+  fast nicht — sie zeigen eine Figur, die an der Wand *hängt*. Vier
+  Änderungen in `kletterZug`: Der Zwischenschritt zwischen zwei
+  Simulationspunkten (`w.timer % CLIMB_INTERVAL`) vervierfacht die
+  Auflösung der Bewegung; der Aufschwung bekommt **Überschwung** (die
+  Figur schiesst über den Griff und fällt darauf zurück); der Körper
+  **kippt und längt sich** um den Fusspunkt; und für die Dauer des Rucks
+  leiht sich der Kletterer die **Bilder des Hochziehens** — die einzige
+  Reihe im Blatt mit einem Arm, der ausgreift. Deren eigene Grundneigung
+  (0,20 gegen 0,06) wird dabei genau verrechnet, sonst liegt die Figur
+  während jedes Zugs halb waagerecht an der Wand. Das Haar schwingt jetzt
+  mit dreifacher Stärke nach und pendelt in den Halt hinein aus statt am
+  Zugende abzureissen. `src/render/scene.ts`, Abnahme
+  `tests/klettern.test.ts`.
 - ✅ **Avatare** zur Auswahl: **zwölf gemalte Porträts** vom Blatt
   (`src/art/ui/avatare.webp`, Zeichner `src/render/avatare.ts`, Liste
   `src/profil.ts`) — je Variante eigene Haarfarbe, Haarsilhouette und

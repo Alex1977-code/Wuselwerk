@@ -1,11 +1,9 @@
 import { RATE_MAX, RATE_MIN, TICK_HZ } from '../core/constants';
-import { SKILL_LABEL, type SkillId } from '../core/types';
+import { SKILLS, SKILL_KNOPF, SKILL_LABEL, type SkillId } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
-import { drawSkillBild, drawSkillIcon } from './icons';
-import { State, DeathCause, type Wusel } from '../core/types';
-import type { SpriteAtlas } from './atlas';
-import type { Box, Layout } from './layout';
+import { drawRichtungsmarke, drawSkillBild, drawSkillIcon } from './icons';
+import { NAME_BREITE, type Box, type Layout } from './layout';
 
 /**
  * Farben der Bedienoberfläche.
@@ -33,8 +31,6 @@ export interface HudState {
   selected: SkillId | null;
   cameraFollow: boolean;
   muted: boolean;
-  /** Das Figurenblatt — die Knoepfe zeigen die Figur bei der Arbeit. */
-  atlas: SpriteAtlas | null;
   /**
    * Lebensvorrat fuer die Kopfleiste — `null`, wenn das System aus ist
    * (Testmodus). Im Level sichtbar, damit man **vor** dem riskanten Zug
@@ -274,52 +270,6 @@ function drawIconButton(
  *    Ecke, wie an einem Vorrat — und sie ist das Einzige, was sich während des
  *    Spiels ändert, also darf sie sich abheben.
  */
-/**
- * Welches Bild ein Beruf auf seinem Knopf traegt: Pose und Zustand einer
- * kleinen Vorfuehr-Figur, gezeichnet vom **echten** Zeichner mit Werkzeug und
- * Signalband.
- *
- * Die Kritik (G7) verlangte „ein kleines Portraet der Figur bei der Arbeit,
- * aus dem vorhandenen Figurenblatt zusammensetzbar". Der Einwand aus dem
- * Grafikbedarf — die Posen allein seien zu aehnlich (74 Prozent
- * Ueberdeckung) — hat sich im Spiel dann doch bestaetigt: Werkzeuge von sechs
- * Punkten tragen den Unterschied nicht, „die Spielerfiguren lassen den Beruf
- * nicht erkennen". Deshalb steht das Portraet nur noch **neben** dem Symbol
- * auf den breiten Knoepfen (quer); die Lesbarkeit traegt ueberall das Symbol.
- */
-const PORTRAET: Record<SkillId, { pose: string; state: State; extra?: Partial<Wusel> }> = {
-  climber: { pose: 'climbing', state: State.CLIMBING, extra: { hasClimber: true } },
-  floater: { pose: 'floating', state: State.FALLING, extra: { hasFloater: true, fallDist: 30 } },
-  bomber: { pose: 'walking', state: State.WALKING, extra: { fuse: 200 } },
-  blocker: { pose: 'blocking', state: State.BLOCKING, extra: { isBlocker: true } },
-  builder: { pose: 'building', state: State.BUILDING },
-  basher: { pose: 'bashing', state: State.BASHING },
-  miner: { pose: 'mining', state: State.MINING },
-  digger: { pose: 'digging', state: State.DIGGING },
-};
-
-function portraetWusel(id: SkillId): Wusel {
-  return {
-    id: 9000,
-    x: 0,
-    y: 0,
-    dir: 1,
-    state: PORTRAET[id].state,
-    timer: 0,
-    fallDist: 0,
-    bricks: 6,
-    hoist: 0,
-    hasClimber: false,
-    hasFloater: false,
-    isBlocker: false,
-    fuse: 0,
-    vormerk: null,
-    cause: DeathCause.NONE,
-    bornTick: 0,
-    ...PORTRAET[id].extra,
-  };
-}
-
 export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudState): void {
   const c = L.controls;
   ctx.fillStyle = COL.panel;
@@ -334,12 +284,42 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
 
   drawRateSlider(ctx, L, s.world);
 
+  // Eine Schriftgroesse fuer alle acht Namen: die groesste, bei der auch der
+  // laengste („Kletterer") noch in seinen Knopf passt.
+  //
+  // Vorher suchte jeder Knopf seine eigene Groesse. Das Ergebnis war eine
+  // Leiste mit acht verschieden grossen Beschriftungen — „Kletterer" in elf
+  // Punkt neben „Schirmspringer" in acht. Zwei Schriftgroessen nebeneinander
+  // lesen als Rangfolge: Der groessere Name sieht wichtiger aus. Es gibt hier
+  // aber keine Rangfolge, es gibt acht gleichwertige Werkzeuge.
+  const erste = L.skillButtons[0];
+  const namePlatz = erste.w - 8;
+  // Die Obergrenze haengt auch an der Knopfhoehe: Auf einem flachen Knopf
+  // frisst eine grosse Schrift dem Symbol den Platz weg, und ein Name ohne
+  // erkennbares Bild darueber ist genauso halb wie ein Bild ohne Namen.
+  let nameFs = Math.min(10.5, Math.round(erste.h * 0.23 * 2) / 2);
+  const passt = (fs: number): boolean => {
+    ctx.font = `600 ${fs}px system-ui, sans-serif`;
+    return SKILLS.every((id) => ctx.measureText(SKILL_KNOPF[id]).width <= namePlatz);
+  };
+  while (nameFs > 8 && !passt(nameFs)) nameFs -= 0.5;
+  // Die Zeile, die der Name unten belegt — daraus ergibt sich, was oben fuer
+  // das Symbol uebrig bleibt. Beide aus derselben Zahl zu rechnen ist der
+  // einzige Weg, auf dem sie sich bei keiner Knopfhoehe ueberlappen.
+  const nameRaum = nameFs + 7;
+
   for (const b of L.skillButtons) {
     const count = s.world.skills[b.id];
     const selected = s.selected === b.id;
     const usable = count > 0;
-    // Ab dieser Breite passt der Name unter das Symbol, ohne zu brechen.
-    const weit = b.w >= 66;
+    // Ab dieser Breite passt der Name unter das Symbol, ohne zu brechen. Das
+    // Layout stellt sicher, dass das im Hochformat gilt — notfalls, indem es
+    // die acht Knoepfe auf zwei Reihen legt.
+    const weit = b.w >= NAME_BREITE;
+    // Und ab dieser Hoehe passt neben das Symbol noch die arbeitende Figur.
+    // Zweireihig ist der Knopf dafuer zu flach: Dort traegt das Symbol allein,
+    // dafuer gross und mittig.
+    const hoch = weit && b.h >= 58;
 
     // --- Fläche ------------------------------------------------------------
     if (selected) {
@@ -387,79 +367,85 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       ctx.restore();
     }
 
-    // --- Symbol und Figur --------------------------------------------------
+    // --- Symbol ------------------------------------------------------------
     //
-    // Das **Symbol** traegt die Lesbarkeit, die **Figur bei der Arbeit** kommt
-    // nur dazu, wo der Knopf breit genug fuer beides ist. Die erste Fassung
-    // (G7) hatte die Figur allein auf den Knopf gesetzt — und die Rueckmeldung
-    // war eindeutig: „die Spielerfiguren lassen den Beruf nicht erkennen."
-    // Zu Recht: Bei vierzig Punkten Knopfbreite unterscheiden sich acht
-    // Figuren nur im Werkzeug, und das Werkzeug misst dann sechs Punkte.
-    // Eine Silhouette, die man erst suchen muss, ist kein Symbol.
+    // Ein Knopf, drei Aussagen: **was** (Symbol), **wohin** (Richtungsmarke),
+    // **wie oft** (Plakette) — und darunter der ausgeschriebene **Name**.
+    //
+    // Vorher stand auf dem breiten Knopf zusaetzlich die arbeitende Figur.
+    // Sie ist gegangen, und zwar nicht aus Platznot: Vier Bilder auf einer
+    // Flaeche von fuenfundsiebzig Punkten heben sich gegenseitig auf. Die
+    // Figur bei der Arbeit lehrt am besten dort, wo sie ohnehin steht — im
+    // Spielfeld. Der Knopf muss etwas anderes koennen: in einem Viertel
+    // Augenblick sagen, welches Werkzeug er ist. Dafuer traegt jetzt ueberall
+    // dasselbe Bild in derselben Groesse an derselben Stelle, hoch wie quer.
     //
     // Der gewaehlte Knopf drueckt sichtbar ein: Alles rutscht anderthalb
     // Punkte nach unten.
-    const symbolY = b.y + b.h * (weit ? 0.4 : 0.46);
     const druck = selected ? 1.5 : 0;
     const symbolFarbe = selected ? '#ffffff' : usable ? COL.text : '#4a5a75';
-    if (s.atlas && weit) {
-      // Breiter Knopf: links die Figur bei der Arbeit, rechts das Symbol.
-      // Die Figur lehrt, wie der Beruf im Spielfeld aussieht; das Symbol sagt,
-      // welcher es ist.
-      const wz = portraetWusel(b.id);
-      const gross = Math.min(b.h * 0.56, b.w * 0.44);
-      const massstab = gross / 15;
-      ctx.save();
-      if (!usable) ctx.globalAlpha = 0.38;
-      const van = {
-        ox: 0,
-        oy: 0,
-        scale: massstab,
-        box: { x: b.x + b.w * 0.29, y: symbolY + gross * 0.44 + druck - massstab, w: b.w, h: b.h },
-      };
-      s.atlas.drawWusel(ctx, van, wz, 1, Infinity, PORTRAET[b.id].pose, 0);
-      ctx.restore();
-      // Das gemalte Symbol zuerst; die Vektorform bleibt der Rueckfall.
-      // Es traegt eigene Farben, darf also groesser stehen als die
-      // einfarbige Form — Zustand sagt die Knopfflaeche, aufgebraucht
-      // sagt die Durchsicht.
-      if (!drawSkillBild(ctx, b.id, b.x + b.w * 0.68, symbolY + druck, Math.min(b.w * 0.46, 40), !usable)) {
-        drawSkillIcon(
-          ctx,
-          b.id,
-          b.x + b.w * 0.68,
-          symbolY + druck,
-          Math.min(b.w * 0.36, 26),
-          symbolFarbe,
-        );
-      }
-    } else if (
-      !drawSkillBild(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.74, 40), !usable)
-    ) {
-      drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.6, 30), symbolFarbe);
+    // Was nach der Namenszeile oben uebrig bleibt. Die Groesse bindet an
+    // diesen Rest UND an die Breite: nur an der Breite gebunden, stuende das
+    // Symbol im flachen zweireihigen Knopf unter dem Namen hervor; nur an der
+    // Hoehe gebunden, verschwaende es quer die Breite.
+    const symbolRaum = weit ? b.h - nameRaum - 4 : b.h;
+    const gross = weit ? Math.min(b.w * 0.62, symbolRaum, 42) : Math.min(b.w * 0.74, 40);
+    const symbolY = weit ? b.y + 2 + symbolRaum / 2 : b.y + b.h * 0.46;
+    // Das gemalte Symbol zuerst; die Vektorform bleibt der Rueckfall. Es
+    // traegt eigene Farben, darf also groesser stehen als die einfarbige
+    // Form — Zustand sagt die Knopfflaeche, aufgebraucht sagt die Durchsicht.
+    if (!drawSkillBild(ctx, b.id, b.x + b.w / 2, symbolY + druck, gross, !usable)) {
+      drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, gross * 0.78, symbolFarbe);
     }
+
+    // --- Richtungsmarke ----------------------------------------------------
+    //
+    // Fuenf der acht Berufe tragen die Figur durch die Welt, und sie
+    // unterscheiden sich nur in der RICHTUNG: Kletterer hinauf,
+    // Brueckenbauer schraeg hinauf, Rammer waagerecht, Schraegbagger schraeg
+    // hinab, Graeber hinab. Genau diese Reihe ist am gemalten Blatt kaum zu
+    // sehen — Schraegbagger und Graeber sind dort zwei Schaufeln im Schutt,
+    // und bei siebenundzwanzig Punkten ist das dieselbe Schaufel.
+    //
+    // Die Marke sagt es unabhaengig vom Symbol: dieselbe kleine Scheibe, nur
+    // gedreht. Wer eine gelesen hat, liest alle fuenf — und die drei ohne
+    // Marke (Blocker, Sprengmeister, Schirmspringer) sagen mit dem Fehlen
+    // ebenfalls etwas Wahres: Sie bringen niemanden woandershin.
+    //
+    // Sie steht nur auf dem breiten Knopf. Auf einem von fuenfunddreissig
+    // Punkten stiesse sie mit der Plakette zusammen, und zwei Zeichen, die
+    // einander ueberdecken, sagen weniger als eines.
+    if (weit) drawRichtungsmarke(ctx, b.id, b.x + 12, b.y + 12 + druck, usable, selected);
 
     // --- Name, nur wo Platz ist -------------------------------------------
     //
-    // Die Namen sind unterschiedlich lang: „Blocker" hat sieben Zeichen,
-    // „Schirmspringer" vierzehn. Bei fester Schriftgrösse liefen die langen in
-    // den Nachbarn hinein. Deshalb wird sie so weit heruntergesetzt, bis der
-    // Name in seinen Knopf passt — und wenn selbst neun Punkt nicht reichen,
-    // bleibt der Name weg. Lieber kein Name als einer, der zum Nachbarn gehört.
+    // Auf dem Knopf steht die Kurzform (SKILL_KNOPF), nicht der volle Name.
+    // Den vollen schreibt die Hinweiszeile unter der Leiste, sobald man den
+    // Beruf waehlt — und weil jede Kurzform die Wurzel des vollen Namens ist,
+    // lernt man das Paar dabei nebenbei.
+    //
+    // Reicht selbst acht Punkt nicht, wird der Name gestaucht statt
+    // weggelassen. Ein Knopf ohne Namen war der Befund, der diesen Umbau
+    // ausgeloest hat; er darf nicht durch die Hintertuer zurueckkommen.
     if (weit) {
-      const platz = b.w - 8;
-      let fs = 11;
-      ctx.font = `600 ${fs}px system-ui, sans-serif`;
-      while (fs > 8 && ctx.measureText(SKILL_LABEL[b.id]).width > platz) {
-        fs -= 0.5;
-        ctx.font = `600 ${fs}px system-ui, sans-serif`;
+      ctx.font = `600 ${nameFs}px system-ui, sans-serif`;
+      const breite = ctx.measureText(SKILL_KNOPF[b.id]).width;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      // Heller als zuvor (COL.dim war ein Grauton fuer Nebensaechliches). Der
+      // Name ist hier die Hauptsache.
+      ctx.fillStyle = selected ? '#ffffff' : usable ? '#c9d8ef' : '#4a5468';
+      const mitte = b.x + b.w / 2;
+      const grund = b.y + b.h - (hoch ? 12 : 9);
+      if (breite > namePlatz) {
+        ctx.translate(mitte, grund);
+        ctx.scale(namePlatz / breite, 1);
+        ctx.fillText(SKILL_KNOPF[b.id], 0, 0);
+      } else {
+        ctx.fillText(SKILL_KNOPF[b.id], mitte, grund);
       }
-      if (ctx.measureText(SKILL_LABEL[b.id]).width <= platz) {
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillStyle = selected ? '#dbe9ff' : usable ? COL.dim : '#333c4c';
-        ctx.fillText(SKILL_LABEL[b.id], b.x + b.w / 2, b.y + b.h - 10);
-      }
+      ctx.restore();
     }
 
     // --- Plakette mit dem Vorrat ------------------------------------------

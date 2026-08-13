@@ -11,6 +11,33 @@ export interface SkillButton extends Box {
   id: SkillId;
 }
 
+/**
+ * Ab dieser Knopfbreite steht der Berufsname unter dem Symbol.
+ *
+ * Gemessen, nicht geschaetzt: Die laengste Knopfbeschriftung ist „Kletterer"
+ * und misst in 600er system-ui bei neuneinhalb Punkt achtundvierzig
+ * Bildpunkte. Mit acht Punkten Rand sind das sechsundfuenfzig; achtundfuenfzig
+ * geben etwas Luft.
+ *
+ * Die Zahl steht hier und nicht in `hud.ts`, weil das **Layout** sie braucht:
+ * Es muss die Knoepfe so legen, dass die Bedingung erfuellt IST. Wer sie nur
+ * beim Zeichnen kennt, baut eine Leiste, in der der Name dann eben wegbleibt —
+ * genau der Zustand, den der Spieltest mit „nicht selbsterklaerend"
+ * beschrieben hat.
+ */
+export const NAME_BREITE = 58;
+
+/**
+ * Ab dieser Knopfbreite lohnt eine einzige Reihe aus acht Knoepfen.
+ *
+ * Sie liegt deutlich ueber `NAME_BREITE`, und das ist Absicht: Ein Knopf, auf
+ * dem der Name gerade so Platz hat, ist noch lange kein guter Knopf. Erst ab
+ * etwa achtundsiebzig Punkten trifft ihn ein Daumen ohne Zielen. Darunter
+ * gewinnt das Raster aus vier mal zwei — es macht jeden Knopf mehr als doppelt
+ * so breit und kostet dafuer rund vierzig Punkte Spielfeldhoehe.
+ */
+const EINREIHIG_BREITE = 78;
+
 export interface Layout {
   cssW: number;
   cssH: number;
@@ -59,45 +86,86 @@ export function computeLayout(cssW: number, cssH: number): Layout {
    * Hinweiszeile, die es nur im Hochformat gibt.
    */
   const hintH = landscape ? 0 : 26;
-  const btnH = Math.min(landscape ? 78 : 66, Math.round(cssH * 0.22));
-  const controlsH = btnH + 12 + hintH + 10;
-  const topBar: Box = { x: 0, y: 0, w: cssW, h: TOP_H };
-  const controls: Box = { x: 0, y: cssH - controlsH, w: cssW, h: controlsH };
-  const play: Box = { x: 0, y: TOP_H, w: cssW, h: cssH - TOP_H - controlsH };
 
   const pad = 10;
   const rateW = 38;
   const areaX = pad + rateW + 12;
   const areaW = cssW - areaX - pad;
   const gap = 6;
-  const btnW = (areaW - gap * (SKILLS.length - 1)) / SKILLS.length;
-  // Höher als vorher. Die Fläche ist das, was ein Daumen trifft; 72 Punkte
-  // waren eine Obergrenze aus der Zeit, als unter den Knöpfen noch eine Zeile
-  // Kürzel stand.
+
+  /**
+   * Eine Reihe oder zwei? Das entscheidet die Breite, nicht der Geschmack.
+   *
+   * Acht Knöpfe nebeneinander sind auf einem 390 Punkte breiten Telefon
+   * fünfunddreissig Punkte breit. Darauf passt ein Symbol und sonst nichts —
+   * kein Name, keine Richtungsmarke. Der Spieltest hat das mit einem Satz
+   * erledigt: „die Grafiken der Berufsleiste sind nicht selbsterklärend."
+   *
+   * Vier mal zwei löst es: Bei denselben 390 Punkten wird jeder Knopf
+   * fünfundsiebzig breit — Platz für Symbol, Richtungsmarke **und** Name. Der
+   * Preis sind rund vierzig Punkte Spielfeldhöhe. Das ist der bessere Handel:
+   * Ein Spielfeld, in dem man scrollen kann, ist verschmerzbar; ein Werkzeug,
+   * das man nicht benennen kann, nicht.
+   *
+   * Quer und auf dem Tablett bleibt es bei einer Reihe — dort sind die Knöpfe
+   * von selbst breit genug, und die Höhe ist das Knappe.
+   */
+  const einreihig =
+    (areaW - gap * (SKILLS.length - 1)) / SKILLS.length >= EINREIHIG_BREITE;
+  const spalten = einreihig ? SKILLS.length : 4;
+  const reihen = einreihig ? 1 : 2;
+  const btnW = (areaW - gap * (spalten - 1)) / spalten;
+  // Die Fläche ist das, was ein Daumen trifft. Einreihig war 66 hoch (72 waren
+  // eine Obergrenze aus der Zeit, als unter den Knöpfen noch eine Zeile Kürzel
+  // stand); zweireihig ist der einzelne Knopf flacher, aber seine FLÄCHE
+  // wächst trotzdem deutlich — aus 35 x 66 werden 75 x 52.
+  //
+  // Zweireihig bindet die Höhe an denselben Anteil, den die einreihige Leiste
+  // beansprucht hätte, geteilt durch zwei. Ein fester Anteil je Reihe (0,075)
+  // war die erste Fassung und lieferte quer auf einem kleinen Gerät Knöpfe von
+  // vierundzwanzig Punkten — flacher als ein Fingernagel.
+  const reihenGap = 6;
+  const btnH = einreihig
+    ? Math.min(landscape ? 78 : 66, Math.round(cssH * 0.22))
+    : Math.min(52, Math.max(34, Math.round((cssH * 0.26 - reihenGap) / 2)));
+
   // Flacher Bogen. Er soll dem Daumen entgegenkommen, aber die Reihe muss als
   // Reihe lesen — bei dreizehn Punkten Hub sah sie aus wie eine Girlande.
-  const arc = landscape ? 3 : 8;
+  // Zweireihig entfällt er: Zwei gebogene Reihen übereinander lesen als Welle,
+  // nicht als Raster, und ein Raster ist genau das, was hier gebraucht wird.
+  const arc = !einreihig ? 0 : landscape ? 3 : 8;
+  // Der Bogen senkt die äusseren Knöpfe um `arc` — er gehört also in die Höhe
+  // des Blocks. Vorher fehlte er dort, und die unterste Knopfkante ragte um
+  // genau diese acht Punkte in den unteren Rand der Leiste.
+  const blockH = btnH * reihen + reihenGap * (reihen - 1) + arc;
+
+  const controlsH = blockH + 12 + hintH + 10;
+  const topBar: Box = { x: 0, y: 0, w: cssW, h: TOP_H };
+  const controls: Box = { x: 0, y: cssH - controlsH, w: cssW, h: controlsH };
+  const play: Box = { x: 0, y: TOP_H, w: cssW, h: cssH - TOP_H - controlsH };
 
   const skillButtons: SkillButton[] = SKILLS.map((id, i) => {
-    const t = (i - (SKILLS.length - 1) / 2) / ((SKILLS.length - 1) / 2);
+    const spalte = i % spalten;
+    const reihe = Math.floor(i / spalten);
+    const t = (spalte - (spalten - 1) / 2) / ((spalten - 1) / 2);
     const lift = (1 - t * t) * arc;
     return {
       id,
-      x: areaX + i * (btnW + gap),
-      y: controls.y + 12 + (arc - lift),
+      x: areaX + spalte * (btnW + gap),
+      y: controls.y + 12 + reihe * (btnH + reihenGap) + (arc - lift),
       w: btnW,
       h: btnH,
     };
   });
 
-  // Der Schieber steht auf derselben Linie wie die Knöpfe und ist genauso hoch.
-  // Vorher lief er über die ganze Leistenhöhe und hatte oben und unten je eine
-  // Beschriftung — drei Elemente für eine Zahl.
+  // Der Schieber steht auf derselben Linie wie die Knöpfe und ist genauso hoch
+  // wie der ganze Knopfblock. Vorher lief er über die ganze Leistenhöhe und
+  // hatte oben und unten je eine Beschriftung — drei Elemente für eine Zahl.
   const rateSlider: Box = {
     x: pad,
-    y: skillButtons[0].y,
+    y: controls.y + 12,
     w: rateW,
-    h: btnH,
+    h: blockH,
   };
 
   const btn = landscape ? 34 : 38;
