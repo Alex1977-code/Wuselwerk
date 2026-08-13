@@ -67,7 +67,37 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Altpläne** — er fand einen echten Trivialpfad (Einzelschräge zur
   Kammer), der mit Blech vor dem Riegel und einer Stahl-Ostwand
   geschlossen wurde. Damit ist die beworbene **66** wieder wahr.
-  Pakete 3–5 stehen aus.
+- ✅ **Mehrebenen-Konzept, Paket 3** (Welt 4): w4-01 „Die Kante" als
+  aktivierte Kaskade (B5: Riegel-Rammung, dann der Schacht aufs
+  Zwischenbord, bevor die sichtbare 120er-Ostkante erreichbar wird; alle
+  krummen 70er der Welt auf das Normraster gehoben); w4-06 → **„Das
+  Doppeltor"** (B6-Routenwahl-Ersatzbau statt des erklärten
+  w4-02-Klons: Stollen vom Eisboden hält das Par, der Firn-Spalt mit
+  Grube, Wächter und Freisprengung ist schneller, kostet aber zwei
+  Vergaben mehr und ein Leben — bomber+digger, der bisherige Köder wird
+  Lösung; beide Routen grün getestet); w4-07 „Gegenwind" repariert
+  (die alte Fassung rettete 12/12 mit null Zuweisungen, weil die
+  Stufenkante über dem Pfeilerkopf lag — jetzt Pfeiler 96, Kletterer
+  echt, Par neu gemessen auf 8); w4-10 „Vier Kanten" als **erstes
+  Zwei-Fronten-Pflichtlevel** (der Schacht im Firn-Fleck teilt den Pulk
+  nach Fallrichtung; die Ostfront gräbt sich im Sohlen-Stollen unter der
+  Terrasse zurück — niemand kann sterben, Marge 3). Dazu w4-04 als
+  nachgeholte Marge-Heilung (Messlauf zeigte Marge 1); w4-13/w4-14
+  waren schon in Paket 0 bzw. der Design-Runde geheilt. Sechs neue
+  Rot-Tests (darunter die beiden Konzept-Pflichten w4-07 gegen den
+  Attrappen-Trick und w4-10 gegen beide Ein-Front-Altpläne), Uhren auf
+  W4-Faktor 1,4 geeicht. **Zwei Blaupausen ehrlich widerlegt:** Die
+  „Wiedervereinigung per Freisprengung" nach Blocker-Split kollabiert in
+  diesem Regelwerk (Tür fängt eine Laufrichtung immer von selbst; die
+  Fallrichtungs-Weiche des Schachts trägt den Split stattdessen), und
+  die Bauer-Kette aus der Grube trägt nie — eine vom Boden steigende
+  Rampe hat unter ihren ersten Stufen eine Tasche, wer westlich des
+  Fußes pendelt, kommt nie zum Einstieg (gemessen; Bergung darum als
+  Sohlen-Stollen). Auch die Raster-Arithmetik des Konzepts war zu
+  optimistisch: Ein Bauer steigt 12, ein Kettenglied 10 — „E48 mit zwei
+  Bauern" hieße in Wahrheit fünf.
+  Pakete 4–5 stehen aus (Meilenstein-Check nach vier Ersatzbauten,
+  Strittig 1).
 
 ## Grafik
 

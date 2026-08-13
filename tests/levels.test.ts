@@ -858,6 +858,142 @@ function planFrost14(): Plan {
 }
 
 /**
+ * w4-01 v2 „Die Kante" — die aktivierte Kaskade (Paket 3, Baustein B5).
+ *
+ * Ein Wusel macht beide Handgriffe: westwaerts durch den Riegel auf
+ * Stufe 2, dann — nach Wandwende auf Stufe 3 — der Schacht auf das
+ * Zwischenbord, bevor irgendwer die toedliche Ostkante erreicht. Der
+ * Rammer ist immer der Erste auf Stufe 3; wer ihm folgt, faellt in den
+ * fertigen oder wachsenden Schacht.
+ */
+function planKaskade(): Plan {
+  let rammer: number | null = null;
+  let schacht = false;
+  return (w) => {
+    if (rammer === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 240 && x.y < 260 &&
+          x.x >= 190 && x.x <= 230,
+      );
+      if (c && w.assign(c.id, 'basher')) rammer = c.id;
+      return;
+    }
+    if (!schacht) {
+      const r = w.wuselById(rammer);
+      if (r && r.state === State.WALKING && r.dir === 1 && r.y > 280 && r.x >= 116 && r.x <= 124) {
+        if (w.assign(r.id, 'digger')) schacht = true;
+      }
+    }
+  };
+}
+
+/**
+ * w4-06 v2 „Das Doppeltor" — die Stollenroute (Paket 3, Baustein B6).
+ *
+ * Die Musterloesung nimmt den Weg, der das Par haelt: ein einziger Rammer
+ * westwaerts vom Blankeis-Boden in die Kammer. Graeber, Waechter und
+ * Sprengmeister im Vorrat sind die andere Route — `planDoppeltorOben`
+ * beweist sie separat.
+ */
+function planDoppeltor(): Plan {
+  let stollen = false;
+  return (w) => {
+    if (stollen) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.dir === -1 && x.y > 270 && x.x >= 241 && x.x <= 246,
+    );
+    if (c && w.assign(c.id, 'basher')) stollen = true;
+  };
+}
+
+/**
+ * w4-06 v2, Route zwei — der Firn-Spalt (bomber+digger debuetiert).
+ *
+ * Graben zwischen Eissaeule und Deckel (nur dort meldet der Boden keinen
+ * Stahl), dann den Waechter an die Ostwand der Grube stellen und ihn
+ * freisprengen: Der Krater oeffnet die Erdwand zur Kammer. Kostet zwei
+ * Vergaben mehr und ein Leben — dafuer ist der Weg kurz.
+ */
+function planDoppeltorOben(): Plan {
+  let graeber: number | null = null;
+  let wache: number | null = null;
+  let zuendung = false;
+  return (w) => {
+    if (graeber === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 220 && x.x >= 84 && x.x <= 87,
+      );
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (wache === null) {
+      const g = w.wuselById(graeber);
+      // Erst wenn der Schacht auf der Stahlsohle angekommen ist, steht in
+      // der Grube jemand — der Waechter gehoert an ihre Ostwand.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === 1 && x.y > 278 &&
+          g !== undefined && x.x >= g.x + 2 && x.x <= g.x + 5,
+      );
+      if (c && w.assign(c.id, 'blocker')) wache = c.id;
+      return;
+    }
+    if (!zuendung) {
+      if (w.assign(wache, 'bomber')) zuendung = true;
+    }
+  };
+}
+
+/**
+ * w4-07 v2 „Gegenwind" — acht echte Kletterer (Paket 3, Reparatur).
+ *
+ * Der Pulk laeuft die Normraster-Kaskade sicher auf den Grund; dort
+ * bekommen acht Wusel die Gabe und steigen die 96er-Ostwand des
+ * Tuerpfeilers hinauf. Ohne Zuweisung rettet dieses Level niemanden
+ * mehr — das haelt der Rot-Test gegen den alten Attrappen-Trick fest.
+ */
+function planPfeiler(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 8) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.y > 300 && w.skills.climber > 0,
+    );
+    if (c && w.assign(c.id, 'climber')) n++;
+  };
+}
+
+/**
+ * w4-10 v3 „Vier Kanten" — die Doppelfront (Paket 3).
+ *
+ * Der Schacht faellt in den Firn-Fleck, wenn die ersten Wandwender schon
+ * westwaerts unterwegs sind: Die Fallrichtung teilt den Pulk in die
+ * Westfront (laeuft zur Tuer durch) und die Ostfront (sitzt auf dem
+ * Ostbord). Die Bergung ist der Sohlen-Stollen westwaerts unter der
+ * Terrasse — die Bauer-Kette der Blaupause ist widerlegt, siehe den
+ * Levelkommentar in `welt4.ts`.
+ */
+function planVierKanten(): Plan {
+  let schacht = false;
+  let stollen = false;
+  return (w) => {
+    if (!schacht) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 230 && x.x >= 324 && x.x <= 332,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht = true;
+      return;
+    }
+    if (!stollen) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 330 && x.x >= 361 && x.x <= 366,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
  * w2-09 v2 „Adern und Deckel" — die Sichtluecke (Muster Blaupause 5).
  *
  * Die Platte ist durchgehend, nur bei x 380 liegt eine 24 Punkte breite
@@ -1427,16 +1563,19 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w3-12': planRost12,
   'w3-13': () => planRost13(9),
   'w3-14': planHinweg,
-  'w4-01': planFrost1,
+  // Paket 3 (Level-Konzept): w4-01/06/07/10 haben neue Geometrien und neue
+  // Plaene; die Altplaene bleiben als Rot-Test-Gegenprobe stehen (planFrost1
+  // dient ausserdem w5-01 weiter).
+  'w4-01': planKaskade,
   'w4-02': planFrost2,
   'w4-03': planFrost3,
   'w4-04': planFrost4,
   'w4-05': planFrost5,
-  'w4-06': planFrost6,
-  'w4-07': planFrost7,
+  'w4-06': planDoppeltor,
+  'w4-07': planPfeiler,
   'w4-08': planFrost8,
   'w4-09': planFrost9,
-  'w4-10': planFrost10,
+  'w4-10': planVierKanten,
   'w4-11': planFrost11,
   'w4-12': planFrost3,
   'w4-13': planFrost13,
@@ -1493,6 +1632,18 @@ describe('Alle Level sind lösbar', () => {
       const w = play(level, planFor(level));
       expect(w.skillsUsed, level.id).toBeLessThanOrEqual(level.par);
     }
+  });
+
+  it('w4-06: auch der Firn-Spalt löst das Doppeltor — teurer, mit einem Opfer', () => {
+    // Der Beweis der Routenwahl (Baustein B6): Beide Zugaenge loesen, aber
+    // nur der Stollen haelt das Par. Graeber + Waechter + Freisprengung
+    // kosten drei Vergaben und ein Leben — die Quote laesst genau das zu.
+    const level = levelById('w4-06')!;
+    const w = play(level, planDoppeltorOben());
+    expect(w.phase).toBe('won');
+    expect(w.saved).toBeGreaterThanOrEqual(level.needed);
+    expect(w.skillsUsed).toBe(3);
+    expect(w.skillsUsed).toBeGreaterThan(level.par);
   });
 });
 
@@ -1569,7 +1720,33 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   it('w2-05: ohne Rate-Zuege verpendelt der Pulk die Uhr', () => {
     erwarteRot('w2-05', planKlamm5);
   });
-  it('w4-10: der alte West-Schacht ist zu langsam fuer die Uhr', () => {
+  // Paket 3 (Level-Konzept): Die W4-Umbauten gegen ihre Altplaene.
+  it('w4-01: die Kaskade traegt nicht mehr von selbst', () => {
+    // Der Altplan war null Zuweisungen — genau der Befund der Inventur
+    // („der Pulk laeuft die Kaskade ohne eine einzige Zuweisung hinunter").
+    erwarteRot('w4-01', planFrost1);
+  });
+  it('w4-06: der Schirmpflicht-Plan graebt neben die Kammer', () => {
+    // planFrost6 war ein erklaerter Klon von planFrost2 — sein Schacht bei
+    // x230..250 endet an der Kante oder auf der Stahlsohle, nie in der
+    // Kammer, und seine Schirme finden keinen langen Fall mehr.
+    erwarteRot('w4-06', planFrost6);
+  });
+  it('w4-07: der alte Trick ohne echten Kletterer muss scheitern', () => {
+    // Die Rot-Pflicht aus dem Konzept (Paket 3): Die alte Fassung rettete
+    // 12/12 mit null Zuweisungen, weil die Stufenkante ueber dem
+    // Pfeilerkopf lag. Jetzt verliert, wer nichts zuweist — und auch der
+    // alte Kletterplan greift ins Leere, denn sein Fenster (y > 400) liegt
+    // unter dem neuen Grund.
+    erwarteRot('w4-07', planFrost1);
+    erwarteRot('w4-07', planFrost7);
+  });
+  it('w4-10: beide Ein-Front-Altplaene lassen die Ostfront sitzen', () => {
+    // Die Rot-Pflicht aus dem Konzept (Paket 3): Der Ostwache-Plan (v2)
+    // graebt zu frueh und findet keinen Waechter im Vorrat — fast der
+    // ganze Pulk faellt ostwaerts und bleibt auf dem Ostbord; der alte
+    // West-Schacht-Plan (v1) graebt ins Blankeis.
+    erwarteRot('w4-10', planFrost10);
     erwarteRot('w4-10', planFrost10Alt);
   });
   it('w5-10: Schirme ohne Ostwache — die Kante holt die Quote', () => {

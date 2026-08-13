@@ -17,8 +17,11 @@ function sk(partial: Partial<SkillCounts>): SkillCounts {
  * ## Die Entwurfsregeln dieser Welt
  *
  * 1. **Die Fallhoehe ist der Gegner.** Fast jedes Raetsel fragt: Wie kommen
- *    alle heil nach unten? Absaetze von siebzig Bildpunkten sind die
- *    Waehrung; was darueber liegt, braucht Schirm, Schacht oder Bruecke.
+ *    alle heil nach unten? Die Absaetze liegen auf dem Normraster des
+ *    Level-Konzepts — 48 die billige Etage, 72 der tiefste freie Fall,
+ *    96/120 die Gaben-Etagen; was ueber 72 liegt, braucht Schirm, Schacht
+ *    oder Bruecke. (Die krummen 70er der Erstfassung sind seit Paket 3
+ *    verboten: Jeder Abstand erklaert selbst, welches Werkzeug er verlangt.)
  * 2. **Schmal statt breit.** 480 Bildpunkte Breite, bis zu 860 Hoehe — die
  *    Klamm ist ein Schacht, kein Land. Die Weltwaende sind Spielflaeche.
  * 3. **Blankeis ist der Stahl dieser Welt.** Dieselbe Simulation, andere
@@ -32,28 +35,42 @@ export const WELT4_LEVELS: LevelDef[] = [
     id: 'w4-01',
     name: 'Die Kante',
     chapter: 'Kante',
-    hint: 'Die Klamm trägt dich — noch. Absatz für Absatz, keiner tiefer als ein Körper fällt.',
+    // Level-Konzept, Paket 3: die aktivierte Kaskade (Baustein B5). Die
+    // Treppenform bleibt, aber jeder zweite Absatz verlangt einen Handgriff —
+    // ein Riegel sperrt die zweite Stufe (Rammer), die dritte endet ueber dem
+    // tiefen Abgrund und nur der Schacht auf das Zwischenbord macht aus E120
+    // zwei mal E-sicher (Graeber). Alle Abstaende auf dem Normraster: 48 zum
+    // Absteigen, 72 als tiefster erlaubter Fall, 120 als sichtbare Grenze.
+    hint: 'Die Kaskade trägt nicht mehr von selbst: Ein Riegel sperrt die zweite Stufe, und die dritte endet über dem Abgrund. Ramme — und grabe rechtzeitig.',
     theme: 'frost',
     width: 480,
     height: 620,
     seed: 41001,
     entrance: { x: 240, y: 140 },
-    exit: { x: 224, y: 460, w: 32, h: 26 },
+    exit: { x: 224, y: 390, w: 32, h: 26 },
     total: 10,
-    needed: 8,
-    timeLimitSec: 120,
+    // Messlauf: die Musterloesung rettet alle 10. Drittel A, Marge 3.
+    needed: 7,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (68,6 s), W4-Faktor.
+    timeLimitSec: 100,
     releaseRate: 50,
     minReleaseRate: 30,
-    skills: sk({ digger: 2 }),
-    par: 0,
+    skills: sk({ basher: 2, digger: 2 }),
+    par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
-      // Die Kaskade: Absaetze im Wechsel, jeder siebzig tief.
-      { t: 'rect', x: 0, y: 200, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'rect', x: 100, y: 270, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'rect', x: 0, y: 340, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'rect', x: 100, y: 410, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 480, y: 480, h: 140, mat: MAT.ROCK, rough: 2 },
+      // Stufe 1: haengt oestlich, alle spawnen ostwaerts.
+      { t: 'rect', x: 120, y: 200, w: 260, h: 12, mat: MAT.ROCK },
+      // Stufe 2 mit dem Riegel: der Pulk pendelt sicher zwischen Riegel und
+      // Ostwand, bis der Rammer westwaerts oeffnet.
+      { t: 'rect', x: 100, y: 248, w: 380, h: 12, mat: MAT.ROCK },
+      { t: 'rect', x: 160, y: 218, w: 28, h: 30, mat: MAT.ROCK },
+      // Stufe 3: ihre Ostkante liegt 120 ueber dem Grund — toedlich, sichtbar.
+      { t: 'rect', x: 0, y: 296, w: 380, h: 12, mat: MAT.ROCK },
+      // Das Zwischenbord: der Schacht dorthin faengt jeden, bevor die
+      // Ostkante erreichbar wird; beide Bordkanten fallen 72.
+      { t: 'rect', x: 40, y: 344, w: 180, h: 12, mat: MAT.ROCK },
+      { t: 'ground', x: 0, w: 480, y: 416, h: 204, mat: MAT.ROCK, rough: 2 },
     ],
   },
   {
@@ -123,7 +140,9 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 240 },
     exit: { x: 400, y: 280, w: 32, h: 26 },
     total: 14,
-    needed: 10,
+    // Marge-Heilung (Level-Konzept, Paket 3): Die Musterloesung rettet 11 —
+    // Quote = Messung - 2. Die alte 10 liess nur einen einzigen Fehltritt zu.
+    needed: 9,
     timeLimitSec: 160,
     releaseRate: 45,
     minReleaseRate: 25,
@@ -169,58 +188,88 @@ export const WELT4_LEVELS: LevelDef[] = [
   },
   {
     id: 'w4-06',
-    name: 'Doppelsprung',
+    name: 'Das Doppeltor',
     chapter: 'Absturz',
-    hint: 'Zwei Stürze, ein Schirm: Wer einmal schweben kann, kann es auch beim zweiten Mal.',
+    // Level-Konzept, Paket 3: der B6-Routenwahl-Ersatzbau. Der alte
+    // „Doppelsprung" war ein selbsterklaerter Klon von w4-02 („wie
+    // Schirmpflicht, nur mit Zwischenhalt") — hier ersetzt ihn die Kammer
+    // mit zwei Zugaengen: oben der Firn-Spalt zwischen Eissaeule und
+    // Blankeis-Deckel (Graeber, dann Waechter an die Ostwand der Grube und
+    // Freisprengung durch die Erdwand — bomber+digger, der bisherige Koeder
+    // wird Loesung), seitlich der lange Stollen vom Eisboden (ein Rammer,
+    // kein Toter, aber der weite Umweg). Beide Wege loesen, nur der Stollen
+    // haelt das Par — die erste echte Routenwahl des Spiels. Beide Zugaenge
+    // liegen in einem 300x200-Fenster (x72..246, y210..290).
+    hint: 'Die Kammer hat zwei Tore: der Firn-Spalt neben der Eissäule — Grube, Wächter, Sprengung. Oder der lange Stollen vom Eisboden. Nur einer hält das Par.',
     theme: 'frost',
     width: 480,
-    height: 860,
+    height: 620,
     seed: 41006,
-    entrance: { x: 240, y: 140 },
-    exit: { x: 224, y: 770, w: 32, h: 26 },
-    total: 12,
-    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
-    needed: 4,
-    timeLimitSec: 180,
-    releaseRate: 30,
+    entrance: { x: 40, y: 150 },
+    exit: { x: 108, y: 258, w: 32, h: 26 },
+    total: 16,
+    // Stollenweg rettet 16, Sprengweg 15 (ein Opfer): Quote laesst beide zu.
+    needed: 13,
+    // Uhr = 1,4 x letzte Rettung der LANGSAMEREN Route (Stollen, 75,8 s);
+    // die Sprengroute rettet in 40,2 s — beide Wege passen bequem.
+    timeLimitSec: 110,
+    releaseRate: 35,
     minReleaseRate: 20,
-    skills: sk({ floater: 8, digger: 2 }),
-    par: 7,
+    skills: sk({ digger: 2, blocker: 2, bomber: 2, basher: 2 }),
+    par: 1,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
-      { t: 'rect', x: 120, y: 200, w: 240, h: 70, mat: MAT.ROCK },
-      { t: 'rect', x: 120, y: 140, w: 10, h: 60, mat: MAT.ROCK },
-      { t: 'rect', x: 350, y: 140, w: 10, h: 60, mat: MAT.ROCK },
-      // Der Zwischenhalt — und von seinen Kanten geht es gleich weiter.
-      { t: 'rect', x: 120, y: 520, w: 260, h: 16, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 480, y: 790, h: 70, mat: MAT.ROCK, rough: 2 },
+      // Die Firn-Hochebene auf der Stahlsohle; oestlich faellt sie 72 auf
+      // den Blankeis-Boden (der Pfercht der Stollenroute).
+      { t: 'rect', x: 0, y: 212, w: 240, h: 72, mat: MAT.EARTH },
+      { t: 'rect', x: 0, y: 284, w: 480, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 0, y: 290, w: 480, h: 330, mat: MAT.ROCK },
+      // Die Kammer mit der Tuer — sichtbar im Fels, beidseitig verschlossen.
+      { t: 'rect', x: 96, y: 218, w: 96, h: 66, mat: MAT.EMPTY },
+      // Blankeis-Deckel (verbietet den direkten Schacht in die Kammer) und
+      // Eissaeule (fuehrt den Spalt: nur zwischen Saeule und Deckel greift
+      // der Graeber, alles andere meldet Stahl).
+      { t: 'rect', x: 92, y: 212, w: 104, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 72, y: 212, w: 8, h: 72, mat: MAT.STEEL },
     ],
   },
   {
     id: 'w4-07',
     name: 'Gegenwind',
     chapter: 'Absturz',
-    hint: 'Ganz unten steht ein Pfeiler, und auf dem Pfeiler die Tür. Hinauf hilft nur der Kletterer.',
+    // Level-Konzept, Paket 3: die Reparatur. Die alte Fassung war kaputt —
+    // die Westkante der zweiten Stufe lag 58 ueber dem Pfeilerkopf, der Pulk
+    // landete im Vorbeifallen auf der Tuer, und die Musterloesung rettete
+    // 12/12 mit null Zuweisungen; der inszenierte Kletterer war Attrappe.
+    // Jetzt liegt keine Kante mehr ueber dem Pfeiler, alle Abstiege sind
+    // Normraster (48/72), und der Pfeiler selbst ist 96 hoch: hinauf kommt
+    // nur ein echter Kletterer. Der Rot-Test haelt den alten Trick fest:
+    // Null Zuweisungen muessen verlieren.
+    hint: 'Ganz unten steht der Pfeiler, sechsundneunzig hoch, und auf dem Pfeiler die Tür. Hinauf kommt nur, wer klettern kann.',
     theme: 'frost',
     width: 480,
     height: 620,
     seed: 41007,
-    entrance: { x: 240, y: 160 },
-    exit: { x: 72, y: 336, w: 32, h: 26 },
+    entrance: { x: 240, y: 140 },
+    exit: { x: 40, y: 198, w: 32, h: 26 },
     total: 12,
+    // Par misst neu: 8 Kletterer steigen, 8 kommen an — Quote = Messung - 2.
     needed: 6,
-    timeLimitSec: 180,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (57,6 s), W4-Faktor.
+    timeLimitSec: 85,
     releaseRate: 40,
     minReleaseRate: 25,
     skills: sk({ climber: 8, floater: 2, builder: 2 }),
-    par: 6,
+    par: 8,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
-      { t: 'rect', x: 0, y: 220, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'rect', x: 100, y: 290, w: 380, h: 12, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 480, y: 430, h: 190, mat: MAT.ROCK, rough: 2 },
-      // Der Pfeiler mit der Tuer — siebzig hoch, nur fuer Kletterer.
-      { t: 'rect', x: 60, y: 360, w: 60, h: 70, mat: MAT.ROCK },
+      // Zwei Stufen im Normraster: 48 hinab, dann 72 auf den Grund.
+      { t: 'rect', x: 120, y: 200, w: 260, h: 12, mat: MAT.ROCK },
+      { t: 'rect', x: 100, y: 248, w: 380, h: 12, mat: MAT.ROCK },
+      { t: 'ground', x: 0, w: 480, y: 320, h: 300, mat: MAT.ROCK, rough: 2 },
+      // Der Pfeiler mit der Tuer — sechsundneunzig hoch, nur fuer Kletterer.
+      // Die zwei Bauer im Vorrat sind ehrlicher Koeder: ihre Kette stiege 24.
+      { t: 'rect', x: 24, y: 224, w: 60, h: 96, mat: MAT.ROCK },
     ],
   },
   {
@@ -279,34 +328,55 @@ export const WELT4_LEVELS: LevelDef[] = [
     id: 'w4-10',
     name: 'Vier Kanten',
     chapter: 'Tiefe',
-    hint: 'Ein Schacht im Osten ist der schnelle Weg — aber wer unten ostwärts läuft, braucht sofort einen Wächter.',
+    // Level-Konzept, Paket 3: das erste Zwei-Fronten-Pflichtlevel. Die
+    // Design-Runde hatte die alte Doppelfront-Blaupause im Messlauf
+    // geschlagen (die Tuer fing alle Westlaeufer von selbst, die zweite
+    // Front hatte keinen Gegner) — diese Fassung baut die zweite Front so,
+    // dass sie einen hat: Der einzige Schacht liegt im Firn-Fleck der
+    // Blankeis-Platte, und die Fallrichtung teilt den Pulk. Wer westwaerts
+    // faellt, laeuft ueber die Westkante zur Tuer auf dem Westbord; wer
+    // ostwaerts faellt, sitzt auf dem Ostbord fest — kein Waechter im
+    // Vorrat kann ihn wenden. Die Bergung ist der Sohlen-Stollen: ein
+    // Rammer schlaegt vom Ostbord westwaerts UNTER der Terrasse durch bis
+    // zum Westbord, und die Ostfront laeuft unter dem Hinweg der Westfront
+    // zur Tuer durch. (Die Bauer-Kette der Blaupause ist im Messlauf
+    // widerlegt: Eine vom Bordboden steigende Rampe traegt unter ihren
+    // ersten Stufen eine Tasche — wer westlich des Rampenfusses pendelt,
+    // stoesst an die Unterseite und kommt nie mehr zum Einstieg.) Beide
+    // Fronten arbeiten gleichzeitig und liegen im 300x200-Fenster, die
+    // zweite direkt unter der ersten (Lesefenster-Gesetz). Niemand kann
+    // sterben: alle Kanten fallen 48 oder 72. Marge 3, wie das Konzept
+    // fuer Splits verlangt.
+    hint: 'Der Firn-Fleck ist der einzige Weg hinunter — und er teilt den Pulk. Westläufer finden die Tür; die Ostfront gräbt sich unter der Terrasse zurück.',
     theme: 'frost',
     width: 480,
     height: 620,
     seed: 41010,
     entrance: { x: 240, y: 160 },
-    exit: { x: 224, y: 270, w: 32, h: 26 },
+    exit: { x: 40, y: 314, w: 32, h: 26 },
     total: 16,
-    // Die Ostwache (Design-Runde; die Messung schlug die
-    // Doppelfront-Blaupause): Alle spawnen ostwaerts, also ist der
-    // Ost-Schacht der schnelle Weg — Quote in 30,6 s statt 50,9 s ueber
-    // den West-Schacht. Aber ohne sofortigen Waechter an der Ostkante
-    // sterben fuenfzehn (gemessen). Die Tuer faengt alle Westlaeufer von
-    // selbst; eine zweite Front hat keinen Gegner, deshalb ist sie keine.
-    // Die Uhr (45 s) laesst nur den Ostweg zu — der Rot-Test belegt es.
-    needed: 12,
-    timeLimitSec: 45,
+    needed: 13,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (88,8 s), W4-Faktor.
+    timeLimitSec: 125,
     releaseRate: 55,
     minReleaseRate: 30,
-    skills: sk({ digger: 2, blocker: 2 }),
+    skills: sk({ digger: 2, basher: 2, floater: 2 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 480, h: 20, mat: MAT.ROCK },
-      { t: 'rect', x: 0, y: 220, w: 480, h: 58, mat: MAT.ROCK },
-      // Die freie Terrasse: beide Kanten offen, unter beiden der lange Fall.
-      { t: 'rect', x: 120, y: 290, w: 240, h: 330, mat: MAT.ROCK },
-      { t: 'ground', x: 0, w: 120, y: 520, h: 100, mat: MAT.ROCK, rough: 2 },
-      { t: 'ground', x: 360, w: 120, y: 520, h: 100, mat: MAT.ROCK, rough: 2 },
+      // Die Blankeis-Platte mit dem einen Firn-Fleck: nur dort greift der
+      // Graeber, alles andere meldet Stahl.
+      { t: 'rect', x: 0, y: 220, w: 480, h: 24, mat: MAT.STEEL },
+      { t: 'rect', x: 300, y: 220, w: 56, h: 24, mat: MAT.EARTH },
+      // Die Terrasse auf vollem Sockel: beide Kanten fallen 48 auf die
+      // Borde. Blankeis-Haut gegen den Koeder-Schacht in die Tiefe.
+      { t: 'rect', x: 120, y: 292, w: 240, h: 328, mat: MAT.ROCK },
+      { t: 'rect', x: 120, y: 292, w: 240, h: 6, mat: MAT.STEEL },
+      // Westbord mit der Tuer; Ostbord als sichere Sackgasse der Ostfront.
+      { t: 'rect', x: 0, y: 340, w: 120, h: 280, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 340, w: 120, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 360, y: 340, w: 120, h: 280, mat: MAT.ROCK },
+      { t: 'rect', x: 360, y: 340, w: 120, h: 6, mat: MAT.STEEL },
     ],
   },
   {
