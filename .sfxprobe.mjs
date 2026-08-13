@@ -141,6 +141,11 @@ const ergebnis = await page.evaluate(async () => {
   for (let k = 1; k * schritt < dauer - 0.1; k++) {
     const t = k * schritt;
     void off.suspend(t).then(() => {
+      // Die Stimmenbremse der Engine erlaubt 6 begrenzte Stimmen JE BILD;
+      // im Spiel setzt die Bildschleife den Zaehler zurueck. Ohne diesen
+      // Aufruf schluckt die Bremse nach den ersten sechs Klaengen alles
+      // Begrenzte — der halbe Katalog war digital still.
+      engine.beginFrame();
       feuere(t);
       void off.resume();
     });

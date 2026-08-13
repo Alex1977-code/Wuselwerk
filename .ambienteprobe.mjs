@@ -26,7 +26,10 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const dauerMusik = Number(process.argv[2] ?? '45');
-const TAIL = 4;
+// 12 statt 4: Der Kristall-Liegeton dauert 7,5 s und darf bis kurz vor dem
+// Planungsende starten — dazu bis zu 2,9 s Raumhall. Ein kuerzerer Ausklang
+// schneidet ihn hoerbar ab (die Nachpruefung mass -16 dBFS am Dateiende).
+const TAIL = 12;
 const WELTEN = [
   { theme: 'grass', name: 'wiese' },
   { theme: 'crystal', name: 'kristall' },
