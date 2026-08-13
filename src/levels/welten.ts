@@ -251,7 +251,9 @@ export const WELTEN: Welt[] = [
     thema: 'Eine Halde aus Stahl und Schrott. Wenig ist grabbar, alles ist im Weg.',
     kartenTheme: 'rust',
     farbe: '#c07a3a',
-    soll: 13,
+    // 14 seit „Unter dem Hinweg" (Level-Konzept, Paket 2) — damit stimmt
+    // die beworbene 66 wieder.
+    soll: 14,
     phase: 4,
     // Das Sterntor vor Punkt 8: vierzig Sterne aus bis dahin 87 moeglichen.
     // Wer alles nur eben besteht, hat 29 — und zwei Welten voller Gruende,

@@ -128,12 +128,13 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 120, y: 320 },
     exit: { x: 840, y: 360, w: 32, h: 28 },
     total: 20,
-    // 17 statt 14 (Design-Runde): Die Musterloesung rettet 18 — hier ist
-    // die eine erlaubte Marge-1-Pruefung der Welt. Uhr 130 statt 200: die
-    // letzte Rettung faellt bei ~108 s, die Sprengung muss ins Fenster
-    // zwischen Bruecke 1 und Pulkankunft, nicht irgendwann.
+    // Rate-Fenster-Fassung (Level-Konzept, Paket 2): Die Musterloesung
+    // drosselt sofort und dreht nach der Sprengung auf — so rettet sie 19
+    // statt 18, die Marge liegt bei 2. Die Uhr ist an DIESER gedrosselten
+    // Messung geeicht (letzte Rettung 107,5 s x 1,6 = 170); wer bei Rate
+    // 70 einfach laufen laesst, verliert Nachzuegler an die Spalte.
     needed: 17,
-    timeLimitSec: 130,
+    timeLimitSec: 170,
     releaseRate: 70,
     minReleaseRate: 30,
     skills: sk({ builder: 6, blocker: 2, bomber: 1 }),
@@ -150,32 +151,40 @@ export const WELT3_LEVELS: LevelDef[] = [
   },
   {
     id: 'w3-05',
-    name: 'Fallwerk',
+    name: 'Die Galerie',
     chapter: 'Werk',
-    hint: 'Ohne Schirm überlebt den Fall niemand — und wer unten ostwärts losläuft, braucht einen Wächter im Rücken.',
+    hint: 'Der Schirm trägt hinunter, und das Ziel liegt sichtbar unter den Füssen — aber die Halle ist zur Tür hin vermauert. Wer gelandet ist, hat noch Arbeit.',
     theme: 'rust',
     width: 720,
     height: 540,
     seed: 31005,
     entrance: { x: 100, y: 110 },
-    // Entklont (Design-Runde): Die Tuer liegt jetzt WESTLICH der
-    // Landestelle. Gelandete laufen ostwaerts los; ohne Waechter kostet
-    // der Pendelweg ueber die halbe Welt die Uhr (Rot-Test gegen den
-    // geerbten w1-04-Plan).
-    exit: { x: 80, y: 450, w: 32, h: 26 },
+    exit: { x: 650, y: 444, w: 32, h: 26 },
     total: 12,
-    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
+    // Messlauf: letzte Rettung 54,2 s x 1,6 = 85. Quote 4 = Messung 6
+    // minus Marge 2.
     needed: 4,
-    timeLimitSec: 62,
+    timeLimitSec: 85,
     releaseRate: 30,
     minReleaseRate: 20,
-    // +1 Schirm (Paket 0): Ein Fehltipp verbrannte sonst die letzte Gabe.
-    skills: sk({ floater: 8, blocker: 1 }),
-    par: 8,
+    // B2 „Galerie ueber der Halle" (Level-Konzept, Paket 2): Der dritte
+    // Schirmregen ist damit entklont — der Schirm arbeitet zum ersten Mal
+    // NACH der Landung (floater+basher, nie zuvor gespielt). Vom Balkon
+    // sieht man die Tuerkammer unter den Fuessen: die sichtbare, noch
+    // unverstandene Loesung. Rot-Tests gegen beide Altplaene.
+    skills: sk({ floater: 8, basher: 2 }),
+    // Sechs Schirme, ein Stollen.
+    par: 7,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
+      // Der Balkon — die Galerie, von der alles faellt.
       { t: 'rect', x: 0, y: 170, w: 320, h: 26, mat: MAT.STEEL },
-      { t: 'ground', x: 0, w: 720, y: 470, h: 70, mat: MAT.ROCK, rough: 2 },
+      // Der Hallenboden, GLATT: Auf rauem Grund verliert der Rammer den
+      // Boden unter den Fuessen (Messung aus w2-08).
+      { t: 'rect', x: 0, y: 470, w: 720, h: 70, mat: MAT.ROCK },
+      // Die Mauer vor der Tuerkammer: 110 hoch, kein Weg darueber. Sie
+      // ersetzt den alten Waechter — die Halle selbst ist der Fang.
+      { t: 'rect', x: 560, y: 360, w: 44, h: 110, mat: MAT.ROCK },
     ],
   },
   {
@@ -425,6 +434,61 @@ export const WELT3_LEVELS: LevelDef[] = [
       // Glatt aus demselben Grund wie in „Naht und Riegel": Arbeitsboden.
       { t: 'ground', x: 580, w: 380, y: 440, h: 160, mat: MAT.ROCK, rough: 0 },
       { t: 'rect', x: 740, y: 373, w: 40, h: 67, mat: MAT.ROCK },
+    ],
+  },
+  {
+    id: 'w3-14',
+    name: 'Unter dem Hinweg',
+    chapter: 'Halde',
+    hint: 'Die Tür liegt sichtbar unter dem Eingang — aber ihr Deckel ist Stahl. Der Weg führt nach Osten, schräg hinab, und im Stollen zurück unter dem Hinweg.',
+    theme: 'rust',
+    width: 960,
+    height: 540,
+    seed: 31014,
+    entrance: { x: 140, y: 240 },
+    exit: { x: 110, y: 404, w: 32, h: 26 },
+    total: 16,
+    // Messlauf: letzte Rettung 145,9 s x 1,6 (W3-Faktor) = 235. Quote 14 =
+    // Messung 16 minus Marge 2 (Profil C). Die Musterloesung dreht die
+    // Rate sofort auf — Rate-Zuege kosten kein Par.
+    needed: 14,
+    timeLimitSec: 235,
+    releaseRate: 45,
+    minReleaseRate: 25,
+    // B3 „Haarnadel" (Level-Konzept, Paket 2) — das Weltmeisterstueck und
+    // das miner+basher-Debuet: Aus einer Karte wird eine Geschichte, denn
+    // der Rueckweg fuehrt UNTER dem Hinweg zur Tuer unter dem Eingang.
+    // Drei Zuege: der Riegel auf dem Hinweg (Rammer), die Schraege in die
+    // Tiefe (Schraegbagger, die Stahlsohle faengt ihn), der Stollen
+    // westwaerts (Rammer, gewendet am Weltrand). Der Graeber ist Koeder:
+    // Wer ueber der Tuer senkrecht ansetzt, steht auf dem Stahldeckel —
+    // „Stahl erzwingt den Umweg", das Weltziel woertlich. Damit stimmt
+    // auch die beworbene 66 wieder.
+    skills: sk({ basher: 3, miner: 2, digger: 1 }),
+    par: 3,
+    paint: [
+      // Der Hinweg: eine Aschehalde, oben begehbar, darunter massiv.
+      // GLATT — auf rauem Grund verliert der Rammer den Boden (w2-08).
+      { t: 'ground', x: 0, w: 960, y: 300, h: 240, mat: MAT.EARTH, rough: 0 },
+      // Der Riegel auf dem Hinweg — der erste Rammer-Zug.
+      { t: 'rect', x: 500, y: 240, w: 44, h: 62, mat: MAT.ROCK },
+      // Das Blech vor dem Riegel: Es verbietet genau die Schraegen-Ansaetze,
+      // deren Bahn das Stollenfenster der Kammer traefe — der Rot-Test
+      // gegen alle Altplaene hat diesen Trivialpfad gefunden (der
+      // w2-05-Plan grub mit EINER Westschraege zur Tuer).
+      { t: 'rect', x: 420, y: 300, w: 100, h: 6, mat: MAT.STEEL },
+      // Die Stahlsohle in der Tiefe: Sie faengt die Schraege des
+      // Schraegbaggers und gibt dem Stollen seine Hoehe.
+      { t: 'rect', x: 520, y: 372, w: 440, h: 12, mat: MAT.STEEL },
+      // Die Tuerkammer unter dem Eingang: Stahl deckelt sie von oben
+      // (der Graeber-Koeder steht darauf), Stahl schliesst sie nach Osten
+      // unterhalb der Stollenhoehe — offen bleibt allein das waagerechte
+      // Fenster, das nur der Rammer von der Sohle aus trifft.
+      { t: 'rect', x: 80, y: 340, w: 120, h: 12, mat: MAT.STEEL },
+      { t: 'rect', x: 80, y: 352, w: 120, h: 78, mat: MAT.EMPTY },
+      { t: 'rect', x: 188, y: 372, w: 12, h: 58, mat: MAT.STEEL },
+      // Der Fels unter Kammer und Tuer.
+      { t: 'rect', x: 80, y: 430, w: 120, h: 110, mat: MAT.ROCK },
     ],
   },
 ];

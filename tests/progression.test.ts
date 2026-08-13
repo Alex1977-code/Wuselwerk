@@ -445,7 +445,9 @@ describe('Der ausgelieferte Katalog', () => {
     const karte = weltkarte({}, KATALOG);
     expect(karte.welten).toHaveLength(5);
     expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5']);
-    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 13, 13, 14, 15]);
+    // 14 in Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2) —
+    // die Summe ist wieder die beworbene 66.
+    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 13, 14, 14, 15]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });

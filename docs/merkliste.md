@@ -55,7 +55,19 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Versatz), w2-07 „Über den Deckel" (man läuft AUF dem Deckel zur Tür),
   w2-08 „Gegenstrom" (Wender, blocker+basher-Debüt). Vier neue
   Rot-Tests, alle Werte aus dem Messlauf. w1-10 trug die beschlossene
-  Fassung 2 bereits. Pakete 2–5 stehen aus.
+  Fassung 2 bereits.
+- ✅ **Mehrebenen-Konzept, Paket 2** (Welt 3): w3-04 „Taktstrasse" als
+  Rate-Fenster-Fassung (Musterlösung drosselt, Uhr an der gedrosselten
+  Messung geeicht — rettet nebenbei 19 statt 18, Marge 2); w3-05 → „Die
+  Galerie" (B2, floater+basher-Debüt: der Schirm arbeitet nach der
+  Landung, zwei Rot-Tests); **w3-14 „Unter dem Hinweg" neu** (B3
+  Haarnadel, miner+basher-Debüt: Riegel, Westschräge auf die Stahlsohle,
+  Stollen zurück unter dem Hinweg zur Tür unter dem Eingang; Gräber als
+  Stahl-Köder). Abnahme wörtlich nach Konzept: Rot-Test gegen **alle 65
+  Altpläne** — er fand einen echten Trivialpfad (Einzelschräge zur
+  Kammer), der mit Blech vor dem Riegel und einer Stahl-Ostwand
+  geschlossen wurde. Damit ist die beworbene **66** wieder wahr.
+  Pakete 3–5 stehen aus.
 
 ## Grafik
 

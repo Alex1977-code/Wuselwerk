@@ -345,7 +345,15 @@ function planRost3(): Plan {
   };
 }
 
-/** Blocker, zwei Brückenketten von derselben Hand, dann die Erlösung. */
+/**
+ * Blocker, zwei Brückenketten von derselben Hand, dann die Erlösung.
+ *
+ * Rate-Fenster-Fassung (Level-Konzept, Paket 2): sofort drosseln, nach
+ * der Sprengung aufdrehen. Die Uhr ist an DIESER gedrosselten Messung
+ * geeicht — die Pionier-Wartezeit steckt in der Messung. Wer nicht
+ * drosselt, verliert bei Rate 70 Nachzuegler an die Spalte, und die
+ * Marge-1-Pruefung verzeiht genau einen.
+ */
 function planRost4(): Plan {
   let builder: number | null = null;
   let blocker: number | null = null;
@@ -353,7 +361,13 @@ function planRost4(): Plan {
   let bruecke2 = false;
   let kette2 = false;
   let bombed = false;
+  let gedrosselt = false;
   return (w) => {
+    if (!gedrosselt) {
+      w.setReleaseRate(30);
+      gedrosselt = true;
+    }
+    if (bombed) w.setReleaseRate(99);
     if (builder === null) {
       const c = walkerNear(w, 356, 364, 1);
       if (c && w.assign(c.id, 'builder')) builder = c.id;
@@ -1298,6 +1312,79 @@ function planGegenstrom(): Plan {
   };
 }
 
+/**
+ * w3-05 „Die Galerie" (B2): Schirme fuer den Fall, und der erste
+ * Gelandete sticht die Hallenmauer durch — der Schirm arbeitet nach
+ * der Landung.
+ */
+function planGalerie(): Plan {
+  let schirme = 0;
+  let stollen = false;
+  return (w) => {
+    if (schirme < 6) {
+      for (const x of w.wusels) {
+        if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {
+          if (w.assign(x.id, 'floater')) schirme++;
+          if (schirme >= 6) break;
+        }
+      }
+      return;
+    }
+    if (!stollen) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 440 && x.x >= 554 && x.x <= 558,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * w3-14 „Unter dem Hinweg" (B3 Haarnadel): Riegel-Rammer auf dem Hinweg,
+ * dann kehrt die Haarnadel am Weltrand — die Schraege faellt WESTWAERTS.
+ * Nur so steht der Schraegbagger unten vor einer Wand statt vor seiner
+ * eigenen offenen Rampe (die Messung hat die Ost-Fassung widerlegt: dort
+ * lief der Kandidat die Schraege einfach wieder hinauf). Derselbe
+ * Schraegbagger rammt unten den Stollen westwaerts unter den Hinweg.
+ */
+function planHinweg(): Plan {
+  let riegel = false;
+  let schraege: number | null = null;
+  let stollen = false;
+  let aufgedreht = false;
+  return (w) => {
+    // Volle Rate von Anfang an: Hier stirbt niemand, und ein gedraengter
+    // Pulk wartet gemeinsam vor dem Stollen statt einzeln nachzutroepfeln.
+    if (!aufgedreht) {
+      w.setReleaseRate(99);
+      aufgedreht = true;
+    }
+    if (!riegel) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 310 && x.x >= 492 && x.x <= 497,
+      );
+      if (c && w.assign(c.id, 'basher')) riegel = true;
+      return;
+    }
+    if (schraege === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y < 310 && x.x >= 890 && x.x <= 904,
+      );
+      if (c && w.assign(c.id, 'miner')) schraege = c.id;
+      return;
+    }
+    if (!stollen) {
+      const m = w.wuselById(schraege);
+      // Nur ganz unten auf der Stahlsohle (Stand 760/761, y 371): Auf der
+      // abfallenden Rampe hinge der Rammer nach jedem 2er-Versatz einen
+      // Punkt ueber dem Boden und fiele ins Laufen zurueck — gemessen.
+      if (m && m.state === State.WALKING && m.dir === -1 && m.y >= 371 && m.x <= 762) {
+        if (w.assign(m.id, 'basher')) stollen = true;
+      }
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -1330,7 +1417,7 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w3-02': planRost2,
   'w3-03': planRost3,
   'w3-04': planRost4,
-  'w3-05': planRost5,
+  'w3-05': planGalerie,
   'w3-06': planRost6,
   'w3-07': planRost7,
   'w3-08': planRost8,
@@ -1339,6 +1426,7 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w3-11': planRost11,
   'w3-12': planRost12,
   'w3-13': () => planRost13(9),
+  'w3-14': planHinweg,
   'w4-01': planFrost1,
   'w4-02': planFrost2,
   'w4-03': planFrost3,
@@ -1504,8 +1592,24 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   it('w2-12: die verschobene Schlucht laesst die alte Bruecke zu kurz', () => {
     erwarteRot('w2-12', planLevel10);
   });
-  it('w3-05: ohne Ostwache frisst der Pendelweg die Uhr', () => {
+  it('w3-05: die Schirmregen-Altplaene kennen den Stollen nicht', () => {
+    // Paket 2: Die Galerie ersetzt den dritten Schirmregen. Beide
+    // Altplaene bringen die Gelandeten hinunter — und keinen durch die
+    // Mauer: der eine hat keinen Waechter mehr zu setzen, der andere
+    // wartet vergebens auf einen Blocker im Vorrat.
     erwarteRot('w3-05', planLevel4);
+    erwarteRot('w3-05', planRost5);
+  });
+  it('w3-14: kein einziger Altplan aus PLANS loest die Haarnadel', () => {
+    // Die Abnahme des Konzepts woertlich: Rot-Test gegen ALLE Altplaene.
+    // Ein neues Level ist erst dann ein neues Raetsel, wenn keine der 65
+    // bestehenden Musterloesungen es aus Versehen mitloest.
+    const level = levelById('w3-14')!;
+    for (const [id, fabrik] of Object.entries(PLANS)) {
+      if (id === 'w3-14') continue;
+      const w = play(level, fabrik(level));
+      expect(w.phase, `w3-14: Altplan von ${id} muesste scheitern`).toBe('lost');
+    }
   });
   // Paket 1 (Level-Konzept): Die Fruehspiel-Umbauten gegen ihre Altplaene.
   it('w1-08: der alte Bruecken-Plan findet weder Schlucht noch Bauer', () => {
