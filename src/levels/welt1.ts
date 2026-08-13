@@ -1,0 +1,611 @@
+import { MAT, SKILLS, type SkillCounts } from '../core/types';
+import type { LevelDef } from './types';
+
+function sk(partial: Partial<SkillCounts>): SkillCounts {
+  const out = {} as SkillCounts;
+  for (const s of SKILLS) out[s] = partial[s] ?? 0;
+  return out;
+}
+
+/**
+ * Welt 1 — Grasland, der Berufs-Grundkurs und die Pruefung.
+ *
+ * Vierzehn Level, gebaut nach dem abgenommenen Plan in `docs/welt-1-neu.md`.
+ * Der Auftrag lautete: „in welt 1 haette ich gern level zum basics lernen
+ * jeden berufs und danach muss das anspruchsvoll werden, ab level drei
+ * braucht es mindestens 3 berufe um das level zu loesen … anspruchsvoll aber
+ * nicht demotivierend."
+ *
+ * ## Warum sich das nicht widerspricht
+ *
+ * Es sieht nach einem Widerspruch aus — erst lehren, dann fordern —, und er
+ * loest sich durch eine Rechnung, nicht durch einen Kompromiss: **Zwei
+ * bekannte Berufe plus ein neuer sind exakt drei.** Der Grundkurs faellt
+ * damit mit der Drei-Berufe-Regel zusammen, statt vor ihr zu liegen.
+ *
+ * - Level 1 und 2 zeigen je genau **einen** scharfen Knopf (Graeber, Rammer).
+ *   Nach zwei Leveln sind zwei Berufe gelernt — der erste arithmetisch
+ *   moegliche Moment fuer „drei".
+ * - Level 3 bis 8 fuehren je genau **einen neuen** Beruf ein und verlangen
+ *   **zwei gelernte**. Nach Level 8 sind alle acht Berufe gelehrt.
+ * - Level 9 bis 14 kombinieren ohne Neuzugang.
+ *
+ * Die Kurve der verlangten Berufe lautet 1, 1, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3,
+ * 4, 4. Ab Level 3 faellt keines darunter.
+ *
+ * ## Die vier Gesetze der Knopfleiste
+ *
+ * Der Spieltest fand nicht zu wenig Haerte, sondern zu wenig Lesbarkeit: von
+ * einem auf vier auf fuenf unbeschriftete Bildchen, kein Beruf je
+ * vorgestellt, sechs Niederlagen am dritten Level. Dagegen gilt:
+ *
+ * 1. Hoechstens **fuenf** Knopfarten je Level — tatsaechlich nie mehr als
+ *    vier.
+ * 2. Jede gezeigte Art ist in einem frueheren Level **vorgestellt** worden.
+ * 3. Der Werkzeug-Ueberschuss steckt ausschliesslich in **Stueckzahlen**,
+ *    nie in einer zusaetzlichen Knopfart.
+ * 4. Jeder Knopf traegt sein deutsches Wort (`SKILL_KNOPF`) und die
+ *    Vorratszahl.
+ *
+ * ## Und die drei Bausetze, die diese Welt benutzt
+ *
+ * - **E48 faellt frei hinab**, E72 auch — und beide sperren den Rueckweg.
+ *   E96 ist die Zahl, die nur der Kletterer beantwortet, E120 die, die nur
+ *   der Schirm ueberlebt (Sturzgrenze 78).
+ * - **Die Schraege ist der Rueckweg.** Der Schraegbagger steigt 1 px je 2 px
+ *   und ist damit die einzige Verbindung des Spiels, die in BEIDE Richtungen
+ *   begehbar ist. Damit der Pulk sie von unten betreten kann, muss ihre
+ *   untere Muendung auf der Wartehoehe liegen — deshalb steht in jedem
+ *   Schraegbagger-Level eine **Wand hinter dem Ansatz**: Sie legt den
+ *   Startpunkt fest, und aus dem Startpunkt folgt die Muendung. Ein
+ *   Ansatzfenster, das der Daumen treffen muss, waere Millimeterarbeit.
+ * - **Sackgassen fangen mit Warten, nie mit Sterben.** Wo eine Kante
+ *   toedlich waere, steht eine 12-px-Lippe davor (ueber MAX_STEP 5, unter
+ *   BASH_UP 12 — ein Rammer oeffnet sie) oder die Kante liegt hinter dem
+ *   Ost-Umweg. In sechs der vierzehn Level gibt es ueberhaupt keine
+ *   Verlustkante.
+ *
+ * **Lippe und Kletterer schliessen einander aus:** Eine Lippe wendet keinen
+ * Kletterer, er klettert sie. Wo ein Kletterer oben umkehren muss, steht ein
+ * **Kragstein** — in Level 9 sichtbar eingefuehrt, in Level 13 abgefragt.
+ *
+ * Ganz Welt 1 ist lebensfrei (`lebensfrei` in `leben.ts`), das Sterntor steht
+ * auf der Kapitelgrenze vor Level 9 — nie im Grundkurs.
+ *
+ * ## Stand: im Bau, nicht verdrahtet
+ *
+ * Diese Datei ist noch **nicht** in `index.ts` eingehaengt, und das ist
+ * Absicht. Die Hausregel dieses Projekts lautet: Ein Level gilt erst, wenn
+ * der Messlauf es bestaetigt hat — Zahlen, die nur plausibel aussehen, sind
+ * hier schon dreimal zusammengebrochen (die Bauerkette aus der Grube, die
+ * Lippe als Kletterer-Wende, der gestapelte Block).
+ *
+ * Gemessen und gruen sind bisher **sechs** der vierzehn: w1-01 bis w1-06 und
+ * w1-08 loesen sich mit ihrer Musterloesung; die uebrigen brauchen noch je
+ * eine Messrunde. Bis dahin spielt das Spiel die alte Welt 1 weiter — eine
+ * halb gebaute Welt auszuliefern waere schlimmer als eine alte.
+ *
+ * Was beim Nachziehen zuerst zu pruefen ist, steht als Befund hier:
+ *
+ * - **w1-07 / w1-09 / w1-11 / w1-14**: Der Schraegbagger muss in die
+ *   Richtung zeigen, in die die Figur **laeuft** — an einer Wand ist das die
+ *   Richtung NACH der Umkehr. Der erste Messlauf hat vier Rampen in die
+ *   falsche Richtung getrieben.
+ * - **w1-12**: Der erste Lauf verlor sechzehn von sechzehn Figuren am
+ *   Uebergang A1 -> A2. Die Terrainprobe zeigt beide Absaetze an ihrer
+ *   Stelle; die Ursache ist noch nicht gefunden und muss es sein, bevor das
+ *   Level ausgeliefert wird.
+ * - **w1-13**: Der Kletterer wird nie vergeben — das Fenster an der
+ *   Pfeilerflanke liegt falsch.
+ */
+export const WELT1_LEVELS: LevelDef[] = [
+  {
+    id: 'w1-01',
+    name: 'Grabe dich durch',
+    chapter: 'Spaziergang',
+    // Unveraendert aus dem Bestand. Ein einziger scharfer Knopf, eine einzige
+    // Zuweisung, kein Weg zu sterben: Wer nichts tut, laeuft ewig auf ebenem
+    // Boden, und nur die Uhr verliert.
+    hint: 'Die Tür liegt unter dir. Wähle den Gräber und tippe eine Figur an.',
+    theme: 'grass',
+    width: 480,
+    height: 540,
+    seed: 1337,
+    entrance: { x: 240, y: 320 },
+    exit: { x: 220, y: 436, w: 40, h: 20 },
+    total: 10,
+    needed: 6,
+    timeLimitSec: 90,
+    releaseRate: 50,
+    minReleaseRate: 30,
+    skills: sk({ digger: 5 }),
+    par: 1,
+    paint: [{ t: 'ground', x: 0, w: 480, y: 380, h: 160, mat: MAT.EARTH, rough: 3 }],
+  },
+  {
+    id: 'w1-02',
+    name: 'Die Wand',
+    chapter: 'Spaziergang',
+    // Zwei Korrekturen am Bestand, beide aus dem Plan:
+    //
+    // 1. `rough` von 2 auf 0. Der Rammer verliert auf rauem Grund nach jedem
+    //    Zwei-Punkt-Versatz den Boden — und die einzige Rammstrecke dieses
+    //    Levels lag auf rauem Boden. Eine gemessene Falle im zweiten Level
+    //    des Spiels.
+    // 2. Der Vorrat schrumpft von vier Knopfarten auf EINE. Das ist die
+    //    direkte Antwort auf den Spieltest-Befund „1 -> 4 -> 5
+    //    unbeschriftete Bildchen": Ein Level, das genau einen Beruf lehrt,
+    //    zeigt genau einen Knopf.
+    hint: 'Der Rammer gräbt waagerecht. Setze ihn an, bevor die Uhr abläuft.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 4711,
+    entrance: { x: 100, y: 340 },
+    exit: { x: 596, y: 380, w: 32, h: 26 },
+    total: 20,
+    needed: 15,
+    timeLimitSec: 120,
+    releaseRate: 50,
+    minReleaseRate: 30,
+    skills: sk({ basher: 3 }),
+    par: 1,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 400, h: 140, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 340, y: 250, w: 44, h: 155, mat: MAT.ROCK },
+    ],
+  },
+  {
+    id: 'w1-03',
+    name: 'Der Wächter',
+    chapter: 'Spaziergang',
+    // Lehrt den Blocker — und zwar an der Stelle, an der er wirklich
+    // gebraucht wird: Der Grabpunkt liegt WESTLICH einer Abbruchkante, und
+    // ohne einen Waechter davor laeuft der Pulk beim Graben daran vorbei.
+    //
+    // Die Falltuer liegt zwischen Riegel und Ostwand: Solange der Spieler
+    // nichts oeffnet, pendelt der ganze Pulk in einer geschlossenen Schale.
+    // Nichts kann verloren gehen, bevor man selbst etwas aufmacht.
+    hint: 'Der Riegel im Westen versperrt den Weg — nur der Rammer kommt hindurch. Dahinter fällt die Wiese ab: Setze den Wächter, bevor du gräbst.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1103,
+    entrance: { x: 480, y: 280 },
+    exit: { x: 140, y: 386, w: 32, h: 26 },
+    total: 20,
+    needed: 13,
+    timeLimitSec: 120,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ basher: 2, blocker: 2, digger: 2 }),
+    par: 3,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 340, h: 200, mat: MAT.EARTH, rough: 0 },
+      // Die Ostwand wendet den Pulk, der Riegel sperrt nach Westen. Zwischen
+      // beiden liegt die Falltuer — die geschlossene Schale.
+      { t: 'rect', x: 676, y: 240, w: 44, h: 100, mat: MAT.ROCK },
+      { t: 'rect', x: 300, y: 280, w: 44, h: 60, mat: MAT.ROCK },
+      // Der Pferch an der Westkante: 72 hinab, ueberlebbar, ohne Rueckweg.
+      // Er ist die Strafe fuer den vergessenen Waechter — sichtbar, nicht
+      // toedlich.
+      { t: 'rect', x: 0, y: 340, w: 60, h: 72, mat: MAT.EMPTY },
+      // Die Tuerkammer unter der Wiese. Deckel 32 dick: Der Graeber braucht
+      // sichtbar Zeit, aber keine zweite Zuweisung.
+      { t: 'rect', x: 100, y: 372, w: 120, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-04',
+    name: 'Die Brücke',
+    chapter: 'Spaziergang',
+    // Lehrt den Brueckenbauer, und mit ihm die Rechnung, die diese Welt
+    // traegt: Je Zuweisung sind rund zwanzig Bildpunkte Weg und zehn Anstieg
+    // nutzbar (Uebergabe bei zwei Reststeinen). Der Normspalt der Welt ist
+    // deshalb 36 px — drei Zuweisungen mit sichtbarem Startfenster, statt
+    // zwei mit Millimeterarbeit.
+    //
+    // Die Falltuer liegt oestlich des Spalts: Der Pulk laeuft erst gegen die
+    // Ostwand und dann zurueck. Bis die erste Kante erreicht ist, vergehen
+    // ueber dreissig Sekunden — die Vierzig-Sekunden-Regel ist ohne Lippe
+    // eingehalten.
+    hint: 'Der Spalt ist zu breit zum Springen. Drei Brückenbauer nacheinander tragen hinüber — und im Westen wartet wieder eine Kante.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1104,
+    entrance: { x: 420, y: 320 },
+    exit: { x: 120, y: 426, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 150,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ builder: 5, blocker: 2, digger: 2 }),
+    par: 5,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 380, h: 160, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 690, y: 300, w: 30, h: 80, mat: MAT.ROCK },
+      // Der Normspalt: 36 breit, 72 tief. Wer hineinfaellt, lebt und wartet.
+      { t: 'rect', x: 300, y: 380, w: 36, h: 72, mat: MAT.EMPTY },
+      // Der Westpferch, wieder 72 — dieselbe Sprache wie in Level 3.
+      { t: 'rect', x: 0, y: 380, w: 60, h: 72, mat: MAT.EMPTY },
+      { t: 'rect', x: 100, y: 412, w: 120, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-05',
+    name: 'Über den Stahl',
+    chapter: 'Kniffelig',
+    // Lehrt den Kletterer und das Material STAHL in einem Bild: Die Flanke
+    // der Stufe ist Stahl, also prallt der Rammer ab und der Graeber beisst
+    // sich nicht durch. Der Kletterer ist eine PERSOENLICHE Gabe — eine je
+    // Figur —, und genau das ist die Lehre.
+    //
+    // Die Stufe ist 72 hoch und nicht, wie zuerst entworfen, 130. Grund:
+    // Wer oben ankommt, laeuft irgendwann nach Westen zurueck und faellt
+    // wieder hinunter. Bei 130 waere das toedlich, und eine 12-px-Lippe
+    // haelt ausgerechnet einen Kletterer nicht auf — er klettert sie. Bei 72
+    // faellt er heil, laeuft wieder gegen den Stahl und steigt erneut: Das
+    // Level korrigiert sich selbst. Der Kragstein, der das anders loesen
+    // wuerde, wird erst in Level 9 vorgestellt.
+    hint: 'Stahl hält jedes Werkzeug auf. Über ihn kommt nur, wer klettern kann — und Klettern ist eine Gabe für eine einzige Figur.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1105,
+    entrance: { x: 200, y: 312 },
+    exit: { x: 650, y: 346, w: 32, h: 26 },
+    total: 10,
+    needed: 5,
+    timeLimitSec: 150,
+    releaseRate: 40,
+    minReleaseRate: 25,
+    skills: sk({ climber: 9, basher: 2, digger: 2 }),
+    // Eine Verteilung von Gaben ist EINE Entscheidung; die Zahl ist die
+    // Stueckzahl, nicht der Anspruch (siehe `docs/welt-1-neu.md`, Par-Regel).
+    par: 10,
+    paint: [
+      { t: 'ground', x: 0, w: 400, y: 372, h: 168, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 400, y: 300, w: 320, h: 240, mat: MAT.EARTH },
+      { t: 'rect', x: 400, y: 300, w: 10, h: 72, mat: MAT.STEEL },
+      // Oben der Riegel: Auch wer klettern kann, kommt nicht ohne Rammer zur
+      // Tuer. Zwei Berufe fuer den Aufstieg, einer fuer die Tuer.
+      { t: 'rect', x: 560, y: 240, w: 44, h: 60, mat: MAT.ROCK },
+      { t: 'rect', x: 620, y: 332, w: 90, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-06',
+    name: 'Der lange Fall',
+    chapter: 'Kniffelig',
+    // Lehrt den Schirmspringer — und die Reihenfolge. Hundertzwanzig
+    // Bildpunkte ueberlebt nur der Schirm; die Lippe an der Ostkante haelt
+    // den Pulk so lange, bis der Spieler selbst oeffnet. Wer zuerst rammt
+    // und dann verteilt, verliert die Schirmlosen: Die toedliche Hoehe ist
+    // erst nach dem eigenen Handgriff offen.
+    //
+    // Kein Kletterer im Vorrat — Gesetz dieser Welt: Eine Lippe wendet
+    // keinen Kletterer.
+    hint: 'Hundertzwanzig hinab überlebt nur, wer einen Schirm hat. Erst verteilen, dann die Kante öffnen — nicht umgekehrt.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1106,
+    entrance: { x: 200, y: 200 },
+    exit: { x: 600, y: 354, w: 32, h: 26 },
+    total: 12,
+    needed: 6,
+    timeLimitSec: 150,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ floater: 10, basher: 2, blocker: 2 }),
+    par: 11,
+    paint: [
+      { t: 'rect', x: 0, y: 260, w: 400, h: 280, mat: MAT.EARTH },
+      // Der Westpferch: Ohne Waechter wandert der halbe Pulk hinein,
+      // waehrend man Schirme verteilt. Er ist der Grund, warum dieses Level
+      // drei Berufe braucht und nicht zwei.
+      { t: 'rect', x: 0, y: 260, w: 60, h: 72, mat: MAT.EMPTY },
+      // Die Lippe: zwoelf hoch — ueber der Stufenhoehe MAX_STEP 5, unter der
+      // Raeumhoehe BASH_UP 12. Genau ein Rammer oeffnet sie.
+      { t: 'rect', x: 388, y: 248, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'ground', x: 400, w: 320, y: 380, h: 160, mat: MAT.EARTH, rough: 0 },
+    ],
+  },
+  {
+    id: 'w1-07',
+    name: 'Die Haarnadel',
+    chapter: 'Kniffelig',
+    // Lehrt den Schraegbagger — die einzige Verbindung des Spiels, die in
+    // BEIDE Richtungen begehbar ist. Der Ansatz steht an der Flanke der
+    // Ostwand und ist damit erzwungen, nicht getroffen: Die Wand trichtert
+    // den Pulk hinein.
+    //
+    // Der Stahl unter der Rampe setzt die Tiefe, nicht der Daumen — dort
+    // dreht der Bagger um, und dort setzt der Rammer den Stollen an, der
+    // unter dem Hinweg zurueck nach Westen laeuft.
+    hint: 'Die Schräge ist der einzige Weg, den man in beide Richtungen gehen kann. Setze sie an der Wand an — und unten wartet der Stahl.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1107,
+    entrance: { x: 300, y: 220 },
+    exit: { x: 140, y: 398, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 180,
+    releaseRate: 35,
+    minReleaseRate: 20,
+    skills: sk({ miner: 2, basher: 3, digger: 3 }),
+    par: 3,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 280, h: 260, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 660, y: 180, w: 60, h: 100, mat: MAT.ROCK },
+      // Die Stahlsohle: Sie stoppt die Schraege auf einer festen Hoehe und
+      // traegt danach den Stollen. Die glatteste Rammstrecke des Spiels.
+      { t: 'rect', x: 200, y: 352, w: 320, h: 10, mat: MAT.STEEL },
+      { t: 'rect', x: 120, y: 392, w: 100, h: 32, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-08',
+    name: 'Fünf Sekunden',
+    chapter: 'Kniffelig',
+    // Lehrt den Sprengmeister — den einzigen Beruf, der die eigene Figur
+    // kostet, und deshalb den letzten im Grundkurs. Dieselbe Silhouette wie
+    // Level 4, andere Aufgabe: Der Waechter steht diesmal IM WEG. Er haelt
+    // den Pulk waehrend des Bauens vom Spalt fern und versperrt danach genau
+    // die fertige Bruecke. Die Zuendschnur von fuenf Sekunden IST die Lehre.
+    hint: 'Der Wächter hält den Pulk — und steht danach selbst im Weg. Ein Sprengmeister räumt sich selbst aus dem Weg, und seine Zündschnur brennt fünf Sekunden.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1108,
+    entrance: { x: 420, y: 320 },
+    exit: { x: 80, y: 354, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 150,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ bomber: 3, builder: 5, blocker: 2 }),
+    par: 5,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 380, h: 160, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 690, y: 300, w: 30, h: 80, mat: MAT.ROCK },
+      { t: 'rect', x: 300, y: 380, w: 36, h: 72, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-09',
+    name: 'Der Aufstieg',
+    chapter: 'Prüfung',
+    // Erstes Level der Pruefung und zugleich ein sicherer Sieg: Ab hier kommt
+    // kein neuer Beruf mehr, der Empfang ist ein Kompetenzgefuehl.
+    //
+    // Die Aufgabe ist der Rueckweg. Ein Kletterer kommt hinauf; der ganze
+    // Pulk kommt nur nach, wenn er oben eine Schraege bekommt — und deren
+    // untere Muendung muss auf der Wartehoehe liegen. Deshalb steht die
+    // Ostwand genau 192 Bildpunkte hinter der Kante: 192 Weg sind 96 Tiefe
+    // (MINE_DX 2 / MINE_DY 1), und 96 ist genau die Hoehe der Stufe. Der
+    // Ansatz ist damit von der Wand gesetzt, nicht vom Daumen getroffen.
+    //
+    // Der Kragstein ueber der Ostwand wird hier sichtbar eingefuehrt: Eine
+    // Lippe wendet keinen Kletterer, ein Kragstein schon. In Level 13 rettet
+    // genau dieser Griff Leben.
+    hint: 'Hinauf kommt nur der Kletterer. Damit alle nachkommen, braucht es oben eine Schräge — setze sie an der Wand an.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1109,
+    entrance: { x: 200, y: 360 },
+    exit: { x: 620, y: 370, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 180,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ climber: 3, miner: 2, digger: 2 }),
+    par: 3,
+    paint: [
+      { t: 'ground', x: 0, w: 500, y: 420, h: 120, mat: MAT.EARTH, rough: 0 },
+      // Die Stahlsohle unter der Wartewiese: Sie faengt die Schraege ab,
+      // damit der Bagger nicht unter dem Pulk weiter in die Tiefe faehrt.
+      { t: 'rect', x: 0, y: 432, w: 500, h: 10, mat: MAT.STEEL },
+      { t: 'rect', x: 500, y: 324, w: 220, h: 216, mat: MAT.EARTH },
+      // Die Stirnwand ist Stahl: 96 hoch UND unbearbeitbar — nur der
+      // Kletterer.
+      { t: 'rect', x: 500, y: 324, w: 10, h: 96, mat: MAT.STEEL },
+      { t: 'rect', x: 694, y: 256, w: 26, h: 68, mat: MAT.ROCK },
+      { t: 'rect', x: 660, y: 244, w: 34, h: 12, mat: MAT.ROCK },
+      { t: 'rect', x: 590, y: 356, w: 100, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-10',
+    name: 'Die Galerie',
+    chapter: 'Prüfung',
+    // Der staerkste Rueckkehrgrund des Genres: Der Spieler sieht das Ziel
+    // unter seinen Fuessen und weiss noch nicht, wie er hinkommt. Zwei
+    // Arbeitsfronten, die zweite direkt unter der ersten — beide passen ins
+    // selbe Lesefenster.
+    //
+    // Kleiner Pulk mit Absicht: Zehn Figuren, damit die Schirmverteilung
+    // eine Entscheidung bleibt und kein Regen wird.
+    hint: 'Die Tür liegt unter der Galerie. Hundertzwanzig hinab trägt nur der Schirm — und unten ist der Weg noch verriegelt.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1110,
+    entrance: { x: 200, y: 140 },
+    exit: { x: 650, y: 366, w: 32, h: 26 },
+    total: 10,
+    needed: 6,
+    timeLimitSec: 180,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ floater: 10, basher: 3, blocker: 2, digger: 2 }),
+    par: 13,
+    paint: [
+      { t: 'rect', x: 0, y: 200, w: 420, h: 20, mat: MAT.EARTH },
+      { t: 'rect', x: 408, y: 188, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'ground', x: 0, w: 720, y: 320, h: 220, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 560, y: 272, w: 44, h: 48, mat: MAT.ROCK },
+      { t: 'rect', x: 610, y: 352, w: 100, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-11',
+    name: 'Der Turm',
+    chapter: 'Prüfung',
+    // Der geborene Hochformat-Baustein: drei Boeden im E72-Takt in einer
+    // geschlossenen Schale. Es gibt keine Verlustkante, jeder Absatz faellt
+    // frei hinab und sperrt den Rueckweg — Richtung ohne Tod.
+    //
+    // Jede Etage verlangt eine andere Antwort, und die zweite ist die Pointe:
+    // Wer dort senkrecht graebt, steht nach zwei Bildpunkten auf einer
+    // Stahlkappe. Die Schraege unterlaeuft sie.
+    hint: 'Drei Böden, drei Antworten. Auf der mittleren Etage liegt Stahl unter dem naheliegenden Punkt — die Schräge unterläuft ihn.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1111,
+    entrance: { x: 300, y: 120 },
+    exit: { x: 540, y: 370, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 200,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ digger: 3, miner: 2, basher: 2 }),
+    par: 4,
+    paint: [
+      { t: 'rect', x: 40, y: 140, w: 20, h: 260, mat: MAT.ROCK },
+      { t: 'rect', x: 660, y: 140, w: 20, h: 260, mat: MAT.ROCK },
+      { t: 'rect', x: 60, y: 180, w: 600, h: 36, mat: MAT.EARTH },
+      { t: 'rect', x: 60, y: 252, w: 600, h: 36, mat: MAT.EARTH },
+      { t: 'rect', x: 60, y: 324, w: 600, h: 36, mat: MAT.EARTH },
+      { t: 'ground', x: 0, w: 720, y: 396, h: 144, mat: MAT.EARTH, rough: 0 },
+      // Die Stahlkappe der zweiten Etage.
+      { t: 'rect', x: 60, y: 258, w: 220, h: 10, mat: MAT.STEEL },
+      // Die Wand, an der die Schraege angesetzt wird.
+      { t: 'rect', x: 340, y: 216, w: 20, h: 36, mat: MAT.ROCK },
+      // Die Rippe der dritten Etage: Sie trennt die Landestelle vom einzigen
+      // offenen Grabpunkt.
+      { t: 'rect', x: 430, y: 288, w: 40, h: 36, mat: MAT.ROCK },
+    ],
+  },
+  {
+    id: 'w1-12',
+    name: 'Die Treppe',
+    chapter: 'Prüfung',
+    // Der Durchatmer vor dem Doppelfinale: bekannte Bausteine in neuer
+    // Silhouette. Vier Absaetze nach Osten, und vor dem Spalt eine Lippe —
+    // der Pulk pendelt auf dem zweiten Absatz zwischen ihr und der Stufe,
+    // die er nicht mehr hinaufkommt. Nichtstun verliert keine einzige Figur,
+    // und zwar dauerhaft.
+    hint: 'Vier Absätze nach Osten. Die Lippe hält den Pulk, bis du sie öffnest — und über den Spalt tragen drei Brückenbauer.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1112,
+    entrance: { x: 100, y: 120 },
+    exit: { x: 560, y: 346, w: 32, h: 26 },
+    total: 16,
+    needed: 10,
+    timeLimitSec: 180,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ builder: 5, basher: 3, digger: 2 }),
+    par: 5,
+    paint: [
+      { t: 'rect', x: 0, y: 180, w: 200, h: 24, mat: MAT.EARTH },
+      { t: 'rect', x: 200, y: 228, w: 140, h: 24, mat: MAT.EARTH },
+      { t: 'rect', x: 328, y: 216, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 340, y: 300, w: 36, h: 240, mat: MAT.EARTH },
+      { t: 'rect', x: 376, y: 228, w: 124, h: 24, mat: MAT.EARTH },
+      { t: 'rect', x: 500, y: 300, w: 190, h: 240, mat: MAT.EARTH },
+      { t: 'rect', x: 690, y: 220, w: 30, h: 80, mat: MAT.ROCK },
+      { t: 'rect', x: 520, y: 332, w: 100, h: 40, mat: MAT.EMPTY },
+    ],
+  },
+  {
+    id: 'w1-13',
+    name: 'Der Pfeiler',
+    chapter: 'Prüfung',
+    // Die Abfrage des Kragsteins. Der Pfeiler ist sechsundneunzig hoch: Nur
+    // der Kletterer kommt hinauf, und oben rettet der Kragstein sein Leben —
+    // ohne ihn liefe der erste Kletterer nach Osten und faellt.
+    //
+    // Die urspruenglich vorgeschlagene Pointe „der erste Kletterer wird oben
+    // zum Gelaender-Blocker" ist gestrichen: Sie toetet ihn im ersten
+    // Versuch planmaessig, und das verletzt die Sackgassen-Regel.
+    hint: 'Der Pfeiler ist zu hoch für alles ausser dem Kletterer. Oben hält der Vorsprung ihn auf — vor dem Pfeiler liegt erst noch ein Spalt.',
+    theme: 'grass',
+    width: 720,
+    height: 540,
+    seed: 1113,
+    entrance: { x: 200, y: 380 },
+    exit: { x: 500, y: 378, w: 32, h: 26 },
+    total: 12,
+    needed: 6,
+    timeLimitSec: 200,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ climber: 10, builder: 5, basher: 2, digger: 2 }),
+    par: 14,
+    paint: [
+      { t: 'ground', x: 0, w: 720, y: 440, h: 100, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 700, y: 360, w: 20, h: 80, mat: MAT.ROCK },
+      { t: 'rect', x: 420, y: 440, w: 36, h: 72, mat: MAT.EMPTY },
+      { t: 'rect', x: 408, y: 428, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 480, y: 344, w: 120, h: 196, mat: MAT.ROCK },
+      // Der Erddeckel auf der Kuppe — der einzige grabbare Fleck des
+      // Pfeilers.
+      { t: 'rect', x: 480, y: 344, w: 120, h: 32, mat: MAT.EARTH },
+      { t: 'rect', x: 470, y: 376, w: 110, h: 28, mat: MAT.EMPTY },
+      { t: 'rect', x: 584, y: 308, w: 16, h: 36, mat: MAT.ROCK },
+      { t: 'rect', x: 560, y: 296, w: 24, h: 12, mat: MAT.ROCK },
+    ],
+  },
+  {
+    id: 'w1-14',
+    name: 'Prüfung im Grasland',
+    chapter: 'Prüfung',
+    // Drei Knoten, jeder fuer sich in einem Lesefenster: Wende und Riegel,
+    // Spalt, Stahldeckel. Kein Schritt ist toedlich, jeder ist binnen
+    // dreizehn Sekunden als richtig oder falsch zu sehen.
+    //
+    // Die einzige Ausnahme von der 720er-Normbreite dieser Welt — eine
+    // Pruefung darf einmal weiter blicken als jedes Lehrstueck.
+    hint: 'Riegel, Spalt, Stahldeckel — drei Knoten nach Westen. Über dem Ausgang liegt Stahl; unter ihm führt nur die Schräge hindurch.',
+    theme: 'grass',
+    width: 960,
+    height: 540,
+    seed: 1114,
+    entrance: { x: 560, y: 280 },
+    exit: { x: 40, y: 378, w: 32, h: 26 },
+    total: 20,
+    needed: 13,
+    timeLimitSec: 240,
+    releaseRate: 30,
+    minReleaseRate: 20,
+    skills: sk({ blocker: 2, builder: 5, miner: 2, basher: 3 }),
+    par: 7,
+    paint: [
+      { t: 'ground', x: 0, w: 960, y: 340, h: 200, mat: MAT.EARTH, rough: 0 },
+      { t: 'rect', x: 920, y: 260, w: 40, h: 80, mat: MAT.ROCK },
+      // Knoten 1: der Riegel nach Westen.
+      { t: 'rect', x: 300, y: 280, w: 44, h: 60, mat: MAT.ROCK },
+      // Knoten 2: der Normspalt.
+      { t: 'rect', x: 224, y: 340, w: 36, h: 72, mat: MAT.EMPTY },
+      // Knoten 3: der Stahldeckel ueber der Tuer — und die Wand, an der die
+      // Schraege angesetzt wird.
+      { t: 'rect', x: 196, y: 280, w: 20, h: 60, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 366, w: 140, h: 10, mat: MAT.STEEL },
+      { t: 'rect', x: 0, y: 404, w: 150, h: 10, mat: MAT.STEEL },
+      { t: 'rect', x: 0, y: 380, w: 150, h: 24, mat: MAT.EMPTY },
+    ],
+  },
+];

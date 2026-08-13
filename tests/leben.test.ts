@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   FREI_SEKUNDEN,
   GESCHENK,
+  freibetragGilt,
+  lebensfrei,
   LEBEN_PRO_TAG,
   VIDEOS_PRO_TAG,
   abziehen,
@@ -73,5 +75,34 @@ describe('Leben und Versuche', () => {
     expect(FREI_SEKUNDEN).toBe(30);
     expect(heuteTag(new Date(2026, 7, 12))).toBe('2026-08-12');
     expect(heuteTag(new Date(2026, 0, 3))).toBe('2026-01-03');
+  });
+
+  /**
+   * Der lebensfreie Lehrgang deckt seit dem Welt-1-Umbau die ganze Welt ab —
+   * rote Linie des Marketings: „Kein Spieler darf seine allererste Sitzung an
+   * der Lebensgrenze beenden."
+   */
+  it('macht ganz Welt 1 lebensfrei und sonst nichts', () => {
+    for (const n of ['01', '05', '08', '10', '14']) {
+      expect(lebensfrei(`w1-${n}`), `w1-${n}`).toBe(true);
+    }
+    for (const id of ['w2-01', 'w3-07', 'w4-14', 'w5-15', 'w6-01']) {
+      expect(lebensfrei(id), id).toBe(false);
+    }
+  });
+
+  /**
+   * Der Erkundungs-Freibetrag: Er gilt genau einmal je Level und nur, solange
+   * das Level noch nie gewonnen wurde. Damit ist der erste ehrliche Versuch
+   * ueberall gratis — und die Haerte bestraft danach das Denken, nie das
+   * Kennenlernen.
+   */
+  it('schenkt den ersten Versuch je Level genau einmal', () => {
+    expect(freibetragGilt(false, false)).toBe(true);
+    // Schon verbraucht.
+    expect(freibetragGilt(false, true)).toBe(false);
+    // Schon gewonnen — wer das Level kennt, zahlt.
+    expect(freibetragGilt(true, false)).toBe(false);
+    expect(freibetragGilt(true, true)).toBe(false);
   });
 });

@@ -34,7 +34,16 @@ import { renderTemplateAtlas } from './render/atlasTemplate';
 import { findAtlasSource } from './art';
 import { Scene } from './render/scene';
 import { TerrainView } from './render/terrainView';
-import { gesteGesehen, gesteMerken, loadProgress, recordResult, starConditions, type Progress } from './storage';
+import {
+  freibetragEinloesen,
+  freibetragOffen,
+  gesteGesehen,
+  gesteMerken,
+  loadProgress,
+  recordResult,
+  starConditions,
+  type Progress,
+} from './storage';
 import type { KartenPunkt } from './levels/welten';
 import { hatKomfort, wanderung, weltkarte, werkzeugeFuer, zeitlimitFuer } from './progression';
 import { drawWeltkarte, type KarteTreffer } from './render/weltkarte';
@@ -413,12 +422,23 @@ export class Game {
    * Schnupperfrist (`onOverlayButton`). Wer erst abbricht und dann doch
    * verliert, zahlt trotzdem nur ein Leben.
    *
-   * Der Lehrgang (w1-01 bis w1-07) ist grundsaetzlich lebensfrei — auf
-   * jedem Weg, auch beim Abbruch. Siehe `lebensfrei` in `leben.ts`.
+   * Ganz Welt 1 ist lebensfrei — auf jedem Weg, auch beim Abbruch. Siehe
+   * `lebensfrei` in `leben.ts`.
+   *
+   * Darueber liegt der **Erkundungs-Freibetrag**: Die erste Niederlage in
+   * einem noch nie gewonnenen Level kostet ueberall einmalig nichts. Er
+   * wird hier eingeloest und nicht erst in `finish`, damit auch der Abbruch
+   * nach der Schnupperfrist ihn zieht — sonst waere „vorher weggehen"
+   * teurer als „bis zum Ende verlieren".
    */
   private verbucheLeben(): void {
     if (this.ohneLeben || this.lebenVerbucht) return;
     if (lebensfrei(this.level.id)) return;
+    if (freibetragEinloesen(this.level.id)) {
+      this.lebenVerbucht = true;
+      this.progress = loadProgress();
+      return;
+    }
     this.lebenVerbucht = true;
     this.leben = abziehen(tagesWechsel(this.leben, heuteTag()));
     speichereLeben(this.leben);
@@ -1006,13 +1026,18 @@ export class Game {
     // zahlt weiterhin; der Abbruch nach der Schnupperfrist auch.
     const uhrNiederlage =
       this.world.timeLimitTicks > 0 && this.world.tickCount >= this.world.timeLimitTicks;
+    // Der Freibetrag muss VOR `verbucheLeben` gelesen werden — das Einloesen
+    // setzt ihn ja gerade auf verbraucht.
+    const ersterVersuch = freibetragOffen(this.progress, this.level.id);
     this.lebenNotiz =
       !gewonnen && !this.ohneLeben && !this.lebenVerbucht
         ? lebensfrei(this.level.id)
           ? 'Lehrgang — kostet kein Leben.'
           : uhrNiederlage
             ? 'Kostet kein Leben — nur die Uhr war schneller.'
-            : null
+            : ersterVersuch
+              ? 'Der erste Versuch ist frei — kostet kein Leben.'
+              : null
         : null;
     if (!gewonnen && !uhrNiederlage) this.verbucheLeben();
     this.verlustAnsage = gewonnen ? null : this.baueVerlustAnsage(uhrNiederlage);

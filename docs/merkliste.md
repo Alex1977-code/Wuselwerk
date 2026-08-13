@@ -273,6 +273,28 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   steht. Alles deterministisch gestreut: Kein `Math.random` je Bild, sonst
   wanderten die Bäume sechzigmal in der Sekunde. `src/render/weltkarte.ts`.
 - ✅ Grafikbedarf vom Grafik-Subagenten: `docs/grafikbedarf.md`.
+- 🔨 **Welt 1 neu — Berufs-Grundkurs und Prüfung** (Auftrag: „in welt 1
+  hätte ich gern level zum basics lernen jeden berufs und danach muss das
+  anspruchsvoll werden, ab level drei braucht es mindestens 3 berufe").
+  Der abgenommene Bauplan von Leveldesigner, Marketing und Chefdesigner
+  steht in `docs/welt-1-neu.md`: vierzehn Level statt zehn, Level 1 und 2
+  mit je genau **einem** Knopf, Level 3 bis 8 mit je **einem neuen plus
+  zwei gelernten** Berufen — zwei bekannte plus ein neuer sind exakt die
+  geforderten drei, damit fällt der Grundkurs mit der Regel zusammen statt
+  vor ihr zu liegen. Level 9 bis 14 kombinieren ohne Neuzugang.
+  Eingebaut sind bereits die zwei Entscheidungen, die nicht an der
+  Levelzahl hängen: **ganz Welt 1 ist lebensfrei** (vorher nur w1-01 bis
+  w1-07 — kein Spieler darf seine allererste Sitzung an der Lebensgrenze
+  beenden) und der **Erkundungs-Freibetrag**, der die erste Niederlage in
+  einem noch nie gewonnenen Level überall einmalig gratis macht. Das ist
+  die Brücke zwischen Lemminge-Härte und Tagesbudget: 1991 kostete ein
+  Neustart nichts, bei uns fünf Leben am Tag — Härte plus Budget ohne
+  Freibetrag ergäbe ein feindseliges System.
+  **Offen:** Die vierzehn Level stehen gebaut in `src/levels/welt1.ts`,
+  sind aber noch **nicht verdrahtet**. Sechs messen grün, sieben nicht;
+  die gefundenen Ursachen und die Musterlösungen stehen im Kopf der Datei
+  und in `tests/welt1-plaene.ts`. Ausgeliefert wird erst, was der Messlauf
+  bestätigt hat.
 
 ## Spieler und Bestenliste
 

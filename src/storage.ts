@@ -7,6 +7,16 @@ export interface LevelResult {
   /** Wenigste Skills, mit denen das Level gewonnen wurde. */
   bestSkills: number;
   stars: number;
+  /**
+   * Ist der Erkundungs-Freibetrag dieses Levels aufgebraucht?
+   *
+   * Die erste Niederlage in einem noch nie gewonnenen Level kostet kein
+   * Leben (`freibetragGilt` in `leben.ts`). Der Merker haengt am Level und
+   * nicht am Tag: Ein Level verschenkt genau einen Versuch, und zwar fuer
+   * immer — sonst waere er ein taegliches Freikontingent statt eines
+   * Kennenlern-Rabatts.
+   */
+  freibetrag?: boolean;
 }
 
 export type Progress = Record<string, LevelResult>;
@@ -71,6 +81,34 @@ export function starConditions(level: LevelDef, world: World): boolean[] {
 
 export function starsFor(level: LevelDef, world: World): number {
   return starConditions(level, world).filter(Boolean).length;
+}
+
+/**
+ * Steht der Erkundungs-Freibetrag dieses Levels noch offen?
+ *
+ * Er gilt genau einmal je Level und nur, solange das Level noch nie gewonnen
+ * wurde. Wer es einmal geschafft hat, kennt es — ab dann kostet jede
+ * Niederlage.
+ */
+export function freibetragOffen(p: Progress, levelId: string): boolean {
+  const r = p[levelId];
+  return !(r?.won ?? false) && !(r?.freibetrag ?? false);
+}
+
+/** Verbraucht den Freibetrag eines Levels. Gibt zurueck, ob er gegriffen hat. */
+export function freibetragEinloesen(levelId: string): boolean {
+  const p = loadProgress();
+  if (!freibetragOffen(p, levelId)) return false;
+  const alt = p[levelId];
+  p[levelId] = {
+    won: alt?.won ?? false,
+    bestSaved: alt?.bestSaved ?? 0,
+    bestSkills: alt?.bestSkills ?? Number.MAX_SAFE_INTEGER,
+    stars: alt?.stars ?? 0,
+    freibetrag: true,
+  };
+  saveProgress(p);
+  return true;
 }
 
 export function recordResult(level: LevelDef, world: World): LevelResult {

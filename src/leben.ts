@@ -42,18 +42,44 @@ export const VIDEOS_PRO_TAG = 3;
 export const FREI_SEKUNDEN = 30;
 
 /**
- * Der lebensfreie Lehrgang — w1-01 bis w1-07 kosten nie ein Leben.
+ * Der lebensfreie Lehrgang — **ganz Welt 1** kostet nie ein Leben.
  *
  * Beschluss der Leveldesign-Runde (Leitsatz 4, `docs/leveldesign-runde.md`):
- * Haerte darf Denkzeit kosten, nie Kennenlern-Leben. Die sieben
- * Lehrgangslevel stellen je ein Konzept vor; wer dort scheitert, lernt
- * gerade — ein Lebensabzug dafuer bestraft das Lernen selbst. Die Grenze
- * liegt vor dem Kapitel "Pruefung" (w1-08), wo das Sterntor die Kurve
- * ohnehin anzieht.
+ * Haerte darf Denkzeit kosten, nie Kennenlern-Leben. Wer dort scheitert,
+ * lernt gerade — ein Lebensabzug dafuer bestraft das Lernen selbst.
+ *
+ * Die Grenze lag zuerst bei w1-07, vor dem Kapitel „Pruefung". Der Umbau von
+ * Welt 1 (`docs/welt-1-neu.md`, Streitpunkt 6) hat sie auf die ganze Welt
+ * ausgedehnt, und zwar gegen den Entwurf des Leveldesigners: Er wollte ab
+ * Level 9 Herzen kosten lassen („Lernen kostet kein Herz, Pruefen schon").
+ * Das trifft aber genau die schwersten Level der Welt bei einem Spieler, der
+ * gerade erst acht Berufe kennengelernt hat, und laesst die allererste
+ * Sitzung an der Lebensgrenze enden. Der Einsatz kommt aus der Etappe
+ * „Pruefung", dem Sterntor und der Quote — nicht aus dem Herzzaehler.
  */
 export function lebensfrei(levelId: string): boolean {
-  const m = /^w1-0([1-7])$/.exec(levelId);
-  return m !== null;
+  return /^w1-/.test(levelId);
+}
+
+/**
+ * Der Erkundungs-Freibetrag: Die **erste** Niederlage in einem noch nie
+ * gewonnenen Level kostet einmalig kein Leben.
+ *
+ * Er ist die Antwort auf die Frage, wie sich Lemminge-Haerte und Tagesbudget
+ * vertragen (`docs/welt-1-neu.md` §5). Lemminge durfte zwanzig Neustarts
+ * verlangen, weil ein Neustart nichts kostete. Wir verlangen fuenf Leben am
+ * Tag von einem Kind — Haerte plus Budget ergibt ein feindseliges System, in
+ * dem der Tag mitten in der Frustschleife endet.
+ *
+ * Der Freibetrag macht den **ersten ehrlichen Versuch ueberall gratis**, wie
+ * 1991. Danach bestraft die Haerte das Denken, nie das Kennenlernen.
+ *
+ * Ausnutzbar ist er nicht: Er haengt am Level, nicht am Tag, und ein Level
+ * hat ihn genau einmal. Wer ihn verbraucht hat, zahlt dort ab dann jede
+ * Niederlage — auch morgen.
+ */
+export function freibetragGilt(schonGewonnen: boolean, schonVerbraucht: boolean): boolean {
+  return !schonGewonnen && !schonVerbraucht;
 }
 
 export interface LebenStand {
