@@ -187,7 +187,9 @@ export const WELT3_LEVELS: LevelDef[] = [
     timeLimitSec: 150,
     releaseRate: 45,
     minReleaseRate: 25,
-    skills: sk({ digger: 3, basher: 3, blocker: 1 }),
+    // +1 Graeber als Koeder (Design-Runde): Ueber der Stahlsohle ist jede
+    // senkrechte Grabung verschenkt - der Vorrat laedt dazu ein.
+    skills: sk({ digger: 4, basher: 3, blocker: 1 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
@@ -218,7 +220,9 @@ export const WELT3_LEVELS: LevelDef[] = [
     timeLimitSec: 150,
     releaseRate: 50,
     minReleaseRate: 25,
-    skills: sk({ builder: 4, blocker: 2, floater: 2 }),
+    // +1 Graeber als Koeder (Design-Runde): Das Blech im Obergeschoss
+    // schluckt jede Grabung - wer es versucht, lernt das Blech kennen.
+    skills: sk({ builder: 4, blocker: 2, floater: 2, digger: 1 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 960, h: 24, mat: MAT.ROCK },

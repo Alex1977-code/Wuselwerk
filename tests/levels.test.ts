@@ -927,6 +927,142 @@ function planSchlot8(): Plan {
   };
 }
 
+/**
+ * w5-10 „Glutregen" — Schirm plus Ostwache auf der Landeinsel.
+ *
+ * Zehn Schirme an die Faller, und der erste Gelandete, der ostwaerts
+ * weiterlaeuft, wird Waechter vor der Kante. Westlaeufer faengt die Tuer.
+ */
+function planSchlot10(): Plan {
+  let schirme = 0;
+  let wache = false;
+  return (w) => {
+    if (schirme < 10) {
+      for (const x of w.wusels) {
+        if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {
+          if (w.assign(x.id, 'floater')) schirme++;
+        }
+      }
+    }
+    if (!wache) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y > 460 && x.x >= 430 && x.x <= 466,
+      );
+      if (c && w.assign(c.id, 'blocker')) wache = true;
+    }
+  };
+}
+
+/**
+ * w5-13 „Der Kessel" — drosseln, Bruecke schlagen, aufdrehen.
+ *
+ * Die Luke steht auf Vollgas: Ohne sofortige Drossel kippen fast alle vom
+ * halbfertigen Steg in die Fanggrube (Rot-Test `planSchlot13Vollgas`).
+ */
+function planSchlot13(): Plan {
+  let gedrosselt = false;
+  let builder: number | null = null;
+  let kette = false;
+  let auf = false;
+  return (w) => {
+    if (!gedrosselt) {
+      w.setReleaseRate(w.minReleaseRate);
+      gedrosselt = true;
+    }
+    if (builder === null) {
+      const c = walkerNear(w, 356, 364, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (!auf) {
+      const b = w.wuselById(builder);
+      // Der Schlussstein liegt: Der Bauer laeuft drueben weiter.
+      if (b && b.state === State.WALKING && b.x > 410) {
+        w.setReleaseRate(99);
+        auf = true;
+      }
+    }
+  };
+}
+
+/** Dieselbe Bruecke ohne Drossel — der Kessel schluckt die Quote. */
+function planSchlot13Vollgas(): Plan {
+  let builder: number | null = null;
+  let kette = false;
+  return (w) => {
+    if (builder === null) {
+      const c = walkerNear(w, 356, 364, 1);
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+    }
+  };
+}
+
+/**
+ * w5-14 „Kaskade und Steg" — Bauer, Waechter, Kette, Bombe.
+ *
+ * Der erste Westlaeufer auf der Ost-Etage baut den Steg ueber die Luecke,
+ * der naechste dahinter haelt den Pulk. Die Kette schliesst den Steg,
+ * die Bombe raeumt den Waechter, die Kaskade laeuft weiter.
+ */
+function planSchlot14(): Plan {
+  let builder: number | null = null;
+  let blocker: number | null = null;
+  let kette = false;
+  let bombed = false;
+  return (w) => {
+    if (builder === null) {
+      const c = w.wusels.find(
+        // Dicht an der Lueckenkante (344): Die Kette spannt 48 Punkte, und
+        // jeder Punkt Anlauf geht von der Spannweite ab.
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y > 260 && x.y < 290 &&
+          x.x >= 346 && x.x <= 352,
+      );
+      if (c && w.assign(c.id, 'builder')) builder = c.id;
+      return;
+    }
+    if (blocker === null) {
+      // Dicht hinter dem Bauer — jeder weiter oestlich gesetzte Waechter
+      // laesst Durchrutscher in die Luecke (gemessen: sieben Tote). Und
+      // weit genug vom Brueckenansatz (356), dass seine Sprengung den
+      // Ansatz nicht mitreisst.
+      const c = w.wusels.find(
+        (x) => x.id !== builder && x.state === State.WALKING && x.dir === -1 &&
+          x.y > 260 && x.y < 290 && x.x >= 378 && x.x <= 392,
+      );
+      if (c && w.assign(c.id, 'blocker')) blocker = c.id;
+    }
+    if (!kette) {
+      const b = w.wuselById(builder);
+      if (b && b.state === State.BUILDING && b.bricks <= 2 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (!bombed && blocker !== null) {
+      const b = w.wuselById(builder);
+      // Der Bauer ist drueben (westlich der Luecke) — der Steg steht.
+      if (b && b.state === State.WALKING && b.x < 300) {
+        const bl = w.wuselById(blocker);
+        if (bl && w.assign(bl.id, 'bomber')) bombed = true;
+      }
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
@@ -989,11 +1125,11 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w5-07': planKlamm5,
   'w5-08': planSchlot8,
   'w5-09': planLevel6,
-  'w5-10': planLevel4,
+  'w5-10': planSchlot10,
   'w5-11': planRost6,
   'w5-12': planRost4,
-  'w5-13': planRost11,
-  'w5-14': planLevel10,
+  'w5-13': planSchlot13,
+  'w5-14': planSchlot14,
   'w5-15': () => planRost13(9),
 };
 
@@ -1108,6 +1244,15 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   });
   it('w4-10: der alte West-Schacht ist zu langsam fuer die Uhr', () => {
     erwarteRot('w4-10', planFrost10Alt);
+  });
+  it('w5-10: Schirme ohne Ostwache — die Kante holt die Quote', () => {
+    erwarteRot('w5-10', planLevel4);
+  });
+  it('w5-13: dieselbe Bruecke ohne Drossel — der Kessel schluckt die Quote', () => {
+    erwarteRot('w5-13', planSchlot13Vollgas);
+  });
+  it('w5-14: der geerbte Pruefungsplan greift ins Leere', () => {
+    erwarteRot('w5-14', planLevel10);
   });
 });
 

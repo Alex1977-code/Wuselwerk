@@ -593,8 +593,8 @@
    "basher": 1,
    "digger": 1
   },
-  "werkzeuge": 7,
-  "ueberschuss": 5
+  "werkzeuge": 8,
+  "ueberschuss": 6
  },
  {
   "id": "w3-07",
@@ -613,8 +613,8 @@
   "benutzt": {
    "builder": 2
   },
-  "werkzeuge": 8,
-  "ueberschuss": 6
+  "werkzeuge": 9,
+  "ueberschuss": 7
  },
  {
   "id": "w3-08",
@@ -1212,23 +1212,24 @@
  },
  {
   "id": "w5-10",
-  "name": "Lavafall",
-  "planTicks": 3188,
-  "letzteRettungSek": 52.8,
-  "quoteSek": 52.8,
-  "uhrSek": 90,
-  "uhrFaktor": 1.7,
-  "gerettet": 6,
+  "name": "Glutregen",
+  "planTicks": 3900,
+  "letzteRettungSek": 57.4,
+  "quoteSek": 53.3,
+  "uhrSek": 65,
+  "uhrFaktor": 1.13,
+  "gerettet": 9,
   "total": 12,
-  "quote": 6,
-  "quotenMarge": 0,
-  "par": 6,
-  "vergaben": 6,
+  "quote": 7,
+  "quotenMarge": 2,
+  "par": 11,
+  "vergaben": 11,
   "benutzt": {
-   "floater": 6
+   "floater": 10,
+   "blocker": 1
   },
   "werkzeuge": 12,
-  "ueberschuss": 6
+  "ueberschuss": 1
  },
  {
   "id": "w5-11",
@@ -1275,46 +1276,45 @@
  },
  {
   "id": "w5-13",
-  "name": "Unter Druck",
-  "planTicks": 3317,
-  "letzteRettungSek": 55,
-  "quoteSek": 46.2,
-  "uhrSek": 110,
-  "uhrFaktor": 2,
-  "gerettet": 15,
-  "total": 16,
-  "quote": 10,
+  "name": "Der Kessel",
+  "planTicks": 9000,
+  "letzteRettungSek": 52.6,
+  "quoteSek": 51.9,
+  "uhrSek": 150,
+  "uhrFaktor": 2.85,
+  "gerettet": 19,
+  "total": 20,
+  "quote": 14,
   "quotenMarge": 5,
   "par": 2,
   "vergaben": 2,
   "benutzt": {
-   "bomber": 1,
-   "basher": 1
+   "builder": 2
   },
-  "werkzeuge": 7,
-  "ueberschuss": 5
+  "werkzeuge": 2,
+  "ueberschuss": 0
  },
  {
   "id": "w5-14",
-  "name": "Der lange Gang",
-  "planTicks": 9000,
-  "letzteRettungSek": 77.4,
-  "quoteSek": 71.6,
+  "name": "Kaskade und Steg",
+  "planTicks": 5811,
+  "letzteRettungSek": 96.5,
+  "quoteSek": 96.5,
   "uhrSek": 150,
-  "uhrFaktor": 1.94,
-  "gerettet": 15,
-  "total": 16,
+  "uhrFaktor": 1.55,
+  "gerettet": 10,
+  "total": 14,
   "quote": 10,
-  "quotenMarge": 5,
-  "par": 3,
-  "vergaben": 3,
+  "quotenMarge": 0,
+  "par": 4,
+  "vergaben": 4,
   "benutzt": {
-   "builder": 1,
-   "basher": 1,
-   "digger": 1
+   "bomber": 1,
+   "blocker": 1,
+   "builder": 2
   },
-  "werkzeuge": 17,
-  "ueberschuss": 14
+  "werkzeuge": 4,
+  "ueberschuss": 0
  },
  {
   "id": "w5-15",

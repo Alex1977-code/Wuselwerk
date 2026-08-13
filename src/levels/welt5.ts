@@ -280,29 +280,38 @@ export const WELT5_LEVELS: LevelDef[] = [
   },
   {
     id: 'w5-10',
-    name: 'Lavafall',
+    name: 'Glutregen',
     chapter: 'Ader',
-    hint: 'Der Schacht ist tiefer, als ein Körper aushält — und die Uhr kürzer, als du denkst.',
+    // Ersetzt den vierten Schirmregen (Design-Runde, Paket 4): Der Schirm
+    // traegt hinab wie gehabt — aber die Landeinsel hat zwei sichtbare
+    // Todeskanten, und die Laufrichtung der Gelandeten fuehrt geradewegs
+    // auf die oestliche zu. Der erste Gelandete muss Waechter werden;
+    // Westlaeufer faengt die Tuer von selbst.
+    hint: 'Der Schirm bringt dich auf die Insel — und die Insel hat Kanten. Der Erste unten wird Wächter.',
     theme: 'magma',
     width: 720,
-    height: 540,
+    height: 620,
     seed: 51010,
-    entrance: { x: 80, y: 140 },
-    exit: { x: 620, y: 456, w: 32, h: 26 },
+    entrance: { x: 100, y: 110 },
+    // Die Tuer liegt WESTLICH der Landestelle: Gelandete laufen ostwaerts
+    // auf die Kante zu — erst der Abprall am Waechter bringt sie zur Tuer.
+    exit: { x: 240, y: 450, w: 32, h: 26 },
     total: 12,
-    needed: 6,
-    timeLimitSec: 90,
-    releaseRate: 35,
+    needed: 7,
+    timeLimitSec: 65,
+    releaseRate: 40,
     minReleaseRate: 20,
-    skills: sk({ floater: 8, blocker: 2, builder: 2 }),
-    par: 6,
+    skills: sk({ floater: 10, blocker: 2 }),
+    par: 11,
     paint: [
-      { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
-      // Der Vorsprung, auf dem alle ankommen — und von dessen Kante der
-      // Schacht faellt: 280 Bildpunkte, weit jenseits der Grenze. Nur unter
-      // dem Schirm kommt man unten an.
-      { t: 'rect', x: 0, y: 200, w: 500, h: 340, mat: MAT.ROCK },
-      { t: 'ground', x: 500, w: 220, y: 480, h: 60, mat: MAT.ROCK, rough: 2 },
+      { t: 'rect', x: 0, y: 50, w: 720, h: 20, mat: MAT.ROCK },
+      // Der Startsims: Blech, von dessen Ostkante der lange Fall beginnt.
+      { t: 'rect', x: 0, y: 170, w: 320, h: 26, mat: MAT.STEEL },
+      // Die Landeinsel — 300 Punkte tiefer, mit zwei offenen Kanten.
+      { t: 'rect', x: 200, y: 470, w: 280, h: 150, mat: MAT.ROCK },
+      // Der Grund der Schlucht, sichtbar toedlich tief (130 Punkte).
+      { t: 'ground', x: 0, w: 200, y: 600, h: 20, mat: MAT.ROCK, rough: 2 },
+      { t: 'ground', x: 480, w: 240, y: 600, h: 20, mat: MAT.ROCK, rough: 2 },
     ],
   },
   {
@@ -366,67 +375,76 @@ export const WELT5_LEVELS: LevelDef[] = [
   },
   {
     id: 'w5-13',
-    name: 'Unter Druck',
+    name: 'Der Kessel',
     chapter: 'Kern',
-    hint: 'Naht, Fall, Riegel — die Reihenfolge kennst du. Der Schlot fragt nur: wie schnell?',
+    // Ersetzt das Ostfluegel-Doppel zu w5-15 (Design-Runde, Paket 4): DAS
+    // Rate-Regler-Level. Die Luke steht auf Vollgas, vor der Tuer klafft
+    // eine Fanggrube — wer die halbfertige Bruecke betritt, kippt vom Ende
+    // hinein und sitzt fest (lebt, aber fehlt der Quote). Vollgas fuellt
+    // den Kessel, Drosseln haelt ihn leer; nach dem Schlussstein wird
+    // aufgedreht. Rate-Zuege kosten kein Par. Die erste Fassung dieses
+    // Slots (Sprengung im vollen Pulk) fiel im Messlauf: Die Explosion
+    // reisst keine Nachbarn mit - nur Terrain.
+    hint: 'Die Luke steht auf Vollgas, und die Brücke ist noch nicht fertig. Drossle den Strom — der Kessel schluckt jeden Vorwitzigen.',
     theme: 'magma',
     width: 720,
     height: 540,
     seed: 51013,
-    entrance: { x: 110, y: 300 },
-    exit: { x: 630, y: 384, w: 32, h: 26 },
-    total: 16,
-    needed: 10,
-    timeLimitSec: 110,
-    releaseRate: 50,
-    minReleaseRate: 25,
-    skills: sk({ bomber: 3, basher: 2, digger: 2 }),
+    entrance: { x: 100, y: 330 },
+    exit: { x: 600, y: 360, w: 32, h: 26 },
+    total: 20,
+    needed: 14,
+    timeLimitSec: 150,
+    releaseRate: 99,
+    minReleaseRate: 15,
+    skills: sk({ builder: 2 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
-      // Duenne Rostschicht auf einer Blechplatte, mit einer Naht bei 540.
-      { t: 'rect', x: 0, y: 337, w: 720, h: 2, mat: MAT.EARTH },
-      { t: 'rect', x: 0, y: 339, w: 720, h: 3, mat: MAT.STEEL },
-      { t: 'rect', x: 540, y: 339, w: 4, h: 3, mat: MAT.EARTH },
-      // Die Halle darunter, mit dem Riegel vor der Tuer.
-      // Glatt, kein rauer Boden: Auf dem Hallenboden arbeitet der Rammer,
-      // und eine Zwei-Punkte-Senke wirft ihn aus dem Stollen (Fallwechsel).
-      { t: 'ground', x: 0, w: 720, y: 404, h: 136, mat: MAT.ROCK, rough: 0 },
-      { t: 'rect', x: 620, y: 342, w: 40, h: 62, mat: MAT.ROCK },
+      { t: 'ground', x: 0, w: 720, y: 380, h: 160, mat: MAT.EARTH, rough: 2 },
+      // Der Kessel: 70 Punkte tief - ueberlebbar, ausweglos, sichtbar.
+      // 24 Punkte breit, das bewiesene w1-03-Mass: Eine Bruecke schafft
+      // zwei Punkte je Stein, die Zweierkette also 48 - mehr Grube waere
+      // fuer den Vorrat unerreichbar (der erste Wurf mass 60 und der Bauer
+      // endete mitten im Loch).
+      { t: 'rect', x: 368, y: 380, w: 24, h: 70, mat: MAT.EMPTY },
     ],
   },
   {
     id: 'w5-14',
-    name: 'Der lange Gang',
+    name: 'Kaskade und Steg',
     chapter: 'Kern',
-    hint: 'Brücke, Schacht, Stollen — die alte Prüfung, auf Schlotzeit gestellt.',
+    // Ersetzt die dritte Portion w1-10 (Design-Runde, Paket 4): Remix aus
+    // zwei Frost-Bausteinen — die Kaskade von w4-01 und die Brueckenluecke
+    // von w4-11, mitten im Abstieg. Unter der Luecke fehlt die naechste
+    // Etage sichtbar: Wer faellt, faellt 140 Punkte. Blocker haelt den
+    // Pulk, Brueckenkette schliesst den Steg, die Bombe oeffnet den Weg.
+    hint: 'Die Kaskade führt hinab — bis zur Lücke. Halte den Pulk, schliesse den Steg, dann sprenge den Wächter frei.',
     theme: 'magma',
-    width: 960,
-    height: 540,
+    width: 480,
+    height: 720,
     seed: 51014,
-    entrance: { x: 120, y: 300 },
-    exit: { x: 690, y: 396, w: 36, h: 24 },
-    total: 16,
+    entrance: { x: 340, y: 150 },
+    exit: { x: 224, y: 390, w: 32, h: 26 },
+    total: 14,
     needed: 10,
     timeLimitSec: 150,
     releaseRate: 50,
     minReleaseRate: 25,
-    skills: sk({ builder: 4, digger: 3, basher: 3, blocker: 3, miner: 2, floater: 2 }),
-    // Brücke, Gräber, Rammer — drei Zuweisungen, jede aus einem früheren Level.
-    par: 3,
+    skills: sk({ builder: 2, blocker: 1, bomber: 1 }),
+    par: 4,
     paint: [
-      { t: 'ground', x: 0, w: 424, y: 340, h: 200, mat: MAT.EARTH, rough: 2 },
-      { t: 'ground', x: 444, w: 516, y: 340, h: 200, mat: MAT.EARTH, rough: 2 },
-      // Die Schlucht hat einen Grund, und der liegt knapp innerhalb der
-      // tödlichen Fallhöhe. Wer hineinfällt, lebt und kommt nicht mehr heraus.
-      // In der Prüfung soll die Strafe für den zu späten Brückenbauer sichtbar
-      // sein, nicht endgültig.
-      { t: 'rect', x: 424, y: 410, w: 20, h: 130, mat: MAT.EARTH },
-      // Deckel über dem Ausgang: Wer senkrecht darüber gräbt, steht auf Stahl.
-      { t: 'rect', x: 560, y: 372, w: 300, h: 10, mat: MAT.STEEL },
-      // Sohle des Stollens. Sie stoppt den Gräber auf genau der Höhe, auf der
-      // der Rammer waagerecht zum Ausgang durchkommt.
-      { t: 'rect', x: 600, y: 410, w: 360, h: 12, mat: MAT.STEEL },
+      { t: 'rect', x: 0, y: 50, w: 480, h: 20, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 200, w: 380, h: 12, mat: MAT.ROCK },
+      // Die geteilte Etage: 44 Punkte Luecke, und darunter — nichts.
+      // Westteil bis 304: Die Luecke misst 40 Punkte - eine Zweierkette
+      // (48 Punkte Spannweite) erreicht das mit zwei Steinen Reserve.
+      { t: 'rect', x: 100, y: 270, w: 204, h: 12, mat: MAT.ROCK },
+      // Die Ost-Etage ist DICK: Auf ihr steht der Waechter, und seine
+      // Sprengung soll eine Mulde reissen, kein Loch - das w1-03-Prinzip.
+      { t: 'rect', x: 344, y: 270, w: 136, h: 50, mat: MAT.ROCK },
+      { t: 'rect', x: 0, y: 340, w: 280, h: 12, mat: MAT.ROCK },
+      { t: 'ground', x: 0, w: 480, y: 410, h: 310, mat: MAT.EARTH, rough: 2 },
     ],
   },
   {
