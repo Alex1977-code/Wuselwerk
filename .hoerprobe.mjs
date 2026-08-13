@@ -55,7 +55,12 @@ const ergebnis = await page.evaluate(async ({ theme, loops }) => {
   const stepDur = 60 / p.bpm / 2;
   const loopSec = stepDur * 64;
   const musikEnde = loopSec * loops;
-  const tail = 2.5;
+  // Der Scheduler plant am letzten Checkpoint vor dem Ende noch die Eins der
+  // naechsten Schleife mit — das ist erwuenscht (ein Schlusston auf der Eins
+  // statt eines Schnitts mitten im Takt), braucht aber Luft zum Ausklingen:
+  // Bass, Flaeche und der lange Hall der langsamen Stuecke tragen mehrere
+  // Sekunden.
+  const tail = 4.5;
   const dauer = musikEnde + tail;
   const sr = 44100;
 
