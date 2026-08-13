@@ -62,6 +62,22 @@ export interface LebenStand {
   uebrig: number;
   /** Heute schon eingelöste Videos. */
   videos: number;
+  /** Zuletzt eingelöstes Auffüll-Kennwort (siehe `GESCHENK`). */
+  geschenk?: string;
+}
+
+/**
+ * Einmalige Auffüllung je Kennwort — das Test-Geschenk nach grossen
+ * Baupaketen: Wer diesen Baustand zum ersten Mal lädt, bekommt den Vorrat
+ * einmal auf voll gesetzt, auch wenn das Tagesbudget schon verbraucht war.
+ * Danach gilt die normale Tagesmechanik weiter; erst ein NEUES Kennwort
+ * (nächster grosser Stand) schenkt wieder.
+ */
+export const GESCHENK = 'paket5-abnahme';
+
+export function mitGeschenk(s: LebenStand): LebenStand {
+  if (s.geschenk === GESCHENK) return s;
+  return { ...s, uebrig: Math.max(s.uebrig, LEBEN_PRO_TAG), geschenk: GESCHENK };
 }
 
 /** Der Kalendertag der Gerätezeit — Mitternacht ist die Grenze des Budgets. */
@@ -72,12 +88,12 @@ export function heuteTag(d: Date = new Date()): string {
 }
 
 export function frischerStand(tag: string): LebenStand {
-  return { tag, uebrig: LEBEN_PRO_TAG, videos: 0 };
+  return { tag, uebrig: LEBEN_PRO_TAG, videos: 0, geschenk: GESCHENK };
 }
 
 /** Wendet den Tageswechsel an: ein anderer Tag heisst voller Vorrat. */
 export function tagesWechsel(s: LebenStand, heute: string): LebenStand {
-  return s.tag === heute ? s : frischerStand(heute);
+  return s.tag === heute ? s : { ...frischerStand(heute), geschenk: s.geschenk };
 }
 
 export function abziehen(s: LebenStand): LebenStand {
@@ -111,7 +127,7 @@ export function ladeLeben(): LebenStand {
     ) {
       return frischerStand(heute);
     }
-    return tagesWechsel(s, heute);
+    return mitGeschenk(tagesWechsel(s, heute));
   } catch {
     return frischerStand(heute);
   }

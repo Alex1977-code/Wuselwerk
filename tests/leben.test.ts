@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   FREI_SEKUNDEN,
+  GESCHENK,
   LEBEN_PRO_TAG,
   VIDEOS_PRO_TAG,
   abziehen,
   frischerStand,
   heuteTag,
+  mitGeschenk,
   tagesWechsel,
   videoEinloesen,
 } from '../src/leben';
@@ -25,11 +27,27 @@ describe('Leben und Versuche', () => {
   });
 
   it('füllt um Mitternacht auf und lässt denselben Tag unangetastet', () => {
-    const gestern = { tag: '2026-08-11', uebrig: 0, videos: 3 };
+    const gestern = { tag: '2026-08-11', uebrig: 0, videos: 3, geschenk: GESCHENK };
     const heute = tagesWechsel(gestern, '2026-08-12');
     expect(heute).toEqual(frischerStand('2026-08-12'));
     const gleich = { tag: '2026-08-12', uebrig: 2, videos: 1 };
     expect(tagesWechsel(gleich, '2026-08-12')).toBe(gleich);
+  });
+
+  it('schenkt je Auffüll-Kennwort genau einmal volle Leben', () => {
+    // Ein alter Stand ohne Kennwort (oder mit dem eines frueheren
+    // Baustands) wird einmal auf voll gesetzt — das Test-Geschenk nach
+    // grossen Paketen. Danach greift die normale Tagesmechanik: Dasselbe
+    // Kennwort schenkt nie ein zweites Mal.
+    const alt = { tag: '2026-08-12', uebrig: 0, videos: 2 };
+    const beschenkt = mitGeschenk(alt);
+    expect(beschenkt.uebrig).toBe(LEBEN_PRO_TAG);
+    expect(beschenkt.geschenk).toBe(GESCHENK);
+    expect(beschenkt.videos).toBe(2);
+    const danach = abziehen(beschenkt);
+    expect(mitGeschenk(danach)).toBe(danach);
+    // Und ueber Mitternacht bleibt das Kennwort erhalten.
+    expect(tagesWechsel(danach, '2026-08-13').geschenk).toBe(GESCHENK);
   });
 
   it('zieht nie unter null ab', () => {
