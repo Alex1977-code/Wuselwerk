@@ -201,6 +201,21 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Scheibenfarbe nach der korrigierten Prompt-Liste (grafikbedarf §3.9).
   Die alte Ringfarbwahl bleibt als Rückfall, solange das Blatt nicht
   entschlüsselt ist.
+- ✅ **Weltkarte detaillierter** (Auftrag „mehr Detaillierung, mehr
+  Grafiken"): Jede Terrasse trägt jetzt eigenes Dekor in der Sprache ihrer
+  Welt — Grasland Bäume, Büsche und Zäune, Kristallklamm Schollen,
+  Rostwerk Schrotttürme, Frostklamm Tannen, Schlot rauchende Schlote. Die
+  Requisiten stehen in der abgedunkelten Farbe ihrer eigenen Terrasse
+  (Luftperspektive: fern wird blasser UND kontrastärmer) und werden mit
+  ihr gezeichnet, sodass die nächstnähere Terrasse ihre Füße überdeckt —
+  daraus wird aus drei Farbbändern eine Landschaft mit Tiefe. Dazu ein
+  Himmelskörper mit Hof je Welt (abwechselnd links/rechts, er sagt auch,
+  woher das Licht auf die Terrassen fällt), die **gemalten** Wolken- und
+  Kulissenbänder statt gezeichneter Kreise (dieselben Blätter wie im
+  Spiel, je Welt eingefärbt gebacken und zwischengespeichert) — und die
+  Wegmitte bleibt frei, damit nie etwas auf Punkten, Sternen oder Figur
+  steht. Alles deterministisch gestreut: Kein `Math.random` je Bild, sonst
+  wanderten die Bäume sechzigmal in der Sekunde. `src/render/weltkarte.ts`.
 - ✅ Grafikbedarf vom Grafik-Subagenten: `docs/grafikbedarf.md`.
 
 ## Spieler und Bestenliste

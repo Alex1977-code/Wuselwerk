@@ -5,6 +5,7 @@ import type { SpriteAtlas } from './atlas';
 import { COL } from './hud';
 import type { Box, Layout } from './layout';
 import { paletteFor } from './palette';
+import type { ThemeId } from '../levels/types';
 
 /**
  * Die Übersichtskarte.
@@ -109,7 +110,213 @@ function torPlakette(
   ctx.restore();
 }
 
+/**
+ * Ein gemaltes Kulissenband, in der Farbe einer Welt gebacken.
+ *
+ * Dieselben Baender, die im Spiel die Berge tragen (Graustufen-Bilder),
+ * hier fuer die Karte eingefaerbt: Das Bild wird mit dem Kammton
+ * multipliziert und ueber seine eigene Deckung beschnitten. Gebacken wird
+ * einmal je Welt und Band — der Cache haengt an Name und Farbe, sonst
+ * rechnete jedes Bild sechzigmal in der Sekunde denselben Verlauf.
+ */
+const BAND_CACHE = new Map<string, HTMLCanvasElement>();
+
+function gebackenesBand(name: string, oben: string, unten: string): HTMLCanvasElement | null {
+  const schluessel = `${name}|${oben}|${unten}`;
+  const da = BAND_CACHE.get(schluessel);
+  if (da) return da;
+  const q = uiBild(name);
+  if (!q) return null;
+  const c = document.createElement('canvas');
+  c.width = q.naturalWidth;
+  c.height = q.naturalHeight;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  g.drawImage(q, 0, 0);
+  g.globalCompositeOperation = 'multiply';
+  const grad = g.createLinearGradient(0, 0, 0, c.height);
+  grad.addColorStop(0, oben);
+  grad.addColorStop(1, unten);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, c.width, c.height);
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(q, 0, 0);
+  BAND_CACHE.set(schluessel, c);
+  return c;
+}
+
+/** Ein Band waagerecht kacheln, mit dem Fuss auf `fussY`. */
+function bandKacheln(
+  ctx: CanvasRenderingContext2D,
+  bild: HTMLCanvasElement,
+  breite: number,
+  fussY: number,
+  hoehe: number,
+  deckung: number,
+): void {
+  const bw = (hoehe * bild.width) / bild.height;
+  ctx.save();
+  ctx.globalAlpha = deckung;
+  for (let x = -bw; x < breite + bw; x += bw) {
+    ctx.drawImage(bild, Math.round(x), Math.round(fussY - hoehe), Math.ceil(bw), Math.ceil(hoehe));
+  }
+  ctx.restore();
+}
+
+/**
+ * Deterministisches Streurauschen — dieselbe Karte sieht immer gleich aus.
+ *
+ * Ein `Math.random()` je Bild liesse Baeume bei jedem Bildwechsel wandern;
+ * die Karte wird sechzigmal in der Sekunde neu gemalt. Zwei Zahlen hinein,
+ * eine Zahl zwischen 0 und 1 heraus — der Ort eines Baumes haengt damit an
+ * seiner Terrasse und seiner Nummer, nicht am Zufall.
+ */
+function streu(a: number, b: number): number {
+  const t = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return t - Math.floor(t);
+}
+
+/**
+ * Eine Hangfarbe abdunkeln.
+ *
+ * Die Requisiten stehen im Ton ihrer eigenen Terrasse — aber im GLEICHEN Ton
+ * waeren sie unsichtbar. Ein fester Anteil nach Schwarz haelt die
+ * Luftperspektive (fern bleibt fern) und gibt trotzdem eine lesbare Kante.
+ */
+function dunkler(farbe: string, anteil: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(farbe.trim());
+  if (!m) return farbe;
+  const v = parseInt(m[1], 16);
+  const r = Math.round(((v >> 16) & 255) * anteil);
+  const g = Math.round(((v >> 8) & 255) * anteil);
+  const b = Math.round((v & 255) * anteil);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/** Welche Requisiten eine Welt auf ihre Terrassen stellt. */
+type Requisit = 'baum' | 'busch' | 'zaun' | 'scholle' | 'schrott' | 'tanne' | 'schlot';
+
+const REQUISITEN: Record<ThemeId, Requisit[]> = {
+  grass: ['baum', 'baum', 'busch', 'zaun'],
+  crystal: ['scholle', 'scholle', 'busch'],
+  rust: ['schrott', 'schrott', 'zaun'],
+  frost: ['tanne', 'tanne', 'busch'],
+  magma: ['schlot', 'schrott', 'busch'],
+};
+
+/**
+ * Eine Requisite auf einer Terrasse.
+ *
+ * Alle sind **Silhouetten in der Farbe ihrer eigenen Terrasse**, nur eine
+ * Spur dunkler — das ist der ganze Trick der Luftperspektive: Was weit weg
+ * ist, verliert nicht nur Helligkeit, sondern auch Kontrast zu seinem
+ * Untergrund. Requisiten in einer eigenen „Baumfarbe" saehen aufgeklebt aus,
+ * und zwar genau in den fernen Reihen, wo es am meisten stoert.
+ */
+function requisit(
+  ctx: CanvasRenderingContext2D,
+  art: Requisit,
+  x: number,
+  y: number,
+  s: number,
+  farbe: string,
+): void {
+  ctx.fillStyle = farbe;
+  switch (art) {
+    case 'baum': {
+      ctx.fillRect(x - s * 0.07, y - s * 0.85, s * 0.14, s * 0.9);
+      ctx.beginPath();
+      ctx.arc(x, y - s * 1.05, s * 0.42, 0, Math.PI * 2);
+      ctx.arc(x - s * 0.3, y - s * 0.8, s * 0.3, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.29, y - s * 0.78, s * 0.28, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'busch': {
+      ctx.beginPath();
+      ctx.arc(x, y - s * 0.26, s * 0.3, 0, Math.PI * 2);
+      ctx.arc(x - s * 0.26, y - s * 0.16, s * 0.22, 0, Math.PI * 2);
+      ctx.arc(x + s * 0.25, y - s * 0.15, s * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
+    case 'zaun': {
+      // Drei Pfosten und zwei Latten — der Zaun sagt „hier wohnt jemand",
+      // und er sagt es mit fuenf Rechtecken.
+      for (let i = 0; i < 3; i++) {
+        ctx.fillRect(x + i * s * 0.36 - s * 0.04, y - s * 0.5, s * 0.08, s * 0.52);
+      }
+      ctx.fillRect(x - s * 0.04, y - s * 0.42, s * 0.8, s * 0.07);
+      ctx.fillRect(x - s * 0.04, y - s * 0.22, s * 0.8, s * 0.07);
+      break;
+    }
+    case 'scholle': {
+      // Kristallschollen: schraege Splitter, die aus dem Hang stossen.
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.22, y);
+      ctx.lineTo(x - s * 0.06, y - s * 1.1);
+      ctx.lineTo(x + s * 0.12, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.08, y);
+      ctx.lineTo(x + s * 0.26, y - s * 0.66);
+      ctx.lineTo(x + s * 0.4, y);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case 'schrott': {
+      // Ein Schrottturm: gestapelte Kaesten mit einem Ausleger.
+      ctx.fillRect(x - s * 0.26, y - s * 0.42, s * 0.52, s * 0.44);
+      ctx.fillRect(x - s * 0.16, y - s * 0.78, s * 0.32, s * 0.38);
+      ctx.fillRect(x - s * 0.04, y - s * 1.15, s * 0.09, s * 0.4);
+      ctx.fillRect(x - s * 0.04, y - s * 1.15, s * 0.42, s * 0.07);
+      break;
+    }
+    case 'tanne': {
+      ctx.fillRect(x - s * 0.05, y - s * 0.3, s * 0.1, s * 0.32);
+      for (let i = 0; i < 3; i++) {
+        const b = s * (0.42 - i * 0.1);
+        const oy = y - s * (0.26 + i * 0.32);
+        ctx.beginPath();
+        ctx.moveTo(x - b, oy);
+        ctx.lineTo(x, oy - s * 0.5);
+        ctx.lineTo(x + b, oy);
+        ctx.closePath();
+        ctx.fill();
+      }
+      break;
+    }
+    case 'schlot': {
+      // Ein Schlot mit Rauchfahne — drei Ballen, nach oben duenner.
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.16, y);
+      ctx.lineTo(x - s * 0.1, y - s * 0.95);
+      ctx.lineTo(x + s * 0.1, y - s * 0.95);
+      ctx.lineTo(x + s * 0.16, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.5;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(
+          x + s * (0.05 + i * 0.14),
+          y - s * (1.12 + i * 0.26),
+          s * (0.13 + i * 0.05),
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      break;
+    }
+  }
+}
+
 /** Die Querspur des Weges als Anteil der kürzeren sinnvollen Achse. */
+
 function spurBreite(L: Layout): number {
   return Math.min(L.cssW * 0.9, L.cssH * 0.62);
 }
@@ -214,6 +421,28 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
     ctx.fillStyle = g;
     ctx.fillRect(0, yO, L.cssW, yU - yO);
 
+    // Der Himmelskoerper: eine Scheibe mit weichem Hof, hoch im freien Teil
+    // des Abschnitts. Sie gibt dem Himmel einen Ort — vorher war er eine
+    // Farbflaeche mit Wolken darauf — und sagt zugleich, aus welcher Richtung
+    // das Licht auf die Terrassen faellt (dieselbe Geste wie im Spiel).
+    {
+      const links = nr % 2 === 0;
+      const sx0 = L.cssW * (links ? 0.22 : 0.78);
+      const sy0 = by(L, a, w.bandStart + w.bandLaenge * 0.9);
+      const sr = spurBreite(L) * 0.075;
+      const hof = ctx.createRadialGradient(sx0, sy0, sr * 0.4, sx0, sy0, sr * 4.2);
+      hof.addColorStop(0, p.glow);
+      hof.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = hof;
+      ctx.fillRect(sx0 - sr * 4.2, sy0 - sr * 4.2, sr * 8.4, sr * 8.4);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(255, 253, 240, 0.9)';
+      ctx.beginPath();
+      ctx.arc(sx0, sy0, sr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     // Wolken: weiche Ballen, je Welt an festen Stellen im **oberen** Drittel
     // des Abschnitts — da, wo der Himmel frei bleibt. Ein Himmel ohne
     // irgendetwas darin ist eine Farbflaeche.
@@ -222,12 +451,38 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
       const wy = by(L, a, w.bandStart + w.bandLaenge * (0.72 + (((wt * 137.5) % 100) / 100) * 0.24));
       const wx = L.cssW * (0.1 + (((wt * 61.8) % 100) / 100) * 0.8);
       const wr = spurBreite(L) * (0.09 + (((wt * 29.7) % 100) / 100) * 0.07);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-      ctx.beginPath();
-      ctx.arc(wx, wy, wr, 0, Math.PI * 2);
-      ctx.arc(wx + wr * 0.9, wy + wr * 0.25, wr * 0.72, 0, Math.PI * 2);
-      ctx.arc(wx - wr * 0.85, wy + wr * 0.3, wr * 0.62, 0, Math.PI * 2);
-      ctx.fill();
+      // Gemalte Wolken, wo das Blatt da ist — drei Ballen aus Kreisen
+      // waren immer nur der Platzhalter dafuer.
+      const wolke = uiBild('wolken');
+      if (wolke) {
+        const wh = wr * 1.6;
+        const ww = (wh * wolke.naturalWidth) / wolke.naturalHeight;
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(wolke, wx - ww / 2, wy - wh / 2, ww, wh);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.arc(wx, wy, wr, 0, Math.PI * 2);
+        ctx.arc(wx + wr * 0.9, wy + wr * 0.25, wr * 0.72, 0, Math.PI * 2);
+        ctx.arc(wx - wr * 0.85, wy + wr * 0.3, wr * 0.62, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Das gemalte Fernband: dieselbe Kulisse wie im Spiel (grafikbedarf
+    // §3.11), in den Farben dieser Welt gebacken und hinter die oberste
+    // Terrasse gelegt. Es gibt dem Abschnitt einen **gezeichneten**
+    // Horizont statt einer weiteren Sinuswelle — und verbindet Karte und
+    // Level sichtbar: Man erkennt die Berge wieder, in die man gleich
+    // hineinlaeuft. Faellt das Blatt aus, bleiben die Terrassen allein.
+    {
+      const fern = gebackenesBand('kulisse-fern', p.hills[0], p.hillsDeep[0]);
+      if (fern) {
+        const fussY = by(L, a, w.bandStart + w.bandLaenge * 0.7);
+        bandKacheln(ctx, fern, L.cssW, fussY, L.cssH * 0.2, 0.85);
+      }
     }
 
     // Der Hang: **Terrassen** aus quer laufenden Huegelkaemmen, die den
@@ -285,6 +540,40 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
         ctx.lineTo(px, kammY(k, Math.min(px, L.cssW)));
       }
       ctx.stroke();
+
+      // Das Dekor dieser Terrasse — Baeume, Schollen, Schlote, je nach Welt.
+      //
+      // Es wird MIT der Terrasse gezeichnet, nicht danach: Die naechste,
+      // naehere Terrasse malt anschliessend ueber ihre Fuesse und schneidet
+      // sie halb weg. Genau das macht aus drei Farbbaendern eine Landschaft
+      // mit Tiefe — Dinge, die hinter einem Huegel stehen, sind hinter ihm.
+      //
+      // Nah ist gross und selten, fern ist klein und dicht; die Farbe ist der
+      // eigene Kammton, abgedunkelt. Die vorderste Reihe (k = 0) bleibt frei:
+      // Dort liegen Weg, Punkte und Figur, und ein Baum davor waere im Weg.
+      if (k > 0) {
+        const arten = REQUISITEN[w.welt.kartenTheme];
+        const naehe = 1 - k / Math.max(1, stufen - 1);
+        const anzahl = Math.round(7 + (1 - naehe) * 5);
+        const groesse = spurBreite(L) * (0.07 + naehe * 0.09);
+        ctx.save();
+        // Fern blasser, nah kraeftiger — und immer dunkler als der Hang,
+        // sonst verschwindet die Silhouette in ihrem eigenen Untergrund.
+        ctx.globalAlpha = 0.5 + naehe * 0.4;
+        const ton = dunkler(unten, 0.62 + (1 - naehe) * 0.22);
+        for (let i = 0; i < anzahl; i++) {
+          const r1 = streu(w.bandStart * 31.7 + k, i);
+          const r2 = streu(k * 5.1, i * 2.3 + w.bandStart);
+          const px = L.cssW * (0.04 + r1 * 0.92);
+          // Die Wegmitte bleibt frei, damit nichts auf dem Band steht —
+          // vorne breiter, weil dort Punkte und Sterne Platz brauchen.
+          const frei = spurBreite(L) * (k === 0 ? 0.26 : k === 1 ? 0.2 : 0.14);
+          if (Math.abs(px - L.cssW / 2) < frei) continue;
+          const art = arten[Math.floor(r2 * arten.length) % arten.length];
+          requisit(ctx, art, px, kammY(k, px) + 1, groesse * (0.8 + r2 * 0.6), ton);
+        }
+        ctx.restore();
+      }
     }
 
     // Die Falltuer-Maschine auf einer hinteren Terrasse — das Wahrzeichen
