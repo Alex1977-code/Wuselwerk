@@ -30,12 +30,16 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
 
 ## Leveldesign
 
-- ⬜ **Schwierigkeitskurve nach der Design-Runde** (Auftrag: „zu einfach,
-  wiederholen sich ab Welt 1"): abgestimmter Plan aus Leveldesigner ↔
-  Spielkritiker ↔ Marketing in `docs/leveldesign-runde.md` — vier Pakete
-  (Herzschutzregel zuerst!), fünf Blaupausen, drei offene Entscheidungen
-  des Auftraggebers. Befund: 25 von 64 Leveln teilen wörtlich den
-  Musterlösungsplan; Überschuss bis +14 über Par.
+- ✅ **Schwierigkeitskurve nach der Design-Runde** (Auftrag: „zu einfach,
+  wiederholen sich ab Welt 1"): Plan in `docs/leveldesign-runde.md`, alle
+  vier Pakete umgesetzt — Herzschutzregel + lebensfreier Lehrgang,
+  Messlauf (`docs/messlauf.json`) und Rot-Test-Harness, Zahlenpass
+  W1–W5, fünf Blaupausen (eine im Messlauf ehrlich widerlegt und durch
+  die Ostwache ersetzt), w2-13 neu, drei W5-Ersatzlevel (Glutregen,
+  Kessel, Kaskade und Steg), sieben Rot-Tests.
+- ⬜ **Feinentklonung, Rest**: w2-03/06/08/10/12 und w3-05 — je eine
+  tragende Zahl/Position ändern, bis der geerbte Altplan im Rot-Test
+  scheitert (Maßnahmenliste der Design-Runde, Paket 4).
 
 ## Grafik
 
