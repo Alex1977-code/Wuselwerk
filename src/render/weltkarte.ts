@@ -1,4 +1,5 @@
-import type { KartenPunkt } from '../levels/welten';
+import { uiBild } from '../art/ui';
+import type { Belohnung, KartenPunkt } from '../levels/welten';
 import type { LevelKarte, WeltKarte, Weltkarte } from '../progression';
 import type { SpriteAtlas } from './atlas';
 import { COL } from './hud';
@@ -139,10 +140,18 @@ function stern(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): 
  * Horizont dieser Welt. Was darueber kommt, ist die naechste; die Naht
  * zwischen zwei Himmeln bekommt so eine Form, statt eine Kante zu sein.
  */
+/** Zelle je Belohnungsart auf `belohnungen.webp` (Reihenfolge des Blattes). */
+const BELOHNUNG_ZELLE: Record<Belohnung['art'], number> = {
+  werkzeug: 0,
+  zeit: 1,
+  komfort: 2,
+  schmuck: 3,
+};
+
 function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void {
   ctx.fillStyle = '#0a0e16';
   ctx.fillRect(0, 0, L.cssW, L.cssH);
-  for (const w of a.karte.welten) {
+  for (const [nr, w] of a.karte.welten.entries()) {
     const yU = by(L, a, w.bandStart);
     const yO = by(L, a, w.bandStart + w.bandLaenge);
     if (yU < -8 || yO > L.cssH + 8) continue;
@@ -244,6 +253,62 @@ function grund(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht): void 
       ctx.fillRect(mx + mw * 0.4 - mw * 0.06, my - mw * 1.4, mw * 0.12, mw * 1.1);
       ctx.fillRect(mx - mw * 0.28, my - mw * 0.34, mw * 0.96, mw * 0.34);
       ctx.globalAlpha = 1;
+    }
+
+    // Die Welttafel — die Kopfplatte des Abschnitts (grafikbedarf.md §3.7).
+    //
+    // Ein gemaltes Bild der Welt, gerahmt wie ein aufgehaengtes Schild, oben
+    // im Himmelsteil des Abschnitts, wo ausser Wolken nichts liegt — und
+    // **unter** der angehefteten Namenszeile, die am oberen Bildrand klebt:
+    // Bei 0,1 Bildhoehen sassen Tafel und Name uebereinander. Sie ist
+    // Kopfplatte, nicht Hintergrund: Weg, Punkte, Laternen und Tor bleiben
+    // gezeichnet, weil sie am Fortschritt haengen. Unten links die
+    // Belohnung der Welt — verdient in voller Deckung, sonst als Aussicht
+    // durchscheinend. Ihr Emblem traegt schon die Namenszeile; ein zweites
+    // auf der Tafel war doppelt gesagt.
+    const tafel = uiBild(`welt-${nr + 1}`);
+    if (tafel) {
+      const tw = Math.min(spurBreite(L) * 0.72, 300);
+      const th = (tw * tafel.naturalHeight) / tafel.naturalWidth;
+      const tx = L.cssW / 2 - tw / 2;
+      const ty = yO + L.cssH * 0.165;
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = '#0a0e16';
+      kreisRunde(ctx, tx, ty, tw, th, 10);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      kreisRunde(ctx, tx, ty, tw, th, 10);
+      ctx.clip();
+      ctx.drawImage(tafel, tx, ty, tw, th);
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 2;
+      kreisRunde(ctx, tx, ty, tw, th, 10);
+      ctx.stroke();
+
+      const bel = uiBild('belohnungen');
+      if (bel) {
+        const z = bel.naturalHeight;
+        const bs = Math.min(44, tw * 0.19);
+        ctx.save();
+        if (!w.belohnungVerdient) ctx.globalAlpha = 0.38;
+        ctx.drawImage(
+          bel,
+          BELOHNUNG_ZELLE[w.belohnung.art] * z,
+          0,
+          z,
+          z,
+          tx - bs * 0.32,
+          ty + th - bs * 0.7,
+          bs,
+          bs,
+        );
+        ctx.restore();
+      }
     }
     ctx.restore();
   }
@@ -442,6 +507,16 @@ function laterne(
     kreis(ctx, x, y - h * 0.75, h * 1.7);
     ctx.fill();
   }
+  // Die gemalte Laterne, wenn das Blatt da ist: Zelle 0 brennt, Zelle 1 ist
+  // erloschen. Der Schein darueber bleibt gezeichnet — er pulst, und ein
+  // Bild pulst nicht.
+  const bild = uiBild('laternen');
+  if (bild) {
+    const z = bild.naturalHeight;
+    const s = h * 1.7;
+    ctx.drawImage(bild, (brennt ? 0 : 1) * z, 0, z, z, x - s / 2, y - s, s, s);
+    return;
+  }
   ctx.fillStyle = brennt ? '#6c5636' : '#3a4152';
   ctx.fillRect(x - h * 0.07, y - h, h * 0.14, h);
   ctx.fillStyle = brennt ? '#ffe1a0' : '#2c3344';
@@ -496,6 +571,19 @@ function tor(
     ctx.textBaseline = 'top';
     ctx.fillText(w.torZiel, x, y + r * 0.4);
   }
+
+  // Das Emblem der Welt **hinter** dem Tor haengt am Sturz — das Tor sagt
+  // damit im Bild, wohin es fuehrt, nicht nur im Text darunter.
+  const em = uiBild('weltembleme');
+  const naechste = a.karte.welten.indexOf(w) + 1;
+  if (em && naechste > 0 && naechste < a.karte.welten.length) {
+    const z = em.naturalHeight;
+    const es = r * 0.95;
+    ctx.save();
+    if (!offen) ctx.globalAlpha = 0.45;
+    ctx.drawImage(em, naechste * z, 0, z, z, x - es / 2, y - r * 1.82, es, es);
+    ctx.restore();
+  }
   return null;
 }
 
@@ -508,18 +596,32 @@ function weltName(ctx: CanvasRenderingContext2D, L: Layout, a: KarteAnsicht, w: 
   // einer Welt nicht mehr, in welcher man ist.
   const zeile = L.cssH * 0.055;
   const y = Math.min(Math.max(yO + 14, L.cssH * 0.05), yU - zeile * 2.6);
+  // Das Emblem der Welt vor ihrem Namen — die Kopfzeile aus grafikbedarf.md
+  // §3.8. Der Text rueckt dafuer nach rechts; fehlt das Blatt, steht er, wo
+  // er immer stand.
+  let textX = 16;
+  const em = uiBild('weltembleme');
+  const nr = a.karte.welten.indexOf(w);
+  if (em && nr >= 0) {
+    const es = Math.min(46, zeile * 1.7);
+    ctx.save();
+    if (!w.betreten) ctx.globalAlpha = 0.55;
+    ctx.drawImage(em, nr * em.naturalHeight, 0, em.naturalHeight, em.naturalHeight, 12, y - es * 0.1, es, es);
+    ctx.restore();
+    textX = 12 + es + 8;
+  }
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   ctx.fillStyle = 'rgba(10, 16, 26, 0.5)';
   ctx.font = `800 ${Math.round(zeile)}px system-ui, sans-serif`;
-  ctx.fillText(w.welt.name, 17.5, y + 1.5);
+  ctx.fillText(w.welt.name, textX + 1.5, y + 1.5);
   ctx.fillStyle = w.betreten ? COL.text : COL.dim;
-  ctx.fillText(w.welt.name, 16, y);
+  ctx.fillText(w.welt.name, textX, y);
   ctx.font = `600 ${Math.round(L.cssH * 0.028)}px system-ui, sans-serif`;
   ctx.fillStyle = 'rgba(234, 242, 255, 0.72)';
   ctx.fillText(
     `${w.geschafft}/${w.level.length} · ${w.sterne}/${w.sterneMoeglich} ★`,
-    16,
+    textX,
     y + L.cssH * 0.062,
   );
 }

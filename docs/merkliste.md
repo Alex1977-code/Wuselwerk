@@ -51,6 +51,20 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Himmelskörper mit Bloom, Nebelbänke auf eigener Parallaxe-Ebene, Korn
   gegen Banding, Vignette, statische Lichtbahnen), alles vorgebacken,
   `src/render/scene.ts`.
+- ✅ **Gelieferte Grafiken eingebaut** (Lieferung in `grafik/`, Aufbereitung
+  `scripts/grafik-aufbereiten.py`, Blätter in `src/art/ui/`): drei
+  Kulissenbänder (entfärbt, zur Laufzeit je Welt eingefärbt, gespiegelt
+  gekachelt — `src/render/kulisse.ts`), Wolkenband, Erd-Reliefkachel
+  (nur Boden-Welten, `terrainView.ts`), gemalte Berufsknöpfe, Titelbild +
+  Wortmarke (`titel.ts`), Welttafeln als Kopfplatten, Weltembleme
+  (Kopfzeile + Torbogen), Bild-Laternen und Belohnungsembleme auf der
+  Karte (`weltkarte.ts`). Jeder Abnehmer behält den prozeduralen Rückfall.
+  **Bewusst nicht eingebaut:** `avatar_1/2` (nur zwei der zwölf Varianten,
+  noch die Zu-gleich-Fassung — wartet auf die korrigierten Prompts aus
+  grafikbedarf §3.9), `schirm_2D`/`Schirm_3D.glb` (Thema der
+  Backe-Pipeline, §3.10), `symbol` (App-Icon kommt weiter aus dem GLB),
+  `tafel` (§3.13, Mechanik fehlt noch), `kulisse_saum` (§3.11 — „erst
+  zeigen, dann entscheiden": nimmt Spielfläche).
 - ✅ Die **Posenknöpfe unten**: Symbol trägt die Lesbarkeit, Figur bei der
   Arbeit daneben, wo Platz ist (Rückmeldungsrunde nach der Kritik).
 - ✅ **Avatare** zur Auswahl: sechs Ringfarben um das Porträt

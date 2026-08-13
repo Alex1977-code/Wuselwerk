@@ -1,3 +1,4 @@
+import { uiBild } from '../art/ui';
 import type { Terrain } from '../core/terrain';
 import { MAT } from '../core/types';
 import type { ThemeId } from '../levels/types';
@@ -55,6 +56,26 @@ import { paletteFor, type Palette } from './palette';
 
 /** Bildpunkte je logischem Pixel auf der Terrain-Leinwand. */
 const SUPER = 2;
+
+/**
+ * Staerke der gemalten Reliefkachel auf der Erde (`erde-relief.webp`).
+ *
+ * Sie liegt **additiv auf der Helligkeit**, nicht auf der Farbe: Das Bild
+ * bringt Klumpen- und Krumenformen mit, die das Rauschen hier nicht hat,
+ * aber Farbton und Tiefenverlauf bleiben Sache der Palette. 0 schaltet die
+ * Kachel ab — der Boden sieht dann wieder aus wie vor dem Einbau.
+ */
+const RELIEF_STAERKE = 0.22;
+
+/**
+ * Wo die Kachel wirkt: nur auf Welten, deren Grund **Boden** ist.
+ *
+ * Das Bild zeigt Ackerkrume — Klumpen, Krumen, Wurzelreste. Auf dem glatten
+ * Hoehlengrund der Kristallklamm lasen sich dieselben Formen in der
+ * Sichtprobe als Kratzer auf blauem Stein; dort bleibt das prozedurale
+ * Material allein.
+ */
+const RELIEF_THEMES: ReadonlySet<ThemeId> = new Set(['grass', 'rust', 'frost', 'magma']);
 
 /** Deterministisches Pixelrauschen — gleiche Stelle, gleiche Koernung. */
 function grain(x: number, y: number): number {
@@ -114,12 +135,18 @@ export class TerrainView {
   private pal: Palette;
   /** Dicke der Narbe je Spalte. Haengt nur an x, also einmal je Durchlauf. */
   private narbe: Float32Array;
+  /** Helligkeitswerte der Reliefkachel, ein Byte je Bildpunkt. */
+  private relief: Uint8ClampedArray | null = null;
+  private reliefB = 0;
+  private reliefH = 0;
+  private reliefErlaubt: boolean;
 
   constructor(
     private terrain: Terrain,
     theme: ThemeId,
   ) {
     this.pal = paletteFor(theme);
+    this.reliefErlaubt = RELIEF_THEMES.has(theme);
     this.canvas = document.createElement('canvas');
     this.canvas.width = terrain.width * SUPER;
     this.canvas.height = terrain.height * SUPER;
@@ -140,6 +167,27 @@ export class TerrainView {
 
   /** Übernimmt alle Änderungen seit dem letzten Aufruf. */
   sync(): void {
+    // Die Reliefkachel wird asynchron entschluesselt und ist beim ersten
+    // vollen Durchlauf meist noch nicht da. Sobald sie es ist, wird einmal
+    // alles neu gemalt — danach kostet sie nur noch einen Tabellenblick je
+    // Unterpixel.
+    if (!this.relief && RELIEF_STAERKE > 0 && this.reliefErlaubt) {
+      const bild = uiBild('erde-relief');
+      if (bild) {
+        const c = document.createElement('canvas');
+        c.width = bild.naturalWidth;
+        c.height = bild.naturalHeight;
+        const g = c.getContext('2d', { willReadFrequently: true })!;
+        g.drawImage(bild, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height);
+        const flach = new Uint8ClampedArray(c.width * c.height);
+        for (let i = 0; i < flach.length; i++) flach[i] = d.data[i * 4];
+        this.relief = flach;
+        this.reliefB = c.width;
+        this.reliefH = c.height;
+        this.terrain.markAllDirty();
+      }
+    }
     const d = this.terrain.consumeDirty();
     if (!d) return;
     const x0 = Math.max(0, d.x - 1);
@@ -270,6 +318,13 @@ export class TerrainView {
                   hell += (schollen - 0.5) * 24;
                   hell += (grain(x * SUPER + ux, y * SUPER + uy) - 0.5) * 12;
                   warm += (schollen - 0.5) * 18;
+
+                  // Die gemalte Reliefkachel, additiv auf der Helligkeit.
+                  if (this.relief) {
+                    const rx = (x * SUPER + ux) % this.reliefB;
+                    const ry = (y * SUPER + uy) % this.reliefH;
+                    hell += (this.relief[ry * this.reliefB + rx] - 128) * RELIEF_STAERKE;
+                  }
 
                   // Kiesel: selten, und jetzt mit Relief. Die helle Ober- und
                   // dunkle Unterseite kommen aus dem Gefaelle des eigenen

@@ -1,3 +1,4 @@
+import { uiBild } from '../art/ui';
 import type { SkillId } from '../core/types';
 
 /**
@@ -70,6 +71,55 @@ function pfeilAufWand(ctx: CanvasRenderingContext2D, u: number, winkel: number):
     ctx.fillRect(u * 0.6, i * u * 0.46 - u * 0.19, u * 0.34, u * 0.38);
   }
   ctx.restore();
+}
+
+/**
+ * Zellenreihenfolge auf `berufe.webp`.
+ *
+ * Das Blatt wird von `scripts/grafik-aufbereiten.py` in genau dieser
+ * Reihenfolge gebaut — sie ist die SKILLS-Reihenfolge des Spiels. Wer sie
+ * dort aendert, muss sie hier aendern, sonst zeigt der Knopf den falschen
+ * Beruf.
+ */
+const BLATT_REIHE: readonly SkillId[] = [
+  'climber',
+  'floater',
+  'bomber',
+  'blocker',
+  'builder',
+  'basher',
+  'miner',
+  'digger',
+];
+
+/**
+ * Der gemalte Berufsknopf vom Blatt. `true`, wenn gezeichnet.
+ *
+ * Die gemalten Symbole tragen ihre eigene Farbe — Zustaende werden deshalb
+ * anders gesagt als bei den Vektorformen: aufgebraucht heisst durchscheinend
+ * (`gedimmt`), gewaehlt sagt weiterhin die Knopfflaeche. Fehlt das Blatt,
+ * zeichnet der Aufrufer die Vektorform — beide Wege bleiben am Leben.
+ */
+export function drawSkillBild(
+  ctx: CanvasRenderingContext2D,
+  id: SkillId,
+  cx: number,
+  cy: number,
+  s: number,
+  gedimmt: boolean,
+): boolean {
+  const blatt = uiBild('berufe');
+  if (!blatt) return false;
+  const zelle = blatt.naturalHeight;
+  const i = BLATT_REIHE.indexOf(id);
+  if (i < 0) return false;
+  ctx.save();
+  if (gedimmt) ctx.globalAlpha = 0.35;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(blatt, i * zelle, 0, zelle, zelle, cx - s / 2, cy - s / 2, s, s);
+  ctx.restore();
+  return true;
 }
 
 export function drawSkillIcon(

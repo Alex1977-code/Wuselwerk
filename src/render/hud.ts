@@ -2,7 +2,7 @@ import { RATE_MAX, RATE_MIN, TICK_HZ } from '../core/constants';
 import { SKILL_LABEL, type SkillId } from '../core/types';
 import type { World } from '../core/world';
 import type { LevelDef } from '../levels/types';
-import { drawSkillIcon } from './icons';
+import { drawSkillBild, drawSkillIcon } from './icons';
 import { State, DeathCause, type Wusel } from '../core/types';
 import type { SpriteAtlas } from './atlas';
 import type { Box, Layout } from './layout';
@@ -370,15 +370,23 @@ export function drawControls(ctx: CanvasRenderingContext2D, L: Layout, s: HudSta
       };
       s.atlas.drawWusel(ctx, van, wz, 1, Infinity, PORTRAET[b.id].pose, 0);
       ctx.restore();
-      drawSkillIcon(
-        ctx,
-        b.id,
-        b.x + b.w * 0.68,
-        symbolY + druck,
-        Math.min(b.w * 0.36, 26),
-        symbolFarbe,
-      );
-    } else {
+      // Das gemalte Symbol zuerst; die Vektorform bleibt der Rueckfall.
+      // Es traegt eigene Farben, darf also groesser stehen als die
+      // einfarbige Form — Zustand sagt die Knopfflaeche, aufgebraucht
+      // sagt die Durchsicht.
+      if (!drawSkillBild(ctx, b.id, b.x + b.w * 0.68, symbolY + druck, Math.min(b.w * 0.4, 34), !usable)) {
+        drawSkillIcon(
+          ctx,
+          b.id,
+          b.x + b.w * 0.68,
+          symbolY + druck,
+          Math.min(b.w * 0.36, 26),
+          symbolFarbe,
+        );
+      }
+    } else if (
+      !drawSkillBild(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.62, 34), !usable)
+    ) {
       drawSkillIcon(ctx, b.id, b.x + b.w / 2, symbolY + druck, Math.min(b.w * 0.6, 30), symbolFarbe);
     }
 

@@ -1,3 +1,4 @@
+import { uiBild } from '../art/ui';
 import type { Layout } from './layout';
 import type { SpriteAtlas } from './atlas';
 import type { Wusel } from '../core/types';
@@ -57,6 +58,61 @@ function titelWusel(pose: State, extra: Partial<Wusel> = {}): Wusel {
 }
 
 export function drawTitel(
+  ctx: CanvasRenderingContext2D,
+  L: Layout,
+  atlas: SpriteAtlas | null,
+  anim: number,
+): void {
+  const w = L.cssW;
+  const h = L.cssH;
+  const quer = w > h;
+
+  // --- Das gemalte Titelbild ------------------------------------------------
+  //
+  // Liegt das Bild vor (`titel.webp`, aus der Grafiklieferung), ist **es** die
+  // Buehne: eine gemalte Grasland-Szene mit Schirmspringer, Bauern und
+  // leuchtendem Tor — alles, was die prozedurale Buehne erzaehlt, steht dort
+  // schon im Bild. Zugeschnitten wie ein Plakat: Es fuellt die Flaeche
+  // (Cover), unten verankert, der Anker leicht links der Mitte, damit im
+  // Hochformat Schirmspringer und Tor beide im Bild bleiben. Solange das
+  // Bild fehlt, laeuft die gemalte prozedurale Buehne samt Parade weiter.
+  //
+  // Der Anker liegt bei 0,40 der Bildbreite: Im Hochformat zeigt der
+  // Ausschnitt nur gut ein Fuenftel des Bildes, und dort soll die Szene um
+  // den Schirmspringer stehen (Kanzel ab etwa 0,28) — bei mittigem Anker
+  // war er am linken Rand halbiert. Im Querformat deckt das Bild fast
+  // deckungsgleich (2,16 zu 2,16), da entscheidet der Anker nichts.
+  const gemalt = uiBild('titel');
+  if (gemalt) {
+    const s = Math.max(w / gemalt.naturalWidth, h / gemalt.naturalHeight);
+    const bw = gemalt.naturalWidth * s;
+    const bh = gemalt.naturalHeight * s;
+    const dx = Math.min(0, Math.max(w - bw, w / 2 - bw * 0.4));
+    ctx.drawImage(gemalt, dx, h - bh, bw, bh);
+  } else {
+    drawBuehne(ctx, L, atlas, anim);
+  }
+
+  drawSchriftzug(ctx, L, anim);
+
+  // --- Die Aufforderung -----------------------------------------------------
+  //
+  // Eine Handlung, ein Satz, atmend statt blinkend.
+  const puls = 0.55 + 0.45 * Math.sin(anim / 30);
+  const afs = Math.max(15, Math.min(w * 0.045, 21));
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `600 ${afs}px system-ui, sans-serif`;
+  ctx.fillStyle = `rgba(255, 255, 255, ${0.55 + 0.4 * puls})`;
+  ctx.shadowColor = 'rgba(20, 30, 70, 0.5)';
+  ctx.shadowBlur = 5;
+  ctx.fillText('Antippen und loswuseln', w / 2, h * (quer ? 0.62 : 0.6));
+  ctx.restore();
+}
+
+/** Die prozedurale Buehne — der Rueckfall, solange das Titelbild fehlt. */
+function drawBuehne(
   ctx: CanvasRenderingContext2D,
   L: Layout,
   atlas: SpriteAtlas | null,
@@ -216,6 +272,50 @@ export function drawTitel(
     );
     ctx.restore();
   }
+}
+
+/**
+ * Der Schriftzug — die gemalte Wortmarke, sonst die getanzten Buchstaben.
+ *
+ * Die Wortmarke (`wortmarke.webp`, Erdreich mit Grasbewuchs) wippt als
+ * Ganzes leicht im Takt: Ein Bild kann nicht Buchstabe fuer Buchstabe
+ * tanzen, aber still stehen soll es auch nicht.
+ */
+function drawSchriftzug(ctx: CanvasRenderingContext2D, L: Layout, anim: number): void {
+  const w = L.cssW;
+  const h = L.cssH;
+  const quer = w > h;
+
+  const marke = uiBild('wortmarke');
+  if (marke) {
+    const seiten = marke.naturalHeight / marke.naturalWidth;
+    const mw = Math.min(w * 0.84, (h * 0.24) / seiten, 560);
+    const mh = mw * seiten;
+    const mx = w / 2;
+    const my = h * (quer ? 0.12 : 0.13) + Math.sin(anim / 26) * mh * 0.02;
+    ctx.save();
+    ctx.translate(mx, my + mh / 2);
+    ctx.rotate(Math.sin(anim / 39) * 0.012);
+    ctx.shadowColor = 'rgba(20, 30, 70, 0.4)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+    ctx.drawImage(marke, -mw / 2, -mh / 2, mw, mh);
+    ctx.restore();
+
+    // Der Nachsatz unter der Marke — was einer ist, unter dem Namen.
+    const nfs = Math.max(14, Math.min(w * 0.042, 22));
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = `600 ${nfs}px system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    ctx.shadowColor = 'rgba(20, 30, 70, 0.45)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 1;
+    ctx.fillText('– die Wuselwerker –', w / 2, my + mh + nfs * 0.5);
+    ctx.restore();
+    return;
+  }
 
   // --- Der Schriftzug -------------------------------------------------------
   //
@@ -268,20 +368,5 @@ export function drawTitel(
   ctx.shadowOffsetY = 1;
   ctx.fillText('– die Wuselwerker –', w / 2, logoY + nfs * 1.9);
   ctx.shadowColor = 'transparent';
-  ctx.restore();
-
-  // --- Die Aufforderung -----------------------------------------------------
-  //
-  // Eine Handlung, ein Satz, atmend statt blinkend.
-  const puls = 0.55 + 0.45 * Math.sin(anim / 30);
-  const afs = Math.max(15, Math.min(w * 0.045, 21));
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `600 ${afs}px system-ui, sans-serif`;
-  ctx.fillStyle = `rgba(255, 255, 255, ${0.55 + 0.4 * puls})`;
-  ctx.shadowColor = 'rgba(20, 30, 70, 0.5)';
-  ctx.shadowBlur = 5;
-  ctx.fillText('Antippen und loswuseln', w / 2, h * (quer ? 0.62 : 0.6));
   ctx.restore();
 }

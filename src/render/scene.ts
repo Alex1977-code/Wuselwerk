@@ -8,6 +8,7 @@ import { paletteFor, type Palette } from './palette';
 import { drawWusel } from './sprites';
 import { drawWarnschein, drawZuendUhr, schopfFarbe, schopfPlatz } from './schopf';
 import { clipForWusel, type SpriteAtlas } from './atlas';
+import { Kulisse } from './kulisse';
 import { SPAEHEN, ansicht, ansichtVergessen } from './ansicht';
 import type { TerrainView } from './terrainView';
 import { PARTIKEL_MS, SCHUTT_MS, schuttWuerfe } from './schutt';
@@ -105,6 +106,8 @@ export class Scene {
   private klappeZiel = 0;
   /** Liegt kein Blatt vor, zeichnet der prozedurale Weg weiter. */
   atlas: SpriteAtlas | null = null;
+  /** Die gemalten Kulissenbaender; solange sie fehlen, malen die Huegel. */
+  private kulisse: Kulisse;
 
   // --- Vorgebackene Kulissen-Malmittel --------------------------------------
   //
@@ -134,6 +137,7 @@ export class Scene {
     private terrainView: TerrainView,
   ) {
     this.palette = paletteFor(level.theme);
+    this.kulisse = new Kulisse(this.palette, level.theme, level.width, level.height);
     this.buildHills();
     this.bakeKulisse();
     // Der gezeichnete Blick ist Ansichtszustand je Figurennummer. Ein neues
@@ -992,7 +996,9 @@ export class Scene {
     // Der Himmelskoerper kommt **vor** den Wolken: Sie ziehen vor ihm vorbei,
     // und genau dieses Davor-und-Dahinter macht den Himmel zum Raum.
     this.drawSonne(ctx, v);
-    this.drawWolken(ctx, v);
+    // Das gemalte Wolkenband, wo es eines gibt — die Hoehle behaelt ihre
+    // Lichtinseln, und ohne Bild bleiben die prozeduralen Ballen.
+    if (!this.kulisse.drawWolken(ctx, v)) this.drawWolken(ctx, v);
   }
 
   /**
@@ -1107,7 +1113,12 @@ export class Scene {
     // dazu* langsamer als der Vordergrund.
     const refX = this.level.width / 2;
     const refY = this.level.height * 0.42;
-    for (const layer of this.hills) {
+    // Die gemalten Baender uebernehmen, sobald sie entschluesselt sind —
+    // Bewuchs, Wiesenflecken und Lichtsaum gehoeren zur prozeduralen
+    // Zeichnung und entfallen mit ihr; die Nebelbaenke darunter bleiben,
+    // sie sind eine eigene Schicht der Staffelung.
+    const gemalt = this.kulisse.drawBerge(ctx, v);
+    for (const layer of gemalt ? [] : this.hills) {
       const ox = v.ox * layer.factor + refX * (1 - layer.factor);
       const oy = v.oy * layer.factor + refY * (1 - layer.factor);
 
