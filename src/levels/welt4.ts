@@ -85,8 +85,8 @@ export const WELT4_LEVELS: LevelDef[] = [
     entrance: { x: 240, y: 140 },
     exit: { x: 380, y: 700, w: 32, h: 26 },
     total: 12,
-    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
-    needed: 4,
+    // Marge-Heilung (Paket 5, Drittel A): Quote = Messung - 3.
+    needed: 3,
     timeLimitSec: 150,
     releaseRate: 30,
     minReleaseRate: 20,
@@ -417,7 +417,10 @@ export const WELT4_LEVELS: LevelDef[] = [
     exit: { x: 240, y: 350, w: 32, h: 26 },
     total: 14,
     needed: 11,
-    timeLimitSec: 70,
+    // Uhr-Heilung (Paket 5): 1,4 x letzte Rettung (60,6 s) — die alte 70
+    // stand bei Faktor 1,16. Die Identitaet („nur die Uhr ist eine
+    // andere") bleibt: w4-03 laesst sich fuer dieselben Schaechte 180.
+    timeLimitSec: 85,
     releaseRate: 60,
     minReleaseRate: 40,
     skills: sk({ digger: 4, blocker: 1 }),

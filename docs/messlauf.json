@@ -64,19 +64,19 @@
  {
   "id": "w1-04",
   "name": "Der lange Fall",
-  "planTicks": 2610,
-  "letzteRettungSek": 43.2,
+  "planTicks": 2898,
+  "letzteRettungSek": 48,
   "quoteSek": 43.2,
   "uhrSek": 120,
-  "uhrFaktor": 2.78,
-  "gerettet": 4,
+  "uhrFaktor": 2.5,
+  "gerettet": 6,
   "total": 12,
   "quote": 4,
-  "quotenMarge": 0,
+  "quotenMarge": 2,
   "par": 6,
-  "vergaben": 4,
+  "vergaben": 6,
   "benutzt": {
-   "floater": 4
+   "floater": 6
   },
   "werkzeuge": 14,
   "ueberschuss": 8
@@ -211,13 +211,13 @@
   "name": "Abstieg",
   "planTicks": 2638,
   "letzteRettungSek": 43.7,
-  "quoteSek": 40.2,
+  "quoteSek": 38.4,
   "uhrSek": 90,
   "uhrFaktor": 2.06,
   "gerettet": 10,
   "total": 10,
-  "quote": 8,
-  "quotenMarge": 2,
+  "quote": 7,
+  "quotenMarge": 3,
   "par": 0,
   "vergaben": 0,
   "benutzt": {},
@@ -477,13 +477,13 @@
   "name": "Blechboden",
   "planTicks": 3449,
   "letzteRettungSek": 57.2,
-  "quoteSek": 53.7,
+  "quoteSek": 51.9,
   "uhrSek": 100,
   "uhrFaktor": 1.75,
   "gerettet": 10,
   "total": 10,
-  "quote": 8,
-  "quotenMarge": 2,
+  "quote": 7,
+  "quotenMarge": 3,
   "par": 1,
   "vergaben": 1,
   "benutzt": {
@@ -497,13 +497,13 @@
   "name": "Steilwand",
   "planTicks": 9000,
   "letzteRettungSek": 54.8,
-  "quoteSek": 50.3,
+  "quoteSek": 48,
   "uhrSek": 150,
   "uhrFaktor": 2.74,
   "gerettet": 6,
   "total": 12,
-  "quote": 4,
-  "quotenMarge": 2,
+  "quote": 3,
+  "quotenMarge": 3,
   "par": 12,
   "vergaben": 12,
   "benutzt": {
@@ -792,13 +792,13 @@
   "name": "Schirmpflicht",
   "planTicks": 2878,
   "letzteRettungSek": 47.7,
-  "quoteSek": 42.9,
+  "quoteSek": 40.5,
   "uhrSek": 150,
   "uhrFaktor": 3.15,
   "gerettet": 6,
   "total": 12,
-  "quote": 4,
-  "quotenMarge": 2,
+  "quote": 3,
+  "quotenMarge": 3,
   "par": 7,
   "vergaben": 7,
   "benutzt": {
@@ -996,8 +996,8 @@
   "planTicks": 3652,
   "letzteRettungSek": 60.6,
   "quoteSek": 56.3,
-  "uhrSek": 70,
-  "uhrFaktor": 1.16,
+  "uhrSek": 85,
+  "uhrFaktor": 1.4,
   "gerettet": 14,
   "total": 14,
   "quote": 11,
@@ -1172,8 +1172,8 @@
   "benutzt": {
    "climber": 8
   },
-  "werkzeuge": 8,
-  "ueberschuss": 0
+  "werkzeuge": 9,
+  "ueberschuss": 1
  },
  {
   "id": "w5-07",
@@ -1302,28 +1302,28 @@
    "blocker": 1,
    "builder": 5
   },
-  "werkzeuge": 7,
-  "ueberschuss": 0
+  "werkzeuge": 8,
+  "ueberschuss": 1
  },
  {
   "id": "w5-13",
   "name": "Der Kessel",
   "planTicks": 4500,
   "letzteRettungSek": 52.6,
-  "quoteSek": 52.3,
+  "quoteSek": 52.1,
   "uhrSek": 75,
   "uhrFaktor": 1.43,
   "gerettet": 19,
   "total": 20,
-  "quote": 17,
-  "quotenMarge": 2,
+  "quote": 16,
+  "quotenMarge": 3,
   "par": 2,
   "vergaben": 2,
   "benutzt": {
    "builder": 2
   },
-  "werkzeuge": 2,
-  "ueberschuss": 0
+  "werkzeuge": 3,
+  "ueberschuss": 1
  },
  {
   "id": "w5-14",
@@ -1344,8 +1344,8 @@
    "blocker": 1,
    "builder": 2
   },
-  "werkzeuge": 4,
-  "ueberschuss": 0
+  "werkzeuge": 5,
+  "ueberschuss": 1
  },
  {
   "id": "w5-15",

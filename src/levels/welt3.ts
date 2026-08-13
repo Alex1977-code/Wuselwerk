@@ -45,7 +45,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 280 },
     exit: { x: 170, y: 380, w: 32, h: 26 },
     total: 10,
-    needed: 8,
+    // Marge-Heilung (Paket 5, Drittel A): Quote = Messung - 3.
+    needed: 7,
     timeLimitSec: 100,
     releaseRate: 50,
     minReleaseRate: 30,
@@ -74,8 +75,8 @@ export const WELT3_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 320 },
     exit: { x: 620, y: 360, w: 32, h: 26 },
     total: 12,
-    // Marge-Heilung (Level-Konzept, Paket 0): Quote = Messung - 2.
-    needed: 4,
+    // Marge-Heilung (Paket 5, Drittel A): Quote = Messung - 3.
+    needed: 3,
     timeLimitSec: 150,
     releaseRate: 35,
     minReleaseRate: 20,

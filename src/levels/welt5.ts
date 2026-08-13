@@ -268,7 +268,8 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 75,
     releaseRate: 45,
     minReleaseRate: 20,
-    skills: sk({ climber: 8 }),
+    // +1 Kletterer (Paket 5): Ein Fehltipp verbrannte sonst die letzte Gabe.
+    skills: sk({ climber: 9 }),
     par: 8,
     paint: [
       { t: 'rect', x: 0, y: 60, w: 720, h: 24, mat: MAT.ROCK },
@@ -519,7 +520,8 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 155,
     releaseRate: 70,
     minReleaseRate: 30,
-    skills: sk({ builder: 5, blocker: 1, bomber: 1 }),
+    // +1 Bauer (Paket 5): ein Fehltipp Reserve.
+    skills: sk({ builder: 6, blocker: 1, bomber: 1 }),
     par: 7,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 960, h: 24, mat: MAT.ROCK },
@@ -551,13 +553,15 @@ export const WELT5_LEVELS: LevelDef[] = [
     entrance: { x: 100, y: 330 },
     exit: { x: 600, y: 360, w: 32, h: 26 },
     total: 20,
-    // 17 statt 14 (Messregel): Die Drossel-Loesung rettet 19, Marge 2 -
-    // und Vollgas fuellt den Kessel weit unter die Quote (Rot-Test).
-    needed: 17,
+    // Marge-Heilung (Paket 5): Die Drossel-Loesung rettet 19, Quote =
+    // Messung - 3 — der Kessel ist der Durchatmer des letzten Drittels
+    // (Vollgas fuellt ihn weit unter die Quote, Rot-Test).
+    needed: 16,
     timeLimitSec: 75,
     releaseRate: 99,
     minReleaseRate: 15,
-    skills: sk({ builder: 2 }),
+    // +1 Bauer (Paket 5): ein Fehltipp Reserve.
+    skills: sk({ builder: 3 }),
     par: 2,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 24, mat: MAT.ROCK },
@@ -593,7 +597,8 @@ export const WELT5_LEVELS: LevelDef[] = [
     timeLimitSec: 135,
     releaseRate: 50,
     minReleaseRate: 25,
-    skills: sk({ builder: 2, blocker: 1, bomber: 1 }),
+    // +1 Bauer (Paket 5): ein Fehltipp Reserve.
+    skills: sk({ builder: 3, blocker: 1, bomber: 1 }),
     par: 4,
     paint: [
       { t: 'rect', x: 0, y: 50, w: 480, h: 20, mat: MAT.ROCK },

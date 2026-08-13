@@ -42,7 +42,8 @@ export const WELT2_LEVELS: LevelDef[] = [
     entrance: { x: 110, y: 224 },
     exit: { x: 610, y: 316, w: 32, h: 26 },
     total: 10,
-    needed: 8,
+    // Marge-Heilung (Paket 5, Drittel A): Quote = Messung - 3.
+    needed: 7,
     timeLimitSec: 90,
     releaseRate: 50,
     minReleaseRate: 30,

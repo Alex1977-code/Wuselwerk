@@ -129,7 +129,22 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Kuppensturz der Zweierkette (w5-07, darum Dreierkette und flacher
   Pfercht) und die Ein-Punkt-Falle der Rammer-Vormerkung über
   gefrästem Boden (w5-11: nur mit Fuß auf der Stahlsohle).
-  Paket 5 (Gesamtabnahme) steht aus.
+- ✅ **Mehrebenen-Konzept, Paket 5 — Gesamtabnahme**
+  (`docs/gesamtabnahme.md`): Messregeln über alle 66 Level bestanden und
+  als Abnahme-Asserts im Messlauf-Test verankert (Marge ≥ 2,
+  Drittel-A ≥ 3, Uhrfaktor ≥ 1,3, Überschuss ≥ 1; Ausnahme w2-05
+  dokumentiert). Zehn letzte Wertheilungen (w2-01, w3-01, w3-02, w4-02,
+  w4-12-Uhr, w5-06/12/13/14-Vorräte, w1-04-Musterlösung). Alle vier
+  Weltgrenzen öffnen mit einem sicheren Sieg; drei Anspannungs-Strecken
+  begründet dokumentiert, w5-09..11 als Familientest-Beobachtungspunkt.
+  Nichtspieler-Panel (drei Prüfer): Benennungs-Test 22/22, blinde
+  Lesbarkeit 16/22 (die sechs sind Meisterstücke — das Bild zeigt die
+  Aufgabe, nicht die Antwort); ein Verwechslungspaar innerhalb einer
+  Welt (w4-01/w4-07) als Grafik-Feinschliff notiert. Vier
+  Werbe-Renderläufe nach Store-Vorgabe (Kaminzug w5-09, Galerie w3-05,
+  Haarnadel w3-14, Turm w5-02). **Damit ist das Level-Konzept
+  vollständig umgesetzt** — offen bleibt nur, was echte Menschen
+  brauchen: der Familientest.
 
 ## Grafik
 

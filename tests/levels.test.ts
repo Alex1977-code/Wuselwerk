@@ -94,6 +94,26 @@ function planLevel4(level: LevelDef): Plan {
   };
 }
 
+/**
+ * w1-04 „Der lange Fall" — die volle Musterloesung (Paket 5).
+ *
+ * `planLevel4` schirmte nur bis zur Quote und stand damit auf Marge 0 —
+ * ein Plan-Artefakt, kein Levelfehler. Die Musterloesung gibt alle
+ * sechs Schirme des Pars; der Altplan bleibt fuer die Rot-Tests stehen.
+ */
+function planLangerFall(): Plan {
+  let given = 0;
+  return (w) => {
+    if (given >= 6) return;
+    for (const x of w.wusels) {
+      if (x.state === State.FALLING && !x.hasFloater && x.y > 240 && w.skills.floater > 0) {
+        if (w.assign(x.id, 'floater')) given++;
+        if (given >= 6) return;
+      }
+    }
+  };
+}
+
 function planLevel5(): Plan {
   let digger: number | null = null;
   let bashed = false;
@@ -1922,7 +1942,7 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w1-01': planLevel1,
   'w1-02': planLevel2,
   'w1-03': planLevel3,
-  'w1-04': planLevel4,
+  'w1-04': planLangerFall,
   'w1-05': planLevel5,
   'w1-06': planLevel6,
   'w1-07': planLevel7,
@@ -2121,6 +2141,28 @@ describe('Messlauf', () => {
     });
     writeFileSync('docs/messlauf.json', `${JSON.stringify(bericht, null, 1)}\n`);
     for (const b of bericht) expect(b.gerettet, b.id).toBeGreaterThanOrEqual(b.quote);
+
+    // Die Messregeln als Abnahmegesetz (Paket 5): Wer eine Zahl aendert,
+    // muss hier vorbei. Dokumentierte Ausnahme: w2-05 „Taktgeber" — die
+    // Marge 0 und die enge Uhr SIND das Raetsel (Rate-Regler-Lehre), und
+    // die Uhr-Niederlage kostet dank Herzschutz kein Leben.
+    for (const b of bericht) {
+      if (b.id === 'w2-05') continue;
+      // Marge >= 2 ueberall; im Einfuehrungs-Drittel (Pos 1-3) >= 3 —
+      // ausser im lebensfreien W1-Lehrgang, den das Konzept unantastbar
+      // stellt.
+      expect(b.quotenMarge, `${b.id}: Marge`).toBeGreaterThanOrEqual(2);
+      const nr = Number(b.id.slice(3));
+      if (nr <= 3 && !b.id.startsWith('w1')) {
+        expect(b.quotenMarge, `${b.id}: Drittel-A-Marge`).toBeGreaterThanOrEqual(3);
+      }
+      // Uhr nie enger als Faktor 1,3 auf die Musterloesung.
+      if (b.uhrFaktor !== null) {
+        expect(b.uhrFaktor, `${b.id}: Uhrfaktor`).toBeGreaterThanOrEqual(1.3);
+      }
+      // Mindestens ein Werkzeug Reserve — ein Fehltipp verliert kein Level.
+      expect(b.ueberschuss, `${b.id}: Ueberschuss`).toBeGreaterThanOrEqual(1);
+    }
   });
 });
 
