@@ -108,14 +108,27 @@ describe('Kletterzug', () => {
     expect(rest, 'aber deutlich kleiner als der erste Ausschlag').toBeLessThan(0.2);
   });
 
-  it('schlaegt das Haar staerker aus als den Koerper', () => {
+  /**
+   * Das Haar schwingt weiter als der Koerper — aber es loest sich nicht vom
+   * Kopf. Beide Grenzen sind teuer bezahlt:
+   *
+   * - **Unten** steht die Forderung aus dem Spieltest („die Haare muessen
+   *   dort mehr im Takt des Rucks wackeln"), und die Physik dazu: Was lose
+   *   haengt, schwingt weiter als das, was gehalten wird.
+   * - **Oben** steht der Befund, mit dem die erste Fassung zurueckkam („die
+   *   Figur hat Fehler"). Bei einem Ausschlag von 0,72 kippte die Kopfachse
+   *   so weit, dass die Haarformen quer ueber das Gesicht schwenkten. Die
+   *   Ursache ist inzwischen an der Wurzel behoben — die gesichtsnahen
+   *   Straehnen drehen gar nicht mehr mit (`drawWusel`, `dreheStirn`) —, aber
+   *   die Deckelung bleibt: Ein Kamm, der sich um mehr als etwa zwanzig Grad
+   *   vom Kopf loest, sieht nach Muetze im Wind aus.
+   */
+  it('schlaegt das Haar staerker aus als den Koerper, ohne sich zu loesen', () => {
     const s = zyklus(200);
     const haar = Math.max(...s.map((x) => Math.abs(x.z.schwung)));
     const koerper = Math.max(...s.map((x) => Math.abs(x.z.neigung + LEHNE.climbing)));
-    // Der Spieltest verlangte ausdruecklich mehr Haarbewegung („die Haare
-    // muessen dort mehr im Takt des Rucks wackeln"). Und physikalisch ist es
-    // richtig: Was lose haengt, schwingt weiter als das, was gehalten wird.
-    expect(haar).toBeGreaterThan(0.3);
+    expect(haar).toBeGreaterThan(0.18);
+    expect(haar).toBeLessThan(0.35);
     expect(haar).toBeGreaterThan(koerper * 1.5);
   });
 

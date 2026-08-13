@@ -405,6 +405,24 @@ export class SpriteAtlas {
     const footX = raster ? Math.round(sx(v, w.x)) : sx(v, w.x);
     const footY = raster ? Math.round(standY(v, w.y)) : standY(v, w.y);
 
+    /**
+     * Der Haarschwung dreht die Kopfachse — aber nur fuer den **Zackenkamm**.
+     *
+     * Das ist keine Feinheit, sondern die Reparatur eines sichtbaren Fehlers.
+     * `drawHaarStraehnen` zeichnet an derselben Achse nicht nur die Straehnen
+     * auf der Kuppel, sondern auch Pony, Koteletten und Randkranz — Teile,
+     * die am GESICHT sitzen und dort mit Bildpunkten Genauigkeit platziert
+     * sind („die Spitzen bleiben oberhalb von -0,2 Achsen, damit sie nie in
+     * die Augen haengen"). Dreht man diese Achse um vierzig Grad, schwenken
+     * genau diese Straehnen quer ueber das Gesicht, und die Figur zerfaellt.
+     * Genau so kam der Befund „die Figur hat Fehler" zurueck.
+     *
+     * Physikalisch ist die Trennung ohnehin die richtige: Der Kopf im Blatt
+     * ist gebacken und bewegt sich nicht. Was frei haengt und deshalb
+     * nachschwingen darf, ist allein der Kamm ueber dem Scheitel; alles, was
+     * auf der Haut oder auf der Kuppel liegt, klebt an einem Kopf, der
+     * stillsteht.
+     */
     const dreheStirn = (dx: number, dy: number): [number, number] => {
       if (!schwung) return [dx, dy];
       const c = Math.cos(schwung);
@@ -464,7 +482,9 @@ export class SpriteAtlas {
         (ha[1] - this.manifest.anchor.y) * s,
         s,
         clip.dreh ?? 0,
-        ...dreheStirn(hs[0] - ha[0], hs[1] - ha[1]),
+        // Ohne Schwung: siehe `dreheStirn`. Was am Gesicht sitzt, bleibt.
+        hs[0] - ha[0],
+        hs[1] - ha[1],
       );
     }
 

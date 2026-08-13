@@ -1810,12 +1810,20 @@ export function kletterZug(
   const nach = (a: number, tau: number, welle: number): number =>
     a * Math.exp(-u / tau) * Math.sin((Math.PI * u) / welle);
 
-  // Das Haar haengt dem Ruck nach und pendelt aus (`drawWusel`, Stirnvektor).
-  // Deutlich staerker als in der ersten Fassung (0,26 als einzelner Bogen):
-  // Ein Ausschlag von einem Viertel Radiant, der nur waehrend des Zugs
-  // existiert, ist bei sechsundzwanzig Bildschirmpunkten Figurenhoehe
-  // schlicht nicht zu sehen.
-  const schwung = nach(0.72, 1.8, 1.5);
+  // Das Haar haengt dem Ruck nach und pendelt aus — genauer: der Zackenkamm
+  // ueber dem Scheitel tut es, denn nur der haengt frei (`drawWusel`,
+  // `dreheStirn`).
+  //
+  // Der erste Wurf stand auf 0,72 und war ein Fehler. Nicht, weil die Zahl zu
+  // gross klingt, sondern weil an derselben Kopfachse auch Pony und
+  // Koteletten hingen: Bei vierzig Grad schwenkten sie quer ueber das
+  // Gesicht, und die Figur zerfiel sichtbar. Behoben ist das an der Wurzel —
+  // die gesichtsnahen Straehnen drehen gar nicht mehr mit. Die Amplitude
+  // bleibt trotzdem gedeckelt: Ein Kamm, der sich um mehr als etwa zwanzig
+  // Grad vom Kopf loest, sieht nicht nach Haar aus, sondern nach Muetze im
+  // Wind. 0,38 ist deutlich mehr als die 0,26 der allerersten Fassung — und
+  // anders als damals ein Nachschwingen statt eines einzelnen Bogens.
+  const schwung = nach(0.38, 1.8, 1.5);
   // Der Koerper legt sich in den Zug: Beim Hochreissen kippt er zur Wand,
   // danach federt er zurueck.
   const neigung = nach(0.22, 1.3, 1.6);

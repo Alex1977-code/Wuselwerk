@@ -272,6 +272,23 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Wegmitte bleibt frei, damit nie etwas auf Punkten, Sternen oder Figur
   steht. Alles deterministisch gestreut: Kein `Math.random` je Bild, sonst
   wanderten die Bäume sechzigmal in der Sekunde. `src/render/weltkarte.ts`.
+- ✅ **Gesicht der Figur repariert** (Befund: „die Figur hat Fehler").
+  Der Figur hingen drei blaue Keile über den Augen — Ponyfransen, die auf
+  der Haut endeten statt am Haaransatz. Das Bemerkenswerte: Der Code kannte
+  die Regel und schrieb sie auf („die Spitzen bleiben oberhalb von -0,2
+  Achsen, damit sie nie in die Augen hängen") und brach sie im selben
+  Atemzug — die Tabelle stand auf -0,08, -0,14 und -0,06, und der
+  Gesichtspunkt liegt auf **Augenhöhe**. Diese Figur hat keine freie Stirn,
+  die Haarkante sitzt auf den Brauen; zwischen Ansatz und Auge ist kein
+  Platz für eine Franse. Pony und vordere Kotelette sind deshalb ersatzlos
+  weg — die Silhouette brechen Zackenkamm und Randkranz ohnehin. Dazu:
+  Scheitellinien und Glanzstrich zurückgenommen (sie lasen sich als
+  aufgemaltes Y), Randkranz enger an die Kuppel. Und der Haarschwung des
+  Kletterzugs dreht jetzt **nur noch den Kamm**: Die gesichtsnahen Strähnen
+  hängen an einem Kopf, der gebacken ist und stillsteht. `src/render/band.ts`,
+  `src/render/atlas.ts`, Abnahme `tests/figur.test.ts` — sie misst den
+  Zeichner mit einem Aufnahme-Kontext aus und hält fest, dass keine Haarform
+  bis auf Augenhöhe reicht, bei keiner Drehung und keinem Schwung.
 - ✅ Grafikbedarf vom Grafik-Subagenten: `docs/grafikbedarf.md`.
 - 🔨 **Welt 1 neu — Berufs-Grundkurs und Prüfung** (Auftrag: „in welt 1
   hätte ich gern level zum basics lernen jeden berufs und danach muss das

@@ -307,8 +307,12 @@ export function drawHaarStraehnen(
   // Kuppelmitte, eine nach hinten in den Nacken. Halbdurchsichtig — sie
   // sollen die Flaeche gliedern, nicht zerschneiden.
   ctx.strokeStyle = HAAR_SCHATTEN;
-  ctx.globalAlpha = 0.5;
-  ctx.lineWidth = 0.24 * L;
+  // Zurueckgenommen von 0,5/0,24: Bei sechsundzwanzig Bildschirmpunkten
+  // Figurenhoehe sind drei Linien dieser Staerke keine Gliederung mehr,
+  // sondern eine Zeichnung AUF dem Haar — zusammen mit dem Glanzstrich las
+  // sich das im Bild als aufgemaltes Y.
+  ctx.globalAlpha = 0.34;
+  ctx.lineWidth = 0.16 * L;
   const linien: readonly (readonly [number, number, number, number])[] = [
     // [Kontrollpunkt quer/hoch, Ende quer/hoch] relativ zum Scheitelpunkt.
     [0.85 * L, 0.1 * L, 1.35 * L, 0.85 * L],
@@ -325,11 +329,11 @@ export function drawHaarStraehnen(
   // Ein Glanzstrich auf der Lichtseite (vorn), heller als der Grundton: die
   // eine Stelle, an der Haar spiegelt und Stoff nicht.
   ctx.strokeStyle = '#5B79E4';
-  ctx.globalAlpha = 0.75;
-  ctx.lineWidth = 0.2 * L;
+  ctx.globalAlpha = 0.38;
+  ctx.lineWidth = 0.14 * L;
   ctx.beginPath();
-  ctx.moveTo(sxp + 0.4 * L, syp + 0.06 * L);
-  ctx.quadraticCurveTo(sxp + 0.95 * L, syp + 0.22 * L, sxp + 1.1 * L, syp + 0.62 * L);
+  ctx.moveTo(sxp + 0.45 * L, syp + 0.08 * L);
+  ctx.quadraticCurveTo(sxp + 0.9 * L, syp + 0.24 * L, sxp + 1.0 * L, syp + 0.55 * L);
   ctx.stroke();
 
   // Zwei Fransen, deren Wurzeln sichtbar auf der Kuppel sitzen und deren
@@ -355,20 +359,38 @@ export function drawHaarStraehnen(
     ctx.fill();
   }
 
-  // --- Die Grenzgaenger: Pony, Schlaefen- und Nackenstraehne ----------------
+  // --- Die Grenzgaenger: Randkranz und Schlaefenstraehne --------------------
   //
-  // Der eigentliche Kappen-Toeter. Zacken und Scheitellinien arbeiten OBEN an
-  // der Kuppel — die Entscheidung „Muetze oder Haar" faellt aber UNTEN, an der
-  // Kante zum Gesicht: Eine Muetze endet dort mit einem glatten Rand, Haar
-  // kreuzt die Grenze. Drei Ponyfransen haengen ueber die Stirn, eine Straehne
-  // faellt an der Schlaefe, eine im Nacken — alle mit der Wurzel im Haar und
-  // der Spitze auf der Haut. Der Gesichtspunkt liegt auf Augenhoehe, der
-  // Haaransatz ~0,65 Achsen darueber; die Spitzen bleiben oberhalb von
-  // -0,2 Achsen, damit sie nie in die Augen haengen.
+  // Zacken und Scheitellinien arbeiten OBEN an der Kuppel — die Entscheidung
+  // „Muetze oder Haar" faellt aber an den Raendern. Hier stehen die Straehnen,
+  // die sie brechen.
   //
-  // Der Pony haengt an der STIRN, nicht am Haarscheitel: Er bekommt keinen
-  // Ruecken-Versatz, nur die perspektivische Verschmaelerung (`schmal`) — bei
-  // gedrehter Figur rueckt die Stirn zusammen, sie wandert nicht nach hinten.
+  // ## Was hier gestanden hat und warum es weg ist
+  //
+  // Drei Ponyfransen ueber der Stirn und eine Straehne auf der Wange. Die
+  // Absicht war richtig — Haar kreuzt die Grenze zur Haut, eine Muetze nicht.
+  // Die Ausfuehrung war ein Fehler, und der Code hat ihn selbst dokumentiert,
+  // ohne ihn zu halten: Im Kommentar stand „die Spitzen bleiben oberhalb von
+  // -0,2 Achsen, damit sie nie in die Augen haengen", in der Tabelle standen
+  // -0,08, -0,14 und -0,06. Der Gesichtspunkt liegt auf **Augenhoehe**, also
+  // endeten alle drei Fransen genau IM Auge.
+  //
+  // Im Bild sah das aus wie drei blaue Keile, die der Figur ins Gesicht
+  // stechen — flach, hart gerandet, ohne Verbindung zur Haarmasse, ueber
+  // einem weich schattierten Kopf. Genau das kam als Befund zurueck: „die
+  // Figur hat Fehler."
+  //
+  // Der naheliegende Wurf waere gewesen, die Zahlen an den Kommentar
+  // anzupassen. Das geht nicht: Diese Figur hat keine freie Stirn, die
+  // Haarkante sitzt direkt auf den Brauen. Zwischen Haaransatz (-0,65) und
+  // Auge (0) liegt kein Platz, in dem eine Franse sichtbar UND neben dem Auge
+  // waere. Ein Pony, der nicht passt, gehoert nicht kleiner gemacht, sondern
+  // weggelassen — die Silhouette brechen Kamm und Randkranz ohnehin, und die
+  // zeigen im Bild, dass sie es koennen.
+  //
+  // Geblieben ist die Schlaefe: eine kurze Straehne vor dem Ohr, die auf der
+  // Wange endet — weit oberhalb der Augenlinie und in der Schattenfarbe des
+  // Haars, also als Haar lesbar und nicht als aufgeklebtes Dreieck.
   const schmal = Math.cos(bg);
   const haengend = (
     zx: number,
@@ -386,38 +408,29 @@ export function drawHaarStraehnen(
     ctx.closePath();
     ctx.fill();
   };
-  // Diese Figur hat keine freie Stirn — die Haarkante sitzt direkt auf den
-  // Brauen. Ein Pony ueber der Stirn landet also auf Haar und ist unsichtbar
-  // (so scheiterte der erste Wurf). Was bleibt, sind drei Kanten, an denen
-  // Haar wirklich gegen etwas anderes steht: die Braue (Haut darunter), die
-  // Wange (Koteletten vor dem Ohr) und der Nacken. Genau dort haengen die
-  // Straehnen — und der Brauenrand wird gezackt statt glatt: Der glatte Bogen
-  // dort IST der Muetzenschirm.
-  const pony: readonly (readonly [number, number, number, number, string])[] = [
-    // [quer (x schmal), Spitze quer-Lehnung, Spitze hoch, halbe Breite]
-    [0.35 * L, 0.08 * L, -0.08 * L, 0.32 * L, HAAR_SCHATTEN],
-    [0.85 * L, 0.14 * L, -0.14 * L, 0.34 * L, HAAR_GRUND],
-    [1.3 * L, 0.2 * L, -0.06 * L, 0.28 * L, HAAR_SCHATTEN],
-  ];
-  for (const [zx, lehn, ty, halb, farbe] of pony) {
-    haengend(zx * schmal, -0.8 * L, zx * schmal + lehn, ty, halb, farbe);
-  }
-  // Die Koteletten: je eine Straehne, die an der Schlaefe bis auf die Wange
-  // faellt — neben den Augen, nie darueber. Vorn wandert sie mit der
-  // Perspektive, hinten haengt sie an der Haarmasse (Versatz).
-  const schlaefe = Math.max(1.45, 1.85 * schmal) * L;
-  haengend(schlaefe, -0.55 * L, schlaefe + 0.16 * L, 0.38 * L, 0.26 * L, HAAR_GRUND);
-  haengend(versatz - 1.85 * L, -0.75 * L, versatz - 2.05 * L, 0.3 * L, 0.26 * L, HAAR_SCHATTEN);
+  // Die Nackenstraehne — und nur sie.
+  //
+  // Die vordere Kotelette ist auch in der verkleinerten Fassung gefallen. Sie
+  // landete weiterhin auf der WANGE, neben dem Auge, und dort gilt dieselbe
+  // Regel wie beim Pony: Was auf der Haut liegt, liest sich bei dieser
+  // Figurengroesse als aufgeklebtes Dreieck, nicht als Haar. Hinten ist es
+  // anders — dort steht die Straehne vor Haar und Nacken und bricht die
+  // Silhouette, ohne ein Gesicht zu stoeren.
+  //
+  // `schmal` bleibt in Gebrauch: Der Randkranz braucht die perspektivische
+  // Verschmaelerung weiterhin.
+  void schmal;
+  haengend(versatz - 1.85 * L, -0.95 * L, versatz - 2.0 * L, -0.35 * L, 0.22 * L, HAAR_SCHATTEN);
   // Der Kranz um die Kuppel: Zwei Randzacken je Seite brechen die glatte
   // Flanke der Silhouette — bisher stach der Kamm nur oben heraus, und eine
   // Kuppel mit glatten Flanken bleibt eine Kappe, egal was am Scheitel
   // passiert.
   const rand: readonly (readonly [number, number, number, number, number, string])[] = [
     // [quer, Wurzelhoehe, Neigung Grad, Hoehe, halbe Breite]
-    [versatz + 1.85 * L, -1.5 * L, 72, 0.62 * L, 0.3 * L, HAAR_LICHT],
-    [versatz + 1.55 * L, -1.95 * L, 52, 0.6 * L, 0.32 * L, HAAR_GRUND],
-    [versatz - 1.8 * L, -1.55 * L, -74, 0.58 * L, 0.3 * L, HAAR_SCHATTEN],
-    [versatz - 1.55 * L, -2.0 * L, -50, 0.6 * L, 0.32 * L, HAAR_SCHATTEN],
+    [versatz + 1.7 * L, -1.55 * L, 72, 0.55 * L, 0.3 * L, HAAR_LICHT],
+    [versatz + 1.45 * L, -1.95 * L, 52, 0.55 * L, 0.32 * L, HAAR_GRUND],
+    [versatz - 1.62 * L, -1.6 * L, -74, 0.52 * L, 0.3 * L, HAAR_SCHATTEN],
+    [versatz - 1.42 * L, -2.0 * L, -50, 0.55 * L, 0.32 * L, HAAR_SCHATTEN],
   ];
   for (const [zx, wy, grad, hoch, halb, farbe] of rand) {
     const b = (grad * Math.PI) / 180;
