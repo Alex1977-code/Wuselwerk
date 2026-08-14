@@ -14,6 +14,7 @@
     "verify:single": "node scripts/verify-single.mjs",
     "atlas:template": "vite build && node scripts/make-atlas-template.mjs",
     "modell:messen": "node scripts/measure-model.mjs",
+    "haar:messen": "node scripts/haar-messen.mjs",
     "atlas:backen": "node scripts/bake-atlas.mjs"
   },
   "devDependencies": {

@@ -80,6 +80,11 @@
           -6,
           0,
           0
+        ],
+        "HaarSchwung": [
+          0,
+          0,
+          0
         ]
       }
     },
@@ -160,6 +165,11 @@
       "winkel": {
         "Head": [
           -6,
+          0,
+          0
+        ],
+        "HaarSchwung": [
+          18,
           0,
           0
         ]
@@ -244,6 +254,11 @@
           -6,
           0,
           0
+        ],
+        "HaarSchwung": [
+          -14,
+          0,
+          0
         ]
       }
     },
@@ -324,11 +339,17 @@
       "winkel": {
         "Head": [
           -6,
+          0,
+          0
+        ],
+        "HaarSchwung": [
+          5,
           0,
           0
         ]
       }
     }
   ],
-  "boden": true
+  "boden": true,
+  "_haar": "Der Ruck, gemessen an ZUG_TAKT in scene.ts: Beim HALTEN steht der Takt auf Bild 0 - dort ist das Haar in Ruhe. Der Zug spielt dann Bild 1 (Haar schleppt nach, der Koerper reisst hoch), Bild 2 (Ueberschwung) und Bild 3 (Einpendeln). Positiv heisst nach vorn/unten - am Kontrollbild gemessen, nicht angenommen."
 }

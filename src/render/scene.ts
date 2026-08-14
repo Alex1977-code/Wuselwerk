@@ -738,7 +738,7 @@ export class Scene {
       // ohne dass die Simulation davon weiss.
       const takt =
         sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt, zug?.schwung ?? 0)) {
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, sicht.pose, takt)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
@@ -879,27 +879,30 @@ export class Scene {
    * - `takt`: die Gliedmassen frieren waehrend des Haltens auf Bild 0 ein
    *   und spielen den 16-Tick-Zyklus des Blatts im Ruck ab — Zug fuer Zug,
    *   statt eines Radfahrens neben der Bewegung.
-   * - `schwung`: das Haar haengt dem Ruck nach (`drawWusel`, Stirnvektor),
-   *   staerkster Ausschlag mitten im Zug, in der Ruhe nichts.
+   *
+   * Das Haar schwingt **mit**, aber nicht mehr von hier aus: Es haengt seit
+   * dem Haar-Umbau am Knochen `HaarSchwung` und ist damit in die vier
+   * Kletterbilder gebacken — Bild 0 Ruhe, Bild 1 Nachschleppen, Bild 2
+   * Ueberschwung, Bild 3 Einpendeln. Vorher drehte der Zeichner dafuer den
+   * Stirnvektor und malte Zacken darauf; das war Farbe auf einer Kappe und
+   * konnte die Silhouette gar nicht erreichen. Die Zuordnung der Bilder haengt
+   * an `ZUG_TAKT` weiter unten: Wer daran dreht, verschiebt die Haarphasen
+   * mit.
    *
    * Alles rechnet allein aus `w.y`: deterministisch, zustandslos, und beim
    * Zeitruecklauf von selbst richtig.
    */
-  private kletterZug(y: number): { dy: number; takt: number; schwung: number } {
+  private kletterZug(y: number): { dy: number; takt: number } {
     const HUB = 6;
     const HALT = 3;
     const hoch = -y;
     const c = ((hoch % HUB) + HUB) % HUB;
     const zuege = Math.floor(hoch / HUB);
     const ZUG_TAKT = [0, 0, 0, 4, 9, 14];
-    if (c < HALT) return { dy: c, takt: zuege * 16 + ZUG_TAKT[c], schwung: 0 };
+    if (c < HALT) return { dy: c, takt: zuege * 16 + ZUG_TAKT[c] };
     const rest = (c - HALT) / (HUB - HALT);
     const e = 1 - (1 - rest) * (1 - rest);
-    return {
-      dy: c * (1 - e),
-      takt: zuege * 16 + ZUG_TAKT[c],
-      schwung: Math.sin(rest * Math.PI) * 0.26,
-    };
+    return { dy: c * (1 - e), takt: zuege * 16 + ZUG_TAKT[c] };
   }
 
   /**
