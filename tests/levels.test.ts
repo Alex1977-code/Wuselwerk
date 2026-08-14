@@ -4,6 +4,7 @@ import { createWorld } from '../src/levels/createWorld';
 import { World } from '../src/core/world';
 import { State } from '../src/core/types';
 import type { LevelDef } from '../src/levels/types';
+import { W1_PLAENE } from './welt1-plaene';
 
 type Plan = (w: World) => void;
 
@@ -32,16 +33,6 @@ function planLevel1(): Plan {
     if (done) return;
     const c = walkerNear(w, 232, 248);
     if (c && w.assign(c.id, 'digger')) done = true;
-  };
-}
-
-function planLevel2(): Plan {
-  let done = false;
-  return (w) => {
-    if (done) return;
-    // Der Rammer greift nur, wenn die Wand schon in Reichweite ist.
-    const c = walkerNear(w, 336, 339, 1);
-    if (c && w.assign(c.id, 'basher')) done = true;
   };
 }
 
@@ -2048,20 +2039,12 @@ function planZuTief(): Plan {
 
 
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
-  'w1-01': planLevel1,
-  'w1-02': planLevel2,
-  'w1-03': planLevel3,
-  'w1-04': planLangerFall,
-  'w1-05': planLevel5,
-  'w1-06': planLevel6,
-  'w1-07': planLevel7,
-  // Paket 1 (Level-Konzept): w1-08 und die W2-Fruehspiel-Level haben neue
-  // Geometrien und neue Plaene; die Altplaene bleiben stehen, weil Welt 5
-  // die alten Geometrien als Kopien weiterbenutzt und die Rot-Tests sie
-  // als Gegenprobe brauchen.
-  'w1-08': planWeiche,
-  'w1-09': planLevel9,
-  'w1-10': planLevel10,
+  // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
+  // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
+  // stehen und werden weiter gebraucht: Welt 5 benutzt die alten Geometrien
+  // als Kopien, und die Rot-Tests weiter unten beweisen mit ihnen, dass die
+  // neuen Level wirklich neue Level sind.
+  ...W1_PLAENE,
   'w2-01': planKlamm1,
   'w2-02': planKlamm2,
   'w2-03': planKamin,
@@ -2398,6 +2381,34 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
   // Paket 1 (Level-Konzept): Die Fruehspiel-Umbauten gegen ihre Altplaene.
   it('w1-08: der alte Bruecken-Plan findet weder Schlucht noch Bauer', () => {
     erwarteRot('w1-08', planLevel8);
+  });
+  // Der Neubau der ersten Welt (vierzehn statt zehn Level). Die Plaetze 3
+  // bis 10 tragen seitdem andere Raetsel; hier steht der Beweis dafuer, dass
+  // sie es wirklich tun. Die Plaetze 1 und 2 fehlen mit Absicht: „Grabe dich
+  // durch" und „Die Wand" sind dieselben Level geblieben.
+  it('w1-03: der alte Abgrund-Plan findet weder Schlucht noch Bauer', () => {
+    erwarteRot('w1-03', planLevel3);
+  });
+  it('w1-04: der alte Schirmregen hat keine Schirme mehr', () => {
+    erwarteRot('w1-04', planLangerFall);
+  });
+  it('w1-05: der alte Stahl-Plan zielt neben den Stollen', () => {
+    erwarteRot('w1-05', planLevel5);
+  });
+  it('w1-06: der alte Kletterplan steht vor der falschen Wand', () => {
+    erwarteRot('w1-06', planLevel6);
+  });
+  it('w1-07: die alte Sprengung findet keine Naht', () => {
+    erwarteRot('w1-07', planLevel7);
+  });
+  it('w1-08: der Weichen-Plan hat hier keine Weiche', () => {
+    erwarteRot('w1-08', planWeiche);
+  });
+  it('w1-09: der alte Doppelgaben-Plan trifft die Flanke nicht', () => {
+    erwarteRot('w1-09', planLevel9);
+  });
+  it('w1-10: die alte Pruefung sucht Bruecke, Schacht und Stollen vergebens', () => {
+    erwarteRot('w1-10', planLevel10);
   });
   it('w2-03: Klettern allein endet auf der Platte — die Tuer liegt darunter', () => {
     erwarteRot('w2-03', planKlamm3);

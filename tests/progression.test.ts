@@ -453,11 +453,13 @@ describe('Der ausgelieferte Katalog', () => {
     const karte = weltkarte({}, KATALOG);
     expect(karte.welten).toHaveLength(6);
     expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
-    // 14 in Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu
-    // die ersten drei Terrassen des Sonnenhangs (Hundert-Level-Ausbau,
+    // 14 in Welt 1 seit dem Neubau des Grundkurses (`welt1.ts`): je ein
+    // Level fuer jeden der acht Berufe, dann sechs, die kombinieren. 14 in
+    // Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu die
+    // ersten drei Terrassen des Sonnenhangs (Hundert-Level-Ausbau,
     // docs/welt-6-7-konzept.md). Die Zahl waechst mit jedem ausgemessenen
     // Level, bis sie hundert erreicht.
-    expect(karte.welten.map((w) => w.level.length)).toEqual([10, 13, 14, 14, 15, 3]);
+    expect(karte.welten.map((w) => w.level.length)).toEqual([14, 13, 14, 14, 15, 3]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });
@@ -465,7 +467,10 @@ describe('Der ausgelieferte Katalog', () => {
   it('teilt Welt 1 in drei Etappen', () => {
     const w = weltkarte({}, KATALOG).welten[0];
     expect(w.etappen.map((e) => e.name)).toEqual(['Spaziergang', 'Kniffelig', 'Prüfung']);
-    expect(w.etappen.map((e) => e.bis - e.von + 1)).toEqual([3, 4, 3]);
+    // 4 + 4 + 6: Der Grundkurs lehrt acht Berufe in acht Leveln, die
+    // Pruefung kombiniert sie in sechs. Das Sterntor steht auf der Grenze
+    // dazwischen — vor Punkt 9, nie im Unterricht.
+    expect(w.etappen.map((e) => e.bis - e.von + 1)).toEqual([4, 4, 6]);
   });
 
   it('gibt am Ende von Welt 1 den zusätzlichen Gräber', () => {

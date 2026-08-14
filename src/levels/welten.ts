@@ -221,11 +221,13 @@ export const WELTEN: Welt[] = [
     thema: 'Weiche Erde, flacher Himmel, alles grabbar. Hier lernt man die acht Berufe.',
     kartenTheme: 'grass',
     farbe: '#63b23f',
-    soll: 10,
-    // Das Sterntor vor Punkt 7: zwoelf von achtzehn bis dahin moeglichen
-    // Sternen. Wer jedes Level nur eben besteht, hat sechs — und einen Grund,
-    // zwei alte Level besser zu spielen, bevor es weitergeht.
-    sternTor: { vorIndex: 6, sterne: 12 },
+    soll: 14,
+    // Das Sterntor steht auf der KAPITELGRENZE vor Punkt 9 — dort, wo der
+    // Grundkurs endet und die Pruefung beginnt. Zwoelf von vierundzwanzig
+    // bis dahin moeglichen Sternen: Wer jedes Lehrstueck nur eben besteht,
+    // hat acht und einen Grund, zwei davon besser zu spielen. Im Grundkurs
+    // selbst steht nie ein Tor — wer noch lernt, wird nicht aufgehalten.
+    sternTor: { vorIndex: 8, sterne: 12 },
     belohnung: {
       art: 'werkzeug',
       skill: 'digger',

@@ -3,20 +3,18 @@ import { State } from '../src/core/types';
 import type { LevelDef } from '../src/levels/types';
 
 /**
- * Die Musterloesungen der neuen Welt 1 — noch nicht abgenommen.
+ * Die Musterloesungen der Welt 1 — gemessen und abgenommen.
  *
- * Sie gehoeren zu `src/levels/welt1.ts` und warten mit ihr auf die
- * Messrunde. Sobald ein Level gruen misst, wandert sein Plan von hier in die
- * `PLANS`-Tabelle von `levels.test.ts`, und das Level wandert in `index.ts`.
+ * Sie gehoeren zu `src/levels/welt1.ts` und werden von `levels.test.ts` in
+ * die `PLANS`-Tabelle gespreizt. Warum sie in einer eigenen Datei stehen und
+ * nicht bei den uebrigen Plaenen: Jeder dieser vierzehn Plaene traegt einen
+ * gemessenen Befund als Kommentar — welches Fenster warum genau so eng ist,
+ * welche Zuweisung warum in dieser Reihenfolge kommt. Zwischen den
+ * Altplaenen der uebrigen Welten waeren diese Befunde nicht mehr zu finden.
  *
- * Warum sie hier stehen und nicht in einer Fehlersuchdatei: Ein Plan ist die
- * einzige pruefbare Aussage darueber, dass ein Level ueberhaupt loesbar ist.
- * Ihn wegzuwerfen, weil er noch nicht gruen ist, hiesse die halbe Messrunde
- * noch einmal zu laufen.
- *
- * Stand des ersten Messlaufs (`docs/welt-1-neu.md` §6, Paket 1 bis 4):
- * w1-01 bis w1-06 und w1-08 loesen sich; die uebrigen sieben nicht. Die
- * gefundenen Ursachen stehen im Kopfkommentar von `welt1.ts`.
+ * Ein Plan ist die einzige pruefbare Aussage darueber, dass ein Level
+ * ueberhaupt loesbar ist. Wer die Geometrie eines Levels anfasst, faellt
+ * hier durch — und das ist der Zweck.
  */
 export type Plan = (w: World) => void;
 
@@ -156,8 +154,18 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
         return;
       }
       if (!ram) {
+        // Erst wenn der Bagger fertig ist. Gemessen: Wird der Rammer
+        // vergeben, solange der Bagger noch zwei Bildpunkte vor ihm
+        // schneidet, schlaegt er genau einen Streifen — dann nimmt ihm der
+        // Bagger den Boden weg, er faellt, laeuft bis an die ungeschnittene
+        // Westwand und dreht ab. Ein Zug ist verloren, und das Level steht.
+        if (w.wusels.some((x) => x.state === State.MINING)) return;
+        // Auf der flachen Sohle ansetzen, nicht auf der Schraege: Ein Rammer
+        // verliert auf schraegem Grund nach jedem Zwei-Punkt-Versatz den
+        // Boden. Der erste Messlauf setzte ihn auf der Rampe an, und der
+        // ganze Pulk pendelte danach dreissig Sekunden lang auf und ab.
         const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 348 && x.y <= 356 && x.dir === -1 && x.x < 520,
+          (x) => x.state === State.WALKING && x.y === 351 && x.dir === -1 && x.x <= 516,
         );
         if (c && w.assign(c.id, 'basher')) ram = true;
         return;
@@ -222,15 +230,22 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
         return;
       }
       if (!gra) {
+        // Der Schacht wird AUF der Schraege angesetzt, nicht auf dem
+        // Plateaudach: Die Kammer liegt unter dem Schraegband.
+        //
+        // Das Fenster beginnt bei x=626 und nicht frueher. Ein Schacht ist
+        // neun Bildpunkte breit (DIG_HALF_W 4), die Kammer beginnt bei
+        // x=620 — wer westlich davon graebt, bohrt an der Kammer vorbei. Im
+        // Messlauf tat er das bei x=612, fiel unten aus der Welt, und der
+        // ganze Pulk lief hinterher: zwanzig Tote.
         const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 320 && x.y <= 328 && x.x >= 615 && x.x <= 640,
+          (x) => x.state === State.WALKING && x.y >= 346 && x.y <= 360 && x.x >= 626 && x.x <= 642,
         );
         if (c && w.assign(c.id, 'digger')) gra = true;
       }
     };
   },
   'w1-10': () => {
-    let blo = false;
     let ram1 = false;
     let ram2 = false;
     let gra = false;
@@ -240,12 +255,12 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
           w.assign(x.id, 'floater');
         }
       }
-      if (!blo && w.released >= 5) {
-        const c = near(w, 330, 350);
-        if (c && w.assign(c.id, 'blocker')) blo = true;
-        return;
-      }
-      if (blo && !ram1) {
+      // Kein Blocker. Der erste Messlauf setzte einen bei x=330 — also
+      // mitten auf dem einzigen Weg zur Lippe. Wer noch westlich von ihm
+      // stand, kam nie mehr nach Osten; gerettet wurde eine einzige Figur.
+      // Der Blocker gehoert hier zum Werkzeugueberschuss, nicht zur Loesung:
+      // Par 13 sind zehn Schirme, zwei Rammer, ein Graeber.
+      if (!ram1) {
         const c = w.wusels.find(
           (x) => x.state === State.WALKING && x.hasFloater && x.x >= 390 && x.x <= 406 && x.dir === 1,
         );
@@ -274,13 +289,19 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
     let g3 = false;
     return (w) => {
       if (!g1) {
+        // Weit weg von der Falltuer bei x=300: Wer dort graebt, faengt seine
+        // Nachzuegler mitten im Sturz auf und bringt sie auf 131 Bildpunkte
+        // Fallweg. Der Stahlriegel unter der Tuer verbietet den Griff
+        // ohnehin; hier steht die Absicht.
         const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 176 && x.y <= 184 && x.x >= 290 && x.x <= 315,
+          (x) => x.state === State.WALKING && x.y >= 176 && x.y <= 184 && x.x >= 200 && x.x <= 240,
         );
         if (c && w.assign(c.id, 'digger')) g1 = true;
         return;
       }
       if (!bag) {
+        // Am Pfeiler, in Laufrichtung OSTEN. Die Schraege muss von der Kappe
+        // weglaufen; nach Westen taucht sie in sie hinein und dreht ab.
         const c = w.wusels.find(
           (x) =>
             x.state === State.WALKING &&
@@ -288,7 +309,7 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
             x.y <= 256 &&
             x.x >= 330 &&
             x.x <= 339 &&
-            x.dir === -1,
+            x.dir === 1,
         );
         if (c && w.assign(c.id, 'miner')) bag = true;
         return;
@@ -309,21 +330,40 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
     };
   },
   'w1-12': () => {
-    let ram = false;
+    let ram: number | null = null;
     let bau: number | null = null;
     const rest = { n: 0 };
     let gra = false;
     return (w) => {
-      if (!ram) {
+      if (ram === null) {
+        // Das Fenster beginnt bei x=323 und keinen Bildpunkt frueher. Ein
+        // Rammer, dem beim Auftrag keine Wand in Reichweite steht (BASH_LOOK
+        // 5), wird nicht zum Rammer, sondern zum VORGEMERKTEN Rammer: Er
+        // laeuft weiter und faengt an der naechstbesten Wand an — in
+        // welcher Richtung er dann gerade schaut. Im Messlauf drehte er an
+        // der Lippe um, lief 120 Bildpunkte nach Westen und rammte dort die
+        // Stirn des ersten Absatzes auf: Der ganze Absatz stand offen, die
+        // Lippe stand noch, und der Pulk pendelte 170 Sekunden lang.
         const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 224 && x.y <= 232 && x.x >= 316 && x.x <= 326 && x.dir === 1,
+          (x) => x.state === State.WALKING && x.y >= 224 && x.y <= 232 && x.x >= 323 && x.x <= 327 && x.dir === 1,
         );
-        if (c && w.assign(c.id, 'basher')) ram = true;
+        if (c && w.assign(c.id, 'basher')) ram = c.id;
         return;
       }
       if (bau === null) {
+        // Nicht derselbe! Der erste Messlauf gab Rammer und Bauer in zwei
+        // aufeinanderfolgenden Ticks an dieselbe Figur: Der Bauauftrag
+        // ueberschrieb den Rammer, die Vormerkung blieb liegen, und beide
+        // Auftraege waren verloren.
         const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 224 && x.y <= 232 && x.x >= 312 && x.x <= 338 && x.dir === 1,
+          (x) =>
+            x.id !== ram &&
+            x.state === State.WALKING &&
+            x.y >= 224 &&
+            x.y <= 232 &&
+            x.x >= 330 &&
+            x.x <= 338 &&
+            x.dir === 1,
         );
         if (c && w.assign(c.id, 'builder')) bau = c.id;
         return;
@@ -338,18 +378,31 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
     };
   },
   'w1-13': () => {
-    let ram = false;
+    let ram: number | null = null;
     let bau: number | null = null;
     const rest = { n: 0 };
     let gra = false;
     return (w) => {
-      if (!ram) {
-        const c = near(w, 396, 406, 1);
-        if (c && w.assign(c.id, 'basher')) ram = true;
+      if (ram === null) {
+        // Dicht an die Lippe (x=408), sonst wird daraus eine Vormerkung, die
+        // irgendwo im Westen losgeht — dieselbe Falle wie in w1-12.
+        const c = near(w, 403, 407, 1);
+        if (c && w.assign(c.id, 'basher')) ram = c.id;
         return;
       }
       if (bau === null) {
-        const c = near(w, 396, 418, 1);
+        // Eine ANDERE Figur, und erst hinter der geoeffneten Lippe: Der
+        // Bauauftrag wuerde den Rammer sonst ueberschreiben.
+        const c = w.wusels.find(
+          (x) =>
+            x.id !== ram &&
+            x.state === State.WALKING &&
+            x.y >= 435 &&
+            x.y <= 443 &&
+            x.x >= 408 &&
+            x.x <= 418 &&
+            x.dir === 1,
+        );
         if (c && w.assign(c.id, 'builder')) bau = c.id;
         return;
       }
@@ -375,23 +428,26 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
   },
   'w1-14': () => {
     let ram1 = false;
-    let blo = false;
     let bau: number | null = null;
     const rest = { n: 0 };
     let bag = false;
-    let ram2 = false;
     return (w) => {
       if (!ram1) {
         const c = near(w, 346, 352, -1);
         if (c && w.assign(c.id, 'basher')) ram1 = true;
         return;
       }
-      if (!blo) {
-        const c = near(w, 320, 340, -1);
-        if (c && w.assign(c.id, 'blocker')) blo = true;
-        return;
-      }
+      // KEIN Blocker. Der erste Messlauf setzte einen in den Stollen von
+      // Knoten 1 — also in den einzigen Gang, den das Level hat. Ein Blocker
+      // steht in diesem Spiel fuer immer: Man kann ihn nicht freigraben, er
+      // blockt auch nach einem Sturz weiter. Der Pulk pendelte danach vier
+      // Minuten oestlich von ihm, und gerettet wurde niemand. Die beiden
+      // Blocker im Kasten sind Werkzeugueberschuss, keine Loesung.
       if (bau === null) {
+        // Drei Bauer legen 72 Bildpunkte. Der Ansatz muss so weit oestlich
+        // liegen, dass die Bruecke westlich des Spalts aufsetzt (x<=223) —
+        // und so weit westlich, dass sie ueberhaupt gebaut wird, ehe der
+        // Pulk am Spalt steht.
         const c = near(w, 264, 288, -1);
         if (c && w.assign(c.id, 'builder')) bau = c.id;
         return;
@@ -410,12 +466,9 @@ export const W1_PLAENE: Record<string, (l: LevelDef) => Plan> = {
         if (c && w.assign(c.id, 'miner')) bag = true;
         return;
       }
-      if (bag && !ram2) {
-        const c = w.wusels.find(
-          (x) => x.state === State.WALKING && x.y >= 400 && x.y <= 410 && x.dir === -1,
-        );
-        if (c && w.assign(c.id, 'basher')) ram2 = true;
-      }
+      // Kein zweiter Rammer: Die Kammer ist offen, sobald die Schraege ihre
+      // Decke durchstoesst. Der Entwurf hatte ihn eingeplant, gemessen
+      // braucht ihn niemand.
     };
   },
 };

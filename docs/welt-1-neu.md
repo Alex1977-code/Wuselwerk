@@ -591,10 +591,14 @@ von Ring 2, dem Elternteil, der sie erkennt und genau deshalb installiert.
 
 ## 7 Die Risiken
 
-- Fortschritts-Migration: Die IDs w1-03 bis w1-10 bedeuten kuenftig andere
-  Level. Ohne Migration stehen gespeicherte Sterne an falschen Punkten und das
-  Sterntor rechnet auf altem Bestand. Muss in Paket 0 mit erledigt werden,
-  sonst verliert jeder Testspieler seinen Stand.
+- ~~Fortschritts-Migration~~ **erledigt** (`UMBAUTEN` in `src/storage.ts`):
+  Beim ersten Start nach dem Umbau fallen fuer w1-03 bis w1-10 Bestwert,
+  Bestzahl und der verbrauchte Erkundungs-Freibetrag weg — sie gehoerten
+  einem Raetsel, das es nicht mehr gibt, und waeren mit dem neuen `total`
+  sichtbar falsch. `won` und die Sternzahl bleiben: Wer die Welt
+  durchgespielt hat, wird nicht an ihren Anfang zurueckgeschickt und verliert
+  kein Tor, das er schon passiert hat. Ein Umbau ist unsere Sache, nicht
+  seine.
 - Freisetzungsrate ist Spielerhand: Die 40-Sekunden-Regel ist mit der Normrate
   gerechnet; wer die Rate hochdreht, schickt sich seinen Pulk selbst schneller
   an jede Kante. In Welt 1 gehoert deshalb eine Rate-Obergrenze in jedes Level
@@ -631,3 +635,73 @@ von Ring 2, dem Elternteil, der sie erkennt und genau deshalb installiert.
   vorher eine Uhr eintraegt, dreht am einzigen Wert, der nie gedreht werden
   darf.
 
+
+## 8 Die Abnahme — was der Messlauf ergeben hat
+
+Alle vierzehn Level loesen sich mit ihrer Musterloesung, halten ihr Par, ihre
+Marge und ihren Uhrfaktor. Die Quittung steht in `docs/messlauf.json`, die
+Plaene in `tests/welt1-plaene.ts`, und `tests/levels.test.ts` prueft beides bei
+jedem Lauf. Welt 1 ist seit dieser Runde verdrahtet (`soll: 14`, Sterntor auf
+`{ vorIndex: 8, sterne: 12 }`).
+
+| Level | gerettet | Quote | Marge | tot | Zuege/Par | Uhrfaktor |
+|---|---|---|---|---|---|---|
+| w1-01 Grabe dich durch | 8/10 | 5 | 3 | 2 | 1/1 | 4,88 |
+| w1-02 Die Wand | 20/20 | 15 | 5 | 0 | 1/1 | 2,00 |
+| w1-03 Der Waechter | 19/20 | 13 | 6 | 0 | 3/3 | 1,43 |
+| w1-04 Die Bruecke | 16/20 | 13 | 3 | 2 | 5/5 | 1,67 |
+| w1-05 Ueber den Stahl | 9/10 | 5 | 4 | 0 | 11/11 | 3,15 |
+| w1-06 Der lange Fall | 10/12 | 6 | 4 | 1 | 12/12 | 2,19 |
+| w1-07 Die Haarnadel | 20/20 | 14 | 6 | 0 | 3/3 | 1,68 |
+| w1-08 Fuenf Sekunden | 17/20 | 14 | 3 | 2 | 5/5 | 1,64 |
+| w1-09 Der Aufstieg | 20/20 | 14 | 6 | 0 | 3/3 | 1,58 |
+| w1-10 Die Galerie | 10/10 | 6 | 4 | 0 | 13/13 | 3,27 |
+| w1-11 Der Turm | 20/20 | 14 | 6 | 0 | 4/4 | 1,63 |
+| w1-12 Die Treppe | 15/18 | 11 | 4 | 3 | 5/5 | 2,59 |
+| w1-13 Der Pfeiler | 9/12 | 6 | 3 | 0 | 13/14 | 4,30 |
+| w1-14 Pruefung im Grasland | 14/20 | 11 | 3 | 0 | 5/5 | 2,20 |
+
+### Sieben Regeln, die der Messlauf gefunden hat
+
+Sieben der vierzehn Level standen im ersten Lauf still oder toeteten ihren
+Pulk. Keine dieser Ursachen war eine Zahl, die knapp danebenlag — jede war
+eine Regel des Spiels, die niemand aufgeschrieben hatte. Sie stehen jetzt im
+Kopf von `src/levels/welt1.ts` und bei dem Level, an dem sie gemessen wurden:
+
+1. Eine Figur setzt beim Laufen **erst den Fuss auf das Nachbarfeld und faellt
+   dann**. Die Westkante einer Platte ist damit ein offener Abgrund, auch wenn
+   die naechste Platte buendig anschliesst.
+2. Ein Rammer ohne Wand in Reichweite (5 px) wird zum **vorgemerkten** Rammer
+   und faengt an der naechstbesten Wand an — in der Richtung, in die er dann
+   gerade schaut.
+3. Ein Bagger prueft **elf Bildpunkte ueber seinen Fuessen** mit. Eine
+   Schraege kann eine durchgehende Stahlkappe nie unterlaufen, und unter einem
+   Stahldeckel braucht sie zwoelf Bildpunkte Luft.
+4. Ein Blocker steht **fuer immer**. In einem Level mit nur einem Gang ist er
+   kein Werkzeug, sondern ein Riegel.
+5. Ein Laeufer ist **viermal schneller als ein Bauer** und ueberholt ihn auf
+   der eigenen Bruecke. Jede Bruecke ueber einen Spalt kostet Figuren; bauen
+   laesst sich nur, dass der Sturz sie nicht toetet.
+6. Zwei Auftraege an dieselbe Figur **loeschen einander** — der zweite
+   ueberschreibt den ersten, eine Vormerkung bleibt trotzdem liegen.
+7. Ein Schacht ist **neun Bildpunkte breit**. Wer weniger als fuenf Bildpunkte
+   von der Kante einer Kammer entfernt graebt, graebt an ihr vorbei.
+
+### Was dabei am Entwurf korrigiert wurde
+
+- **w1-09**: Ausgangskammer aus dem Schraegband heraus nach unten verlegt,
+  Stirnwand von 96 auf 76 Bildpunkten Stahl gekuerzt — sonst konnte die
+  Schraege die Wartewiese nicht erreichen.
+- **w1-11**: Stahlriegel unter die Falltuer (der Schacht darunter kostete 19
+  von 20 Figuren), Kappe der zweiten Etage ueber die ganze begehbare Strecke
+  gezogen, Kappe der dritten Etage neu — ohne sie war der Rammer
+  ueberfluessig. Die Schraege laeuft jetzt nach OSTEN.
+- **w1-12**: Der erste Absatz ist eine echte Stufe statt einer schwebenden
+  Platte; zwei weitere Lippen an den Westkanten; Pulk 16 -> 18, weil die
+  Bruecke drei Figuren kostet; zwei Blocker als Handel „alle retten gegen
+  einen Zug ueber Par".
+- **w1-13**: Spalt von 72 auf 56 Bildpunkte Tiefe — wer vom unfertigen
+  Brueckenende tritt, faellt von der Rampe, nicht von der Wiese.
+- **w1-14**: Stahldeckel von 140 auf 100 Bildpunkte Breite (er sperrte die
+  eigene Loesung), Spalt auf 40 Bildpunkte Tiefe, Blocker und zweiter Rammer
+  aus der Musterloesung gestrichen, Par 7 -> 5, Quote 13 -> 11.

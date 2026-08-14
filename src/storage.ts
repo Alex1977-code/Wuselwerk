@@ -53,10 +53,74 @@ export function gesteMerken(id: GesteId): void {
   }
 }
 
+const UMBAU_KEY = 'wuselwerk.umbau.v1';
+
+/**
+ * Level, die unter ihrer alten Id neu gebaut wurden.
+ *
+ * Eine Level-Id ist ein Platz in der Welt, kein Versprechen auf ein
+ * bestimmtes Raetsel. Beim Neubau der ersten Welt sind aus zehn Leveln
+ * vierzehn geworden, und die Plaetze 3 bis 10 tragen seitdem voellig andere
+ * Level: Was einmal „Der Abgrund" hiess, ist heute „Der Wächter". Der
+ * gespeicherte Bestwert dieses Platzes gehoert also einem Raetsel, das es
+ * nicht mehr gibt — und er waere sichtbar falsch, weil auch `total` sich
+ * geaendert hat: „15 von 10 gerettet" ist keine Bestleistung, sondern ein
+ * Anzeigefehler.
+ *
+ * Deshalb faellt beim ersten Start nach dem Umbau genau das weg, was sich
+ * auf das alte Raetsel bezog — Bestwert, Bestzahl und der verbrauchte
+ * Erkundungs-Freibetrag. Was bleibt, ist `won` und die Sternzahl: Wer die
+ * erste Welt durchgespielt hat, wird nicht an ihren Anfang zurueckgeschickt
+ * und verliert kein Sterntor, das er schon passiert hat. Ein Umbau ist
+ * unsere Sache, nicht seine.
+ */
+const UMBAUTEN: Record<string, string[]> = {
+  'w1-neubau': ['w1-03', 'w1-04', 'w1-05', 'w1-06', 'w1-07', 'w1-08', 'w1-09', 'w1-10'],
+};
+
+function umbautenGelaufen(): string[] {
+  try {
+    const raw = localStorage.getItem(UMBAU_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    // Ohne Speicher gibt es auch keinen alten Fortschritt, der stoeren
+    // koennte: Dann gilt jeder Umbau als erledigt.
+    return Object.keys(UMBAUTEN);
+  }
+}
+
+function umbauAnwenden(p: Progress): Progress {
+  const gelaufen = umbautenGelaufen();
+  const offen = Object.keys(UMBAUTEN).filter((k) => !gelaufen.includes(k));
+  if (offen.length === 0) return p;
+  let geaendert = false;
+  for (const k of offen) {
+    for (const id of UMBAUTEN[k]) {
+      const r = p[id];
+      if (!r) continue;
+      p[id] = {
+        won: r.won,
+        stars: r.stars,
+        bestSaved: 0,
+        bestSkills: Number.MAX_SAFE_INTEGER,
+      };
+      geaendert = true;
+    }
+  }
+  if (geaendert) saveProgress(p);
+  try {
+    localStorage.setItem(UMBAU_KEY, JSON.stringify([...gelaufen, ...offen]));
+  } catch {
+    /* Privatmodus — dann eben bei jedem Start noch einmal. Der Umbau ist
+       absichtlich wiederholbar: Er nimmt beim zweiten Mal nichts Neues weg. */
+  }
+  return p;
+}
+
 export function loadProgress(): Progress {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as Progress) : {};
+    return umbauAnwenden(raw ? (JSON.parse(raw) as Progress) : {});
   } catch {
     return {};
   }
