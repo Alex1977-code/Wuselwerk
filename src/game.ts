@@ -1656,16 +1656,37 @@ export class Game {
         }
         break;
       }
-      case 'menu':
+      case 'menu': {
         // Auf die Karte zurueck heisst: den Weg sehen, den man gerade gemacht
         // hat. Der Ausschnitt wird deshalb auf den *alten* Stand gesetzt und
         // die Figur laeuft von dort los — nicht umgekehrt.
-        this.toMenu(false);
-        this.karteLage = this.karteZiel = this.karteGrenzen(
-          (wanderung(this.standVorher, this.progress).von?.pos.y ?? this.karteMitte() + 0.5) - 0.5,
-        );
-        this.starteWanderung();
+        //
+        // Aber NUR nach einem Ergebnis. Vorher stand hier kein Vorbehalt, und
+        // der Spieltest hat gesagt, was das kostet: „nach Tueroeffnung und
+        // dann Optionen zur Levelauswahl huepft die Figur ab Level eins ueber
+        // die Weltkarte, das dauert sehr lange."
+        //
+        // Der Grund ist `standVorher`: Es wird allein in `finish()` gesetzt.
+        // Wer aus der PAUSE zur Karte geht, hat gerade kein Level beendet —
+        // der Vergleichsstand ist dann der von vor dem letzten abgeschlossenen
+        // Level oder, gleich nach dem Start, der leere. Aus dem leeren Stand
+        // gerechnet steht die Figur auf dem ersten Punkt der Karte, und sie
+        // laeuft brav jeden Halt bis zum heutigen ab. Ein Abbruch ist aber
+        // keine Wanderung: Man hat sich nicht bewegt.
+        const ausErgebnis = this.phase === 'result';
+        this.wanderWeg = [];
+        // Ohne Wanderung zentriert `toMenu` von selbst auf die Figur — genau
+        // das ist hier richtig, und es ist eine Zeile statt fuenf.
+        this.toMenu(!ausErgebnis);
+        if (ausErgebnis) {
+          this.karteLage = this.karteZiel = this.karteGrenzen(
+            (wanderung(this.standVorher, this.progress).von?.pos.y ?? this.karteMitte() + 0.5) -
+              0.5,
+          );
+          this.starteWanderung();
+        }
         break;
+      }
     }
   }
 

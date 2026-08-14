@@ -130,8 +130,29 @@ export function drawIntro(
       w: bw2,
       h: 46,
     };
+    // Der Rueckweg. Er stand hier nicht, und das war ein Fehler mit einer
+    // klaren Ansage aus dem Spieltest: „nachdem man ein Level gestartet hat,
+    // kann man vor Tueroeffnung nicht zurueck zur Levelauswahl."
+    //
+    // Der Befund stimmt doppelt: `drawIntro` gab genau EINEN Knopf zurueck,
+    // und `Game.buttons` wird davon vollstaendig ersetzt — auch der
+    // Pausenknopf der Kopfzeile war damit im Vorspann tot. Wer ein Level
+    // aufmacht und es sich anders ueberlegt, sass fest, bis er die Falltuer
+    // geoeffnet hatte. Ein Vorspann, der zum Nachdenken einlaedt, muss auch
+    // die Antwort „doch nicht dieses" zulassen.
+    //
+    // Er steht im selben freien Band wie der Los-Knopf und schmaler als er:
+    // Der eine ist die Absicht, der andere die Ausrede.
+    const zurueck: Button = {
+      id: 'menu',
+      x: btn.x + (bw2 - Math.min(bw2, 170)) / 2,
+      y: btn.y - 42,
+      w: Math.min(bw2, 170),
+      h: 34,
+    };
     button(ctx, btn, 'Los — Falltür öffnen', true);
-    return [btn];
+    button(ctx, zurueck, 'Zurück zur Levelauswahl');
+    return [btn, zurueck];
   }
 
   // Der Meisterschlüssel (Belohnung von Welt 4) legt die Musterlösungszahl
@@ -193,8 +214,19 @@ export function drawIntro(
     w: b.w - 60,
     h: 44,
   };
+  // Derselbe Rueckweg wie im Lesemodus — siehe dort, warum es ihn gibt. Er
+  // sitzt UNTER der Tafel und nicht darin: Die Tafel ist auf ihre Hoehe
+  // gerechnet, und ein zweiter Knopf darin haette den Hinweistext gedrueckt.
+  const zurueck: Button = {
+    id: 'menu',
+    x: b.x + 30,
+    y: b.y + b.h + 10,
+    w: b.w - 60,
+    h: 34,
+  };
   button(ctx, btn, 'Falltür öffnen', true);
-  return [btn];
+  button(ctx, zurueck, 'Zurück zur Levelauswahl');
+  return [btn, zurueck];
 }
 
 export function drawPause(ctx: CanvasRenderingContext2D, L: Layout): Button[] {
