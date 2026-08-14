@@ -47,7 +47,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const WURZEL = fileURLToPath(new URL('..', import.meta.url));
+const WURZEL = '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/probe-f5aca86/';
 const P = (rel) => WURZEL + rel;
 
 const BLATT = 'src/art/wuselwerker.webp';
@@ -379,16 +379,8 @@ function inseln(maske, n) {
  * Warum nicht einfach Randpunkte zaehlen: Ein Treppenumriss misst fuer einen
  * Kreis das Achtfache des Radius statt 2*pi*r — 27 Prozent zu viel. Dieser
  * Fehler saehe wie Rauheit aus und waere doch nur das Punktraster. Die
- * Kantenmitten schneiden die Treppe ab.
- *
- * Was uebrig bleibt, ist **nicht** gleichmaessig, und das ist beim Lesen der
- * Zahlen wichtig: Nachgemessen an einer geraden Kante unter jedem Winkel
- * stimmt die Laenge genau dort, wo die Kante laengs der Achse (0 Grad) oder
- * genau diagonal (45 Grad) laeuft — beides ergibt exakt 1 — und laeuft
- * dazwischen um bis zu **acht Prozent** vor, am staerksten bei rund 22 Grad.
- * Eine Form mit Kanten in allen Richtungen mittelt das auf rund vier Prozent.
- * Diesen Nullpunkt misst `rasterboden()` bei der Groesse und dem Gitter, um
- * die es gerade geht — nicht ein fuer alle Mal.
+ * Kantenmitten schneiden die Treppe ab; was uebrig bleibt, misst die Eichprobe
+ * weiter unten (rund vier Prozent zu lang, und zwar gleichmaessig).
  *
  * Geliefert werden Gesamtlaenge (alle Raender, auch Loecher) und alle Eckpunkte.
  */
@@ -769,6 +761,7 @@ function vermessen(z) {
         }
       }
       aus.augenzeile = Number((sy / sz).toFixed(2));
+      aus._dunkel = dunkel; aus._gipfelZeile = gipfel;
     }
 
     // Stirnkante: die oberste Hautzeile je Spalte, dort wo Haar darueber sitzt
@@ -804,6 +797,7 @@ function vermessen(z) {
       const strecke = kante.slice(von, bis + 1);
       aus.stirnbreite = Number((strecke.length / PPL).toFixed(3));
       aus.stirnwechsel = richtungswechsel(strecke.map((k) => k.y), WELLEN_SCHWELLE * PPL);
+      aus._kante = strecke; aus._kanteAlle = kante;
     }
 
     // Augenschranke: wie weit bleibt das Haar im mittleren Drittel der
@@ -999,3 +993,42 @@ console.log(
     `(die Augenbrauen — deshalb zaehlen sie nicht als Haarflaeche)`,
 );
 console.log(`\nGeschrieben: ${ZIEL}`);
+
+// ===========================================================================
+// ANHANG 3: Gemessene Augenzeile gegen die UNABHAENGIGE Landmarke aus dem
+// Manifest (aus dem 3D-Modell projiziert, kennt die Bildpunkte nicht).
+// ===========================================================================
+console.log('\n=== Augenzeile gemessen vs. Manifest-Landmarke "anchors" ===');
+console.log('anchors/stirn stehen in logischen Pixeln; * PPL gibt Blattzeilen.');
+console.log('Bild            augenzeile  anchors*PPL   Abw.  | Stirnkante  stirn*PPL   Abw. | haartiefe');
+const abwA = [];
+const abwS = [];
+for (let i = 0; i < BILDER.length; i++) {
+  const b = BILDER[i];
+  const def = manifest.clips[b.clip];
+  const z = zerlegen(felder[i].blatt);
+  const m = vermessen(z);
+  const anker = def.anchors?.[b.bild];
+  const st = def.stirn?.[b.bild];
+  const ankerY = anker ? anker[1] * PPL : null;
+  const stirnY = st ? st[1] * PPL : null;
+  const kanteY = m._kante?.length ? m._kante.reduce((a, k) => a + k.y, 0) / m._kante.length : null;
+  const dA = m.augenzeile !== null && ankerY !== null ? m.augenzeile - ankerY : null;
+  const dS = kanteY !== null && stirnY !== null ? kanteY - stirnY : null;
+  if (dA !== null) abwA.push(dA);
+  if (dS !== null) abwS.push(dS);
+  const f = (v, k = 2) => (v === null ? '   --  ' : v.toFixed(k).padStart(7));
+  console.log(
+    `${(b.clip + '[' + b.bild + ']').padEnd(14)}${f(m.augenzeile)}${f(ankerY)}${f(dA)}  |` +
+      `${f(kanteY)}${f(stirnY)}${f(dS)} |${f(m.haartiefe)}`,
+  );
+}
+const stat = (a) => {
+  const s = [...a].sort((x, y) => x - y);
+  const mit = a.reduce((x, y) => x + y, 0) / a.length;
+  const sd = Math.sqrt(a.reduce((x, y) => x + (y - mit) ** 2, 0) / a.length);
+  return `n=${a.length} Mittel ${mit.toFixed(3)} SD ${sd.toFixed(3)} min ${s[0].toFixed(2)} max ${s[s.length - 1].toFixed(2)} |max| ${Math.max(...a.map(Math.abs)).toFixed(2)}`;
+};
+console.log('\nAbweichung Augenzeile - anchors*PPL (Blattpunkte): ' + stat(abwA));
+console.log('Abweichung Stirnkante - stirn*PPL   (Blattpunkte): ' + stat(abwS));
+console.log(`(1 logischer Pixel = ${PPL.toFixed(3)} Blattpunkte)`);

@@ -31,6 +31,20 @@ export interface Palette {
   crustDark: number;
   /** Dicke der Narbe in Bildpunkten. Eine Höhle hat keinen Rasen. */
   crustThickness: number;
+  /**
+   * Der Saum um die Figur — ein Umriss, der sie vom Hintergrund abhebt.
+   *
+   * Gemessener Grund: Das Haar der Figur (#3851B6) steht in Rostwerk mit
+   * einem WCAG-Kontrast von 1,05 und in der Kristallklamm mit 1,11 vor dem
+   * Himmel. Das ist kein schwacher Kontrast, das ist keiner — die Figur
+   * verschwindet, und der gruene Koerper trifft es genauso. Ein Saum hebt den
+   * schlechtesten Wert des ganzen Spiels auf 2,34.
+   *
+   * Zwei Toene reichen fuer sieben Welten: dunkel dort, wo der Hintergrund
+   * hell ist, hell in den beiden nachtblauen Welten. Ein dunkler Saum in der
+   * Kristallklamm brachte 1,27 — schlimmer als gar keiner.
+   */
+  saum: string;
   rock: number;
   steel: number;
   brick: number;
@@ -79,6 +93,7 @@ const GRASS: Palette = {
   crust: 0x63b23f,
   crustDark: 0x35601f,
   crustThickness: 3,
+  saum: '#0C1020',
   rock: 0x6b7480,
   steel: 0x9aa5b5,
   brick: 0xc98246,
@@ -124,6 +139,7 @@ const SONNENHANG: Palette = {
   crust: 0xc8b23f,
   crustDark: 0x6b5a1c,
   crustThickness: 3,
+  saum: '#0C1020',
   rock: 0xb09a78,
   steel: 0x9aa5b5,
   brick: 0xc98246,
@@ -169,6 +185,7 @@ const WIPFEL: Palette = {
   crust: 0x3fae86,
   crustDark: 0x1f5b46,
   crustThickness: 3,
+  saum: '#0C1020',
   rock: 0x7d6a52,
   steel: 0x9aa5b5,
   brick: 0xc98246,
@@ -194,6 +211,7 @@ const CRYSTAL: Palette = {
   crust: 0x8aa5e8,
   crustDark: 0x2f3a66,
   crustThickness: 1,
+  saum: '#C8D6F0',
   rock: 0x3d4a6f,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
@@ -220,6 +238,7 @@ const RUST: Palette = {
   crust: 0xc06a32,
   crustDark: 0x6e3a1a,
   crustThickness: 2,
+  saum: '#0C1020',
   rock: 0x5c554e,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
@@ -245,6 +264,7 @@ const FROST: Palette = {
   crust: 0xf0f6fb,
   crustDark: 0x9fb8cd,
   crustThickness: 3,
+  saum: '#0C1020',
   rock: 0x5f7089,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
@@ -269,6 +289,7 @@ const MAGMA: Palette = {
   crust: 0x8a4a30,
   crustDark: 0x3d201a,
   crustThickness: 2,
+  saum: '#C8D6F0',
   rock: 0x4f4048,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,

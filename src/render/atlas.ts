@@ -304,11 +304,65 @@ export function frameFor(clip: ClipDef, timer: number): number {
   return clip.holds.length - 1;
 }
 
+/**
+ * Wie weit der Saum ueber die Figur hinaussteht, in Blattpunkten.
+ *
+ * Zwei sind bei einer Zelle von 112 Punkten und einer Figurenhoehe von 84
+ * gerade ein Viertel logischer Pixel — sichtbar als Trennung, zu wenig, um
+ * die Figur dicker zu machen.
+ */
+const SAUM_PX = 2;
+
 export class SpriteAtlas {
   constructor(
     readonly image: CanvasImageSource,
     readonly manifest: AtlasManifest,
   ) {}
+
+  /**
+   * Das Saumblatt: dasselbe Blatt, achtfach versetzt und einfarbig gefuellt.
+   *
+   * Es wird EINMAL je Weltwechsel gebaut, nicht je Figur. Der Unterschied ist
+   * nicht klein: Bei hundert Figuren im Bild waeren das hundert Blattkopien je
+   * Bild statt einer je Level.
+   */
+  private saumBlatt: HTMLCanvasElement | null = null;
+  private saumTon = '';
+
+  /**
+   * Den Saum setzen — die Farbe kommt aus der Palette der Welt.
+   *
+   * Warum es ihn gibt, steht bei `Palette.saum`: Ohne ihn steht die Figur in
+   * Rostwerk mit Kontrast 1,05 vor dem Himmel, also gar nicht.
+   */
+  setSaum(ton: string): void {
+    if (ton === this.saumTon) return;
+    this.saumTon = ton;
+    this.saumBlatt = null;
+    if (!ton) return;
+    const b = this.image as HTMLImageElement;
+    const w = b.naturalWidth || (b as unknown as HTMLCanvasElement).width;
+    const h = b.naturalHeight || (b as unknown as HTMLCanvasElement).height;
+    if (!w || !h) return;
+    const cv = document.createElement('canvas');
+    cv.width = w;
+    cv.height = h;
+    const cx = cv.getContext('2d');
+    if (!cx) return;
+    // Acht Versaetze: die vier Seiten und die vier Ecken. Nur vier Seiten
+    // liessen die Diagonalen offen, und ein Saum mit Loechern an den Ecken
+    // liest sich als Ausfransen.
+    for (const [dx, dy] of [
+      [-SAUM_PX, 0], [SAUM_PX, 0], [0, -SAUM_PX], [0, SAUM_PX],
+      [-SAUM_PX, -SAUM_PX], [SAUM_PX, -SAUM_PX], [-SAUM_PX, SAUM_PX], [SAUM_PX, SAUM_PX],
+    ]) {
+      cx.drawImage(this.image, dx, dy);
+    }
+    cx.globalCompositeOperation = 'source-in';
+    cx.fillStyle = ton;
+    cx.fillRect(0, 0, w, h);
+    this.saumBlatt = cv;
+  }
 
   has(clip: string): boolean {
     return clip in this.manifest.clips;
@@ -412,6 +466,26 @@ export class SpriteAtlas {
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     const lehne = clip.lehne ?? LEHNE[name] ?? 0;
     if (lehne) ctx.rotate(lehne);
+    // Der Saum zuerst — er liegt hinter der Figur.
+    //
+    // Mit GENAU demselben Zielrechteck wie das Blatt. Der Rand steckt schon im
+    // Saumblatt (achtfach versetzt gezeichnet); wer das Ziel zusaetzlich
+    // aufweitet, rechnet ihn ein zweites Mal und zieht ausserdem die ganze
+    // Figur groesser. Im ersten Versuch sah das aus wie ein aufgeklebter
+    // Aufkleber statt wie ein Umriss.
+    if (this.saumBlatt) {
+      ctx.drawImage(
+        this.saumBlatt,
+        frame * cw * ppl,
+        clip.row * ch * ppl,
+        cw * ppl,
+        ch * ppl,
+        -this.manifest.anchor.x * s,
+        -this.manifest.anchor.y * s,
+        cw * s,
+        ch * s,
+      );
+    }
     ctx.drawImage(
       this.image,
       frame * cw * ppl,

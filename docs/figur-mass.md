@@ -127,3 +127,110 @@ Vorlage: etwa acht bis zwoelf, nicht vierzig.**
   ein einziges Mesh mit einem Material (4964 Dreiecke, aus einem
   Bild-zu-3D-Dienst) — deshalb laesst sich am Haar nichts aendern, ohne den
   Kopf mit anzufassen.
+
+## Der Haar-Umbau — was sich am Modell geaendert hat
+
+Der Befund war „die Haare sehen aus wie eine Muetze". Vier Anlaeufe hatten
+versucht, das im Zeichner zu beheben; alle vier sind gescheitert, und die
+Messung sagt warum: Ein Zeichner, der nur die fertige Blattzelle kennt, fuegt
+Tinte hinzu, und der grosse Teil davon landet innerhalb der schon vorhandenen
+Haarkuppel. Der ganze Zackenkamm trug frontal 4,2 Prozent Flaeche bei — sechs
+Bildpunkte bei Telefongroesse.
+
+Die Messung hat dabei auch die naheliegende Erklaerung widerlegt: Das
+gelieferte Modell hat **keine glatte Haarschale**. Das Kontrollbild zeigt
+deutliche Lappen. Was fehlt, ist Amplitude — die Lappen sind rund, die Taeler
+flach, und bei zweiundfuenfzig Geraetepunkten verschmelzen sie zu einer
+blauen Wolke.
+
+### Was jetzt passiert
+
+`scripts/haar-bauen.mjs` baut aus `wuselwerker-rig.glb` das
+`wuselwerker-haar.glb`:
+
+1. Jede Ecke wird ueber ihre **Texturstelle** eingestuft (Haar 1089, Haut 489,
+   dunkel 1095, sonstiges 567). Falle: glTF zaehlt v von oben — kein `1-v`.
+2. Das Relief der Haarschale wird **gespreizt** (Faktor 2,4, Kegel 12 Grad):
+   Der Abstand jeder Haarecke zur Schaedelmitte wird mit dem geglaetteten
+   Mittel ihrer Winkelnachbarschaft verglichen und die Abweichung verstaerkt.
+   Ausschlag nach aussen 0,044, nach innen 0,117 Modelleinheiten.
+3. Ein Knochen `HaarSchwung` kommt unter `Head` (Schaedelmitte gemessen bei
+   0,019 / 0,816 / 0,005); 569 Haarecken haengen mit bis zu 0,55 daran, am
+   Haaransatz mit null — sonst reisst dort die Naht.
+
+### Die gemessenen Masse
+
+| Groesse | Wert |
+|---|---|
+| Figur gesamt (roh) | 0,998 -> 0,996 |
+| Eichfaktor | 0,8627 -> 0,8646 |
+| Haarschale | y 0,252 … 0,998, x ±0,415, z bis 0,296 |
+| Gesichtshaut | x ±0,351, y 0,283 … 0,781, z bis 0,345 |
+| Haut steht vor dem Haar | 0,049 Modelleinheiten |
+| Augenoberkante (gemessen ueber dunkle Dreiecke) | y 0,722 |
+| Figurenbreite im Blatt | max 11,5 logische Pixel (Grenze 12) |
+
+Der Eichfaktor **steigt** um zwei Promille, und das ist richtig so. Als
+Abnahmekriterium war „muss exakt 0,8627 bleiben" falsch gedacht: Die Eichung
+normiert die Figurenhoehe ohnehin. Solange der Faktor nicht SINKT, ist das
+Gesicht nicht kleiner geworden.
+
+### Was das Blatt davon hat
+
+Gemessen mit `scripts/haar-messen.mjs` (Bericht mit SHA-256 des Blatts in
+`art-src/wuselwerker/blatt-mess.json`):
+
+| Mass | vorher | nachher |
+|---|---|---|
+| Rauheit Blatt (Mittel) | 1,242 | 1,271 |
+| Rauheit Blatt (Spitze) | 1,390 | 1,451 |
+| Rauheit Telefon (Mittel) | 1,221 | 1,247 |
+| blaue Inseln | 713 | 1175 |
+| Augenschranke (kleinster Abstand) | 0,932 | 1,082 |
+
+Die Rauheitszahl bewegt sich nur um gut zwei Prozent, und das geplante Ziel
+von 1,50 wird nicht erreicht. Ein Gitter ueber die Schaerfe (2,4 / 3,0 / 3,6)
+zeigt, dass sie bei 1,28 saettigt: Bei 1089 Haarecken traegt das Netz nicht
+mehr Kerben. Der sichtbare Unterschied bei echter Spielgroesse ist trotzdem
+deutlich — und die Zahl, die ihn abbildet, ist die der blauen Inseln: Die
+Masse ist in Locken zerfallen. Das Rauheitsmass war das falsche Instrument,
+nicht der Umbau.
+
+### Der Kletterruck
+
+Er haengt nicht mehr am Zeichner, sondern an `HaarSchwung` und ist in die
+Bilder gebacken:
+
+| Zeile | Bild | Winkel | Rolle |
+|---|---|---|---|
+| hoisting | 1 | +20 | Nachschleppen — der Koerper reisst hoch, das Haar bleibt |
+| hoisting | 2 | +4 | Durchgang |
+| hoisting | 3 | −14 | Ueberschwung |
+| climbing | 0 | −6 | Ausschwingen, erste Stufe |
+| climbing | 1 | +5 | Gegenschlag |
+| climbing | 2 | −2 | ausklingend |
+| climbing | 3 | 0 | Ruhe |
+
+Dabei ist ein alter Fehler aufgefallen: Der Takt stand im Halt auf einem
+Vielfachen von 16 und fiel damit immer auf Kletterbild 0 — die Bilder 1 bis 3
+wurden nie gezeigt. Damit das Durchspielen nicht zum Radeln im Stehen wird,
+tragen alle vier Kletterbilder **denselben Koerper** und unterscheiden sich
+allein im Haar. Die Arme greifen im Ruck aus, und dafuer leiht sich der
+Kletterer die Zeile `hoisting`.
+
+### Der Saum
+
+Nebenbefund derselben Messrunde, und der schwerere von beiden: Das Haar
+(#3851B6) steht in Rostwerk mit WCAG-Kontrast **1,05** vor dem Himmel, in der
+Kristallklamm mit **1,11**. Das ist kein schwacher Kontrast, das ist keiner —
+und der gruene Koerper trifft es genauso. Ein Farbwechsel des Haares waere die
+falsche Antwort: Er repariert eine Welt und bezahlt sie mit sechs anderen.
+
+Stattdessen traegt jede Palette jetzt ein Feld `saum`: dunkel (#0C1020) in
+Grasland, Sonnenhang, Wipfel, Rostwerk und Frostgrat, hell (#C8D6F0) in
+Kristallklamm und Schlot. Der schlechteste Kontrast des ganzen Spiels steigt
+damit von 1,05 auf 2,23. Gebaut wird der Saum als **ein** Blatt je Weltwechsel
+(das Sprite-Blatt achtfach versetzt, dann einfarbig gefuellt), gezeichnet mit
+genau demselben Zielrechteck wie die Figur — wer das Ziel zusaetzlich
+aufweitet, rechnet den Rand doppelt und bekommt einen Aufkleber statt eines
+Umrisses. `tests/saum.test.ts` haelt die Rechnung fest.

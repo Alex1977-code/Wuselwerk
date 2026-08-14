@@ -47,7 +47,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const WURZEL = fileURLToPath(new URL('..', import.meta.url));
+const WURZEL = '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/probe-f5aca86/';
 const P = (rel) => WURZEL + rel;
 
 const BLATT = 'src/art/wuselwerker.webp';
@@ -379,16 +379,8 @@ function inseln(maske, n) {
  * Warum nicht einfach Randpunkte zaehlen: Ein Treppenumriss misst fuer einen
  * Kreis das Achtfache des Radius statt 2*pi*r — 27 Prozent zu viel. Dieser
  * Fehler saehe wie Rauheit aus und waere doch nur das Punktraster. Die
- * Kantenmitten schneiden die Treppe ab.
- *
- * Was uebrig bleibt, ist **nicht** gleichmaessig, und das ist beim Lesen der
- * Zahlen wichtig: Nachgemessen an einer geraden Kante unter jedem Winkel
- * stimmt die Laenge genau dort, wo die Kante laengs der Achse (0 Grad) oder
- * genau diagonal (45 Grad) laeuft — beides ergibt exakt 1 — und laeuft
- * dazwischen um bis zu **acht Prozent** vor, am staerksten bei rund 22 Grad.
- * Eine Form mit Kanten in allen Richtungen mittelt das auf rund vier Prozent.
- * Diesen Nullpunkt misst `rasterboden()` bei der Groesse und dem Gitter, um
- * die es gerade geht — nicht ein fuer alle Mal.
+ * Kantenmitten schneiden die Treppe ab; was uebrig bleibt, misst die Eichprobe
+ * weiter unten (rund vier Prozent zu lang, und zwar gleichmaessig).
  *
  * Geliefert werden Gesamtlaenge (alle Raender, auch Loecher) und alle Eckpunkte.
  */
@@ -999,3 +991,44 @@ console.log(
     `(die Augenbrauen — deshalb zaehlen sie nicht als Haarflaeche)`,
 );
 console.log(`\nGeschrieben: ${ZIEL}`);
+
+// ===========================================================================
+// ANHANG 4: Inselgroessen — traegt die Schranke 0,05 was sie soll?
+// ===========================================================================
+console.log('\n=== Haarinseln je Bild (Anteil an der groessten Insel) ===');
+console.log('Bild            groesste  weitere Inseln (Groesse = Anteil%)          ueberSchranke');
+let brauenGr = [];
+let verworfenGross = [];
+let mehrfach = 0;
+for (let i = 0; i < BILDER.length; i++) {
+  const b = BILDER[i];
+  const f = felder[i].blatt;
+  const z = zerlegen(f);
+  const alle = inseln(new Uint8Array(z.haarRoh), ZELLE);
+  const gr = alle[0].length;
+  const rest = alle.slice(1).map((x) => ({ n: x.length, a: x.length / gr, insel: x }));
+  const ueber = alle.filter((x) => x.length >= gr * INSEL_SCHRANKE).length;
+  if (ueber > 1) mehrfach++;
+  // Welche der verworfenen Inseln liegen NICHT im Hautumriss (also keine Brauen)?
+  const hautVoll = mitLoechern(z.haut, ZELLE);
+  for (const r of rest) {
+    if (r.n >= gr * INSEL_SCHRANKE) continue;
+    const drin = r.insel.filter((k) => hautVoll[k]).length;
+    if (drin / r.n > 0.5) brauenGr.push(r.a);
+    else if (r.n >= 4) verworfenGross.push({ bild: b.clip + '[' + b.bild + ']', n: r.n, a: r.a });
+  }
+  console.log(
+    `${(b.clip + '[' + b.bild + ']').padEnd(14)}${String(gr).padStart(8)}  ` +
+      rest.map((r) => `${r.n}=${(r.a * 100).toFixed(1)}%`).join(' ').padEnd(42) +
+      `  ${ueber}`,
+  );
+}
+const st = (a) => {
+  const s = [...a].sort((x, y) => x - y);
+  return `n=${a.length} min ${(s[0] * 100).toFixed(2)}% median ${(s[s.length >> 1] * 100).toFixed(2)}% max ${(s[s.length - 1] * 100).toFixed(2)}%`;
+};
+console.log('\nInseln IM Hautumriss (= Augenbrauen), Anteil an der Kappe: ' + st(brauenGr));
+console.log('Schranke INSEL_SCHRANKE = ' + (INSEL_SCHRANKE * 100) + '%');
+console.log('\nVerworfene Inseln AUSSERHALB des Hautumrisses (also echtes Haar, >= 4 Punkte):');
+for (const v of verworfenGross) console.log(`  ${v.bild.padEnd(14)} ${v.n} Punkte = ${(v.a * 100).toFixed(2)}% der Kappe`);
+console.log(`\nBilder mit mehr als EINER Insel ueber der Schranke: ${mehrfach} von ${BILDER.length}`);

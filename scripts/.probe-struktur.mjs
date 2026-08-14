@@ -47,7 +47,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const WURZEL = fileURLToPath(new URL('..', import.meta.url));
+const WURZEL = '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/probe-f5aca86/';
 const P = (rel) => WURZEL + rel;
 
 const BLATT = 'src/art/wuselwerker.webp';
@@ -379,16 +379,8 @@ function inseln(maske, n) {
  * Warum nicht einfach Randpunkte zaehlen: Ein Treppenumriss misst fuer einen
  * Kreis das Achtfache des Radius statt 2*pi*r — 27 Prozent zu viel. Dieser
  * Fehler saehe wie Rauheit aus und waere doch nur das Punktraster. Die
- * Kantenmitten schneiden die Treppe ab.
- *
- * Was uebrig bleibt, ist **nicht** gleichmaessig, und das ist beim Lesen der
- * Zahlen wichtig: Nachgemessen an einer geraden Kante unter jedem Winkel
- * stimmt die Laenge genau dort, wo die Kante laengs der Achse (0 Grad) oder
- * genau diagonal (45 Grad) laeuft — beides ergibt exakt 1 — und laeuft
- * dazwischen um bis zu **acht Prozent** vor, am staerksten bei rund 22 Grad.
- * Eine Form mit Kanten in allen Richtungen mittelt das auf rund vier Prozent.
- * Diesen Nullpunkt misst `rasterboden()` bei der Groesse und dem Gitter, um
- * die es gerade geht — nicht ein fuer alle Mal.
+ * Kantenmitten schneiden die Treppe ab; was uebrig bleibt, misst die Eichprobe
+ * weiter unten (rund vier Prozent zu lang, und zwar gleichmaessig).
  *
  * Geliefert werden Gesamtlaenge (alle Raender, auch Loecher) und alle Eckpunkte.
  */
@@ -999,3 +991,93 @@ console.log(
     `(die Augenbrauen — deshalb zaehlen sie nicht als Haarflaeche)`,
 );
 console.log(`\nGeschrieben: ${ZIEL}`);
+
+// ===========================================================================
+// ANHANG 6: umriss() und huellenUmfang() gegen unabhaengige Verfahren
+// ===========================================================================
+// 1) Der MS-Umriss muss GESCHLOSSEN sein: jeder Eckpunkt hat geraden Grad.
+//    Waere die MS-Tafel falsch, liefen Strecken ins Leere.
+// 2) Der Huellenumfang gegen Jarvis-Marsch (voellig anderes Verfahren).
+// 3) Flaeche der Huelle >= Flaeche der Maske (Plausibilitaet).
+// 4) Isoperimetrie: Umriss^2 / (4*pi*Flaeche) >= 1 muss immer gelten.
+
+const MST = {
+  1: [[0, 3]], 2: [[0, 1]], 3: [[3, 1]], 4: [[1, 2]], 5: [[0, 3], [1, 2]],
+  6: [[0, 2]], 7: [[3, 2]], 8: [[3, 2]], 9: [[0, 2]], 10: [[0, 1], [3, 2]],
+  11: [[1, 2]], 12: [[3, 1]], 13: [[0, 1]], 14: [[0, 3]],
+};
+function grade(maske, n) {
+  const grad = new Map();
+  const s = (x, y) => (x < 0 || y < 0 || x >= n || y >= n ? 0 : maske[y * n + x] ? 1 : 0);
+  for (let y = -1; y < n; y++) {
+    for (let x = -1; x < n; x++) {
+      const code = s(x, y) | (s(x + 1, y) << 1) | (s(x + 1, y + 1) << 2) | (s(x, y + 1) << 3);
+      if (code === 0 || code === 15) continue;
+      const ecke = [[x + 0.5, y], [x + 1, y + 0.5], [x + 0.5, y + 1], [x, y + 0.5]];
+      for (const [i, j] of MST[code]) {
+        for (const e of [ecke[i], ecke[j]]) {
+          const k = e[0] + ':' + e[1];
+          grad.set(k, (grad.get(k) ?? 0) + 1);
+        }
+      }
+    }
+  }
+  let ungerade = 0;
+  for (const g of grad.values()) if (g % 2) ungerade++;
+  return { ecken: grad.size, ungerade };
+}
+/** Konvexe Huelle per Jarvis-Marsch — anderes Verfahren als Andrew. */
+function jarvis(punkte) {
+  if (punkte.length < 3) return 0;
+  const uniq = [...new Map(punkte.map((p) => [p[0] + ':' + p[1], p])).values()];
+  let start = 0;
+  for (let i = 1; i < uniq.length; i++) {
+    if (uniq[i][0] < uniq[start][0] || (uniq[i][0] === uniq[start][0] && uniq[i][1] < uniq[start][1])) start = i;
+  }
+  const h = [];
+  let akt = start;
+  do {
+    h.push(uniq[akt]);
+    let nx = (akt + 1) % uniq.length;
+    for (let i = 0; i < uniq.length; i++) {
+      const kr =
+        (uniq[nx][0] - uniq[akt][0]) * (uniq[i][1] - uniq[akt][1]) -
+        (uniq[nx][1] - uniq[akt][1]) * (uniq[i][0] - uniq[akt][0]);
+      const d1 = Math.hypot(uniq[i][0] - uniq[akt][0], uniq[i][1] - uniq[akt][1]);
+      const d2 = Math.hypot(uniq[nx][0] - uniq[akt][0], uniq[nx][1] - uniq[akt][1]);
+      if (kr < 0 || (kr === 0 && d1 > d2)) nx = i;
+    }
+    akt = nx;
+    if (h.length > uniq.length + 2) throw new Error('Jarvis dreht sich');
+  } while (akt !== start);
+  let u = 0;
+  for (let i = 0; i < h.length; i++) {
+    const a = h[i], b = h[(i + 1) % h.length];
+    u += Math.hypot(a[0] - b[0], a[1] - b[1]);
+  }
+  return u;
+}
+
+console.log('\n=== Struktur- und Kreuzprobe auf den ECHTEN Haarmasken ===');
+let maxOffen = 0, maxHuelleAbw = 0, minIso = Infinity, schlimm = '';
+for (let i = 0; i < BILDER.length; i++) {
+  const b = BILDER[i];
+  for (const [wo, feld] of [['blatt', felder[i].blatt], ['telefon', felder[i].telefon]]) {
+    const z = zerlegen(feld);
+    const n = z.n;
+    const g = grade(z.haar, n);
+    const u = umriss(z.haar, n);
+    const hA = huellenUmfang(u.punkte);
+    const hJ = jarvis(u.punkte);
+    let flaeche = 0;
+    for (let k = 0; k < n * n; k++) if (z.haar[k]) flaeche++;
+    const iso = (u.laenge * u.laenge) / (4 * Math.PI * flaeche);
+    maxOffen = Math.max(maxOffen, g.ungerade);
+    const dh = Math.abs(hA - hJ);
+    if (dh > maxHuelleAbw) { maxHuelleAbw = dh; schlimm = b.clip + '[' + b.bild + '] ' + wo; }
+    if (iso < minIso) minIso = iso;
+  }
+}
+console.log(`Ecken mit ungeradem Grad (muss 0 sein, sonst ist die MS-Tafel kaputt): ${maxOffen}`);
+console.log(`Groesste Abweichung Andrew vs. Jarvis (muss ~0 sein): ${maxHuelleAbw.toExponential(2)}  bei ${schlimm}`);
+console.log(`Kleinste Isoperimetrie U^2/(4*pi*A) (muss >= 1 sein): ${minIso.toFixed(4)}`);

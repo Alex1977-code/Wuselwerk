@@ -300,7 +300,10 @@ export class Game {
     const img = await loadImage(src.url);
     if (!img) return;
     this.atlas = new SpriteAtlas(img, src.manifest);
-    if (this.scene) this.scene.atlas = this.atlas;
+    if (this.scene) {
+      this.scene.atlas = this.atlas;
+      this.atlas.setSaum(this.scene.palette.saum);
+    }
   }
 
   start(): void {
@@ -337,6 +340,10 @@ export class Game {
     this.terrainView = new TerrainView(this.world.terrain, level.theme);
     this.scene = new Scene(level, this.terrainView);
     this.scene.atlas = this.atlas;
+    // Der Saum der Welt. Er haengt an der Palette und nicht an der Figur: In
+    // zwei der sieben Welten steht die Figur sonst mit einem Kontrast von 1,05
+    // vor dem Himmel — also gar nicht (siehe `Palette.saum`).
+    this.atlas?.setSaum(this.scene.palette.saum);
     this.knarrte = false;
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
     // Die Level-Id geht mit: Jedes Level hat sein eigenes Stueck aus der

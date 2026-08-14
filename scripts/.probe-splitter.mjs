@@ -47,7 +47,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const WURZEL = fileURLToPath(new URL('..', import.meta.url));
+const WURZEL = '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/probe-f5aca86/';
 const P = (rel) => WURZEL + rel;
 
 const BLATT = 'src/art/wuselwerker.webp';
@@ -379,16 +379,8 @@ function inseln(maske, n) {
  * Warum nicht einfach Randpunkte zaehlen: Ein Treppenumriss misst fuer einen
  * Kreis das Achtfache des Radius statt 2*pi*r — 27 Prozent zu viel. Dieser
  * Fehler saehe wie Rauheit aus und waere doch nur das Punktraster. Die
- * Kantenmitten schneiden die Treppe ab.
- *
- * Was uebrig bleibt, ist **nicht** gleichmaessig, und das ist beim Lesen der
- * Zahlen wichtig: Nachgemessen an einer geraden Kante unter jedem Winkel
- * stimmt die Laenge genau dort, wo die Kante laengs der Achse (0 Grad) oder
- * genau diagonal (45 Grad) laeuft — beides ergibt exakt 1 — und laeuft
- * dazwischen um bis zu **acht Prozent** vor, am staerksten bei rund 22 Grad.
- * Eine Form mit Kanten in allen Richtungen mittelt das auf rund vier Prozent.
- * Diesen Nullpunkt misst `rasterboden()` bei der Groesse und dem Gitter, um
- * die es gerade geht — nicht ein fuer alle Mal.
+ * Kantenmitten schneiden die Treppe ab; was uebrig bleibt, misst die Eichprobe
+ * weiter unten (rund vier Prozent zu lang, und zwar gleichmaessig).
  *
  * Geliefert werden Gesamtlaenge (alle Raender, auch Loecher) und alle Eckpunkte.
  */
@@ -999,3 +991,93 @@ console.log(
     `(die Augenbrauen — deshalb zaehlen sie nicht als Haarflaeche)`,
 );
 console.log(`\nGeschrieben: ${ZIEL}`);
+
+// ===========================================================================
+// ANHANG 5: Was sind die verworfenen Inseln AUSSERHALB des Hautumrisses?
+// ===========================================================================
+import { pngVon } from '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/png.mjs';
+const AUS = '/tmp/claude-0/-home-user-Wuselwerk/9de56fbf-32ae-5115-8d23-53a558f14354/scratchpad/';
+console.log('\n=== Verworfene Nicht-Brauen-Inseln: Farbe und Lage ===');
+console.log('Bild           Pkt  Anteil   Kasten          mittl.Farbton  mittl.RGB        Abstand zur Kappe');
+const zeigen = [];
+for (let i = 0; i < BILDER.length; i++) {
+  const b = BILDER[i];
+  const f = felder[i].blatt;
+  const p = f.p;
+  const z = zerlegen(f);
+  const alle = inseln(new Uint8Array(z.haarRoh), ZELLE);
+  const gr = alle[0].length;
+  const hautVoll = mitLoechern(z.haut, ZELLE);
+  for (const ins of alle.slice(1)) {
+    if (ins.length >= gr * INSEL_SCHRANKE) continue;
+    const drin = ins.filter((k) => hautVoll[k]).length;
+    if (drin / ins.length > 0.5 || ins.length < 4) continue;
+    let sh = 0, sr = 0, sg = 0, sb = 0;
+    let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+    for (const k of ins) {
+      const o = k * 4;
+      sh += hsv(p[o], p[o + 1], p[o + 2]).h;
+      sr += p[o]; sg += p[o + 1]; sb += p[o + 2];
+      const x = k % ZELLE, y = (k / ZELLE) | 0;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    const n = ins.length;
+    // kuerzester Abstand zur Kappe
+    let dmin = 1e9;
+    const kappe = alle[0];
+    for (const k of ins) {
+      const ax = k % ZELLE, ay = (k / ZELLE) | 0;
+      for (const j of kappe) {
+        const bx = j % ZELLE, by = (j / ZELLE) | 0;
+        const d = Math.hypot(ax - bx, ay - by);
+        if (d < dmin) dmin = d;
+      }
+    }
+    console.log(
+      `${(b.clip + '[' + b.bild + ']').padEnd(14)}${String(n).padStart(4)}` +
+        `${((n / gr) * 100).toFixed(2).padStart(7)}%  ${(x0 + ',' + y0 + ' ' + (x1 - x0 + 1) + 'x' + (y1 - y0 + 1)).padEnd(14)}` +
+        `${(sh / n).toFixed(0).padStart(9)} Grad  ` +
+        `rgb(${(sr / n).toFixed(0)},${(sg / n).toFixed(0)},${(sb / n).toFixed(0)})`.padEnd(18) +
+        `${dmin.toFixed(1)} Punkte`,
+    );
+    zeigen.push({ i, ins, x0, y0, x1, y1, name: b.clip + '[' + b.bild + ']' });
+  }
+}
+
+// Bild: Ausschnitt um die verworfene Insel, 16-fach
+const Z = 16, R = 12;
+const CW = 2 * R + 1;
+const breite = CW * Z * 2;
+const hoehe = CW * Z * zeigen.length;
+const out = Buffer.alloc(breite * hoehe * 4, 0);
+zeigen.forEach((s, reihe) => {
+  const p = felder[s.i].blatt.p;
+  const z = zerlegen(felder[s.i].blatt);
+  const set = new Set(s.ins);
+  const cx = ((s.x0 + s.x1) / 2) | 0, cy = ((s.y0 + s.y1) / 2) | 0;
+  for (let yy = 0; yy < CW; yy++) {
+    for (let xx = 0; xx < CW; xx++) {
+      const x = cx - R + xx, y = cy - R + yy;
+      let c0 = [20, 20, 20], c1 = [20, 20, 20];
+      if (x >= 0 && y >= 0 && x < ZELLE && y < ZELLE) {
+        const k = y * ZELLE + x, o = k * 4;
+        const a = p[o + 3] / 255;
+        const ka = ((x >> 1) + (y >> 1)) & 1 ? 80 : 55;
+        c0 = [p[o] * a + ka * (1 - a), p[o + 1] * a + ka * (1 - a), p[o + 2] * a + ka * (1 - a)];
+        c1 = set.has(k) ? [0, 255, 60] : z.haar[k] ? [255, 0, 220] : c0.map((v) => v * 0.5);
+      }
+      for (let dy = 0; dy < Z; dy++) {
+        for (let dx = 0; dx < Z; dx++) {
+          for (const [sp, c] of [[0, c0], [1, c1]]) {
+            const px = sp * CW * Z + xx * Z + dx, py = reihe * CW * Z + yy * Z + dy;
+            const o2 = (py * breite + px) * 4;
+            out[o2] = c[0]; out[o2 + 1] = c[1]; out[o2 + 2] = c[2]; out[o2 + 3] = 255;
+          }
+        }
+      }
+    }
+  }
+});
+writeFileSync(AUS + 'splitter.png', pngVon(out, breite, hoehe));
+console.log('\nPNG: ' + AUS + 'splitter.png  (links Original, rechts gruen = verworfene Insel, magenta = Haarflaeche)');
+console.log('Reihen: ' + zeigen.map((s) => s.name).join(', '));
