@@ -9,3 +9,10 @@ art-src/ansichten/
 
 # Kontrollbilder einzelner Zustände — entstehen mit `bake-atlas.mjs --clip <name>`
 art-src/proben/
+
+# Wegwerf-Messdateien. Eine Levelmessung braucht eine Harnischdatei, die den
+# Lauf aufsetzt, Zahlen ausgibt und danach nichts mehr wert ist — die
+# Hausregel lautet seit der ersten Messrunde, dass sie nie eingecheckt wird.
+# Sie stand bisher nur in Kommentaren und Auftraegen; jetzt steht sie hier,
+# denn eine Regel, an die sich jeder erinnern muss, ist keine.
+tests/.debug-*.test.ts
