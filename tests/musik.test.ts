@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { ARPEGGIO, BASSFIGUR, PULS, STUECKE } from '../src/audio/music';
+import {
+  ARPEGGIO,
+  BASSFIGUR,
+  DURCHGAENGE,
+  HARMONIE_STELLEN,
+  PULS,
+  STUECKE,
+} from '../src/audio/music';
+import { farbTon, pruefe, stueckFuer, zaehler } from '../src/audio/musikbau';
+import { LEVELS } from '../src/levels';
+import type { ThemeId } from '../src/levels/types';
 
 /**
  * Pruefungen am Notentext, nicht am Klang.
@@ -10,9 +20,25 @@ import { ARPEGGIO, BASSFIGUR, PULS, STUECKE } from '../src/audio/music';
  * still kaputt — ein Takt mit neun Achteln verschiebt die Melodie fuer immer
  * gegen die Akkorde, und man hoert nur, dass etwas nicht stimmt, ohne zu
  * wissen, was.
+ *
+ * ## Zwei Sorten Stuecke, und beide werden hier geprueft
+ *
+ * `STUECKE` haelt die abgenommenen **Weltstuecke** — eines je Thema. Sie sind
+ * der Rueckfall (Weltkarte, Vorspann, unbekanntes Level) und die Vorlage, aus
+ * der die Motivfamilien gewonnen wurden. Was im Spiel wirklich laeuft, ist das
+ * **Levelstueck** aus `musikbau.ts`: dieselbe Familie, je Level anders montiert.
+ *
+ * Die Pruefungen der ersten Haelfte gelten den Weltstuecken und sind
+ * absichtlich von Hand ausgeschrieben; die der zweiten Haelfte laufen ueber
+ * **alle gebauten Level** und benutzen `pruefe()` aus dem Baukasten. Eine
+ * einzelne Melodie kann man von Hand ansehen; siebzig kann man nur noch
+ * gegenrechnen.
  */
 
 const TAKT = 8;
+const kl = (t: number) => ((t % 12) + 12) % 12;
+/** Alle Themen, die es gibt — die Weltstuecke sind darueber verschluesselt. */
+const THEMEN = Object.keys(STUECKE) as ThemeId[];
 
 describe('Die laufende Sechzehntelfigur', () => {
   it('meidet die Terz', () => {
@@ -30,6 +56,10 @@ describe('Die laufende Sechzehntelfigur', () => {
     // 800 Hz bis 3 kHz gehoert der Melodie. Eine Begleitfigur, die dort
     // mitspielt, zwingt einen dazu, die Melodie lauter zu drehen — und dann ist
     // alles zu laut.
+    //
+    // Gemessen wird hier an den **Weltstuecken** und an der abgenommenen Figur.
+    // Dieselbe Aussage ueber alle montierten Levelstuecke und ueber alle vier
+    // Figuren der Bank steht weiter unten („Ein eigenes Stueck je Level").
     let hoechste = 0;
     for (const p of Object.values(STUECKE)) {
       const wurzel = Math.max(...p.akkorde);
@@ -220,4 +250,281 @@ describe('Notentext der Begleitmusik', () => {
       });
     });
   }
+});
+
+/**
+ * Ein eigenes Stueck je Level (`src/audio/musikbau.ts`).
+ *
+ * ## Warum hier anders geprueft wird als oben
+ *
+ * Ueber den Weltstuecken steht eine Abnahme: Ein Mensch hat sie gehoert und
+ * „melodie passt, merken" gesagt. Ueber einem montierten Stueck kann das
+ * niemand sagen, weil es siebzig davon gibt und morgen hundert. An deren Stelle
+ * tritt die **Bauart**: Die Bausteine sind einzeln abgenommen (Eintrag 0 jeder
+ * Tabelle stammt aus dem Weltstueck), und `pruefe()` haelt jedes fertige Stueck
+ * gegen dieselben Gesetze, die `docs/musik-abnahme.md` und
+ * `docs/klangdesign.md` festhalten.
+ *
+ * Deshalb laufen diese Pruefungen ueber **alle gebauten Level** und nicht ueber
+ * eine Auswahl. Eine Auswahl waere hier wertlos: Der Fehler, den es zu fangen
+ * gilt, trifft nicht „die Musik", sondern genau ein Level — und man merkt es
+ * beim Spielen dieses einen Levels.
+ */
+describe('Ein eigenes Stueck je Level', () => {
+  /** Alles einmal montieren; die Pruefungen darunter lesen nur noch. */
+  const stuecke = LEVELS.map((lv) => ({ lv, p: stueckFuer(lv.id, lv.theme) }));
+
+  it('haelt an jedem gebauten Level jedes Gesetz der Klangschicht', () => {
+    // Die Sammelpruefung. Sie sagt zu jedem Verstoss, welches Gesetz gebrochen
+    // ist (A1, B1..B8, C9..C11, E3, F2, F3, F6) — nachzulesen in `pruefe()`.
+    // Faellt hier etwas um, ist es kein Geschmacksurteil, sondern eine
+    // Zusage, an der eine andere Schicht haengt.
+    const befunde = stuecke
+      .map(({ lv, p }) => ({ id: lv.id, fe: pruefe(p) }))
+      .filter((x) => x.fe.length);
+    expect(
+      befunde.map((x) => `${x.id}: ${x.fe.join(', ')}`),
+      `${befunde.length} von ${stuecke.length} Leveln mit Befund`,
+    ).toEqual([]);
+  });
+
+  it('erzeugt zu einer Level-Id immer dasselbe Stueck', () => {
+    // Die Erzeugung darf keinen Zufall enthalten — sonst klingt ein Level bei
+    // jedem Start anders, und der Spieler kann sich an nichts erinnern.
+    // `Math.random` waere im Klang grundsaetzlich erlaubt (die Simulation ist
+    // deterministisch, der Klang muss es nicht sein); an DIESER Stelle waere er
+    // aber der Unterschied zwischen einem Stueck und einem Geraeusch.
+    //
+    // Tief verglichen, nicht nur die Melodie: Auch Kadenz, Farbe, Stimmen,
+    // Figur und Bogenplan muessen wiederkommen.
+    for (const { lv, p } of stuecke) {
+      expect(stueckFuer(lv.id, lv.theme), `"${lv.id}" klingt beim zweiten Mal anders`).toEqual(p);
+    }
+  });
+
+  /**
+   * Und keinem Level im GANZEN Spiel dasselbe wie einem anderen.
+   *
+   * Der Test je Welt reicht nicht, und das ist gemessen: Drei Welten teilen
+   * die gruene Motivfamilie, und ohne `THEMA_VERSATZ` standen w1-01 und w6-01
+   * auf demselben Punkt des Notenraums — gleicher Notentext, gleiche Kadenz,
+   * nur andere Tonart. Ein Test, der nur innerhalb der Welt vergleicht, sieht
+   * das nie.
+   */
+  it('gibt keinen zwei Leveln im ganzen Spiel dasselbe Stueck', () => {
+    const gesehen = new Map<string, string>();
+    for (const lv of LEVELS) {
+      const p = stueckFuer(lv.id, lv.theme);
+      const schluessel = JSON.stringify([p.melodie, p.akkorde, p.farbe]);
+      const alt = gesehen.get(schluessel);
+      expect(alt, `${lv.id} klingt wie ${alt}`).toBeUndefined();
+      gesehen.set(schluessel, lv.id);
+    }
+    expect(gesehen.size).toBe(LEVELS.length);
+  });
+
+  it('gibt keinen zwei Leveln derselben Welt dasselbe Stueck', () => {
+    // Der Sinn des ganzen Verfahrens. Zwei Level einer Welt mit demselben
+    // Notentext waeren der Zustand von vorher, nur teurer.
+    //
+    // Verglichen werden Melodie UND Kadenz, also der Notentext. Zwei gleiche
+    // Melodien mit verschiedener Figur waeren fuer das Ohr dasselbe Stueck.
+    const gesehen = new Map<string, string>();
+    const doppelt: string[] = [];
+    for (const { lv, p } of stuecke) {
+      const schluessel = `${lv.theme}|${JSON.stringify(p.melodie)}|${JSON.stringify(p.akkorde)}`;
+      const vorher = gesehen.get(schluessel);
+      if (vorher) doppelt.push(`${lv.id} klingt wie ${vorher}`);
+      else gesehen.set(schluessel, lv.id);
+    }
+    expect(doppelt).toEqual([]);
+  });
+
+  it('haelt die Begleitung jedes Levels unter dem Fenster der Melodie', () => {
+    // Dieselbe Aussage wie oben bei der Sechzehntelfigur, nur ueber alle Level:
+    // Die Maschine bleibt **unter** 800 Hz, das Fenster darueber gehoert der
+    // Melodie. Neu daran ist, dass jetzt jedes Level seine eigene Kadenz, seine
+    // eigene Figur und seine eigene Flaechenfarbe mitbringt — die Rechnung ist
+    // also nicht mehr einmal zu machen, sondern siebzigmal.
+    //
+    // Drei Groessen, und alle drei sind Rechenwege und keine Schaetzungen:
+    //
+    // 1. Die Sechzehntelfigur, hoechste Akkordwurzel plus hoechster Figurton.
+    // 2. Die Flaeche, hoechster Farbton ueber der hoechsten Wurzel — und einen
+    //    Halbton hoeher, weil im Endspurt alles hochgeschoben wird.
+    // 3. Die Oktavdopplung der Melodie im vierten Umlauf, die von oben an das
+    //    Fenster stoesst und unter 3 kHz bleiben muss.
+    //
+    // Was hier NICHT geprueft wird: dass die Melodie durchweg ueber 800 Hz
+    // liegt. Ihre tiefsten Toene liegen darunter (die Wiese faengt bei 523 Hz
+    // an), und das ist so gewollt — die Zusage lautet, dass die Begleitung
+    // nicht ins Melodiefenster hineinspielt, nicht umgekehrt.
+    for (const { lv, p } of stuecke) {
+      const hoch = Math.max(...p.akkorde);
+      const figur = p.grund * Math.pow(2, (hoch + Math.max(...(p.arpeggio ?? ARPEGGIO))) / 12);
+      expect(figur, `Figur in "${lv.id}" bei ${figur.toFixed(0)} Hz`).toBeLessThan(800);
+
+      let farbSpitze = hoch;
+      for (const wurzel of p.akkorde) {
+        for (const stufe of p.farbe) {
+          farbSpitze = Math.max(farbSpitze, farbTon(wurzel, stufe, p.leiter));
+        }
+      }
+      const flaeche = p.grund * Math.pow(2, (farbSpitze + 1) / 12);
+      expect(flaeche, `Flaeche in "${lv.id}" bei ${flaeche.toFixed(0)} Hz`).toBeLessThan(800);
+
+      const toene = p.melodie.map(([t]) => t).filter((t): t is number => t !== null);
+      const spitze = p.grund * Math.pow(2, Math.max(...toene) / 12 + 2);
+      expect(spitze, `Oktavdopplung in "${lv.id}" bei ${spitze.toFixed(0)} Hz`).toBeLessThan(3000);
+    }
+  });
+
+  it('stimmt die Geraeusche jedes Levels auf Toene, die dessen Melodie benutzt', () => {
+    // Dieselbe Pruefung wie fuer die Weltstuecke oben — und hier ist sie keine
+    // Formalie mehr, sondern der Grund fuer eine Regel in der Montage
+    // (`deckt`): Die Geraeuschleiter ist je WELT fest, die Melodie wechselt je
+    // Level. Ein montiertes Stueck, dem eine Stufe der Leiter fehlt, laesst
+    // jedes Spielgeraeusch neben seiner eigenen Musik stehen.
+    //
+    // Gemessen wird am gebauten Notentext, nicht an einer Tabelle: Eine Tabelle
+    // koennte falsch sein, ohne dass es auffaellt.
+    for (const { lv, p } of stuecke) {
+      const inDerMelodie = new Set(
+        p.melodie
+          .map(([ton]) => ton)
+          .filter((t): t is number => t !== null)
+          .map(kl),
+      );
+      for (const stufe of p.sfxStufen) {
+        expect(
+          inDerMelodie.has(kl(stufe)),
+          `Geraeuschstufe ${stufe} fehlt in der Melodie von "${lv.id}"`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('laesst keinen Ton der Harmoniespur ausserhalb des Modus liegen', () => {
+    // **Der Test zum gemessenen Befund.**
+    //
+    // Die Flaeche und die gezupfte Harmonie spielen je Takt die Akkordwurzel
+    // und darueber die Farbtoene. Solange die Farbe ein festes Halbtonintervall
+    // war, war sie nur ueber der Tonika richtig — ueber jeder anderen Wurzel
+    // fiel sie aus der Tonart. Seit sie in LEITERSTUFEN zaehlt (`farbTon`),
+    // kann das nicht mehr vorkommen; dieser Test ist der Nagel, der es
+    // festhaelt.
+    //
+    // Geprueft werden Welt- und Levelstuecke: Der Fehler sass in den
+    // Weltstuecken, und die Levelstuecke erben ihre Farben aus derselben Bank.
+    const alle = [
+      ...THEMEN.map((th) => ({ name: th, p: STUECKE[th] })),
+      ...stuecke.map(({ lv, p }) => ({ name: lv.id, p })),
+    ];
+    for (const { name, p } of alle) {
+      for (const wurzel of p.akkorde) {
+        for (const stufe of p.farbe) {
+          const halbton = farbTon(wurzel, stufe, p.leiter);
+          expect(
+            p.leiter.includes(kl(halbton)),
+            `"${name}": Stufe ${stufe} ueber der Wurzel ${wurzel} ergibt ${kl(halbton)} — nicht im Modus [${p.leiter}]`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('haelt fest, was die feste Halbtonfarbe angestellt hatte', () => {
+    // Der Befund in Zahlen, damit er nicht als Behauptung im Kommentar steht.
+    //
+    // Nachgerechnet wird die alte Lesart: dieselbe Farbe, aber als festes
+    // Halbtonintervall ueber jeder Akkordwurzel — genau das, was bis zum Umbau
+    // in `STUECKE.farbe` stand (`leiter[stufe]` ist die Umrechnung zurueck).
+    // Gezaehlt werden die Takte, in denen dabei ein modusfremder Ton entstand.
+    // Er lief zweimal je Takt, im Band 250 bis 800 Hz, seit der ersten
+    // Auslieferung.
+    //
+    // Dass die drei Gruenwelten heil blieben, ist kein Verdienst, sondern Dur:
+    // Ueber den Wurzeln 0, 5 und 7 ist die grosse Terz zufaellig immer
+    // leitereigen. Beim ersten Moll-Stueck hielt der Zufall nicht mehr.
+    const erwartet: Record<string, number> = {
+      grass: 0, sonnenhang: 0, wipfel: 0, crystal: 5, rust: 5, frost: 6, magma: 4,
+    };
+    const gemessen: Record<string, number> = {};
+    for (const th of THEMEN) {
+      const p = STUECKE[th];
+      const alsHalbton = p.farbe.map((stufe) => p.leiter[stufe]);
+      gemessen[th] = p.akkorde.filter((wurzel) =>
+        alsHalbton.some((h) => !p.leiter.includes(kl(wurzel + h))),
+      ).length;
+    }
+    expect(gemessen, 'der Befund hat sich verschoben — nachrechnen, nicht anpassen').toEqual(
+      erwartet,
+    );
+  });
+
+  it('laesst Tonart, Tempo, Geraeuschleiter und Fanfare der Welt unangetastet', () => {
+    // Was ausdruecklich NICHT je Level wechselt, und warum:
+    //
+    // `tonart()` und `schrittDauer()` reichen Grundton, Geraeuschleiter,
+    // Fanfarengrund und Tempo an `sfx.ts` und `stinger.ts` weiter. Wechselten
+    // sie je Level, haette eine Welt keine Tonart mehr, sondern fuenfzehn — und
+    // die Tempobaender der Welten (88 bis 132) wuerden ueberlappen, womit der
+    // Puls nicht mehr sagt, wo man ist.
+    //
+    // Der Test hat einen zweiten Zweck: Dieselben vier Werte stehen in
+    // `STUECKE` (`music.ts`) und in `WELTEN` (`musikbau.ts`), weil das
+    // Weltstueck dort abgenommen ist. Hier laufen beide Tabellen gegeneinander,
+    // damit sie nicht auseinanderdriften.
+    for (const { lv, p } of stuecke) {
+      const welt = STUECKE[lv.theme];
+      expect(p.grund, `Grundton von "${lv.id}"`).toBe(welt.grund);
+      expect(p.bpm, `Tempo von "${lv.id}"`).toBe(welt.bpm);
+      expect(p.sfxStufen, `Geraeuschleiter von "${lv.id}"`).toEqual(welt.sfxStufen);
+      expect(p.fanfareGrund, `Fanfarengrund von "${lv.id}"`).toBe(welt.fanfareGrund);
+      expect(p.leiter, `Modus von "${lv.id}"`).toEqual(welt.leiter);
+      expect(p.melodieStimme, `fuehrende Stimme von "${lv.id}"`).toBe(welt.melodieStimme);
+    }
+  });
+
+  it('baut aus dem ersten Level jeder Welt das abgenommene Weltstueck', () => {
+    // Das ist die Zusage, die den ganzen Umbau von einer Neukomposition
+    // unterscheidet: Eintrag 0 jeder Tabelle des Baukastens stammt aus dem
+    // abgenommenen Weltstueck, und der Zaehler eines ersten Levels ist null.
+    // Also muss dort Note fuer Note dasselbe herauskommen, was heute laeuft —
+    // samt Kadenz, Farbe, Stimmen, Figur, Harmoniedichte und Bogenplan.
+    //
+    // Die Id kommt aus den gebauten Leveln, damit hier keine zweite Tabelle
+    // „welche Welt hat welche Nummer" entsteht. Fuer eine Welt, die noch keine
+    // Level hat (die Wipfelweide), steht `w0-01` ein — `zaehler` liest nur die
+    // Nummer hinter dem Strich, und die ist es, auf die es ankommt.
+    // Nur die FUEHRENDE Welt einer Motivfamilie steht auf Punkt null.
+    //
+    // Drei Welten teilen die gruene Familie, und ihr abgenommenes Weltstueck
+    // ist bei allen drei derselbe Notentext — sie trennen sich ueber Tempo,
+    // Tonart und Instrumentierung. Stuenden alle drei auf Punkt null, spielte
+    // das erste Level des Sonnenhangs Note fuer Note die Eroeffnungsmelodie
+    // des Spiels; `THEMA_VERSATZ` schiebt sie deshalb weiter. Fuer sie ist
+    // diese Zusage dadurch nicht verloren, sondern war von Anfang an leer.
+    const FUEHREND = ['grass', 'crystal', 'rust', 'frost', 'magma'];
+    for (const th of THEMEN.filter((t) => FUEHREND.includes(t))) {
+      const id = LEVELS.find((lv) => lv.theme === th && zaehler(lv.id) === 0)?.id ?? 'w0-01';
+      const p = stueckFuer(id, th);
+      const soll = STUECKE[th];
+      expect(p.melodie, `Melodie von "${id}" (${th})`).toEqual(soll.melodie);
+      expect(p.akkorde, `Kadenz von "${id}" (${th})`).toEqual(soll.akkorde);
+      expect(p.leiter, `Modus von "${id}" (${th})`).toEqual(soll.leiter);
+      expect(p.farbe, `Farbe von "${id}" (${th})`).toEqual(soll.farbe);
+      expect(
+        [p.melodieStimme, p.zweitStimme, p.harmonieStimme],
+        `Stimmen von "${id}" (${th})`,
+      ).toEqual([soll.melodieStimme, soll.zweitStimme, soll.harmonieStimme]);
+      expect(p.bpm).toBe(soll.bpm);
+      expect(p.grund).toBe(soll.grund);
+      // Die drei Texturangaben, die ein Levelstueck mitbringt: Eintrag 0 ist
+      // ueberall das Abgenommene, also das, was `music.ts` ohne sie tut.
+      expect(p.arpeggio, `Figur von "${id}"`).toEqual(ARPEGGIO);
+      expect(p.harmonieStellen, `Harmoniedichte von "${id}"`).toEqual(HARMONIE_STELLEN);
+      expect(p.bogen, `Bogenplan von "${id}"`).toEqual(DURCHGAENGE);
+    }
+  });
 });

@@ -43,8 +43,17 @@ export class GameAudio {
     return next;
   }
 
-  setTheme(theme: ThemeId): void {
-    this.music.setTheme(theme);
+  /**
+   * Welche Welt klingt — und, wenn ein Level geladen wird, welches.
+   *
+   * Die Level-Id geht nur an die Musik: Jedes Level bekommt ein eigenes Stueck
+   * aus der Motivfamilie seiner Welt (`musikbau.ts`). Umgebungsbett und
+   * Geraeusche haengen dagegen an der **Welt** — ein Level ist kein anderer Ort.
+   *
+   * Ohne Id (Weltkarte, Vorspann) laeuft das abgenommene Weltstueck.
+   */
+  setTheme(theme: ThemeId, levelId?: string): void {
+    this.music.setTheme(theme, levelId);
     this.ambiente.setTheme(theme);
     this.sfx.reset();
   }

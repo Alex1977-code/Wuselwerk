@@ -289,6 +289,26 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   `src/render/atlas.ts`, Abnahme `tests/figur.test.ts` — sie misst den
   Zeichner mit einem Aufnahme-Kontext aus und hält fest, dass keine Haarform
   bis auf Augenhöhe reicht, bei keiner Drehung und keinem Schwung.
+- ✅ **Eigene Hintergrundmusik je Level** (Auftrag: „jedes level bekommt eine
+  eigene hintergrundmusik"). Statt eines Stücks je Welt-Thema montiert
+  `src/audio/musikbau.ts` je Level ein Stück aus einer **Motivfamilie**:
+  Kopf, Wendungen, Antworten, Mittelteile, Läufe, Schlüsse, Kadenzen und
+  Flächenfarben — jeder Baustein einzeln abgenommen, nur der Zusammenbau
+  ist erzeugt. Damit ist jeder Takt, den ein Kind hört, einmal von einem
+  Menschen geschrieben worden; ein freier Generator besteht jedes Gesetz
+  und kann trotzdem nicht wissen, ob ein Lied gut ist. Dazu diatonische
+  Operatoren (Sequenz und Umkehrung auf Leiterstufen), eine Formgrammatik
+  und drei Kopfrhythmen. Feste Welt-Identität: Tonart, Tempo,
+  Geräuschleiter und Fanfare wechseln **nicht** je Level — `tonart()`
+  reicht sie an Geräusche und Stinger weiter, die Welt hätte sonst keine
+  Tonart mehr. `docs/musik-abnahme.md` §8. Abnahme: elf neue Tests über
+  **alle** gebauten Level.
+  **Nebenbefund, seit der ersten Auslieferung im Spiel:** Die Harmoniespur
+  spielte modusfremde Töne — Kristallklamm in 5 von 8 Takten, Rostwerk
+  5/8, Frostklamm 6/8, Schlot 4/8. In der Höhle stand über B ein Cis,
+  während das Stück in A-dorisch läuft. Ursache war die Flächenfarbe als
+  festes Halbtonintervall über der Akkordwurzel; jetzt steht sie in
+  **Leiterstufen**, damit ein modusfremder Ton nicht mehr formulierbar ist.
 - ✅ Grafikbedarf vom Grafik-Subagenten: `docs/grafikbedarf.md`.
 - 🔨 **Welt 1 neu — Berufs-Grundkurs und Prüfung** (Auftrag: „in welt 1
   hätte ich gern level zum basics lernen jeden berufs und danach muss das

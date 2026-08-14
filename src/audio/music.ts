@@ -1,6 +1,7 @@
 import type { ThemeId } from '../levels/types';
 import type { AudioEngine } from './engine';
 import {
+  type TonOpts,
   akkordeon,
   bass,
   erdschlag,
@@ -19,6 +20,17 @@ import {
   ukulele,
   woodblock,
 } from './instrumente';
+import {
+  ARPEGGIEN,
+  BOGENPLAENE,
+  type Durchgang,
+  HARMONIESTELLEN,
+  type Note,
+  type StimmName,
+  type Stueck,
+  farbTon,
+  stueckFuer,
+} from './musikbau';
 
 /**
  * Begleitmusik, zur Laufzeit erzeugt.
@@ -101,16 +113,20 @@ import {
  * | Letzte zehn Sekunden | nur noch Bass und Tick |
  * | Pause | Tiefpass auf 400 Hz und doppelte Luft statt Stille — die Musik rueckt weg, statt abzureissen |
  * | Alle gerettet, Level laeuft noch | Glitzer verdoppelt, Glockengirlande darueber |
- */
-
-/**
- * Ein Ton: Halbtöne über dem Grundton (null = Pause) und Länge in Achteln.
  *
- * **Die Tonfolgen in `STUECKE` sind abgenommen** (`docs/musik-abnahme.md`).
- * Wer sie ändern will, fragt vorher. Instrumentierung, Begleitung, Groove und
- * Mischung sind ausdruecklich nicht mit abgenommen und duerfen sich bewegen.
+ * ## Ein Stueck je LEVEL, nicht je Welt
+ *
+ * `STUECKE` unten haelt weiter genau ein Stueck je Welt-Thema — das
+ * abgenommene, und es ist der Rueckfall. Gespielt wird aber, was `musikbau.ts`
+ * aus der Level-Id montiert: dieselbe Motivfamilie, andere Form, andere
+ * Antworten, andere Kadenz. Warum das noetig war, steht dort; hier zaehlt nur,
+ * dass ein montiertes Stueck **dieselbe Form** hat wie ein handgeschriebenes und
+ * diese Datei deshalb nicht wissen muss, woher ihres kommt.
+ *
+ * Fest je Welt bleiben Grundton, Tempo, Geraeuschleiter und Fanfarengrund —
+ * `tonart()` und `schrittDauer()` lesen sie deshalb aus `STUECKE` und nicht aus
+ * dem laufenden Levelstueck. Eine Welt mit fuenfzehn Tonarten waere keine Welt.
  */
-type Note = readonly [number | null, number];
 
 /**
  * Die Stimmen, die eine Melodie **halten** koennen.
@@ -118,61 +134,34 @@ type Note = readonly [number | null, number];
  * Ein Stabspiel steht hier nicht: Es kann keinen Ton halten, und eine Melodie
  * aus lauter abfallenden Anschlaegen piekst nur vor sich hin. Den Anschlag gibt
  * ohnehin das Stabspiel darunter dazu — siehe `update`.
+ *
+ * Der Typ ist `Record<StimmName, ...>` und nicht `as const`: `StimmName` steht
+ * in `musikbau.ts`, und der Baukasten darf nur Stimmen waehlen, die es hier
+ * wirklich gibt. Eine fehlende oder eine zusaetzliche faellt damit beim
+ * Uebersetzen auf, nicht im Spiel.
  */
-const STIMMEN = { akkordeon, klarinette, panfloete, okarina, leier, streicher } as const;
-type StimmName = keyof typeof STIMMEN;
+const STIMMEN: Record<StimmName, (e: AudioEngine, t: TonOpts) => void> = {
+  akkordeon,
+  klarinette,
+  panfloete,
+  okarina,
+  leier,
+  streicher,
+};
 
-interface Stueck {
-  melodie: readonly Note[];
-  /** Akkordgrundton je Takt, in Halbtönen. */
-  akkorde: readonly number[];
-  /** Zusätzliche Töne des Akkords für die Harmoniespur. */
-  farbe: readonly number[];
-  bpm: number;
-  /** Frequenz des Grundtons. */
-  grund: number;
-  /**
-   * Wer die Melodie **haelt**, und wer sie im naechsten Durchgang uebernimmt.
-   *
-   * Zwei Stimmen statt einer, und das ist die Antwort auf „zu eintoenig". Eine
-   * Achttaktschleife, die immer gleich klingt, wird nach dem dritten Umlauf zur
-   * Tapete — nicht weil die Melodie schlecht waere, sondern weil **nichts
-   * passiert**. In einem Orchester gibt man die Melodie in der Wiederholung
-   * weiter; genau das tut `DURCHGAENGE`.
-   *
-   * `stimme` fuehrt, `zweitStimme` antwortet. Sie muessen sich hoerbar
-   * unterscheiden, sonst ist der Wechsel keiner — gepaart sind deshalb eine
-   * obertonreiche (gestrichen) und eine obertonarme (geblasen).
-   */
-  melodieStimme: StimmName;
-  zweitStimme: StimmName;
-  harmonieStimme: 'ukulele' | 'kalimba';
-  /**
-   * Die Fuenftonleiter, in der die **Geraeusche** dieser Welt stehen.
-   *
-   * Bisher hingen alle Spielgeraeusche fest an C-Dur pentatonisch. Bei diesen
-   * zwei Welten geht das gut, aber nur durch einen Zufall: Die C-Pentatonik
-   * (C D E G A) liegt vollstaendig in A-dorisch. Bei der dritten Welt haelt der
-   * Zufall nicht mehr, und der Fehler ist einer von der leisen Sorte — man hoert
-   * nur, dass etwas nicht stimmt, ohne zu wissen, was.
-   *
-   * Deshalb bringt jedes Stueck seine eigene Leiter mit, und `tonart()` reicht
-   * sie an `sfx.ts` und `stinger.ts` weiter. Abgesichert durch einen Test:
-   * **Jede Stufe muss ein Ton sein, den die Melodie dieser Welt selbst
-   * benutzt** — dann kann eine Geraeuschleiter gar nicht neben ihrem Stueck
-   * stehen.
-   */
-  sfxStufen: readonly number[];
-  /**
-   * Grundton der Fanfare, in Halbtoenen ueber `grund`.
-   *
-   * Eine Fanfare muss in Dur stehen, sonst ist sie kein Sieg. Bei einem Stueck
-   * in Dur ist das der Grundton selbst; bei einem in Moll oder dorisch ist es
-   * die **Paralleltonart** — der Ton drei Halbtoene darueber. Dass beide Welten
-   * dadurch heute auf C landen, ist ein Ergebnis und keine Voraussetzung.
-   */
-  fanfareGrund: number;
-}
+/**
+ * Was in einem Stueck steht, sagt `Stueck` in `musikbau.ts` — dort, wo Stuecke
+ * auch gebaut werden. Der Typ ist derselbe fuer die handgeschriebenen
+ * Weltstuecke unten und fuer die montierten Levelstuecke; anders liesse sich
+ * das eine nicht als Rueckfall des anderen benutzen.
+ *
+ * Ein Ton ist dabei `[Halbtoene ueber dem Grundton | null fuer Pause, Laenge in
+ * Achteln]`.
+ *
+ * **Die Tonfolgen in `STUECKE` sind abgenommen** (`docs/musik-abnahme.md`).
+ * Wer sie aendern will, fragt vorher. Instrumentierung, Begleitung, Groove und
+ * Mischung sind ausdruecklich nicht mit abgenommen und duerfen sich bewegen.
+ */
 
 const TAKT = 8;
 
@@ -289,7 +278,16 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
     // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
     akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
-    farbe: [4, 7],
+    // Die sieben Stufen des Modus: Dur. Das Fis des Mittelteils steht mit
+    // Absicht nicht darin — die Leiter sagt, was die BEGLEITUNG darf, und der
+    // lydische Gast ist eine Sache der Melodie.
+    leiter: [0, 2, 4, 5, 7, 9, 11],
+    // Terz und Quinte — in LEITERSTUFEN ueber der jeweiligen Akkordwurzel und
+    // nicht mehr in Halbtoenen (vorher `[4, 7]`). Ueber der Tonika klingt
+    // beides gleich; ueber jeder anderen Wurzel bleibt nur die Stufenzaehlung
+    // im Modus. Warum das ein Fehler war und keine Feinheit, steht bei
+    // `farbTon` in `musikbau.ts`.
+    farbe: [2, 4],
     // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
     // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
     //
@@ -339,7 +337,16 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
     // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
     akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
-    farbe: [4, 7],
+    // Die sieben Stufen des Modus: Dur. Das Fis des Mittelteils steht mit
+    // Absicht nicht darin — die Leiter sagt, was die BEGLEITUNG darf, und der
+    // lydische Gast ist eine Sache der Melodie.
+    leiter: [0, 2, 4, 5, 7, 9, 11],
+    // Terz und Quinte — in LEITERSTUFEN ueber der jeweiligen Akkordwurzel und
+    // nicht mehr in Halbtoenen (vorher `[4, 7]`). Ueber der Tonika klingt
+    // beides gleich; ueber jeder anderen Wurzel bleibt nur die Stufenzaehlung
+    // im Modus. Warum das ein Fehler war und keine Feinheit, steht bei
+    // `farbTon` in `musikbau.ts`.
+    farbe: [2, 4],
     // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
     // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
     //
@@ -393,7 +400,16 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // dem Grundton liegt. Diese Reibung zieht die Schleife herum — ein Stueck,
     // das auf seinem eigenen Schlusston zur Ruhe kommt, faengt nicht wieder an.
     akkorde: [0, 5, 0, 7, 0, 7, 5, 7],
-    farbe: [4, 7],
+    // Die sieben Stufen des Modus: Dur. Das Fis des Mittelteils steht mit
+    // Absicht nicht darin — die Leiter sagt, was die BEGLEITUNG darf, und der
+    // lydische Gast ist eine Sache der Melodie.
+    leiter: [0, 2, 4, 5, 7, 9, 11],
+    // Terz und Quinte — in LEITERSTUFEN ueber der jeweiligen Akkordwurzel und
+    // nicht mehr in Halbtoenen (vorher `[4, 7]`). Ueber der Tonika klingt
+    // beides gleich; ueber jeder anderen Wurzel bleibt nur die Stufenzaehlung
+    // im Modus. Warum das ein Fehler war und keine Feinheit, steht bei
+    // `farbTon` in `musikbau.ts`.
+    farbe: [2, 4],
     // 120 statt 126. Die 126 stammen aus einem Vorgabeblatt von 1991 und nicht
     // aus diesem Spiel. Zwei Gruende fuer 120, und beide sind nachpruefbar:
     //
@@ -409,7 +425,13 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // Beobachtung ueber den Bau der alten Stimme, nicht ueber ihren Pegel.
     // Die Begruendung im Einzelnen steht bei `leier` in `instrumente.ts`.
     melodieStimme: 'panfloete',
-    zweitStimme: 'okarina',
+    // Drehleier statt Okarina, und das ist eine Berichtigung: Panfloete und
+    // Okarina sind beide geblasen, der Stimmwechsel im zweiten Umlauf war
+    // deshalb kaum zu hoeren — der Bau lief leer, ohne dass etwas kaputt war.
+    // Gepaart gehoert eine obertonreiche mit einer obertonarmen Stimme
+    // (`familieVon` in `musikbau.ts`). Stimmen sind ausdruecklich nicht
+    // abgenommen (`docs/musik-abnahme.md` §1).
+    zweitStimme: 'leier',
     harmonieStimme: 'kalimba',
     // C-Dur pentatonisch. Jede Stufe kommt in der Melodie oben vor.
     sfxStufen: [0, 2, 4, 7, 9],
@@ -440,7 +462,13 @@ export const STUECKE: Record<ThemeId, Stueck> = {
       [2, 2], [0, 6],
     ],
     akkorde: [0, 10, 0, 5, 10, 3, 5, 0],
-    farbe: [3, 7],
+    // A-dorisch: Moll mit grosser Sexte (9).
+    leiter: [0, 2, 3, 5, 7, 9, 10],
+    // Terz und Quinte in Leiterstufen. Hier hing der Befund: als feste
+    // Halbtoene (`[3, 7]`) legte die Flaeche ueber der Wurzel 10 (G) ein B, wo
+    // A-dorisch das H hat — fuenf der acht Takte lagen daneben. Siehe `farbTon`
+    // in `musikbau.ts`.
+    farbe: [2, 4],
     // 100 statt 112. Der alte Abstand zur Wiese war elf Prozent — hoerbar, aber
     // zu wenig, um die Hoehle zu einem anderen **Ort** zu machen statt zu
     // derselben Musik in Blau. Mit 100 gegen 120 sind es sechzehn Prozent, und
@@ -492,7 +520,11 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // Pendel zwischen G und F — die mixolydische Kadenz. Der letzte Takt
     // steht wieder auf G: Ein Arbeitslied kommt heim und faengt neu an.
     akkorde: [0, 10, 0, 5, 10, 5, 10, 0],
-    farbe: [4, 10],
+    // G-mixolydisch: Dur mit kleiner Septime (10).
+    leiter: [0, 2, 4, 5, 7, 9, 10],
+    // Terz und Septime in Leiterstufen (vorher `[4, 10]`). Fuenf von acht
+    // Takten trugen als feste Halbtoene einen modusfremden Ton.
+    farbe: [2, 6],
     // 112: schneller als die Wiese, langsamer als der Schlot — Hammertakt.
     bpm: 112,
     grund: 196,
@@ -526,7 +558,12 @@ export const STUECKE: Record<ThemeId, Stueck> = {
       [2, 2], [0, 6],
     ],
     akkorde: [0, 8, 3, 10, 8, 3, 10, 0],
-    farbe: [3, 8],
+    // E-aeolisch: reines Moll.
+    leiter: [0, 2, 3, 5, 7, 8, 10],
+    // Terz und Sexte in Leiterstufen (vorher `[3, 8]`). Sechs von acht Takten
+    // trugen als feste Halbtoene einen modusfremden Ton — der schlechteste
+    // Wert aller Welten.
+    farbe: [2, 5],
     // 88: das langsamste Stueck des Spiels — in der Klamm traegt der Hall.
     bpm: 88,
     grund: 164.81,
@@ -561,7 +598,12 @@ export const STUECKE: Record<ThemeId, Stueck> = {
     // Das phrygische Pendel: D gegen Es, dazwischen einmal F. Es loest sich
     // nie weiter als einen Halbton — genau das haelt die Spannung.
     akkorde: [0, 1, 0, 3, 1, 0, 1, 0],
-    farbe: [1, 3],
+    // D-phrygisch: die kleine Sekunde (1) direkt ueber dem Grundton.
+    leiter: [0, 1, 3, 5, 7, 8, 10],
+    // Sekunde und Terz in Leiterstufen (vorher `[1, 3]`) — der phrygische
+    // Cluster, der die Reibung macht. Vier von acht Takten lagen als feste
+    // Halbtoene daneben.
+    farbe: [1, 2],
     // 132: Zeitdruck von oben, Hitze von unten.
     bpm: 132,
     grund: 146.83,
@@ -612,6 +654,13 @@ export interface Tonart {
  * anderen sind der gemeinsame Raum, das gemeinsame Material und der gemeinsame
  * Takt). Ein Effekt, der neben der laufenden Musik steht, klingt nach Fehler —
  * auch wenn er fuer sich genommen schoen ist.
+ *
+ * Gelesen wird bewusst das **Weltstueck** und nicht das montierte Levelstueck:
+ * Grundton, Geraeuschleiter und Fanfarengrund sind Eigenschaften der WELT.
+ * Haenge sie am Level, dann hat eine Welt keine Tonart mehr, sondern fuenfzehn,
+ * und jedes Geraeusch des Spiels wandert beim Levelwechsel mit. `musikbau.ts`
+ * traegt dieselben Werte in jedes montierte Stueck — ein Test haelt beide
+ * Tabellen aneinander.
  */
 export function tonart(): Tonart {
   const p = STUECKE[laufendesThema];
@@ -673,8 +722,27 @@ const LOOKAHEAD = 0.35;
  *
  * Acht Stellen, also genau ein halber Takt: Damit faellt der Anfang der Figur
  * zweimal je Takt mit dem Schlag zusammen und nicht irgendwo dazwischen.
+ *
+ * Sie ist der **Rueckfall** und der Eintrag 0 der Figurenbank (`ARPEGGIEN` in
+ * `musikbau.ts`): Ein Levelstueck darf eine der anderen drei Figuren mitbringen,
+ * und alle halten dieselbe Regel — kein Ton ausser Grundton, Quinte, Oktave.
  */
-export const ARPEGGIO = [0, 7, 12, 7, 0, 7, 12, 7] as const;
+export const ARPEGGIO: readonly number[] = ARPEGGIEN[0];
+
+/**
+ * Auf welchen Achteln die gezupfte Harmonie steht — die abgenommene Dichte.
+ *
+ * Die Achtel 1 und 5 sind die unbetonten Haelften der ersten und dritten
+ * Viertel. Vorher standen die Nachschlaege auf 2 und 6, also auf schweren
+ * Zeiten, und verdoppelten damit den Puls, statt ihm zu antworten.
+ *
+ * Auch das ist Eintrag 0 einer Bank (`HARMONIESTELLEN` in `musikbau.ts`): Ein
+ * Levelstueck darf die doppelte Dichte mitbringen — dann greift die Hand auf
+ * jeder zweiten Achtel (1, 3, 5, 7), also viermal je Takt statt zweimal. Das
+ * ist dichter gewebt und nicht mehr reines Gegengewicht, denn die 3 ist eine
+ * Pulsstelle; als Wechsel der Textur zwischen zwei Leveln traegt es trotzdem.
+ */
+export const HARMONIE_STELLEN: readonly number[] = HARMONIESTELLEN[0];
 
 /**
  * Was sich von Durchgang zu Durchgang aendert.
@@ -717,25 +785,27 @@ export const ARPEGGIO = [0, 7, 12, 7, 0, 7, 12, 7] as const;
  *   Neuanfang. Sie liegt bei hoechstens gut 2 kHz und bleibt damit im Fenster
  *   der Melodie — eine Transposition waere hier falsch gewesen, sie haette die
  *   Melodie unter 800 Hz gedrueckt und der Sechzehntelfigur in die Quere.
+ *
+ * Der Plan selbst ist Eintrag 0 der Bogenbank (`BOGENPLAENE` in
+ * `musikbau.ts`), damit er an genau einer Stelle steht. Ein Levelstueck darf
+ * einen der beiden anderen Plaene mitbringen; alle drei halten die drei festen
+ * Punkte ein, an denen die Abnahmen haengen — Umlauf 1 fuehrt, Umlauf 2 gibt
+ * weiter, Umlauf 3 hat den Bruch.
  */
-export interface Durchgang {
-  /** `false` heisst: die Zweitstimme fuehrt. */
-  haupt: boolean;
-  /** Erste zwei Takte ohne Schlagwerk. */
-  bruch: boolean;
-  /** Die Sechzehntelfigur laeuft rueckwaerts. */
-  rueck: boolean;
-  /** Leise Oktavdopplung ueber der Melodie. */
-  oktave: boolean;
-}
+export type { Durchgang };
 
-export const DURCHGAENGE: readonly Durchgang[] = [
-  { haupt: true, bruch: false, rueck: false, oktave: false },
-  { haupt: false, bruch: false, rueck: true, oktave: false },
-  { haupt: true, bruch: true, rueck: false, oktave: false },
-  { haupt: false, bruch: false, rueck: true, oktave: true },
-];
+export const DURCHGAENGE: readonly Durchgang[] = BOGENPLAENE[0];
 
+/**
+ * Die Melodie auf das Achtelraster ziehen: ein Eintrag je Achtel, `null` fuer
+ * jede Achtel, die ein gehaltener Ton noch besetzt.
+ *
+ * Das wird **einmal je Stueck** gerechnet und im Objekt gehalten (`Music.raster`)
+ * — nicht je Bild. Bei einem Stueck je Welt liess sich das noch als Tabelle
+ * vorberechnen; bei einem Stueck je Level waere eine solche Tabelle entweder
+ * unvollstaendig oder muesste alle Level kennen, und beides ist schlechter als
+ * ein Feld, das beim Themenwechsel neu gefuellt wird.
+ */
 function aufRaster(m: readonly Note[]): (Note | null)[] {
   const raster: (Note | null)[] = [];
   for (const n of m) {
@@ -744,16 +814,6 @@ function aufRaster(m: readonly Note[]): (Note | null)[] {
   }
   return raster;
 }
-
-const RASTER: Record<ThemeId, (Note | null)[]> = {
-  grass: aufRaster(STUECKE.grass.melodie),
-  crystal: aufRaster(STUECKE.crystal.melodie),
-  rust: aufRaster(STUECKE.rust.melodie),
-  frost: aufRaster(STUECKE.frost.melodie),
-  magma: aufRaster(STUECKE.magma.melodie),
-  sonnenhang: aufRaster(STUECKE.sonnenhang.melodie),
-  wipfel: aufRaster(STUECKE.wipfel.melodie),
-};
 
 /** Was die Musik über die Spiellage wissen muss. */
 export interface Lage {
@@ -778,6 +838,13 @@ export class Music {
   private step = 0;
   private notes = 0;
   private theme: ThemeId = 'grass';
+  /**
+   * Das Stueck, das gerade laeuft — das montierte des Levels oder, solange kein
+   * Level geladen ist (Karte, Vorspann), das abgenommene Weltstueck.
+   */
+  private stueck: Stueck = STUECKE.grass;
+  /** Sein Achtelraster. Einmal je Stueck gerechnet, nicht je Bild. */
+  private raster: (Note | null)[] = aufRaster(STUECKE.grass.melodie);
   private lage: Lage = { restAnteil: 1, restSekunden: 999, alleGerettet: false, pausiert: false };
   private gefiltert: 'auf' | 'fokus' | 'zu' = 'auf';
   private besetzung: 'karte' | 'voll' = 'voll';
@@ -803,9 +870,38 @@ export class Music {
     };
   }
 
-  setTheme(theme: ThemeId): void {
+  /**
+   * Welche Welt — und, wenn bekannt, welches Level.
+   *
+   * Die Level-Id ist **wahlfrei**, und das ist kein Bequemlichkeitsentscheid:
+   * Es gibt zwei Aufrufer mit zwei verschiedenen Fragen. Das Spiel laedt ein
+   * Level und kennt seine Id (`game.ts`), die Weltkarte und der Vorspann kennen
+   * nur die Welt. Ohne Id laeuft deshalb das abgenommene **Weltstueck** — auch
+   * der ehrlichere Klang fuer eine Karte, auf der noch kein Level gewaehlt ist.
+   *
+   * Unbekanntes Thema faellt auf `grass`, unbekannte Level-Id auf einen Platz
+   * aus ihrem Streuwert (`zaehler`). Und wenn die Montage aus einem Grund, den
+   * heute niemand kennt, wirft, bleibt es beim Weltstueck: Die Musik ist die
+   * einzige Schicht, die stumm bleiben darf — das Spiel mitreissen darf sie
+   * nicht.
+   */
+  setTheme(theme: ThemeId, levelId?: string): void {
     this.theme = theme in STUECKE ? theme : 'grass';
     laufendesThema = this.theme;
+    let p = STUECKE[this.theme];
+    if (levelId) {
+      try {
+        const montiert = stueckFuer(levelId, this.theme);
+        // Ein Stueck ohne Noten waere keine Musik, sondern ein Leerlauf mit
+        // NaN-Frequenzen (`step % 0`). Kommt nicht vor; kostet eine Zeile, es
+        // auszuschliessen.
+        if (montiert.melodie.length) p = montiert;
+      } catch {
+        // Bleibt beim Weltstueck.
+      }
+    }
+    this.stueck = p;
+    this.raster = aufRaster(p.melodie);
     // Das Echo muss neu gesetzt werden, aber die Klangwerkstatt gibt es zu
     // diesem Zeitpunkt vielleicht noch nicht (sie entsteht erst nach der ersten
     // Nutzergeste). Also nur vormerken; `update` traegt es nach.
@@ -863,8 +959,14 @@ export class Music {
 
     if (!this.playing || !engine.ready || engine.muted) return;
 
-    const p = STUECKE[this.theme];
-    const raster = RASTER[this.theme];
+    // Das Stueck dieses Levels, sein Raster und die drei Texturangaben, die es
+    // mitbringen darf. Fehlen sie, gilt das Abgenommene — so laeuft ein
+    // handgeschriebenes Weltstueck durch denselben Apparat wie ein montiertes.
+    const p = this.stueck;
+    const raster = this.raster;
+    const arpeggio = p.arpeggio ?? ARPEGGIO;
+    const harmonieStellen = p.harmonieStellen ?? HARMONIE_STELLEN;
+    const durchgaenge = p.bogen ?? DURCHGAENGE;
     const stepDur = 60 / p.bpm / 2;
     // Punktierte Achtel: drei Sechzehntel gegen zwei. Sie laeuft dadurch gegen
     // das Raster, statt es zu verdoppeln — deshalb ist sie die uebliche Wahl.
@@ -886,8 +988,25 @@ export class Music {
       const delay = this.nextTime - engine.time;
       const i = this.step % raster.length;
       const takt = Math.floor(i / TAKT) % p.akkorde.length;
-      const wurzel = p.akkorde[takt] + schiebung;
+      // Zwei Wurzeln, und der Unterschied ist wichtig: `wurzelRein` ist die
+      // Stufe, auf der der Akkord im Modus steht — daran haengt die Farbe der
+      // Harmonie. `wurzel` ist dieselbe Stufe, wie sie gerade **klingt**, also
+      // im Endspurt einen Halbton hoeher. Wer die Farbe aus der geschobenen
+      // Wurzel ableitet, sucht die Terz einer Tonart, in der das Stueck nicht
+      // steht.
+      const wurzelRein = p.akkorde[takt];
+      const wurzel = wurzelRein + schiebung;
       const f = (h: number, oktave = 0) => p.grund * Math.pow(2, h / 12 + oktave);
+      /**
+       * Ein Farbton der Flaeche, in Halbtoenen ueber dem Grundton.
+       *
+       * `p.farbe` zaehlt in LEITERSTUFEN ueber der Akkordwurzel, nicht in
+       * Halbtoenen — der Grund steht bei `farbTon` in `musikbau.ts`, samt der
+       * Rechnung darueber, was die feste Halbtonfarbe in den Moll-Welten
+       * angestellt hat.
+       */
+      const farbHalbton = (stufe: number) =>
+        farbTon(wurzelRein, stufe, p.leiter) + schiebung;
       const g = { delay, bus: 'music' as const, fest: true };
       // Der Pad-Zweig. Alles, was hier hineingeht, weicht bei jedem Schlag kurz
       // zurueck — siehe `AudioEngine.pumpe`.
@@ -898,7 +1017,7 @@ export class Music {
       const bogen = takt / Math.max(1, p.akkorde.length - 1);
       const imTakt = i % TAKT;
       // Was dieser Umlauf anders macht als der vorige — siehe `DURCHGAENGE`.
-      const va = DURCHGAENGE[this.durchgang % DURCHGAENGE.length];
+      const va = durchgaenge[this.durchgang % durchgaenge.length];
       // Der Bruch: zwei Takte ohne Schlagwerk. Bass, Flaeche, Figur und Melodie
       // laufen weiter — was fehlt, ist der Antrieb, und genau den hoert man beim
       // Wiederkommen doppelt.
@@ -976,8 +1095,10 @@ export class Music {
 
       // --- Akkordflaeche ----------------------------------------------------
       if (!endspurt && imTakt === 0) {
-        for (const ton of p.farbe) {
-          flaeche(engine, { freq: f(wurzel + ton), dur: stepDur * TAKT * 0.96, gain: 0.022, ...gp });
+        for (const stufe of p.farbe) {
+          flaeche(engine, {
+            freq: f(farbHalbton(stufe)), dur: stepDur * TAKT * 0.96, gain: 0.022, ...gp,
+          });
         }
       }
 
@@ -1001,8 +1122,8 @@ export class Music {
           // Rueckwaerts in jedem zweiten Durchgang: dieselben drei Toene,
           // entgegengesetzte Kontur. Bewegung aendern, ohne einen Ton zu
           // tauschen — siehe `DURCHGAENGE`.
-          const stelle = (i * 2 + halb) % ARPEGGIO.length;
-          const ton = ARPEGGIO[va.rueck ? ARPEGGIO.length - 1 - stelle : stelle];
+          const stelle = (i * 2 + halb) % arpeggio.length;
+          const ton = arpeggio[va.rueck ? arpeggio.length - 1 - stelle : stelle];
           pizzicato(engine, {
             freq: f(wurzel + ton),
             dur: stepDur * 0.42,
@@ -1019,8 +1140,9 @@ export class Music {
       // --- Harmonie auf den Nachschlaegen ----------------------------------
       //
       // Gezupfte Nachschlaege auf den Achteln 1 und 5 — den unbetonten Haelften
-      // der ersten und dritten Viertel. Vorher standen sie auf 2 und 6, also auf
-      // schweren Zeiten, und verdoppelten damit den Puls, statt ihm zu
+      // der ersten und dritten Viertel (`HARMONIE_STELLEN`; ein Levelstueck darf
+      // die doppelte Dichte mitbringen). Vorher standen sie auf 2 und 6, also
+      // auf schweren Zeiten, und verdoppelten damit den Puls, statt ihm zu
       // antworten. Auf dem Nachschlag ist es ein **Gegengewicht**: Man hoert
       // die Harmonie dort, wo unten gerade nichts passiert.
       //
@@ -1030,16 +1152,16 @@ export class Music {
       // Die Akkordtoene werden ueber die Breite verteilt, von links nach rechts
       // aufsteigend. Ein Dreiklang, dessen Toene alle an derselben Stelle
       // stehen, ist ein Klang; einer, der auseinandergezogen ist, ist ein Griff.
-      if (!endspurt && (imTakt === 1 || imTakt === 5)) {
+      if (!endspurt && harmonieStellen.includes(imTakt)) {
         const stimme = p.harmonieStimme === 'ukulele' ? ukulele : kalimba;
-        const toene = [0, ...p.farbe];
-        toene.forEach((ton, k) => {
+        const griff = [wurzel, ...p.farbe.map(farbHalbton)];
+        griff.forEach((ton, k) => {
           stimme(engine, {
-            freq: f(wurzel + ton),
+            freq: f(ton),
             gain: 0.038,
             dur: stepDur * 1.3,
             ...gp,
-            pan: -0.4 + (0.8 * k) / Math.max(1, toene.length - 1),
+            pan: -0.4 + (0.8 * k) / Math.max(1, griff.length - 1),
             delay: ab(VERSATZ.harmonie),
           });
         });
@@ -1107,7 +1229,10 @@ export class Music {
       this.step++;
       if (this.step >= raster.length) {
         this.step = 0;
-        this.durchgang = (this.durchgang + 1) % DURCHGAENGE.length;
+        // Nach dem Plan dieses Stuecks zaehlen, nicht nach dem abgenommenen.
+        // Heute sind alle Plaene vier Umlaeufe lang; morgen ist einer laenger,
+        // und dann steht hier sonst eine stille Verkuerzung.
+        this.durchgang = (this.durchgang + 1) % durchgaenge.length;
       }
     }
   }

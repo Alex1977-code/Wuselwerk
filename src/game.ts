@@ -339,7 +339,9 @@ export class Game {
     this.scene.atlas = this.atlas;
     this.knarrte = false;
     this.camera = new Camera(level.width, level.height, level.entrance.x, level.entrance.y + 40);
-    this.audio.setTheme(level.theme);
+    // Die Level-Id geht mit: Jedes Level hat sein eigenes Stueck aus der
+    // Motivfamilie seiner Welt (`audio/musikbau.ts`).
+    this.audio.setTheme(level.theme, level.id);
     // Die Musik laeuft aus der Karte weiter — im Vorspann in Kartenbesetzung,
     // mit dem Start kommt das volle Arrangement. Abgerissen wird nicht mehr.
     this.audio.setBesetzung('karte');

@@ -11,6 +11,11 @@ weiterentwickelt werden.
 Quelle: `src/audio/music.ts`, Konstante `STUECKE`.
 Abgesichert durch: `tests/musik.test.ts`.
 
+Seit §8 hat **jedes Level ein eigenes Stück** (`src/audio/musikbau.ts`). Die
+Stücke in `STUECKE` bleiben, was sie sind: das abgenommene Stück ihrer Welt, der
+Nullpunkt des Verfahrens (Level 1 baut es Note für Note wieder) und der Rückfall
+für Weltkarte, Vorspann und unbekannte Level.
+
 ---
 
 ## 1. Was genau abgenommen ist
@@ -118,6 +123,12 @@ erst recht nicht.
 Die Tests sichern den **Bau**, nicht die Schönheit. Ob eine Melodie schön ist,
 kann kein Test sagen — dafür steht oben die Abnahme.
 
+Seit §8 kommt eine zweite Hälfte dazu, die dasselbe über **jedes gebaute Level**
+prüft: Gesetzestreue (`pruefe()`), Determinismus, kein Stück zweimal in einer
+Welt, Frequenzbänder, Geräuschleiter, Flächenfarbe im Modus, und dass Level 1
+das abgenommene Weltstück wiederherstellt. Bei siebzig Stücken tritt das
+Gegenrechnen an die Stelle des Hinsehens.
+
 ---
 
 ## 6. Was sich seit der Abnahme geändert hat
@@ -157,3 +168,112 @@ der Wiederholung tut. Die Oktavdopplung ist eine zusätzliche Stimme, keine
 Transposition: Die abgenommene Lage bleibt genau, wo sie war, und das ist hier
 nicht nur eine Formalie — eine Transposition nach unten hätte die Melodie unter
 800 Hz gedrückt und damit in das Band, das der Begleitung gehört.
+
+---
+
+## 8. Musik je Level — das Verfahren („Weg D")
+
+Ab hier gibt es **ein eigenes Stück je Level**, nicht mehr eines je Welt.
+Erzeugt wird es in `src/audio/musikbau.ts`, abgesichert durch
+`tests/musik.test.ts` (Abschnitt „Ein eigenes Stück je Level", läuft über
+**alle** gebauten Level).
+
+Der Grund ist Arithmetik: Fünfzehn Level einer Welt teilten sich einen
+Achttakter von rund zwanzig Sekunden. Wer eine Welt durchspielt, hört ihn ein
+paar hundert Mal. Der Bogen über vier Umläufe (§7) hat das gelindert, aber nicht
+behoben — er wechselt das Arrangement, nicht den Notentext.
+
+### 8.1 Was das Verfahren ist
+
+**Motivfamilie je Welt, Arrangement je Level.** Jede Welt bringt einen Baukasten
+mit — Kopf, Kopfrhythmen, Wendungen, Antworten, Mittelteile, Läufe, Schlüsse,
+Kadenzen, Farben. Je Level wird daraus nach einer Formgrammatik (fünf Formen wie
+`K A K A M M K S`) ein Stück montiert. Verschoben und gespiegelt wird auf
+**Leiterstufen**, nicht auf Halbtönen: eine Zeile weiter in derselben Tonart,
+nicht einen Halbton daneben.
+
+Kein freier Generator. Die Teile sind einzeln abgenommen, und **Eintrag 0 jeder
+Tabelle ist der Baustein aus dem abgenommenen Weltstück**. Der Zähler eines
+ersten Levels ist null, also baut Level 1 jeder Welt Note für Note das Stück,
+das schon vorher lief — samt Kadenz, Farbe, Stimmen, Figur und Bogenplan. Ein
+Test hält genau das fest. Die Abnahme von §1 bis §3 gilt damit unverändert
+weiter; sie ist der Nullpunkt des Verfahrens und nicht sein Nebenprodukt.
+
+Die Erzeugung ist eine **reine Funktion der Level-Id**. Kein `Math.random`: Ein
+Level, das bei jedem Start anders klingt, ist kein Level mit Musik.
+
+### 8.2 Was je Welt fest bleibt, was je Level wechselt
+
+| fest je Welt | wechselt je Level |
+|---|---|
+| Grundton (`grund`) und Tempo (`bpm`) | Form, Kopfrhythmus, Wendungen |
+| Geräuschleiter (`sfxStufen`), Fanfarengrund | Antworten, Mittelteil, Lauf, Schluss |
+| Modus (`leiter`) und Motivfamilie | Kadenz und Flächenfarbe |
+| die führende Melodiestimme | Zweitstimme, Harmoniestimme |
+| der Puls 3-3-2, Bass, Kies, Versatz | Sechzehntelfigur, Harmoniedichte, Bogenplan |
+
+### 8.3 Warum Transposition und Tempo *nicht* je Level wechseln
+
+Das ist die eine Entscheidung, die man beim Lesen für eine Auslassung halten
+könnte. Sie ist eine Entscheidung:
+
+1. **Der Grundton ist die Tonart der Welt, nicht des Levels.** `tonart()` reicht
+   Grundton, Geräuschleiter und Fanfarengrund an `sfx.ts` und `stinger.ts`
+   weiter — jeder Werkzeugklang, jedes Plopp, jede Fanfare hängt daran. Wechselt
+   der Grundton je Level, hat eine Welt keine Tonart mehr, sondern fünfzehn, und
+   das häufigste Geräusch des Spiels wandert beim Levelwechsel mit. Genau
+   deshalb lesen `tonart()` und `schrittDauer()` weiter `STUECKE[Welt]` und nicht
+   das laufende Levelstück.
+2. **Das Tempo ist das Kennzeichen des Ortes.** Die Welten liegen auf 88 bis 132
+   Viertel je Minute, in Abständen von zwölf und mehr. Streuten die Level um
+   ihre Welt herum, überlappten die Bänder, und der Puls sagt nicht mehr, wo man
+   ist. Dazu hängt an 120 ein rundes Raster: eine Achtel von genau 250 ms, auf
+   der Echo (375 ms) und Trippelschritte (`schrittDauer`) sitzen.
+3. **Die führende Stimme** bleibt aus demselben Grund fest: Sie ist das, woran
+   man eine Welt in einer Sekunde erkennt. Die *Zweitstimme* darf wechseln — sie
+   ist der Kontrast, nicht das Gesicht.
+
+### 8.4 Der Harmonie-Befund und seine Behebung
+
+Beim Umbau nachgerechnet und bestätigt: Die Harmoniespur hat ihre Zusatztöne
+(`farbe`) als **festes Halbtonintervall** über die Akkordwurzel gelegt. Über dem
+Grundton ist das richtig — dort ist die Farbe abgenommen —, über jeder anderen
+Wurzel war es Glück. Gezählt über die acht Takte jedes abgenommenen Weltstücks —
+und zu hören war der Ton in jedem gezählten Takt doppelt: Die Fläche liegt den
+ganzen Takt darauf, die gezupfte Harmonie greift ihn auf den Achteln 1 und 5:
+
+| Welt | Takte mit modusfremdem Ton | Beispiel |
+|---|---|---|
+| grass, sonnenhang, wipfel | 0 von 8 | — |
+| **crystal** | **5 von 8** | über der Wurzel 10 (G) ein B, wo A-dorisch das H hat |
+| **rust** | **5 von 8** | über der Wurzel 10 (F) ein Es statt E |
+| **frost** | **6 von 8** | über der Wurzel 8 (C) ein Dis statt D |
+| **magma** | **4 von 8** | über der Wurzel 1 (Es) ein E statt F |
+
+Dass die drei Grünwelten heil blieben, ist kein Verdienst, sondern Dur: Über den
+Wurzeln 0, 5 und 7 ist die große Terz zufällig immer leitereigen. Beim ersten
+Moll-Stück hielt der Zufall nicht mehr. Das ist ein falscher Ton im Band 250 bis
+800 Hz, zweimal je Takt, seit der ersten Auslieferung — dieselbe leise Sorte
+Fehler, die `sfxStufen` schon einmal hatte: Man hört, dass etwas nicht stimmt,
+ohne zu wissen, was.
+
+**Die Behebung.** `farbe` zählt jetzt in **Leiterstufen** statt in Halbtönen:
+„zwei Stufen über der Wurzel" heißt die Terz *dieses Modus* — groß oder klein,
+je nachdem, wo die Wurzel steht (`farbTon` in `musikbau.ts`). Ein modusfremder
+Flächenton ist damit nicht mehr formulierbar. Die Umrechnung der bestehenden
+Werte ist verlustfrei: `[3, 7]` in der Höhle wird `[2, 4]`, also weiter Terz und
+Quinte; über der Tonika klingt beides gleich, über allen anderen Wurzeln klingt
+nur die neue Lesart im Modus. Zwei Tests halten es fest — einer prüft, dass kein
+Ton der Harmoniespur außerhalb der Leiter liegt, der andere hält die Zahlen der
+Tabelle oben fest, damit der Befund nicht als Behauptung im Kommentar steht.
+
+War das abgenommen? Nein. Die Akkordfolge je Takt ist abgenommen (§1, linke
+Spalte), die Begleitfiguren sind es ausdrücklich nicht (rechte Spalte). Geändert
+hat sich kein Akkord, sondern die Stimmführung der Fläche darüber.
+
+### 8.5 Zwei weitere Berichtigungen aus demselben Anlass
+
+| geändert | war das abgenommen? |
+|---|---|
+| Wipfelweide: Zweitstimme Okarina → Drehleier | Nein — „welche Stimme sie spielt". Panflöte und Okarina sind beide geblasen; der Stimmwechsel im zweiten Umlauf war deshalb kaum zu hören, der Bau lief leer. Gepaart gehören eine obertonreiche und eine obertonarme Stimme. |
+| Deckungspflicht der Montage auch über die Ableitung | Neu, kein Eingriff in Abgenommenes. Im Schlot (phrygisch) tragen nur Mittelteil und Lauf die kleine Septime, und die Geräuschleiter braucht sie. Eine Sequenz eine Stufe nach *unten* nahm sie aus jedem Baustein — drei von fünfzehn Leveln hatten danach kein C mehr, und alle Spielgeräusche standen neben ihrer Musik. Findet die Montage mit der gewählten Ableitung kein taugliches Stück, rücken jetzt auch die übrigen Ableitungen nach. Jedes Level, dessen Ableitung trägt, bleibt Note für Note dasselbe. |
