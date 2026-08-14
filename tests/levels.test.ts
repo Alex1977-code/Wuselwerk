@@ -208,8 +208,25 @@ function planLevel10(): Plan {
 // sechs neuen Formen brauchen eigene Lösungen.
 
 /** Reines Ankommen: Die Kante erledigt alles, null Zuweisungen. */
+/**
+ * w2-01 „Abstieg" — der Riegel auf der unteren Sohle.
+ *
+ * Das Level trug einmal `par: 0` und wurde durch Nichtstun gewonnen; der
+ * Spieltest hat das beim Namen genannt. Jetzt sperrt ein sechsunddreissig
+ * Punkte hoher Riegel den Weg zur Tuer, und ein Rammer oeffnet ihn.
+ *
+ * Angesetzt wird dicht davor: Ein Rammer, dem beim Auftrag keine Wand in
+ * Reichweite steht (BASH_LOOK 5), wird nicht zum Rammer, sondern zum
+ * VORGEMERKTEN Rammer und faengt an der naechstbesten Wand an — das hat in
+ * Welt 1 zweimal die falsche Wand geoeffnet.
+ */
 function planKlamm1(): Plan {
-  return () => {};
+  let done = false;
+  return (w) => {
+    if (done) return;
+    const c = walkerNear(w, 514, 519, 1);
+    if (c && w.assign(c.id, 'basher')) done = true;
+  };
 }
 
 /** Rechts vom Ende der Stahlader graben — die Tür liegt im Schacht. */
@@ -2378,6 +2395,48 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
       expect(w.phase, `w3-14: Altplan von ${id} muesste scheitern`).toBe('lost');
     }
   });
+  /**
+   * w2-01 „Abstieg": Nichtstun gewinnt nicht mehr.
+   *
+   * Das ist kein Rot-Test gegen einen Altplan, sondern gegen den LEEREN Plan
+   * — und er steht hier, weil das Level einmal genau daran krankte. Es trug
+   * `par: 0`, und im Kommentar stand der Satz „Reines Ankommen: Wer nur
+   * laufen laesst, gewinnt mit null Zuweisungen." Der Spieltest hat es beim
+   * Namen genannt: „um Level Abstieg muss der Spieler ueberhaupt nichts
+   * machen."
+   *
+   * Ein Level, das sich von allein loest, ist kein Level. Wer die Geometrie
+   * hier wieder aufmacht, faellt an dieser Stelle durch.
+   */
+  it('w2-01: Nichtstun gewinnt nicht mehr', () => {
+    const level = levelById('w2-01')!;
+    expect(level.par).toBeGreaterThanOrEqual(1);
+    const w = play(level, () => {});
+    expect(w.phase, 'ohne eine einzige Zuweisung').toBe('lost');
+  });
+
+  /**
+   * Und der Graeber ist wirklich die falsche Antwort — nicht nur dem
+   * Kommentar nach.
+   *
+   * Unter der Sohle liegt eine Stahlader; wer dort senkrecht graebt, steht
+   * nach dreizehn Bildpunkten darauf. Das ist die Lehre der Kristallklamm,
+   * und sie ist nur dann eine, wenn sie wirklich greift.
+   */
+  it('w2-01: der Graeber allein kommt nicht durch den Stahl', () => {
+    const level = levelById('w2-01')!;
+    const w = play(level, (() => {
+      let done = false;
+      return (welt: World) => {
+        if (done) return;
+        const c = walkerNear(welt, 450, 470);
+        if (c && welt.assign(c.id, 'digger')) done = true;
+      };
+    })());
+    expect(w.skillsUsed, 'der Graeber wurde vergeben').toBe(1);
+    expect(w.phase, 'und half trotzdem nicht').toBe('lost');
+  });
+
   // Paket 1 (Level-Konzept): Die Fruehspiel-Umbauten gegen ihre Altplaene.
   it('w1-08: der alte Bruecken-Plan findet weder Schlucht noch Bauer', () => {
     erwarteRot('w1-08', planLevel8);

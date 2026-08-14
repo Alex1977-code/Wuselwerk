@@ -306,20 +306,22 @@
  {
   "id": "w2-01",
   "name": "Abstieg",
-  "planTicks": 2638,
-  "letzteRettungSek": 43.7,
-  "quoteSek": 38.4,
+  "planTicks": 2728,
+  "letzteRettungSek": 45.2,
+  "quoteSek": 39.9,
   "uhrSek": 90,
-  "uhrFaktor": 2.06,
+  "uhrFaktor": 1.99,
   "gerettet": 10,
   "total": 10,
   "quote": 7,
   "quotenMarge": 3,
-  "par": 0,
-  "vergaben": 0,
-  "benutzt": {},
-  "werkzeuge": 2,
-  "ueberschuss": 2
+  "par": 1,
+  "vergaben": 1,
+  "benutzt": {
+   "basher": 1
+  },
+  "werkzeuge": 4,
+  "ueberschuss": 3
  },
  {
   "id": "w2-02",

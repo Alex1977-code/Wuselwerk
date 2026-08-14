@@ -34,28 +34,53 @@ export const WELT2_LEVELS: LevelDef[] = [
     id: 'w2-01',
     name: 'Abstieg',
     chapter: 'Abstieg',
-    hint: 'Willkommen unter Tage. Der Weg führt über die Kante — der Fall ist kürzer, als er aussieht.',
+    hint: 'Willkommen unter Tage. Über die Kante geht es — der Fall ist kürzer, als er aussieht. Unten sperrt ein Riegel, und unter ihm liegt Stahl.',
     theme: 'crystal',
     width: 720,
     height: 540,
     seed: 21001,
     entrance: { x: 110, y: 224 },
-    exit: { x: 610, y: 316, w: 32, h: 26 },
+    exit: { x: 640, y: 316, w: 32, h: 26 },
     total: 10,
     // Marge-Heilung (Paket 5, Drittel A): Quote = Messung - 3.
     needed: 7,
     timeLimitSec: 90,
     releaseRate: 50,
     minReleaseRate: 30,
-    skills: sk({ digger: 2 }),
-    // Reines Ankommen: Wer nur laufen lässt, gewinnt mit null Zuweisungen.
-    par: 0,
+    // Ein Rammer loest es. Der Graeber liegt als NAHELIEGENDE FALSCHE Antwort
+    // daneben: Unter der Sohle liegt Stahl, und wer dort graebt, hat einen Zug
+    // verschenkt und die Lehre dieser Welt gelernt.
+    skills: sk({ basher: 2, digger: 2 }),
+    par: 1,
     paint: [
       { t: 'rect', x: 0, y: 70, w: 720, h: 26, mat: MAT.ROCK },
       { t: 'ground', x: 0, w: 400, y: 280, h: 260, mat: MAT.ROCK, rough: 2 },
-      // Die Kante: 56 Bildpunkte hinunter — überlebbar, und von unten führt
-      // kein Weg zurück. Genau das ist die erste Lektion der Klamm.
-      { t: 'ground', x: 400, w: 320, y: 336, h: 204, mat: MAT.ROCK, rough: 2 },
+      // Die Kante: 56 Bildpunkte hinunter — ueberlebbar, und von unten fuehrt
+      // kein Weg zurueck. Genau das ist die erste Lektion der Klamm.
+      //
+      // `rough: 0` auf der unteren Sohle, und zwar aus Notwendigkeit: Ein
+      // Rammer verliert auf rauem Grund nach jedem Zwei-Punkt-Versatz den
+      // Boden und dreht ab. Derselbe Befund hat schon w1-02 die Rammstrecke
+      // gekostet. Der Rammer arbeitet hier unten — also ist es hier unten
+      // glatt, und die Rauheit bleibt oben, wo sie niemanden stoert.
+      { t: 'ground', x: 400, w: 320, y: 336, h: 204, mat: MAT.ROCK, rough: 0 },
+      // Der Riegel — der Grund, warum dieses Level ueberhaupt eines ist.
+      //
+      // Vorher stand hier `par: 0` und im Kommentar der Satz „Reines
+      // Ankommen: Wer nur laufen laesst, gewinnt mit null Zuweisungen." Ein
+      // Level, das sich von allein loest, ist kein Level, sondern ein
+      // Ladebildschirm mit Uhr; der Spieltest hat es beim Namen genannt.
+      //
+      // Sechsunddreissig hoch: weit ueber MAX_STEP 5, und ein Rammer raeumt
+      // nur die untersten dreizehn (BASH_UP 12). Der Stollen geht also
+      // hindurch, der Riegel bleibt darueber stehen — man sieht am Ende, was
+      // man getan hat.
+      { t: 'rect', x: 520, y: 300, w: 40, h: 36, mat: MAT.ROCK },
+      // Und die Stahlader darunter. Sie macht den Graeber zur teuren Ausrede:
+      // Wer unten senkrecht graebt, steht nach dreizehn Bildpunkten auf Stahl.
+      // „Der Stahl liegt in Adern" ist das Versprechen dieser Welt — hier
+      // steht es zum ersten Mal im Weg.
+      { t: 'rect', x: 400, y: 349, w: 320, h: 10, mat: MAT.STEEL },
     ],
   },
   {
