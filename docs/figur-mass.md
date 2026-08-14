@@ -189,7 +189,11 @@ Gemessen mit `scripts/haar-messen.mjs` (Bericht mit SHA-256 des Blatts in
 | Augenschranke (kleinster Abstand) | 0,932 | 1,082 |
 
 Die Rauheitszahl bewegt sich nur um gut zwei Prozent, und das geplante Ziel
-von 1,50 wird nicht erreicht. Ein Gitter ueber die Schaerfe (2,4 / 3,0 / 3,6)
+von 1,50 wird nicht erreicht. Diese zwei Prozent sind allerdings die falsche
+Rechnung, und die Selbstprobe des Messwerkzeugs sagt warum: Eine **glatte**
+Scheibe misst auf diesem Raster schon **1,038** — das ist der Boden, den das
+Gitter allein einzieht. Ueber diesem Boden steht das alte Haar bei 0,204, das
+neue bei 0,233: **vierzehn Prozent mehr Rauheit**, nicht zwei. Ein Gitter ueber die Schaerfe (2,4 / 3,0 / 3,6)
 zeigt, dass sie bei 1,28 saettigt: Bei 1089 Haarecken traegt das Netz nicht
 mehr Kerben. Der sichtbare Unterschied bei echter Spielgroesse ist trotzdem
 deutlich — und die Zahl, die ihn abbildet, ist die der blauen Inseln: Die

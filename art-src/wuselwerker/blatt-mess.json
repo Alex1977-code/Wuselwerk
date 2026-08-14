@@ -3,7 +3,7 @@
   "blatt": "src/art/wuselwerker.webp",
   "sha256": "9ab1500bda40930fc171eb83eb9fe42839058c5bed8ce470cd631fb85e4aab94",
   "manifest": "src/art/wuselwerker.atlas.json",
-  "gemessen": "2026-08-14T10:31:34.719Z",
+  "gemessen": "2026-08-14T10:43:56.750Z",
   "zelle": {
     "blatt": 112,
     "telefon": 69,
@@ -12,8 +12,11 @@
   },
   "eichung": {
     "_warum": "Rauheit von Formen, deren Wert feststeht. Die Scheibe ist glatt und misst trotzdem ueber 1 — das ist der Beitrag des Punktrasters und gilt fuer jede gemessene Form gleich. Das Gesicht (spannen.rauheitGesicht) ist dieselbe Probe an einer gemalten glatten Form auf diesem Blatt.",
+    "quadrat": 1,
+    "raute": 1,
     "scheibe": 1.0382,
-    "zackenstern": 2.7714
+    "zackenstern": 2.7714,
+    "zackensternGerechnet": 2.7184
   },
   "farben": {
     "_warum": "Klassengrenzen aus dem Farbtonhistogramm des Blattes, nicht geraten. gipfel = Lage der drei Farbtongipfel in Grad, grenzen = die Taeler dazwischen. punkte = wie viele deckende Punkte ueber alle 66 Einzelbilder in jede Klasse fallen.",

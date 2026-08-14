@@ -528,42 +528,126 @@ function richtungswechsel(werte, schwelle) {
 // Eichprobe: das Messband gegen sich selbst
 // ---------------------------------------------------------------------------
 
+/** Eine gerechnete Form auf ein Gitter legen und mit `rauheit()` vermessen. */
+function probeform(n, drin) {
+  const m = new Uint8Array(n * n);
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      if (drin(x + 0.5 - n / 2, y + 0.5 - n / 2)) m[y * n + x] = 1;
+    }
+  }
+  return rauheit(m, n);
+}
+
 /**
- * Bevor irgendein Bild vermessen wird, misst das Werkzeug zwei Formen, deren
- * Rauheit feststeht: eine Scheibe (glatt, also 1) und einen Zackenstern (rau).
+ * Rauheit des Sterns r = R0 + A*cos(k*theta) — **gerechnet**, nicht gemessen.
  *
- * Ohne das ist eine Zahl wie 1,2 nicht zu lesen — man wuesste nicht, ob sie die
- * Form beschreibt oder das Raster. Die Scheibe sagt, wie viel das Raster
- * beitraegt; der Stern sagt, dass das Mass ueberhaupt ausschlaegt.
+ * Umfang = Integral ueber sqrt(r^2 + r'^2) dtheta. Die Mittelpunktsumme auf
+ * einer glatten geschlossenen Kurve konvergiert so schnell, dass schon tausend
+ * Schritte auf acht Stellen stehen; zwanzigtausend sind Sicherheitsabstand.
+ * Die konvexe Huelle ist das regelmaessige k-Eck durch die Zackenspitzen — die
+ * Kurve zwischen zwei Spitzen faellt auf R0-A und liegt damit innerhalb der
+ * Sehne (fuer 12/16/8 nachgerechnet: Tal bei 8, Sehne bei 23,2).
+ */
+function sternRauheit(zacken, R0, A, schritte = 20000) {
+  let umfang = 0;
+  for (let i = 0; i < schritte; i++) {
+    const t = (2 * Math.PI * (i + 0.5)) / schritte;
+    const r = R0 + A * Math.cos(zacken * t);
+    const dr = -A * zacken * Math.sin(zacken * t);
+    umfang += Math.hypot(r, dr) * ((2 * Math.PI) / schritte);
+  }
+  return umfang / (zacken * 2 * (R0 + A) * Math.sin(Math.PI / zacken));
+}
+
+/**
+ * Bevor irgendein Bild vermessen wird, misst das Werkzeug Formen, deren Rauheit
+ * feststeht — mit denselben Funktionen, die danach das Haar messen.
+ *
+ * Drei Stufen, von hart nach weich:
+ *
+ * 1. **Konvexe Vielecke** (Quadrat, Raute). Bei einer konvexen Maske ist der
+ *    Umriss schon seine eigene konvexe Huelle, also muss **exakt 1** heraus-
+ *    kommen — nachgerechnet auf neun Stellen. Das ist die scharfe Probe: eine
+ *    verdrehte Marching-Squares-Tafel oder eine kaputte Huelle faellt hier
+ *    sofort auf und nicht erst in der dritten Nachkommastelle.
+ * 2. **Zackenstern gegen seinen gerechneten Wert.** Frueher stand hier nur
+ *    `> 1,6`; das haette auch eine Formel bestanden, die bloss die halbe Laenge
+ *    zaehlt. Jetzt steht die integrierte Zahl daneben.
+ * 3. **Scheibe**: glatt und krumm zugleich. Sie misst nicht 1, sondern rund
+ *    1,04 — kein Fehler, sondern der Preis des Rasters. Wie hoch der bei der
+ *    Groesse und dem Gitter des Haares wirklich liegt, sagt `rasterboden()`.
  */
 function eichprobe() {
-  const mach = (n, f) => {
-    const m = new Uint8Array(n * n);
-    for (let y = 0; y < n; y++) {
-      for (let x = 0; x < n; x++) {
-        if (f(x + 0.5 - n / 2, y + 0.5 - n / 2)) m[y * n + x] = 1;
-      }
-    }
-    return m;
-  };
-  const rauheit = (m, n) => {
-    const u = umriss(m, n);
-    return u.laenge / huellenUmfang(u.punkte);
-  };
   const n = 64;
-  const scheibe = rauheit(mach(n, (x, y) => x * x + y * y <= 24 * 24), n);
-  const stern = rauheit(
-    mach(n, (x, y) => {
-      const r = Math.hypot(x, y);
-      return r <= 16 + 8 * Math.cos(12 * Math.atan2(y, x));
-    }),
-    n,
-  );
+  const eck = {
+    Quadrat: probeform(n, (x, y) => Math.abs(x) <= 16 && Math.abs(y) <= 16),
+    Raute: probeform(n, (x, y) => Math.abs(x) + Math.abs(y) <= 22),
+  };
+  for (const [name, wert] of Object.entries(eck)) {
+    if (wert === null || Math.abs(wert - 1) > 1e-9) {
+      throw new Error(`Eichprobe gescheitert: ${name} misst ${wert} statt exakt 1`);
+    }
+  }
+  const scheibe = probeform(n, (x, y) => x * x + y * y <= 24 * 24);
   if (!(scheibe > 0.98 && scheibe < 1.12)) {
     throw new Error(`Eichprobe gescheitert: Scheibe misst ${scheibe.toFixed(3)} statt rund 1`);
   }
-  if (!(stern > 1.6)) throw new Error(`Eichprobe gescheitert: Stern misst nur ${stern.toFixed(3)}`);
-  return { scheibe: Number(scheibe.toFixed(4)), zackenstern: Number(stern.toFixed(4)) };
+  const [ZACKEN, R0, A] = [12, 16, 8];
+  const stern = probeform(n, (x, y) => Math.hypot(x, y) <= R0 + A * Math.cos(ZACKEN * Math.atan2(y, x)));
+  const sternSoll = sternRauheit(ZACKEN, R0, A);
+  // Sechs Prozent Spielraum: So viel darf das Raster einer krummen Kante
+  // zulegen (siehe `umriss`), mehr waere ein Fehler in der Formel.
+  if (!(Math.abs(stern / sternSoll - 1) <= 0.06)) {
+    throw new Error(
+      `Eichprobe gescheitert: Zackenstern misst ${stern.toFixed(4)}, gerechnet sind ${sternSoll.toFixed(4)}`,
+    );
+  }
+  return {
+    quadrat: Number(eck.Quadrat.toFixed(6)),
+    raute: Number(eck.Raute.toFixed(6)),
+    scheibe: Number(scheibe.toFixed(4)),
+    zackenstern: Number(stern.toFixed(4)),
+    zackensternGerechnet: Number(sternSoll.toFixed(4)),
+  };
+}
+
+/**
+ * Was eine **glatte** Flaeche derselben Groesse auf demselben Gitter misst —
+ * der Nullpunkt, gegen den eine Haarzahl zu lesen ist.
+ *
+ * Zwei Dinge, die eine einzelne Scheibe bei einer festen Groesse nicht leistet
+ * und die vorher stillschweigend unterstellt waren:
+ *
+ * - **Der Boden haengt am Gitter.** Blatt (112) und Telefon (69) sind zwei
+ *   verschiedene Raster; eine Zahl aus einem dritten (64) gehoert zu keiner
+ *   von beiden. Gemessen wird deshalb je Gittergroesse.
+ * - **Der Boden haengt an der Lage.** Dieselbe Scheibe misst zwischen 1,00 und
+ *   1,05, je nachdem, wie sie auf das Raster faellt. Ueber vier mal vier
+ *   Unterpixel-Lagen gemittelt bleibt eine Zahl mit einer Streuung von rund
+ *   0,004 stehen — klein genug, um daneben etwas ablesen zu koennen.
+ */
+function rasterboden(n, flaeche, phasen = 4) {
+  if (!(flaeche > 0)) return null;
+  const r = Math.sqrt(flaeche / Math.PI);
+  const werte = [];
+  for (let i = 0; i < phasen; i++) {
+    for (let j = 0; j < phasen; j++) {
+      const ox = i / phasen;
+      const oy = j / phasen;
+      const w = probeform(n, (x, y) => (x - ox) ** 2 + (y - oy) ** 2 <= r * r);
+      if (w !== null) werte.push(w);
+    }
+  }
+  if (!werte.length) return null;
+  const mittel = werte.reduce((a, b) => a + b, 0) / werte.length;
+  const streuung = Math.sqrt(werte.reduce((a, b) => a + (b - mittel) ** 2, 0) / werte.length);
+  return {
+    mittel: Number(mittel.toFixed(4)),
+    streuung: Number(streuung.toFixed(4)),
+    flaeche: Math.round(flaeche),
+    gitter: n,
+  };
 }
 
 const EICHUNG = eichprobe();
