@@ -1,11 +1,22 @@
 {
   "_warum": "Was am Wuselwerker verschieden ist. Ein Chibi: 55 Prozent der Hoehe sind Kopf und Haar, die Beine messen 0,11 Modelleinheiten gegen 0,27 beim Erdmaennchen. Kein Kopfmassstab noetig — der Kopf ist gross genug. Die Blickwinkel liegen durchweg flacher als beim Tier: Diese Figur hat ein Gesicht mit Augen und Mund, und das verliert im Profil mehr, als die Silhouette gewinnt.",
-  "modell": "wuselwerker-rig.glb",
+  "modell": "wuselwerker-haar.glb",
   "kopfSkala": 1.0,
   "seitenversatz": 0,
   "drehung": {
-    "walking": 46, "falling": 34, "floating": 26, "climbing": 40, "hoisting": 48,
-    "building": 50, "bashing": 52, "mining": 54, "digging": 44,
-    "blocking": 8, "saving": 10, "dying": 0, "spaehen": 14
-  }
+    "walking": 46,
+    "falling": 34,
+    "floating": 26,
+    "climbing": 40,
+    "hoisting": 48,
+    "building": 50,
+    "bashing": 52,
+    "mining": 54,
+    "digging": 44,
+    "blocking": 8,
+    "saving": 10,
+    "dying": 0,
+    "spaehen": 14
+  },
+  "_haar": "Nicht mehr das gelieferte Rig, sondern das daraus gebaute: scripts/haar-bauen.mjs spreizt das Lappenrelief der Haarschale und haengt den Knochen HaarSchwung ein."
 }

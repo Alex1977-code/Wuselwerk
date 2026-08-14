@@ -2,7 +2,7 @@ import { State, type SkillId, type Wusel } from '../core/types';
 import { standY, sx, type View } from './camera';
 import { drawSchopf, schopfFarbe } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
-import { drawBand, drawHaarZacken, drawHaarStraehnen, bandFarbe } from './band';
+import { drawBand, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
 
 /**
@@ -374,10 +374,6 @@ export class SpriteAtlas {
     // Simulation glaetten darf — siehe `ansicht.ts`.
     pose?: string,
     takt?: number,
-    // Haarschwung in Radiant, fuer den Kletterzug (`Scene.kletterZug`): dreht
-    // den Stirnvektor, an dem Zacken, Straehnen und Band haengen — das Haar
-    // nickt dem Ruck nach, der gebackene Koerper bleibt, wie er ist.
-    schwung = 0,
   ): boolean {
     const name = pose ?? clipForWusel(w);
     if (!name) return false;
@@ -405,31 +401,6 @@ export class SpriteAtlas {
     const footX = raster ? Math.round(sx(v, w.x)) : sx(v, w.x);
     const footY = raster ? Math.round(standY(v, w.y)) : standY(v, w.y);
 
-    /**
-     * Der Haarschwung dreht die Kopfachse — aber nur fuer den **Zackenkamm**.
-     *
-     * Das ist keine Feinheit, sondern die Reparatur eines sichtbaren Fehlers.
-     * `drawHaarStraehnen` zeichnet an derselben Achse nicht nur die Straehnen
-     * auf der Kuppel, sondern auch Pony, Koteletten und Randkranz — Teile,
-     * die am GESICHT sitzen und dort mit Bildpunkten Genauigkeit platziert
-     * sind („die Spitzen bleiben oberhalb von -0,2 Achsen, damit sie nie in
-     * die Augen haengen"). Dreht man diese Achse um vierzig Grad, schwenken
-     * genau diese Straehnen quer ueber das Gesicht, und die Figur zerfaellt.
-     * Genau so kam der Befund „die Figur hat Fehler" zurueck.
-     *
-     * Physikalisch ist die Trennung ohnehin die richtige: Der Kopf im Blatt
-     * ist gebacken und bewegt sich nicht. Was frei haengt und deshalb
-     * nachschwingen darf, ist allein der Kamm ueber dem Scheitel; alles, was
-     * auf der Haut oder auf der Kuppel liegt, klebt an einem Kopf, der
-     * stillsteht.
-     */
-    const dreheStirn = (dx: number, dy: number): [number, number] => {
-      if (!schwung) return [dx, dy];
-      const c = Math.cos(schwung);
-      const s2 = Math.sin(schwung);
-      return [dx * c - dy * s2, dx * s2 + dy * c];
-    };
-
     ctx.save();
     // Pixelgrafik wird hart vergrössert, Gemaltes weich verkleinert. Beides
     // ist hier richtig: Beim harten Vergrössern wäre Glättung ein Verwaschen,
@@ -441,22 +412,6 @@ export class SpriteAtlas {
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     const lehne = clip.lehne ?? LEHNE[name] ?? 0;
     if (lehne) ctx.rotate(lehne);
-    // Die Haarzacken des Wuselwerkers — **vor** dem Bild gezeichnet, damit sie
-    // dahinter liegen: Ihre Wurzeln verschwinden unter der gebackenen
-    // Haarkuppel, nur die Spitzen brechen die Silhouette. Warum es sie gibt,
-    // steht bei `drawHaarZacken`.
-    if (this.manifest.figur === 'wuselwerker' && clip.anchors && clip.stirn) {
-      const ha = clip.anchors[frame] ?? clip.anchors[0];
-      const hs = clip.stirn[frame] ?? clip.stirn[0];
-      drawHaarZacken(
-        ctx,
-        (ha[0] - this.manifest.anchor.x) * s,
-        (ha[1] - this.manifest.anchor.y) * s,
-        s,
-        clip.dreh ?? 0,
-        ...dreheStirn(hs[0] - ha[0], hs[1] - ha[1]),
-      );
-    }
     ctx.drawImage(
       this.image,
       frame * cw * ppl,
@@ -468,25 +423,6 @@ export class SpriteAtlas {
       cw * s,
       ch * s,
     );
-
-    // Die Straehnen **auf** der Kuppel — nach dem Bild, damit sie darauf
-    // liegen. Zacken hinter dem Koerper brechen nur die Silhouette; erst die
-    // innere Zeichnung nimmt der Flaeche das Kappenhafte (siehe
-    // `drawHaarStraehnen`).
-    if (this.manifest.figur === 'wuselwerker' && clip.anchors && clip.stirn) {
-      const ha = clip.anchors[frame] ?? clip.anchors[0];
-      const hs = clip.stirn[frame] ?? clip.stirn[0];
-      drawHaarStraehnen(
-        ctx,
-        (ha[0] - this.manifest.anchor.x) * s,
-        (ha[1] - this.manifest.anchor.y) * s,
-        s,
-        clip.dreh ?? 0,
-        // Ohne Schwung: siehe `dreheStirn`. Was am Gesicht sitzt, bleibt.
-        hs[0] - ha[0],
-        hs[1] - ha[1],
-      );
-    }
 
     // Das Werkzeug — vor dem Koerper, hinter dem Schopf.
     //
@@ -577,7 +513,8 @@ export class SpriteAtlas {
           s,
           false,
           clip.dreh ?? 0,
-          ...dreheStirn(st ? st[0] - a[0] : 0, st ? st[1] - a[1] : -2),
+          st ? st[0] - a[0] : 0,
+          st ? st[1] - a[1] : -2,
         );
       } else {
         drawSchopf(ctx, px, py, zustand, farbe, s, false, platz);

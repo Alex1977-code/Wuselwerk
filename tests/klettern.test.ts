@@ -86,50 +86,53 @@ describe('Kletterzug', () => {
   });
 
   /**
-   * Haar, Neigung und Streckung ruhen im Moment des Zugbeginns und schlagen
-   * danach aus. Ein Ausschlag, der schon vor dem Ruck da ist, sieht nach
-   * Zappeln aus, nicht nach Ursache und Wirkung.
+   * Neigung und Streckung ruhen im Moment des Zugbeginns und schlagen danach
+   * aus. Ein Ausschlag, der schon vor dem Ruck da ist, sieht nach Zappeln aus,
+   * nicht nach Ursache und Wirkung.
+   *
+   * Das Haar steht hier nicht mehr: Es haengt seit dem Haar-Umbau am Knochen
+   * `HaarSchwung` und ist in die Bilder gebacken. Was der Zug davon steuert,
+   * ist die Bildwahl — und die pruefen die beiden Tests darunter.
    */
   it('faengt jeden Ausschlag bei null an', () => {
     // Zugbeginn liegt bei hoch % 6 === 4.
     const z = kletterZug(-16, 0);
-    expect(z.schwung).toBeCloseTo(0, 6);
     expect(z.reck).toBeCloseTo(1, 6);
   });
 
-  it('schwingt aus, statt am Zugende abzureissen', () => {
-    const s = zyklus(200);
-    const spaet = s.filter((x) => {
-      const c = ((x.hoch % 6) + 6) % 6;
-      return c > 0.5 && c < 3.5; // mitten im Halt, also lange nach dem Ruck
-    });
-    const rest = Math.max(...spaet.map((x) => Math.abs(x.z.schwung)));
-    expect(rest, 'Restschwung im Halt').toBeGreaterThan(0.01);
-    expect(rest, 'aber deutlich kleiner als der erste Ausschlag').toBeLessThan(0.2);
+  /**
+   * Der Halt zeigt alle VIER Kletterbilder, nicht nur das erste.
+   *
+   * Bis zum Haar-Umbau stand der Takt im Halt auf `zuege * 16`. `frameFor`
+   * rechnet modulo 16, und `climbing.holds` ist [4,4,4,4] — der Takt fiel
+   * damit immer auf Bild 0, und die Bilder 1 bis 3 der Kletterzeile wurden
+   * NIE gezeigt. Drei gebackene Zellen lagen brach. Sie tragen jetzt das
+   * Nachpendeln der Haarmasse; wer den Takt wieder glattzieht, nimmt es
+   * ersatzlos weg, und niemand saehe es.
+   */
+  it('spielt im Halt alle vier Kletterbilder', () => {
+    const bilder = new Set<number>();
+    for (const x of zyklus(200)) {
+      if (x.z.pose !== 'climbing') continue;
+      bilder.add(Math.floor(((x.z.takt % 16) + 16) % 16 / 4));
+    }
+    expect([...bilder].sort(), 'alle vier Bilder der Kletterzeile').toEqual([0, 1, 2, 3]);
   });
 
   /**
-   * Das Haar schwingt weiter als der Koerper — aber es loest sich nicht vom
-   * Kopf. Beide Grenzen sind teuer bezahlt:
-   *
-   * - **Unten** steht die Forderung aus dem Spieltest („die Haare muessen
-   *   dort mehr im Takt des Rucks wackeln"), und die Physik dazu: Was lose
-   *   haengt, schwingt weiter als das, was gehalten wird.
-   * - **Oben** steht der Befund, mit dem die erste Fassung zurueckkam („die
-   *   Figur hat Fehler"). Bei einem Ausschlag von 0,72 kippte die Kopfachse
-   *   so weit, dass die Haarformen quer ueber das Gesicht schwenkten. Die
-   *   Ursache ist inzwischen an der Wurzel behoben — die gesichtsnahen
-   *   Straehnen drehen gar nicht mehr mit (`drawWusel`, `dreheStirn`) —, aber
-   *   die Deckelung bleibt: Ein Kamm, der sich um mehr als etwa zwanzig Grad
-   *   vom Kopf loest, sieht nach Muetze im Wind aus.
+   * Und der Ruck leiht sich die Bilder 1 bis 3 des Hochziehens — dieselben,
+   * in die die staerksten Haarstellungen gebacken sind.
    */
-  it('schlaegt das Haar staerker aus als den Koerper, ohne sich zu loesen', () => {
-    const s = zyklus(200);
-    const haar = Math.max(...s.map((x) => Math.abs(x.z.schwung)));
-    const koerper = Math.max(...s.map((x) => Math.abs(x.z.neigung + LEHNE.climbing)));
-    expect(haar).toBeGreaterThan(0.18);
-    expect(haar).toBeLessThan(0.35);
-    expect(haar).toBeGreaterThan(koerper * 1.5);
+  it('leiht sich im Ruck die Bilder 1 bis 3 des Hochziehens', () => {
+    // Haltedauern der Zeile hoisting: [8,8,8,8,8,12].
+    const grenzen = [8, 16, 24, 32, 40, 52];
+    const bild = (takt: number) => grenzen.findIndex((g) => takt < g);
+    const bilder = new Set<number>();
+    for (const x of zyklus(200)) {
+      if (x.z.pose !== 'hoisting') continue;
+      bilder.add(bild(x.z.takt));
+    }
+    expect([...bilder].sort()).toEqual([1, 2, 3]);
   });
 
   /**
@@ -147,11 +150,28 @@ describe('Kletterzug', () => {
     }
   });
 
-  /** Der Halt friert auf Bild 0 ein — sonst radelt die Figur im Stehen. */
-  it('friert im Halt auf einem Bild ein', () => {
-    const halt = zyklus(200).filter((x) => x.z.pose === 'climbing');
-    const takte = new Set(halt.map((x) => x.z.takt % 16));
-    expect(takte.size, `Takte im Halt: ${[...takte].join(' ')}`).toBe(1);
+  /**
+   * Der Koerper friert im Halt ein — sonst radelt die Figur im Stehen.
+   *
+   * Das war einmal ein Befund und ist es geblieben; nur die Stelle hat sich
+   * verschoben. Frueher hielt der Takt dagegen: Er stand auf Bild 0, und die
+   * Bilder 1 bis 3 wurden nie gezeigt. Seit dem Haar-Umbau laeuft er durch
+   * alle vier — dafuer tragen alle vier DENSELBEN Koerper und unterscheiden
+   * sich allein in der Stellung der Haarmasse. Die Zusage wird deshalb jetzt
+   * an der Posendatei geprueft und nicht mehr am Takt: Wer dort wieder Arme
+   * hineinschreibt, laesst die Figur radeln.
+   */
+  it('haelt im Halt den Koerper still und bewegt nur das Haar', async () => {
+    const { readFileSync } = await import('node:fs');
+    const pose = JSON.parse(
+      readFileSync('art-src/wuselwerker/posen/climbing.json', 'utf8'),
+    ) as { frames: { richtung: Record<string, number[]>; winkel: Record<string, number[]> }[] };
+    const basis = JSON.stringify(pose.frames[0].richtung);
+    for (const [i, f] of pose.frames.entries()) {
+      expect(JSON.stringify(f.richtung), `Koerper in Bild ${i}`).toBe(basis);
+    }
+    const haar = pose.frames.map((f) => f.winkel.HaarSchwung[0]);
+    expect(new Set(haar).size, `Haarstellungen: ${haar.join(' ')}`).toBe(pose.frames.length);
   });
 
   /**

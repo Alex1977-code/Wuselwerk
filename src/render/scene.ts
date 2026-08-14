@@ -761,7 +761,7 @@ export class Scene {
       const takt =
         sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
       const pose = zug?.pose ?? sicht.pose;
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt, zug?.schwung ?? 0)) {
+      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt)) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);
@@ -1762,7 +1762,6 @@ export function wuselCenterY(y: number): number {
  * - `takt`: die Gliedmassen frieren waehrend des Haltens auf Bild 0 ein und
  *   spielen den 16-Tick-Zyklus des Blatts im Ruck ab — Zug fuer Zug, statt
  *   eines Radfahrens neben der Bewegung.
- * - `schwung`: das Haar haengt dem Ruck nach (`drawWusel`, Stirnvektor).
  * - `neigung`: die Neigung des ganzen Koerpers um den Fusspunkt, in Radiant,
  *   positiv zur Wand hin.
  * - `reck`: die senkrechte Streckung um den Fusspunkt, 1 ist ungestreckt.
@@ -1782,7 +1781,6 @@ export function kletterZug(
 ): {
   dy: number;
   takt: number;
-  schwung: number;
   neigung: number;
   reck: number;
   pose: string;
@@ -1810,20 +1808,15 @@ export function kletterZug(
   const nach = (a: number, tau: number, welle: number): number =>
     a * Math.exp(-u / tau) * Math.sin((Math.PI * u) / welle);
 
-  // Das Haar haengt dem Ruck nach und pendelt aus — genauer: der Zackenkamm
-  // ueber dem Scheitel tut es, denn nur der haengt frei (`drawWusel`,
-  // `dreheStirn`).
+  // Das Haar schwingt hier NICHT mehr mit.
   //
-  // Der erste Wurf stand auf 0,72 und war ein Fehler. Nicht, weil die Zahl zu
-  // gross klingt, sondern weil an derselben Kopfachse auch Pony und
-  // Koteletten hingen: Bei vierzig Grad schwenkten sie quer ueber das
-  // Gesicht, und die Figur zerfiel sichtbar. Behoben ist das an der Wurzel —
-  // die gesichtsnahen Straehnen drehen gar nicht mehr mit. Die Amplitude
-  // bleibt trotzdem gedeckelt: Ein Kamm, der sich um mehr als etwa zwanzig
-  // Grad vom Kopf loest, sieht nicht nach Haar aus, sondern nach Muetze im
-  // Wind. 0,38 ist deutlich mehr als die 0,26 der allerersten Fassung — und
-  // anders als damals ein Nachschwingen statt eines einzelnen Bogens.
-  const schwung = nach(0.38, 1.8, 1.5);
+  // Bis zum Haar-Umbau drehte diese Zeile den Stirnvektor, und der Zeichner
+  // malte daran einen Zackenkamm. Die Messung hat den Ansatz verworfen: Ein
+  // Zeichner, der nur die fertige Blattzelle kennt, kann der Silhouette gar
+  // nicht beikommen, weil der grosse Teil seiner Tinte innerhalb der schon
+  // vorhandenen Haarkuppel landet. Das Haar haengt jetzt am Knochen
+  // `HaarSchwung` und ist in die Bilder gebacken — sieben Stellungen ueber
+  // einen Zug, siehe unten bei der Bildwahl.
   // Der Koerper legt sich in den Zug: Beim Hochreissen kippt er zur Wand,
   // danach federt er zurueck.
   const neigung = nach(0.22, 1.3, 1.6);
@@ -1835,7 +1828,16 @@ export function kletterZug(
   // Warten: Der Zeichenversatz waechst genau so, wie die Simulation steigt —
   // die Figur bleibt am Absatz stehen und friert auf Bild 0 ein.
   if (c < HALT) {
-    return { dy: c, takt: zuege * 16, schwung, neigung, reck, pose: 'climbing' };
+    // Die vier Kletterbilder als AUSSCHWINGEN.
+    //
+    // Vorher stand hier `zuege * 16`, und weil `frameFor` modulo 16 rechnet
+    // und `climbing.holds` [4,4,4,4] ist, fiel der Takt damit immer auf Bild
+    // 0: Die Bilder 1, 2 und 3 der Kletterzeile wurden nie gezeigt — drei
+    // gebackene Zellen lagen brach. Sie tragen jetzt das Nachpendeln der
+    // Haarmasse, in das der Ruck hineinlaeuft. `u` steht waehrend des Haltens
+    // zwischen 2 und 6, das ergibt genau die vier Bilder.
+    const aus = Math.min(3, Math.max(0, Math.floor(u - 2)));
+    return { dy: c, takt: zuege * 16 + aus * 4, neigung, reck, pose: 'climbing' };
   }
 
   // Reissen: sechs Bildpunkte in acht Ticks, mit Ueberschwung. Der
@@ -1860,7 +1862,6 @@ export function kletterZug(
   return {
     dy: c - HUB * r,
     takt: 8 + t * 24,
-    schwung,
     // Die geliehene Reihe bringt ihre eigene Grundneigung mit (`LEHNE`:
     // Hochziehen 0,20 gegen Klettern 0,06). Ungerechnet springt der Koerper
     // beim Wechsel um acht Grad und liegt fuer die Dauer des Zugs halb
