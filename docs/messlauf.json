@@ -1511,6 +1511,26 @@
  {
   "id": "w6-03",
   "name": "Zu tief zum Fallen",
+  "planTicks": 4457,
+  "letzteRettungSek": 74,
+  "quoteSek": 61.3,
+  "uhrSek": 105,
+  "uhrFaktor": 1.42,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 2,
+  "vergaben": 2,
+  "benutzt": {
+   "miner": 2
+  },
+  "werkzeuge": 7,
+  "ueberschuss": 5
+ },
+ {
+  "id": "w6-04",
+  "name": "Die dritte Schräge",
   "planTicks": 7627,
   "letzteRettungSek": 126.8,
   "quoteSek": 112.7,
@@ -1527,5 +1547,67 @@
   },
   "werkzeuge": 8,
   "ueberschuss": 5
+ },
+ {
+  "id": "w6-05",
+  "name": "Die Rampe von oben",
+  "planTicks": 7588,
+  "letzteRettungSek": 126.2,
+  "quoteSek": 123.8,
+  "uhrSek": 177,
+  "uhrFaktor": 1.4,
+  "gerettet": 14,
+  "total": 14,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 3,
+  "vergaben": 3,
+  "benutzt": {
+   "climber": 1,
+   "miner": 2
+  },
+  "werkzeuge": 8,
+  "ueberschuss": 5
+ },
+ {
+  "id": "w6-06",
+  "name": "Der Sonnenhof",
+  "planTicks": 4098,
+  "letzteRettungSek": 68,
+  "quoteSek": 62.3,
+  "uhrSek": 95,
+  "uhrFaktor": 1.4,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 1,
+  "vergaben": 1,
+  "benutzt": {
+   "basher": 1
+  },
+  "werkzeuge": 18,
+  "ueberschuss": 17
+ },
+ {
+  "id": "w6-07",
+  "name": "Der Brunnen",
+  "planTicks": 3062,
+  "letzteRettungSek": 50.7,
+  "quoteSek": 45.5,
+  "uhrSek": 71,
+  "uhrFaktor": 1.4,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 13,
+  "vergaben": 13,
+  "benutzt": {
+   "climber": 12,
+   "digger": 1
+  },
+  "werkzeuge": 19,
+  "ueberschuss": 6
  }
 ]

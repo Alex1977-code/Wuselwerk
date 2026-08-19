@@ -76,6 +76,13 @@ const UMBAU_KEY = 'wuselwerk.umbau.v1';
  */
 const UMBAUTEN: Record<string, string[]> = {
   'w1-neubau': ['w1-03', 'w1-04', 'w1-05', 'w1-06', 'w1-07', 'w1-08', 'w1-09', 'w1-10'],
+  // Der Sonnenhang hat auf Platz 3 ein anderes Raetsel bekommen: Aus drei
+  // losen E96-Bloecken ist der gestufte Hang mit zwei Schraegen geworden,
+  // und die alte Aufgabe steht jetzt eine Stufe weiter als w6-04. Par faellt
+  // dabei von 3 auf 2 — eine gespeicherte Bestzahl von 3 waere ab sofort
+  // die Bestleistung an einer Aufgabe, die es auf diesem Platz nicht mehr
+  // gibt. Sie faellt weg, gewonnen und Sterne bleiben.
+  'w6-03-neubau': ['w6-03'],
 };
 
 function umbautenGelaufen(): string[] {

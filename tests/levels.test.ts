@@ -2030,8 +2030,52 @@ function planVersetzterSchacht(): Plan {
 }
 
 
-/** w6-04: Drei Schraegen durch drei E96-Bloecke — kein Schirm im Vorrat. */
+/**
+ * w6-03: Zwei Schraegen den Hang hinab — die zweite oestlich des Findlings.
+ *
+ * In der Messung nimmt DIESELBE Figur beide Auftraege: Sie faellt als erste
+ * aus der Stirn von T1 und steht als erste am zweiten Ansatz. Der Plan sucht
+ * trotzdem nach Ort und Blickrichtung statt nach der Kennung — das ist der
+ * Griff, den ein Spieler tut.
+ */
 function planZuTief(): Plan {
+  let obenGesetzt = false;
+  let untenGesetzt = false;
+  return (w) => {
+    if (!obenGesetzt) {
+      // Ansatzfenster ausgemessen: x136 bis x144 tragen alle. Weiter westlich
+      // laeuft die Schraege in das Findlingsband auf T2-Hoehe und endet in
+      // einer Sackgasse, weiter oestlich bricht sie zu frueh aus der Stirn.
+      const c = walkerNear(w, 138, 142, 1);
+      if (c && c.y < 185 && w.assign(c.id, 'miner')) obenGesetzt = true;
+      return;
+    }
+    if (!untenGesetzt) {
+      // Auf T2 erst oestlich von x392: Davor liegt der Findling, und der
+      // Bagger dreht sichtbar ab, ohne einen Bildpunkt zu raeumen. Gemessen
+      // tragen x394 bis x406.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === 1 &&
+          x.y > 270 &&
+          x.y < 280 &&
+          x.x >= 398 &&
+          x.x <= 402,
+      );
+      if (c && w.assign(c.id, 'miner')) untenGesetzt = true;
+    }
+  };
+}
+
+/**
+ * w6-04 „Die dritte Schräge": drei lose E96-Bloecke, drei Ansaetze.
+ *
+ * Der Unterschied zum Vorlevel steht in der Luft zwischen den Bloecken: Am
+ * Blockfuss verliert der Bagger den Boden und faellt die 24 heil auf den
+ * naechsten — also muss dieselbe Hand dort neu ansetzen, zweimal.
+ */
+function planDritteSchraege(): Plan {
   let miner: number | null = null;
   let stufen = 0;
   return (w) => {
@@ -2054,6 +2098,121 @@ function planZuTief(): Plan {
   };
 }
 
+
+/**
+ * w6-05 „Die Rampe von oben" — der eine Aufstieg der Abwaertswelt.
+ *
+ * Ein Kletterer und zwei Schraegen, alle drei an derselben Figur. Der Kern
+ * steht in Zug 2: Ein Bagger graebt, wohin er schaut, also muss der Spaeher
+ * erst bis an den Weltrand laufen und dort umkehren — die Westschraege gibt
+ * es nur auf dem Rueckweg. Unten wendet ihn die Findlingssohle, er steigt
+ * seine eigene Rampe zurueck hinauf, und oben schneidet dieselbe Hand die
+ * Ostschraege in die Tuerkammer.
+ */
+function planRampeVonOben(): Plan {
+  let spaeher: number | null = null;
+  let west = false;
+  let ost = false;
+  return (w) => {
+    if (spaeher === null) {
+      // Noch weit vor dem Erdkeil: Er hat den ganzen Anlauf, um an die
+      // Flanke zu kommen, und der Rest des Pulks pendelt derweil sicher.
+      const c = walkerNear(w, 60, 100, 1);
+      if (c && c.y > 340 && w.assign(c.id, 'climber')) spaeher = c.id;
+      return;
+    }
+    const k = w.wuselById(spaeher);
+    // Nur oben auf der Krone (y 299). Am Hangfuss steht dieselbe Figur auf
+    // der Findlingssohle — dort verpufft jeder Bagger sofort am Stahl.
+    if (!k || k.state !== State.WALKING || k.y > 310) return;
+    if (!west) {
+      // Blick nach Westen, also nach der Kehre am Weltrand: Diese Schraege
+      // holt den Pulk herauf. Gemessenes Fenster x256 bis x326.
+      if (k.dir === -1 && k.x >= 285 && k.x <= 295 && w.assign(k.id, 'miner')) west = true;
+      return;
+    }
+    if (!ost) {
+      // Zurueck aus der eigenen Rampe, Blick wieder nach Osten: Jetzt die
+      // Schraege in die Tuerkammer. Gemessenes Fenster x286 bis x328.
+      if (k.dir === 1 && k.x >= 300 && k.x <= 310 && w.assign(k.id, 'miner')) ost = true;
+    }
+  };
+}
+
+/**
+ * w6-06 „Der Sonnenhof" — die Westmauer, das Par.
+ *
+ * Ein einziger Zug. Das Fenster x115..119 ist Vorschrift und nicht
+ * Zieluebung: Ein Rammer ohne Wand in Reichweite (BASH_LOOK 5) wird zum
+ * VORGEMERKTEN Rammer. Gemessen traegt hier auch die Vormerkung von weit
+ * westlich — auf der Hofsohle steht keine zweite Wand, an der sie falsch
+ * anfangen koennte —, aber ein Plan, der sich darauf verlaesst, prueft die
+ * Geometrie nicht mehr.
+ *
+ * Die Hoehenschranke y > 350 trennt die Hofsohle vom Zwischenband der
+ * Aussentreppe: Dort laufen dieselben Spalten, nur zweiundsiebzig
+ * Bildpunkte hoeher.
+ */
+function planSonnenhof(): Plan {
+  let tor = false;
+  return (w) => {
+    if (tor) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.dir === 1 && x.y > 350 && x.x >= 115 && x.x <= 119,
+    );
+    if (c && w.assign(c.id, 'basher')) tor = true;
+  };
+}
+
+/**
+ * w6-06, Route zwei — der Schacht durchs Erddach (die Kuer).
+ *
+ * Der B6-Gegenbeweis wie bei w4-06 und w5-05: Auch das Dach loest das
+ * Level, dreissig Sekunden schneller und zwoelf Vergaben teurer. Der
+ * Graeber faellt aus seinem eigenen Schacht 96, jeder Nachlaeufer 120 —
+ * darum bekommt JEDER einen Schirm, der Graeber eingeschlossen. Das
+ * Dachfenster ist breit (gemessen loest jede Grabstelle von x184 bis x355);
+ * ueber dem Mauerkopf meldet der Graeber Stein und das Level ist verloren,
+ * ohne dass jemand stirbt.
+ */
+function planSonnenhofDach(): Plan {
+  let schacht = false;
+  return (w) => {
+    if (!schacht) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 245 && x.x >= 240 && x.x <= 250,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht = true;
+      return;
+    }
+    if (w.skills.floater <= 0) return;
+    const f = w.wusels.find((x) => !x.hasFloater && w.canAssignTo(x, 'floater'));
+    if (f) w.assign(f.id, 'floater');
+  };
+}
+
+/** w6-07: Ein Schacht in die Kammer, dann je ein Kletterer an der Ostwand. */
+function planBrunnen(): Plan {
+  let graeber = false;
+  return (w) => {
+    // Der erste Laeufer der Mittelterrasse sinkt den Brunnen. Die Stelle ist
+    // frei waehlbar — gemessen traegt jede zwischen x304 und x551; nur auf
+    // der Findlingsbank im Westen trifft sein Fenster auf Stein.
+    if (!graeber) {
+      const c = walkerNear(w, 512, 520, 1);
+      if (c && w.assign(c.id, 'digger')) graeber = true;
+      return;
+    }
+    // Und dann jedem in der Kammer seinen Kletterer: Die 48 an der Tuerbank
+    // nimmt keiner ohne. `y > 340` heisst „steht auf der Kammersohle" — oben
+    // auf der Terrasse waere derselbe Griff verschenkt und der Kletterer
+    // kippte am Kragstein.
+    const k = w.wusels.find(
+      (x) => x.state === State.WALKING && !x.hasClimber && x.y > 340 && x.y < 352,
+    );
+    if (k) w.assign(k.id, 'climber');
+  };
+}
 
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
@@ -2127,6 +2286,10 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-01': planVierWiesen,
   'w6-02': planVersetzterSchacht,
   'w6-03': planZuTief,
+  'w6-04': planDritteSchraege,
+  'w6-05': planRampeVonOben,
+  'w6-06': planSonnenhof,
+  'w6-07': planBrunnen,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -2194,6 +2357,20 @@ describe('Alle Level sind lösbar', () => {
     // den Sprengmeister aermer.
     const level = levelById('w5-15')!;
     const w = play(level, planPruefungA());
+    expect(w.phase).toBe('won');
+    expect(w.saved).toBeGreaterThanOrEqual(level.needed);
+    expect(w.skillsUsed).toBeGreaterThan(level.par);
+  });
+
+  it('w6-06: auch der Schacht durchs Erddach löst den Sonnenhof — schneller, teurer', () => {
+    // Das eine Doppeltor des Sonnenhangs (Konzept: B6 genau einmal je neuer
+    // Welt), und die Preisfrage steht andersherum als bei w4-06 und w5-05:
+    // Hier ist der TEURE Weg der schnelle. Der Rammer durch die Westmauer
+    // kostet eine Vergabe und 68,0 s, der Schacht dreizehn Vergaben und
+    // 36,6 s — dreissig Sekunden gegen zwoelf Schirme. Sterben tut auf
+    // beiden Wegen niemand.
+    const level = levelById('w6-06')!;
+    const w = play(level, planSonnenhofDach());
     expect(w.phase).toBe('won');
     expect(w.saved).toBeGreaterThanOrEqual(level.needed);
     expect(w.skillsUsed).toBeGreaterThan(level.par);
@@ -2383,6 +2560,17 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
     // wartet vergebens auf einen Blocker im Vorrat.
     erwarteRot('w3-05', planLevel4);
     erwarteRot('w3-05', planRost5);
+  });
+  it('w6-03: der Bloecke-Plan des Nachbarn endet auf dem Findlingsband', () => {
+    // Das E96-Paar der Welt: Beide Level lehren „sechsundneunzig traegt nur
+    // die Schraege", und genau deshalb muessen sie sich als Raetsel
+    // trennen. Der Nachsetz-Plan von w6-04 findet hier zwar seinen ersten
+    // Ansatz, setzt die zweite Schraege aber westlich des Findlings — sie
+    // dreht am Stein ab, und der Pulk bleibt auf der zweiten Terrasse.
+    erwarteRot('w6-03', planDritteSchraege);
+  });
+  it('w6-04: die Zwei-Schraegen-Hand des Nachbarn laesst den dritten Block stehen', () => {
+    erwarteRot('w6-04', planZuTief);
   });
   it('w3-14: kein einziger Altplan aus PLANS loest die Haarnadel', () => {
     // Die Abnahme des Konzepts woertlich: Rot-Test gegen ALLE Altplaene.

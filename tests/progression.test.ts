@@ -455,11 +455,12 @@ describe('Der ausgelieferte Katalog', () => {
     expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
     // 14 in Welt 1 seit dem Neubau des Grundkurses (`welt1.ts`): je ein
     // Level fuer jeden der acht Berufe, dann sechs, die kombinieren. 14 in
-    // Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu die
-    // ersten drei Terrassen des Sonnenhangs (Hundert-Level-Ausbau,
+    // Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu das
+    // erste Kapitel des Sonnenhangs — sechs Terrassen-Level und mit dem
+    // „Brunnen" der Auftakt des Hangs (Hundert-Level-Ausbau,
     // docs/welt-6-7-konzept.md). Die Zahl waechst mit jedem ausgemessenen
     // Level, bis sie hundert erreicht.
-    expect(karte.welten.map((w) => w.level.length)).toEqual([14, 13, 14, 14, 15, 3]);
+    expect(karte.welten.map((w) => w.level.length)).toEqual([14, 13, 14, 14, 15, 7]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });

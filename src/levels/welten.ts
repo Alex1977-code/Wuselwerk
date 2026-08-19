@@ -317,9 +317,9 @@ export const WELTEN: Welt[] = [
     thema: 'Terrassen im Nachmittagslicht. Was von weitem wie eine Wiese aussieht, hat vier Stockwerke.',
     kartenTheme: 'sonnenhang',
     farbe: '#d9a441',
-    // Drei von siebzehn gebaut. Die Zahl waechst mit jedem ausgemessenen
+    // Sieben von siebzehn gebaut. Die Zahl waechst mit jedem ausgemessenen
     // Level — die Karte verspricht nur, was das Spiel haelt.
-    soll: 3,
+    soll: 7,
     phase: 3,
     belohnung: {
       art: 'komfort',
