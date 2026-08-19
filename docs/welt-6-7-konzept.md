@@ -122,7 +122,32 @@ den Bestand gestrichen und drei Simulationswahrheiten im Code nachgemessen.
 
 Paket 0 (Fundament) ist gebaut: zwei ThemeIds, zwei Paletten, zwei
 Ambiente-Betten, zwei Musikstücke, zwei Welten in `welten.ts`, Kartendekor
-für beide. Aus Paket 1 sind **drei Level gemessen und grün** (w6-01 bis
-w6-03). Die übrigen stehen als Entwurf in der Tabelle oben; jedes braucht
-seine eigene Messrunde, denn — wie in allen fünf Paketen davor — sind die
-Zahlen dieses Papiers erst nach dem Messlauf wahr.
+für beide. Gemessen und grün sind **sieben Level** (w6-01 bis w6-07) —
+Paket 1 vollständig und mit dem „Brunnen" der Auftakt von Paket 2. Die
+übrigen stehen als Entwurf in der Tabelle oben; jedes braucht seine eigene
+Messrunde, denn — wie in allen fünf Paketen davor — sind die Zahlen dieses
+Papiers erst nach dem Messlauf wahr.
+
+### Eine Abweichung von der Tabelle, bewusst und gemessen
+
+Zeile 3 („Die Wasserrinne") ist **aus dem Plan gefallen**. Der Grund steht
+in der Baugeschichte: Gebaut wurde damals der Entwurf von Zeile 4 auf Platz
+3, und die spätere Messrunde hat aus derselben Zeile ein zweites, besseres
+Level gemacht — kürzere Uhr, ein Griff weniger, ein Findlingsband, das
+Fehlansätze abfängt. Statt eines der beiden wegzuwerfen stehen sie jetzt als
+Paar: **w6-03 „Zu tief zum Fallen"** führt die Schräge am gestuften Hang ein
+(par 2), **w6-04 „Die dritte Schräge"** steigert sie an drei losen Blöcken
+mit Luft dazwischen (par 3). Zwei Rot-Tests belegen, dass es wirklich zwei
+Rätsel sind: Jeder Plan verliert im Level des anderen.
+
+Damit belegen die verbleibenden Zeilen 5 bis 17 genau die Plätze w6-05 bis
+w6-17 — die Tabelle bleibt also ab hier eins zu eins gültig. Die
+Reihenfolge-Lehre, die „Die Wasserrinne" tragen sollte (Lippe, dann Spanne,
+dann Schräge — das Level prüft die Reihenfolge, nicht die Hand), trägt
+w6-13 „Vier Etagen", wo jeder Abstand über seine Zahl selbst sagt, welches
+Werkzeug er verlangt.
+
+### Kapitel
+
+Siebzehn Level teilen sich 6/6/5: **Terrasse** w6-01 bis w6-06,
+**Hang** w6-07 bis w6-12, **Kamm** w6-13 bis w6-17.
