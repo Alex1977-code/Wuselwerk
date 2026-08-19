@@ -174,12 +174,20 @@ for i, z in enumerate(zellen):
 speichere(blatt, 'berufe.webp', 80)
 
 # --- Weltembleme: ein Blatt -------------------------------------------------
+# Die Zahl der Zellen richtet sich nach den vorhandenen Quellen, nicht nach
+# einer fest verdrahteten Fuenf: Das Blatt wird mit dem Weltindex
+# angesprochen (`weltkarte.ts`), ein zu kurzes Blatt laesst die letzte Welt
+# also stillschweigend ohne Emblem. Wer weltemblem_6.png dazulegt, bekommt
+# beim naechsten Lauf sechs Zellen — ohne diese Datei anzufassen.
 zellen = []
-for i in range(1, 6):
-    im = Image.open(f'{QUELLE}/weltemblem_{i}.png').resize((512, 512), Image.LANCZOS)
+for i in range(1, 99):
+    quelle = f'{QUELLE}/weltemblem_{i}.png'
+    if not os.path.exists(quelle):
+        break
+    im = Image.open(quelle).resize((512, 512), Image.LANCZOS)
     im = schachbrett_frei(im)
     zellen.append(quadrat(beschneiden(im), 128))
-blatt = Image.new('RGBA', (128 * 5, 128), (0, 0, 0, 0))
+blatt = Image.new('RGBA', (128 * len(zellen), 128), (0, 0, 0, 0))
 for i, z in enumerate(zellen):
     blatt.paste(z, (i * 128, 0), z)
 speichere(blatt, 'weltembleme.webp', 82)
@@ -274,8 +282,13 @@ im = Image.open(f'{QUELLE}/titel.png').resize((1280, 592), Image.LANCZOS)
 speichere(im.convert('RGB'), 'titel.webp', 74)
 
 # --- Welttafeln -------------------------------------------------------------
-for i in range(1, 6):
-    im = Image.open(f'{QUELLE}/welt_{i}.png').resize((384, 216), Image.LANCZOS)
+# Ebenso hier: gemalt wird, was daliegt. Fruehere Fassungen zaehlten bis
+# fuenf und haetten eine gelieferte welt-6 beim naechsten Lauf uebergangen.
+for i in range(1, 99):
+    quelle = f'{QUELLE}/welt_{i}.png'
+    if not os.path.exists(quelle):
+        break
+    im = Image.open(quelle).resize((384, 216), Image.LANCZOS)
     speichere(im.convert('RGB'), f'welt-{i}.webp', 72)
 
 print('fertig')
