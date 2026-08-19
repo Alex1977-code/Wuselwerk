@@ -1054,4 +1054,532 @@ export const WELT6_LEVELS: LevelDef[] = [
       { t: 'rect', x: 340, y: 300, w: 4, h: 6, mat: MAT.EARTH }
     ]
   },
+  {
+    id: 'w6-12',
+    name: 'Das Storchennest',
+    chapter: 'Hang',
+    // Der Durchatmer des Kapitels und das Werbebild der Welt: ein
+    // Findlingsschlot mit fuenf Grasboeden im reinen E48-Takt (y152 / y200 /
+    // y248 / y296 / y344) ueber der Sohle y392, und die 12er-Lippe wechselt
+    // auf jeder Etage die Kante — Ost, West, Ost, West, Ost. Der Pulk laeuft
+    // deshalb Stockwerk fuer Stockwerk in die andere Richtung; ohne Zuweisung
+    // pendelt er zwischen Lippe und Findlingsflanke hin und her, und die
+    // Silhouette liest sich beim Spielen wie ein Uhrpendel (gemessene
+    // Halbwelle 11,4 s, volles Hin und Her 22,8 s — auf jeder Etage gleich,
+    // weil jedes Band dieselben 228 begehbaren Bildpunkte hat). Fuenf Rammer,
+    // einer je Lippe, oeffnen den Turm von oben nach unten; gemessen faellt
+    // alle 14,3 Sekunden eine (7,0 / 21,3 / 35,6 / 49,8 / 64,1 s).
+    //
+    // Die Aussage des Levels ist die TODESFREIHEIT, und sie ist gebaut, nicht
+    // behauptet: Jeder Sturz misst genau 48 (Sturzgrenze 78), der Falltuerfall
+    // 43, und der Turm hat keine andere Kante. Was der Spieler falsch machen
+    // kann, kostet ein Werkzeug und den Rueckweg.
+    //
+    // ## Was die Messung gegen den Entwurf entschieden hat
+    //
+    // 1. TODESFREI, UND ZWAR BEWIESEN. Sechzehnhundert Laeufe mit wahllos
+    //    verteilten Berufen — tausend davon zusaetzlich mit zufaelligen
+    //    Reglerzuegen, zusammen ueber 13 000 Vergaben: null Tote, groesster
+    //    gemessener Sturz 48. Zwei bis drei von tausend Laeufen gewinnen sogar
+    //    blind; das ist kein Leck, sondern das Versprechen des Durchatmers.
+    // 2. DIE FINDLINGSFLANKEN SIND DIE TODESFREIHEIT, NICHT DIE KULISSE.
+    //    Gegenprobe mit denselben Flanken aus Erde: dieselben Zufallslaeufe
+    //    ergeben 1476 Tote in 220 von 300 Laeufen, groesster Sturz 239 — ein
+    //    fehlgeleiteter Rammer schlaegt den Schlot auf, und der Pulk faellt
+    //    von der Etage bis auf die Sohle. Das Bittere daran: Die
+    //    Musterloesung merkt den Unterschied NICHT (12 von 12, dieselbe
+    //    Zeit auf den Tick). Ein Level, das nur an seiner Musterloesung
+    //    geprueft wird, haette diesen Fehler mitgeliefert.
+    // 3. EINE VORMERKUNG UEBERLEBT DEN STURZ, ABER NICHT DIE LANDUNG.
+    //    `stepFalling` setzt beim Aufkommen nur den Zustand, `w.vormerk`
+    //    bleibt stehen — ein vorbestellter Rammer koennte also mitfallen und
+    //    die naechste Lippe von selbst oeffnen. Gemessen tut er das nie: Jede
+    //    Landung liegt zwanzig Bildpunkte neben der Findlingsflanke, der
+    //    Blick zeigt dorthin, und `wandInReichweite` loest an ihr aus. Fuenf
+    //    Rammer auf einen Schlag auf der obersten Etage oeffnen gemessen
+    //    genau EINE Lippe und sind danach alle fuenf weg. Der Turm laesst
+    //    sich also nicht im Voraus loesen; jede Etage kostet ihren eigenen
+    //    Griff, und deshalb ist par 5 kein Budget, sondern der bewiesene
+    //    Mindestwert.
+    // 4. DAS ANSATZFENSTER IST DAS GANZE STOCKWERK. 115 von 115 Proben je
+    //    Etage im Zwei-Punkte-Raster (x232..459 bzw. x264..491): Jeder
+    //    Rammer, der in Richtung seiner Lippe schaut, oeffnet sie — die
+    //    Vormerkung traegt ihn hin. Gesucht ist nicht der Ort, sondern die
+    //    RICHTUNG. Wer zur Flanke tippt, hoert den Stein und sieht die Figur
+    //    umdrehen.
+    // 5. NEUN RAMMER HEISSEN GEMESSEN VIER FREIE FEHLGRIFFE. Vier Fehlgriffe
+    //    plus fuenf richtige sind neun Vergaben und gewinnen (96,3 s); ein
+    //    Fehlgriff je Etage waeren zehn und verliert — ohne einen Toten. Auch
+    //    der Panikwurf geht noch auf: fuenf Rammer sofort oben, danach sauber
+    //    weiter ab Etage 2, macht neun Vergaben und 91,3 s.
+    // 6. DER SCHIRM IST HIER KEINE RETTUNG, SONDERN EINE BREMSE. Kein Sturz
+    //    erreicht die Sturzgrenze, ein Schirm kann also nichts retten — er
+    //    kostet Zeit (FLOAT_INTERVAL 3 gegen FALL_INTERVAL 1). Alle sechs
+    //    vergeben: 97,1 s statt 90,7 s, und gewonnen wird trotzdem. Genau
+    //    dafuer liegt er im Vorrat: als der eine Knopf, mit dem man nichts
+    //    kaputtmachen kann.
+    // 7. DER TURM IST GEMESSEN SCHMAL. Der Entwurf liess die Boeden bis an
+    //    die Weltkanten laufen — die Weltkante wendet gratis und ist so hart
+    //    wie Findling. Gemessen dauert diese Fassung 240,4 s statt 90,7 s:
+    //    Jedes Stockwerk waere 600 Bildpunkte breit, ein Pendelschlag eine
+    //    ganze Minute, und zwei Drittel der Uhr waeren Zuschauen. Zwei
+    //    Findlingsflanken bei x208 und x492 kuerzen das Band auf 228
+    //    begehbare Bildpunkte und geben dem Fehlgriff seinen Preis. Dass der
+    //    Schlot dabei frei in der Wiese steht, ist die Folge der Messung,
+    //    nicht der Entwurf.
+    // 8. Die Uhr haengt nicht am Regler und kaum an der Geduld. Zwischen
+    //    Rate 20 (der Untergrenze) und Rate 90 schwankt die letzte Rettung um
+    //    5,8 s (96,5 bis 90,7) — der Pulk staut sich ohnehin an jeder Lippe.
+    //    Wer erst nach vierzig Sekunden anfaengt, rettet noch alle zwoelf
+    //    (124,8 s); wer nach fuenfzig anfaengt, rettet zehn und gewinnt. Wer
+    //    gar nichts tut, verliert ohne eine einzige Figur: Der Pulk pendelt
+    //    die volle Uhr auf Etage 1.
+    //
+    // Malreihenfolge beachtet: Die beiden Findlingsflanken stehen am ENDE
+    // der Liste — sie liegen ueber den Etagenbaendern und dem Sohlenband, und
+    // ein spaeterer Malbefehl haette aus ihrem Fuss wieder Erde gemacht. Die
+    // Turmsohle traegt rough 0, weil auf ihr gerammt wird; nur die Wiese
+    // links und rechts des Schlots ist rau.
+    hint: 'Fünf Grasböden, fünf Lippen — und jede sitzt an der anderen Kante. Ein Rammer je Lippe, und kein Fall misst mehr als achtundvierzig: Hier kann niemand sterben.',
+    theme: 'sonnenhang',
+    width: 720,
+    height: 540,
+    seed: 61012,
+    entrance: { x: 360, y: 108 },
+    exit: { x: 420, y: 366, w: 32, h: 26 },
+    total: 12,
+    // Musterloesung rettet alle zwoelf — sterben kann hier niemand (Befund 1).
+    // Quote = Messung minus 3.
+    needed: 9,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (90,7 s). Gemessener
+    // Uhrfaktor 1,40; der langsamste gepruefte Gewinnweg (vier Fehlgriffe,
+    // 96,3 s) liegt bei 1,32.
+    timeLimitSec: 127,
+    releaseRate: 60,
+    minReleaseRate: 20,
+    // Zwei Knopfarten, beide laengst gelehrt. Neun Rammer fuer fuenf Lippen
+    // sind gemessen genau vier freie Fehlgriffe (Befund 5); die Schirme sind
+    // der Fehltipp-Puffer, der nichts kaputtmachen kann (Befund 6).
+    skills: sk({ basher: 9, floater: 6 }),
+    par: 5,
+    paint: [
+      { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
+      // Die fuenf Grasboeden im E48-Takt. Die ungeraden (y152/y248/y344)
+      // haengen an der Westflanke und tragen ihre Lippe im Osten, die
+      // geraden (y200/y296) an der Ostflanke mit der Lippe im Westen. Aus
+      // dem Versatz von zwanzig Bildpunkten faellt der Pulk genau neben die
+      // Flanke der naechsten Etage — dorthin, wo er sofort wendet und das
+      // ganze Band zurueckgehen muss. Das ist der Pendelschlag.
+      { t: 'rect', x: 232, y: 152, w: 240, h: 16, mat: MAT.EARTH },
+      { t: 'rect', x: 460, y: 140, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 252, y: 200, w: 240, h: 16, mat: MAT.EARTH },
+      { t: 'rect', x: 252, y: 188, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 232, y: 248, w: 240, h: 16, mat: MAT.EARTH },
+      { t: 'rect', x: 460, y: 236, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 252, y: 296, w: 240, h: 16, mat: MAT.EARTH },
+      { t: 'rect', x: 252, y: 284, w: 12, h: 12, mat: MAT.EARTH },
+      { t: 'rect', x: 232, y: 344, w: 240, h: 16, mat: MAT.EARTH },
+      { t: 'rect', x: 460, y: 332, w: 12, h: 12, mat: MAT.EARTH },
+      // Die Wiese. Unter dem Schlot rough 0 — dort wird gerammt, und ein
+      // Zwei-Punkte-Huckel nimmt dem Rammer nach jedem Versatz den Boden.
+      { t: 'ground', x: 0, w: 208, y: 392, h: 148, mat: MAT.EARTH, rough: 2 },
+      { t: 'ground', x: 208, w: 308, y: 392, h: 148, mat: MAT.EARTH, rough: 0 },
+      { t: 'ground', x: 516, w: 204, y: 392, h: 148, mat: MAT.EARTH, rough: 2 },
+      // Findling ZULETZT. Die beiden Flanken sind das Netz dieses Levels:
+      // Sie schliessen den Schlot von oben bis auf die Wiese, sie wenden
+      // jeden Laeufer, und an ihnen verpufft jeder Rammer, der in die
+      // falsche Richtung tippt — sichtbar, hoerbar, ohne Verlust. Aus Erde
+      // gebaut kosten sie gemessen 1476 Leben (Befund 2).
+      { t: 'rect', x: 208, y: 100, w: 24, h: 292, mat: MAT.STEEL },
+      { t: 'rect', x: 492, y: 100, w: 24, h: 292, mat: MAT.STEEL },
+    ],
+  },
+  {
+    id: 'w6-13',
+    name: 'Vier Etagen',
+    chapter: 'Kamm',
+    // Der Auftakt des letzten Kapitels, und die These der ganzen Welt in
+    // einem Bild: vier Ebenen im Wechsel 48 / 96 / 48 (Oberkanten y180 /
+    // y228 / y324 / y372, auf den Bildpunkt die Zahlen des Konzepts). Jeder
+    // Abstand nennt sein Werkzeug selbst — die beiden Achtundvierzig nimmt
+    // der Graeber durch den Boden, die Sechsundneunzig dazwischen nimmt
+    // allein die Baggerschraege, und auf der Tuersohle oeffnet ein Rammer
+    // die vierundvierzig dicke Erdmauer. Vier Griffe, streng von oben nach
+    // unten.
+    //
+    // Dieses Level traegt ausserdem die Lehre der gestrichenen „Wasserrinne"
+    // (siehe den Kopf dieser Datei): Es prueft die REIHENFOLGE, nicht die
+    // Hand. Darum liegt von jedem Werkzeug ein Vielfaches im Vorrat, darum
+    // ist jedes Ansatzfenster mindestens dreiundsechzig Bildpunkte breit —
+    // und darum kostet jeder Fehlgriff Zeit oder den Weg, aber gemessen
+    // niemals eine Figur.
+    //
+    // ## Was die Messung gegen den Entwurf entschieden hat
+    //
+    // 1. DIE UNTEREN ZWEI ETAGEN SIND GALERIEN, KEINE WIESEN. Der Entwurf
+    //    sagt „vier Terrassen". Gemessen geht das nicht: Eine offene
+    //    Terrassenkante ueber achtundvierzig ist ein GESCHENKTER Abstieg —
+    //    der Pulk laeuft sie ohne eine einzige Zuweisung hinunter, und der
+    //    Graeber, dem die Achtundvierzig gehoeren soll, waere ueberfluessig.
+    //    Wo der Boden das Tor ist, muss die Etage links und rechts
+    //    geschlossen sein. Also: T1 und T2 sind offene Baender (West der
+    //    Weltrand, Ost die Hangstirn bei x340, deren Krone y156 zwoelf ueber
+    //    T1 steht und jeden wendet), T3 und T4 sind Galerien IM Hang, vom
+    //    ersten Bild an sichtbar aufgeschnitten. Die vier Hoehen des
+    //    Konzepts stehen unveraendert.
+    // 2. DER ABSTAND NENNT SEIN WERKZEUG — ABER NUR IN EINER RICHTUNG.
+    //    Gemessen nimmt die Schraege auch die Achtundvierzig: Durch die
+    //    sechzehn dicken Platten von T1 und T3 schneidet sie eine begehbare
+    //    Rampe und faellt unten heraus (14 von 14, 76,0 s — dieselbe Zeit
+    //    wie der Schacht). Umgekehrt nimmt der Graeber die Sechsundneunzig
+    //    NIE: im Erdfenster von T2 sinkt er zweiundsechzig auf die
+    //    Findlingsbank (y288), der Pulk sackt ihm Bildpunkt fuer Bildpunkt
+    //    nach und steht am Ende vollzaehlig im Neun-Punkte-Schacht.
+    //    Gemessen 0 gerettet, 0 tot, tiefster Einzelfall 60. Das ist der
+    //    Satz des Levels, und er ist unsymmetrisch: Die Schraege kann alles,
+    //    der Graeber nur die Achtundvierzig — und sie kostet dafuer das
+    //    Werkzeug, das die Sechsundneunzig braucht.
+    // 3. DIE SCHRAEGE LAEUFT 151, NICHT 192. Gemessen von x188/y227 bis
+    //    x339/y303: hunderteinundfuenfzig Bildpunkte Lauf, sechsundsiebzig
+    //    Abstieg — die letzten zwanzig sind ein FALL in die Galerie. Die
+    //    192 der reinen 2:1-Rechnung haetten buendig gemuendet, und eine
+    //    buendige Muendung ist eine Rampe in beide Richtungen (Paket 1,
+    //    Befund 1). Die zwanzig Bildpunkte Absatz sind es, die den Pulk
+    //    unten wenden.
+    // 4. DAS ANSATZFENSTER IST DREIUNDSECHZIG BREIT — UND SEINE OSTKANTE IST
+    //    DER ANLAUF. Gemessen tragen x179 bis x241. Die Westkante ist die
+    //    Kante des Findlingsdeckels bei x180 (der Bagger prueft vier Spalten
+    //    VOR sich, er darf also einen Bildpunkt westlich der Erde stehen).
+    //    Die Ostkante liegt neununddreissig Bildpunkte vor dem Deckel, der
+    //    bei x280 wieder anfaengt: Seine Bahn muss zwoelf unter der
+    //    Deckelunterkante (y233) liegen, bevor sein Blick die Kante
+    //    erreicht — 2 x 19 + 1 = 39. Das ist die Anlaufregel aus Paket 2,
+    //    zum zweiten Mal gemessen und auf den Bildpunkt bestaetigt.
+    // 5. DER SCHACHT GEHOERT ZWISCHEN FALLTUER UND ANSATZ. Die ganze
+    //    Grasschulter traegt ihn (gemessen x4 bis x338; x0 bis x3 fallen aus,
+    //    weil der Weltrand wie Stahl zaehlt und das Neun-Punkte-Fenster ihn
+    //    mitprueft). Aber nur zwischen x38 und x194 kommen alle vierzehn an
+    //    (76 bis 82 s): Dort landet der Pulk WESTLICH des Ansatzes und laeuft
+    //    ostwaerts hinein. Sonst landet er oestlich davon, und bis wieder
+    //    jemand ostwaerts am Fenster vorbeikommt, vergeht eine volle
+    //    T2-Runde — gemessen 13 von 14 und letzte Rettung 105,8 s. Niemand
+    //    stirbt, niemand strandet: Die falsche Seite kostet eine Figur und
+    //    dreissig Sekunden. Das ist die Reihenfolge-Lehre als Zahl.
+    // 6. DER RIEGEL HEILT GENAU DIESEN FEHLER. Ein Waechter WESTLICH des
+    //    Ansatzes dreht den westwaerts laufenden Pulk frueher um: gemessen
+    //    bei x150 letzte Rettung 85,2 s statt 105,8 s — zwanzig Sekunden
+    //    zurueck fuer eine Vergabe. Das ist die einzige gemessene Wirkung
+    //    des Waechters in diesem Level; er aendert weder Weg noch Ausgang,
+    //    nur die Uhr (dieselbe Handelsart wie in w6-06).
+    // 7. AUF DER TUERSOHLE BEISST NUR DER RAMMER. Das Findlingspflaster
+    //    liegt fuenf Bildpunkte unter ihr (die Zahl aus w6-10): Ein Graeber
+    //    kratzt eine Rinne und steht auf Stein, ein Bagger schneidet eine
+    //    fuenf tiefe Mulde und dreht ab — beides gemessen, beides verloren,
+    //    beides ohne Toten, und aus beiden Mulden steigt jeder wieder heraus
+    //    (MAX_STEP 5). Das Rammerfenster ist dafuer die GANZE Sohle:
+    //    gemessen x344 bis x555, zweihundertzwoelf Bildpunkte, weil ein
+    //    Rammer ohne Wand in BASH_LOOK 5 zur Vormerkung wird und von selbst
+    //    an der Mauer anfaengt. Die Mauer ist zweiunddreissig hoch, der
+    //    Stollen raeumt dreizehn — neunzehn Bildpunkte Erde bleiben als
+    //    Sturz darueber stehen und sind im Profil sichtbar.
+    // 8. FINDLING IST DAS NETZ, UND ES HAT ZWEI ZUSAETZLICHE MASCHEN
+    //    GEBRAUCHT. Der erste Bau hatte weder das Band in der Hangmasse
+    //    (y234) noch das Band auf Galeriehoehe (y324): dreihundert
+    //    Zufallslaeufe ergaben 63 Tote, tiefster Fall 106. Der Weg dorthin
+    //    war immer derselbe und immer zweizuegig — ein Rammer schlaegt einen
+    //    waagerechten Stollen (auf T1 bei y167..179, auf T2 bei y215..227,
+    //    in der Galerie westwaerts bei y311..323), und ein Graeber IN diesem
+    //    Stollen nimmt ihm den Boden; von der Stollensohle in die Galerie
+    //    sind es sechsundneunzig. Mit beiden Baendern: achthundert
+    //    Zufallslaeufe, 0 Tote, 0 Zufallssiege, tiefster Fall 67.
+    // 9. DIE FALLTUER HAENGT AUF y160 UND NICHT AUF y150, UND ZWAR WEGEN
+    //    EINES BILDPUNKTS. Der tiefste Sturz des Levels ist die Falltuer
+    //    selbst: Wer den Schacht genau unter sie legt, laesst jede Figur von
+    //    der Luke bis auf den Findlingsdeckel von T2 durchfallen. Aus y150
+    //    waren das gemessene 77 bei einer Grenze von 78. Aus y160 sind es
+    //    67 — elf Bildpunkte Luft, und das Bild aendert sich nicht.
+    // 10. NICHTSTUN VERLIERT UND TOETET NIEMANDEN, TRAEGHEIT KOSTET NUR UHR.
+    //    Leerer Plan ueber die volle Uhr UND ueber 300 s: 0 gerettet, 0 tot —
+    //    der Pulk pendelt auf der Grasschulter. Wer erst nach 25 s anfaengt,
+    //    rettet noch alle vierzehn; nach 30 s dreizehn. Und ein Rammer, den
+    //    man aus Ungeduld schon oben vergibt, treibt den Pulk in einen
+    //    Blindstollen im Hang: gemessen fuenf Zuege, 13 von 14, 84,5 s —
+    //    gewonnen, acht Sekunden teurer, kein Toter.
+    // 11. EINE SCHRAEGE NACH WESTEN KOSTET DEN LAUF, NICHT DEN PULK. Wird
+    //    der Bagger einer westwaerts laufenden Figur gegeben, schneidet er
+    //    denselben Stollen spiegelverkehrt (Paket 1, Befund 2), und der
+    //    zweite Bagger faellt beim Kreuzen in dessen Hohlraum. Gemessen ueber
+    //    300 s: 0 gerettet, 0 tot. Geheilt wird das nur von einem zweiten
+    //    Ansatz OESTLICH des ersten (Westansatz x200, Zweitansatz x200 bis
+    //    x238: 14 von 14, fuenf Zuege, 78 bis 92 s). Ein danebengesetzter,
+    //    aber ostwaerts blickender Bagger ist dagegen voll heilbar:
+    //    gemessen Fehlansatz x170 oder x260, danach x188 — 14 von 14, fuenf
+    //    Zuege, 77,1 bzw. 80,2 s. Genau dafuer liegen drei Bagger im Vorrat.
+    //
+    // Malreihenfolge beachtet: Alle acht Findlingsstuecke stehen am ENDE der
+    // Liste. Das Band auf Galeriehoehe (x0..x399) liegt auf demselben Streifen
+    // wie die Galeriesohle darunter und waere sonst wieder Erde; im
+    // Terrainabzug geprueft, nicht im Kopf.
+    hint: 'Achtundvierzig, sechsundneunzig, achtundvierzig — jeder Abstand sagt selbst, welches Werkzeug er will. Nur der Reihe nach von oben nach unten, und unten öffnet der Rammer die Mauer.',
+    theme: 'sonnenhang',
+    width: 720,
+    height: 540,
+    seed: 61013,
+    entrance: { x: 40, y: 160 },
+    exit: { x: 650, y: 346, w: 32, h: 26 },
+    total: 14,
+    // Gemessen 14 von 14 ohne einen Toten; Quote = Messung minus 3.
+    needed: 11,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (76,3 s). Gemessener
+    // Uhrfaktor 1,40.
+    timeLimitSec: 107,
+    releaseRate: 50,
+    minReleaseRate: 20,
+    // Vier Knopfarten, alle laengst gelehrt, und von jeder ein Vielfaches:
+    // Das Level prueft die Reihenfolge, nicht die Hand (Erbe der
+    // gestrichenen „Wasserrinne"). Zwei Graeber, ein Bagger, ein Rammer
+    // sind gesetzt — der Rest ist die bezahlte Erlaubnis, sich zu irren.
+    skills: sk({ digger: 4, miner: 3, basher: 3, blocker: 2 }),
+    par: 4,
+    paint: [
+      { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
+      // Die Hangmasse im Osten, Krone y156. Sie ist die Ostwand von T1 UND
+      // T2: vierundzwanzig ueber der Grasschulter, zweiundsiebzig ueber der
+      // Terrasse — beides weit ueber MAX_STEP 5, und es gibt keinen
+      // Kletterer. Deshalb braucht keine dieser beiden Etagen eine Lippe,
+      // und deshalb kann auf ihnen niemand verloren gehen.
+      { t: 'rect', x: 340, y: 156, w: 380, h: 108, mat: MAT.EARTH },
+      // T1, die Grasschulter: sechzehn dick, darunter zweiunddreissig
+      // Bildpunkte Luft. Ein Schacht hier ist zweiunddreissig Fall auf den
+      // Deckel von T2 — geschenkt, und das ist der erste Satz des Levels.
+      { t: 'rect', x: 0, y: 180, w: 340, h: 16, mat: MAT.EARTH },
+      // T2, der Terrassenkoerper: massiv von y228 bis an die Tuersohle. Nur
+      // so steht unter der Schraege durchgehend Boden, und nur deshalb
+      // traegt sie sechsundneunzig am Stueck.
+      { t: 'rect', x: 0, y: 228, w: 340, h: 144, mat: MAT.EARTH },
+      // T3, die Galeriesohle: sechzehn dick, darunter zweiunddreissig Luft.
+      // Dieselbe Bauart wie T1 — dieselbe Zahl, dasselbe Werkzeug.
+      { t: 'rect', x: 340, y: 324, w: 380, h: 16, mat: MAT.EARTH },
+      // Die Erdmauer vor der Tuerkammer: vierundvierzig dick, zweiunddreissig
+      // hoch, vom Boden bis an die Galeriedecke. Der Rammer raeumt dreizehn,
+      // neunzehn bleiben als Sturz stehen.
+      { t: 'rect', x: 560, y: 340, w: 44, h: 32, mat: MAT.EARTH },
+      // Die Tuersohle. rough 0 ist Pflicht: Auf ihr wird gerammt, und auf
+      // rauem Grund verliert ein Rammer nach jedem Zwei-Punkte-Versatz den
+      // Boden.
+      { t: 'ground', x: 0, w: 720, y: 372, h: 168, mat: MAT.EARTH, rough: 0 },
+      // --- Findling zuletzt (Malreihenfolge) ---------------------------
+      // Der Deckel von T2 mit dem Erdfenster x180..x279. Er macht die
+      // Sechsundneunzig zur Sache des Baggers: Westlich und oestlich des
+      // Fensters dreht jedes Werkzeug am Stein ab, im Fenster greift die
+      // Schraege — und nur dort greift auch der Graeber, dem sie gehoert.
+      { t: 'rect', x: 0, y: 228, w: 180, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 280, y: 228, w: 60, h: 6, mat: MAT.STEEL },
+      // Die Findlingsbank zweiundsechzig unter dem Fenster: das Fangnetz
+      // fuer den Graeber, der die Sechsundneunzig probiert. Sie endet bei
+      // x291, und das ist gerechnet: Die Schraege erreicht ihre Hoehe erst
+      // bei x299, sieht sie also nie. Waere sie acht Bildpunkte breiter,
+      // gaebe es dieses Level nicht.
+      { t: 'rect', x: 0, y: 288, w: 292, h: 6, mat: MAT.STEEL },
+      // Das Band in der Hangmasse. Es deckelt jeden Schacht, den ein
+      // Graeber in einem Rammstollen des Hangs ansetzt, bei hoechstens
+      // vierundfuenfzig Bildpunkten ab — ohne es faellt derselbe Fehlgriff
+      // sechsundneunzig in die Galerie (Befund 8).
+      { t: 'rect', x: 340, y: 234, w: 380, h: 6, mat: MAT.STEEL },
+      // Das Band auf Galeriehoehe: vom Westrand durch den ganzen
+      // Terrassenkoerper bis an das Erdfenster der Galeriesohle. Es ist
+      // zugleich der Westdeckel von T3 — ein Streifen, zwei Aufgaben.
+      { t: 'rect', x: 0, y: 324, w: 400, h: 6, mat: MAT.STEEL },
+      { t: 'rect', x: 520, y: 324, w: 200, h: 6, mat: MAT.STEEL },
+      // Die Westflanke der Tuersohle. Ohne sie schlaegt ein westwaerts
+      // vergebener Rammer einen dreihundert Bildpunkte langen Blindstollen
+      // unter die Terrasse; mit ihr hoert er Stein und behaelt seine Figur.
+      { t: 'rect', x: 332, y: 340, w: 8, h: 32, mat: MAT.STEEL },
+      // Das Findlingspflaster, fuenf unter der Tuersohle — die Zahl aus
+      // w6-10: flach genug, dass jeder aus der Rinne wieder heraussteigt.
+      { t: 'rect', x: 0, y: 377, w: 720, h: 6, mat: MAT.STEEL },
+    ],
+  },
+  {
+    id: 'w6-14',
+    name: 'Die Schleife am Hang',
+    chapter: 'Kamm',
+    // Die Rampe von oben ein zweites Mal — und diesmal ist nicht die Kehre das
+    // Raetsel, sondern die STELLE. Die Trockenmauer im Hang (Krone y252, Fuss
+    // y396) sperrt den Ostweg, und in ihrem Koerper stecken zwei
+    // Findlingsrippen uebereinander (x470 bis x485, oben y252..y272, unten
+    // y326..y395). Zwischen ihnen bleibt ein Korridor von dreiundfuenfzig
+    // Bildpunkten offen; nur eine Westschraege, die genau dort hindurchpasst,
+    // kommt bis in den Mauerfuss. Der Rest ist ein Kreis, und er gibt dem
+    // Level seinen Namen: Ein Kletterer steigt die Mauerwestflanke hinauf,
+    // laeuft die Krone ostwaerts, faellt hinten E48 auf die Ostterrasse, wird
+    // dort vom Kragstein ueber der Erdrippe gewendet und kommt an der
+    // Mauerostflanke von selbst wieder herauf — als Einziger mit Blick nach
+    // WESTEN. Dieser Rueckweg IST das Zeitfenster des Levels.
+    //
+    // ## Was die Messung gegen den Entwurf entschieden hat
+    //
+    // 1. DIE VIERZEHN SEKUNDEN GIBT ES NICHT — ES IST EINE SCHLEIFE. Das
+    //    Konzept warnte, der Vorauslaeufer auf der Krone habe rund vierzehn
+    //    Sekunden, bevor er die Tuer erreicht und weg ist. Gemessen wird er
+    //    ueberhaupt nicht verbraucht: Der Kragstein ueber der Erdrippe dreht
+    //    ihn um, die Mauerostflanke traegt ihn zurueck auf die Krone, und er
+    //    laeuft die Runde endlos. Umlauf 31,7 s, davon 3,3 s im Ansatzfenster,
+    //    erster Durchgang bei 41,4 s. Erster, zweiter und dritter Durchgang
+    //    gewinnen (letzte Rettung 119,4 s / 151,1 s / 167,1 s), der vierte
+    //    nicht mehr. Die Krone musste dafuer nicht nach Osten wachsen — sie
+    //    musste sich schliessen.
+    // 2. EINE LIPPE WENDET KEINEN KLETTERER, SIE TOETET IHN HIER. Erster Bau:
+    //    eine 12er Lippe an der Kronenwestkante. Der Spaeher klettert sie
+    //    (Welt-1-Gesetz), steht oben darauf, laeuft weiter nach Westen und
+    //    faellt sechsundachtzig Bildpunkte auf den Keil — gemessen tot, in
+    //    jedem Lauf. Jetzt steht dort ein Findlingspfeiler mit Kragstein: Der
+    //    Pfeiler wendet den Laeufer, der Kragstein kippt den Kletterer nach
+    //    zweiunddreissig Bildpunkten zurueck auf die Krone.
+    // 3. UND DER PFEILER IST DAS UHRWERK, NICHT DAS GELAENDER. Ohne ihn loest
+    //    das Level auch (gemessen 117,8 s, kein Toter) — aber der Spaeher
+    //    faellt dann vierundsiebzig Bildpunkte an der Kronenwestkante hinab,
+    //    vier unter der Sturzgrenze, und seine Schleife laeuft ueber die Sohle
+    //    statt ueber die Krone: Umlauf 77,1 s statt 31,7 s. Der Pfeiler kauft
+    //    beides, Abstand zur Grenze und einen halb so langen Umlauf.
+    // 4. DER KEIL IST PFLICHT, UND ER IST STEILER ALS DER VON w6-05. Ohne den
+    //    Keil am Mauerfuss verliert die Musterloesung (gemessen): Die Schraege
+    //    endet blind im Mauerleib. Er steigt hier 2:1 statt 1:1, weil ein
+    //    flacher Keil nur eine schmale Muendungshoehe abfaengt — die Schraege
+    //    faellt 1 px je 2 px, der Keil muss ihr entgegenkommen. So haengt das
+    //    Ansatzfenster an den Rippen und nicht am Keil, und das ist der Punkt
+    //    des Levels.
+    // 5. DAS FENSTER: x554 BIS x618, dreiundreissig tragende Stellen auf der
+    //    ganzen Krone. Sein Westende macht die obere Rippe (wer weiter westlich
+    //    ansetzt, laeuft zu hoch und stoesst an sie), sein Ostende faellt mit
+    //    dem Ostende der Krone zusammen; die untere Rippe deckt genau diese
+    //    Grenze ab und sagt im Bild, warum es sie gibt: weiter oestlich laege
+    //    die Bahn zu tief. Jeder Fehlansatz kostet einen Bagger und den
+    //    Rueckweg, kein Leben — darum fuenf Bagger fuer einen gesetzten.
+    //    Gemessen: Fehlansatz bei x500 oder x540, danach der richtige — 14 von
+    //    14, vier Zuege, 140,3 s bzw. 139,0 s.
+    // 6. DER KRONENDECKEL IST DIE ANTWORT AUF DEN HAEUFIGSTEN FEHLGRIFF. Ein
+    //    Bagger auf dem HINWEG schneidet die Schraege in die falsche Richtung
+    //    (die Lehre von w6-05). Ohne Deckel kostete das den Lauf an jeder
+    //    Stelle. Mit dem drei Bildpunkte duennen Findlingsdeckel (x392 bis
+    //    x520) meldet jeder Bagger westlich von x524 Stein und kostet nur ein
+    //    Werkzeug: Fehlgriff bei x420 gewinnt noch mit 123,1 s, bei x500 mit
+    //    130,6 s. Zwischen Deckelkante und Fenster bleiben vierunddreissig
+    //    Bildpunkte Anlauf stehen — dieselbe Zahl, die w6-08 gemessen hat, und
+    //    aus demselben Grund (der Bagger prueft elf Bildpunkte ueber den
+    //    Fuessen). Wer dort nach Osten baggert, verliert den Lauf und keine
+    //    Figur; oestlich von x556 heilt der naechste Umlauf den Fehler.
+    // 7. DER KRAGSTEIN UEBER DER ERDRIPPE MUSS UEBER DER RAEUMZEILE DES RAMMERS
+    //    LIEGEN. Er sitzt auf y279..y286, der Rammer raeumt y287..y299
+    //    (BASH_UP 12). Eine Zeile tiefer, und der Rammer prallt an seinem
+    //    eigenen Dach ab, statt die Rippe zu oeffnen. Ohne ihn klettert der
+    //    Spaeher die Rippe, laeuft in die Tuer und ist weg: gemessen 1
+    //    gerettet, verloren.
+    // 8. RAMMER NUR OSTWAERTS. Gemessenes Fenster auf der Ostterrasse x622 bis
+    //    x662 — die ganze freie Terrasse, einundvierzig Bildpunkte. Nach Westen
+    //    loest keine einzige Stelle: Die Findlingsflanke der Mauer wirft ihn
+    //    zurueck. Die Reihenfolge ist Pflicht, und zwar in diese Richtung: Wer
+    //    die Rippe oeffnet, BEVOR die Rampe steht, verliert den Vorlaeufer an
+    //    die Tuer — gemessen 2 gerettet, verloren, auch mit sofort
+    //    nachgesetztem zweitem Kletterer.
+    // 9. DER WAECHTER GEHOERT AUF DIE SOHLE, WESTLICH DER FALLTUER. Bei x120
+    //    (die Falltuer steht auf x140) sammelt er den Pulk und holt die letzte
+    //    Rettung von 119,4 s auf 106,7 s — er kostet sich selbst (13 statt 14)
+    //    und liegt mit vier Zuegen ueber Par: die Kuer dieses Levels. Oestlich
+    //    der Falltuer (x200, x260, x320) riegelt derselbe Waechter den Pulk
+    //    ein: verloren, kein Toter. Auf der Krone kostet er den Spaeher, denn
+    //    oben ist sonst niemand.
+    // 10. TODESFREI, UND ZWAR BEWEISBAR. Tiefster Sturz der Musterloesung ist
+    //    die E48 hinter der Krone; alles andere faellt 65 (Falltuer), 32
+    //    (Kragstein) oder 15. Zweihundert Zufallslaeufe mit wahllos verteilten
+    //    Berufen: null Tote und null Zufallssiege. Nichtstun verliert ueber die
+    //    volle Uhr, ohne eine einzige Figur zu kosten — der Pulk pendelt am
+    //    Mauerfuss. Traegheit kostet nur Uhr: erst nach vierzig Sekunden
+    //    angefangen rettet noch alle vierzehn (157,4 s), nach sechzig noch
+    //    genau die Quote, nach achtzig nicht mehr.
+    //
+    // Malreihenfolge beachtet: Aller Findling steht am ENDE der Liste. Der
+    // Kronendeckel und die Terrassenkappe liegen auf denselben Baendern wie die
+    // Erdkoerper darunter und waeren sonst wieder Erde; im Terrainabzug
+    // geprueft, nicht im Kopf. Und rough 0 auf der Sohle, weil der Keil buendig
+    // anschliessen muss — auf rauem Grund haette sein Fuss eine Stufe.
+    hint: 'Die Mauer trägt zwei Findlingsrippen, und nur zwischen ihnen bleibt ein Korridor frei. Schick einen Kletterer hinauf — die Schräge gibt es erst auf seinem Rückweg über die Krone. Der Rammer drüben kommt zuletzt.',
+    theme: 'sonnenhang',
+    width: 720,
+    height: 540,
+    seed: 61014,
+    entrance: { x: 140, y: 330 },
+    exit: { x: 684, y: 274, w: 32, h: 26 },
+    total: 14,
+    // Musterloesung rettet alle vierzehn — sterben kann hier niemand
+    // (Befund 10). Quote = Messung minus 3.
+    needed: 11,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (119,4 s). Gemessener
+    // Uhrfaktor 1,41. Sie ist so bemessen, dass der zweite Fensterdurchgang
+    // (151,1 s) noch gewinnt und der dritte (167,1 s) genau die Quote holt.
+    timeLimitSec: 168,
+    releaseRate: 40,
+    minReleaseRate: 20,
+    // Vier Knopfarten, alle laengst gelehrt. Fuenf Bagger fuer einen
+    // gesetzten: Das Ansatzfenster ist der Kern des Levels, und ein
+    // Fehlansatz soll ein Werkzeug kosten und einen Umlauf.
+    skills: sk({ climber: 3, miner: 5, basher: 3, blocker: 2 }),
+    par: 3,
+    paint: [
+      { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
+      // Die Sohle. rough 0, damit der Keil ohne Stufe anschliesst.
+      { t: 'ground', x: 0, w: 720, y: 396, h: 144, mat: MAT.EARTH, rough: 0 },
+      // Der Mauerkoerper: Krone y252, Fuss y396 — hundertvierundvierzig, die
+      // von unten niemand nimmt.
+      { t: 'rect', x: 380, y: 252, w: 240, h: 144, mat: MAT.EARTH },
+      // Der Keil am Mauerfuss, 2:1 von der Sohle auf y324. Er ist der Faenger
+      // jeder Westmuendung: Die Schraege faellt 1 px je 2 px, der Keil steigt
+      // 2 px je 1 px, und wo sich beide schneiden, oeffnet sich der Stollen
+      // von selbst auf die Keilflanke. Ohne ihn haengt die Rampe im Berg
+      // (gemessen: verloren).
+      { t: 'slope', x0: 344, y0: 396, x1: 380, y1: 324, thick: 80, mat: MAT.EARTH },
+      // Die Ostterrasse, E48 unter der Krone: der Landeplatz des Pulks und
+      // sein Warteraum vor der Rippe.
+      { t: 'rect', x: 620, y: 300, w: 100, h: 96, mat: MAT.EARTH },
+      // Die Erdrippe — die 12er Lippe der Welt, hier als letzte Sperre vor
+      // der Tuer. Sie haelt den Pulk sicher, bis der Rammer sie oeffnet.
+      { t: 'rect', x: 664, y: 288, w: 12, h: 12, mat: MAT.EARTH },
+      // --- Findling zuletzt (Malreihenfolge) ---------------------------
+      // Das Findlingspflaster der Sohle: An ihm dreht jede Schraege ab, und
+      // deshalb graebt sich in diesem Level niemand aus der Welt.
+      { t: 'rect', x: 0, y: 396, w: 720, h: 8, mat: MAT.STEEL },
+      // Der Kronendeckel, nur drei Bildpunkte stark und trotzdem das
+      // freundlichste Bauteil des Levels: Westlich von x524 beisst kein
+      // Bagger, in keiner Richtung. Er endet vierunddreissig Bildpunkte vor
+      // dem Fenster — genau der Anlauf, den ein Bagger unter einer Deckplatte
+      // braucht.
+      { t: 'rect', x: 392, y: 252, w: 129, h: 3, mat: MAT.STEEL },
+      // Die zwei Findlingsrippen im Mauerkoerper und der Korridor zwischen
+      // ihnen (y273 bis y325). Die obere steht als Steinzahn bis in die
+      // Krone hinauf und ist damit im Startbild die Marke des Fensters; die
+      // untere reicht bis auf das Pflaster.
+      { t: 'rect', x: 470, y: 252, w: 16, h: 21, mat: MAT.STEEL },
+      { t: 'rect', x: 470, y: 326, w: 16, h: 70, mat: MAT.STEEL },
+      // Die Findlingsflanke der Mauer zur Terrasse hin: An ihr endet jeder
+      // Rammer, der auf der Terrasse nach Westen schlaegt (gemessen: keine
+      // einzige Stelle loest westwaerts). Sie beginnt erst bei y294 und nicht
+      // an der Terrassenkante, damit sie nur den Rammer faengt.
+      { t: 'rect', x: 612, y: 294, w: 8, h: 102, mat: MAT.STEEL },
+      // Die Terrassenkappe: Wer hier gruebt oder baggert, steht sofort auf
+      // Stein, und der Weg zur Tuer bleibt eben.
+      { t: 'rect', x: 620, y: 300, w: 100, h: 6, mat: MAT.STEEL },
+      // Der Kragstein ueber der Erdrippe — das Bauteil, das die Schleife
+      // schliesst. Er kippt den Kletterer, der die Rippe nehmen will, nach
+      // Westen zurueck, statt ihn in die Tuer zu lassen. Er sitzt auf y279
+      // bis y286 und damit UEBER der Raeumzeile des Rammers (y287 bis y299):
+      // eine Zeile tiefer, und der Rammer prallt an seinem eigenen Dach ab.
+      { t: 'rect', x: 652, y: 279, w: 32, h: 8, mat: MAT.STEEL },
+      // Findlingspfeiler und Kragstein am Kronenwestende. Der Pfeiler wendet
+      // den Laeufer, der Kragstein kippt den Kletterer — eine Lippe allein
+      // taete beides nicht, sie wuerde geklettert und der Spaeher fiele
+      // dahinter sechsundachtzig Bildpunkte in den Tod (gemessen, erster Bau).
+      { t: 'rect', x: 380, y: 240, w: 12, h: 12, mat: MAT.STEEL },
+      { t: 'rect', x: 380, y: 232, w: 32, h: 8, mat: MAT.STEEL }
+    ]
+  },
 ];

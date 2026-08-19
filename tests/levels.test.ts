@@ -2487,6 +2487,222 @@ function planHangbruchVorhalt(): Plan {
   };
 }
 
+/**
+ * w6-12 „Das Storchennest" — fuenf Lippen, fuenf Rammer, und die Kante
+ * wechselt auf jeder Etage die Seite.
+ *
+ * Der Plan braucht kein Ansatzfenster, und das ist der Befund des Levels:
+ * Ein Rammer ohne Wand in Reichweite wird zur VORMERKUNG und schlaegt zu,
+ * sobald die Wand kommt (`World.applySkill`) — gemessen traegt sie ihn von
+ * jedem Punkt des Stockwerks bis an seine Lippe. Das Fenster je Etage ist
+ * darum das ganze begehbare Band (228 Bildpunkte, 115 von 115 Proben im
+ * Zwei-Punkte-Raster). Gesucht ist nicht der Ort, sondern die RICHTUNG: Wer
+ * zur Findlingsflanke schaut statt zur Lippe, verliert seinen Rammer an
+ * Stein — und nichts weiter.
+ */
+function planStorchennest(): Plan {
+  // Fusshoehe und Rammrichtung je Etage. Die Lippen wechseln die Kante
+  // (Ost, West, Ost, West, Ost), also wechselt auch die Blickrichtung.
+  const etagen: { y: number; dir: -1 | 1 }[] = [
+    { y: 151, dir: 1 },
+    { y: 199, dir: -1 },
+    { y: 247, dir: 1 },
+    { y: 295, dir: -1 },
+    { y: 343, dir: 1 },
+  ];
+  let i = 0;
+  return (w) => {
+    if (i >= etagen.length) return;
+    const e = etagen[i];
+    const c = w.wusels.find((x) => x.state === State.WALKING && x.y === e.y && x.dir === e.dir);
+    if (c && w.assign(c.id, 'basher')) i++;
+  };
+}
+
+/**
+ * Rot-Probe zu w6-12: Fuenf Rammer auf einen Schlag auf der obersten Etage.
+ *
+ * Der naheliegende Griff eines Spielers, der das Muster erkannt hat — und er
+ * traegt nicht. Die Vormerkung ueberlebt zwar den Sturz (`stepFalling` setzt
+ * nur den Zustand, nicht `vormerk`), aber nicht die Landung: Jede Landung
+ * liegt zwanzig Bildpunkte neben der Findlingsflanke, der Blick zeigt
+ * dorthin, und an Stein ist die Vormerkung verbraucht. Gemessen faellt
+ * genau EINE Lippe, fuenf Rammer sind weg, und es stirbt niemand.
+ */
+function planStorchennestVolley(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 5) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.y === 151 && x.dir === 1 && !x.vormerk,
+    );
+    if (c && w.assign(c.id, 'basher')) n++;
+  };
+}
+
+/**
+ * w6-13 „Vier Etagen" — vier Griffe, und jeder Abstand nennt seinen eigenen.
+ *
+ * 1. DER SCHACHT DURCH DIE GRASSCHULTER (y179). Achtundvierzig hinab, also
+ *    der Graeber. Gemessen traegt die ganze Schulter (x4 bis x338; x0..x3
+ *    fallen aus, weil der Weltrand im Neun-Punkte-Fenster wie Stahl zaehlt).
+ *    Der Plan setzt ihn zwischen Falltuer und Ansatzfenster, denn nur dort
+ *    landet der Pulk WESTLICH der Schraege und laeuft ostwaerts in sie
+ *    hinein: gemessenes Schnellfenster x38 bis x194, alle vierzehn in 76 bis
+ *    82 s. Oestlich davon kostet dieselbe Loesung eine volle T2-Runde —
+ *    13 von 14 und 105,8 s, ohne einen Toten.
+ * 2. DIE SCHRAEGE IM ERDFENSTER VON T2 (y227, ostwaerts). Sechsundneunzig
+ *    hinab, also der Bagger — und nur er: Ein Graeber sinkt hier
+ *    zweiundsechzig auf die Findlingsbank und nimmt den ganzen Pulk mit in
+ *    den Schacht (0 gerettet, 0 tot). Gemessenes Ansatzfenster x179 bis
+ *    x241; `dir === 1` ist keine Zierde, sondern die Bedingung — ein Bagger
+ *    graebt, wohin er schaut, und eine Westschraege kostet den Lauf.
+ * 3. DER SCHACHT DURCH DIE GALERIESOHLE (y323). Wieder achtundvierzig,
+ *    wieder der Graeber. Gemessenes Fenster x404 bis x515; westlich und
+ *    oestlich davon liegt der Findlingsdeckel, und die Tuerkammer bleibt so
+ *    von oben unerreichbar.
+ * 4. DER STOLLEN DURCH DIE ERDMAUER (y371, ostwaerts). Gemessen traegt die
+ *    ganze Sohle, x344 bis x555: Steht die Mauer noch nicht in BASH_LOOK 5,
+ *    wird der Auftrag zur Vormerkung und greift von selbst am Mauerfuss.
+ *
+ * Gemessen: 14 von 14 gerettet, kein Toter, vier Zuege, letzte Rettung
+ * 76,3 s bei einer Uhr von 107.
+ */
+function planVierEtagen(): Plan {
+  let schacht1 = false;
+  let schraege = false;
+  let schacht2 = false;
+  let stollen = false;
+  return (w) => {
+    if (!schacht1) {
+      const c = walkerNear(w, 120, 123, 1);
+      if (c && c.y === 179 && w.assign(c.id, 'digger')) schacht1 = true;
+      return;
+    }
+    if (!schraege) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 227 && x.x >= 188 && x.x <= 191,
+      );
+      if (c && w.assign(c.id, 'miner')) schraege = true;
+      return;
+    }
+    if (!schacht2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 323 && x.x >= 408 && x.x <= 411,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht2 = true;
+      return;
+    }
+    if (!stollen) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 371 && x.x >= 460 && x.x <= 463,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * Rot-Test zu w6-13: Der Graeber nimmt die Sechsundneunzig nicht.
+ *
+ * Zweimal derselbe Griff, der auf T1 richtig ist: ein Schacht durch den
+ * Boden. Auf T2 sinkt er zweiundsechzig auf die Findlingsbank, der Pulk
+ * sackt ihm Bildpunkt fuer Bildpunkt nach, und am Ende steht er vollzaehlig
+ * im Neun-Punkte-Schacht. Gemessen: 0 gerettet, 0 tot, tiefster Einzelfall
+ * 60 bei einer Sturzgrenze von 78. Genau so soll sich das falsche Werkzeug
+ * anfuehlen — man sieht sie stehen, man kommt nicht mehr an sie heran, und
+ * gestorben ist niemand.
+ */
+function planW613NurGraeber(): Plan {
+  let schacht1 = false;
+  let schacht2 = false;
+  return (w) => {
+    if (!schacht1) {
+      const c = walkerNear(w, 120, 123, 1);
+      if (c && c.y === 179 && w.assign(c.id, 'digger')) schacht1 = true;
+      return;
+    }
+    if (!schacht2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y === 227 && x.x >= 200 && x.x <= 203,
+      );
+      if (c && w.assign(c.id, 'digger')) schacht2 = true;
+    }
+  };
+}
+
+/**
+ * w6-14 „Die Schleife am Hang" — die Rampe von oben unter Platzierungsdruck.
+ *
+ * Drei Zuege an zwei Figuren, und der mittlere ist der ganze Level. Anders als
+ * in w6-05 muss der Spaeher hier nicht am Weltrand gewendet werden: Die
+ * Geometrie dreht ihn selbst. Er faellt hinter der Krone E48 auf die
+ * Ostterrasse, der Kragstein ueber der Erdrippe kippt ihn dort zurueck, an der
+ * Mauerostflanke klettert er von allein wieder herauf — und steht dann als
+ * Einziger mit Blick nach WESTEN auf der Krone. Gefragt ist nicht die Kehre,
+ * sondern die STELLE: Nur zwischen den beiden Findlingsrippen ist der
+ * Mauerkoerper frei, gemessenes Ansatzfenster x554 bis x618. Der Umlauf dauert
+ * 31,7 s und wiederholt sich, solange die Uhr laeuft.
+ */
+function planSchleifeAmHang(): Plan {
+  let spaeher: number | null = null;
+  let rampe = false;
+  let tor = false;
+  return (w) => {
+    if (spaeher === null) {
+      // Der Kletterer braucht kein Fenster: Gemessen traegt jede Stelle der
+      // Sohle von x20 bis x374 — der Keil fuehrt ihn ohnehin an die Flanke.
+      const c = walkerNear(w, 100, 170, 1);
+      if (c && c.y > 380 && w.assign(c.id, 'climber')) spaeher = c.id;
+      return;
+    }
+    if (!rampe) {
+      // Nur oben auf der Krone (y251) und nur auf dem RUECKWEG. Wer den Bagger
+      // auf dem Hinweg vergibt, schneidet die Schraege nach Osten; westlich
+      // von x524 meldet sie sofort Stein (Kronendeckel), oestlich davon kostet
+      // sie den Lauf. Gemessenes Fenster x554 bis x618, hier mittig genommen.
+      const k = w.wuselById(spaeher);
+      if (
+        k &&
+        k.state === State.WALKING &&
+        k.dir === -1 &&
+        k.y < 260 &&
+        k.x >= 580 &&
+        k.x <= 590 &&
+        w.assign(k.id, 'miner')
+      ) {
+        rampe = true;
+      }
+      return;
+    }
+    if (!tor) {
+      // Zuletzt, und nur zuletzt: Wer die Erdrippe oeffnet, bevor die Rampe
+      // steht, verliert den Spaeher an die Tuer. Nach Osten, auf der
+      // Ostterrasse — gemessenes Fenster x622 bis x662, nach Westen loest
+      // keine Stelle (Findlingsflanke).
+      const c = w.wusels.find(
+        (x) =>
+          x.id !== spaeher &&
+          x.state === State.WALKING &&
+          x.dir === 1 &&
+          x.y > 290 &&
+          x.y < 305 &&
+          x.x >= 630 &&
+          x.x <= 655,
+      );
+      if (c && w.assign(c.id, 'basher')) tor = true;
+    }
+  };
+}
+
+// In PLANS eintragen:
+//   'w6-14': planSchleifeAmHang,
+
+// Und als Rot-Test (Abnahme der Entklonung gegen w6-05):
+//   it('w6-14: der Plan der Rampe von oben findet hier keinen Ansatz', () => {
+//     erwarteRot('w6-14', planRampeVonOben);
+//   });
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
   // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
@@ -2567,6 +2783,9 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-09': planDoppelmauer,
   'w6-10': planWaechterImSchacht,
   'w6-11': planHangbruch,
+  'w6-12': planStorchennest,
+  'w6-13': planVierEtagen,
+  'w6-14': planSchleifeAmHang,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -2664,6 +2883,19 @@ describe('Alle Level sind lösbar', () => {
     expect(w.phase).toBe('won');
     expect(w.saved).toBeGreaterThanOrEqual(level.needed);
     expect(w.skillsUsed).toBeLessThan(level.par);
+  });
+
+  it('w6-12: der Fuenfer-Wurf oeffnet nur eine Lippe — und toetet niemanden', () => {
+    // Der naheliegende Griff eines Spielers, der das Muster erkannt hat:
+    // gleich alle fuenf Rammer auf die oberste Etage. Er traegt nicht. Die
+    // Vormerkung ueberlebt zwar den Sturz, aber nicht die Landung — jede
+    // liegt zwanzig Bildpunkte neben der Findlingsflanke, und an Stein ist
+    // sie verbraucht. Wichtig ist die zweite Erwartung: Der Turm bestraft
+    // auch den falschen Griff nicht mit einer Figur.
+    const level = levelById('w6-12')!;
+    const w = play(level, planStorchennestVolley());
+    expect(w.phase).toBe('lost');
+    expect(w.dead).toBe(0);
   });
 });
 
@@ -2850,6 +3082,24 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
     // wartet vergebens auf einen Blocker im Vorrat.
     erwarteRot('w3-05', planLevel4);
     erwarteRot('w3-05', planRost5);
+  });
+  it('w6-13: zweimal der Gräber — die Sechsundneunzig nimmt er nicht', () => {
+    // Die These der Welt im Gegenlicht: Jeder Abstand sagt ueber seine Zahl
+    // selbst, welches Werkzeug er verlangt. Wer auf E96 denselben Griff tut
+    // wie auf E48, sinkt zweiundsechzig auf die Findlingsbank und steht mit
+    // dem ganzen Pulk im Neun-Punkte-Schacht. Verloren, kein Toter.
+    const level = levelById('w6-13')!;
+    const w = play(level, planW613NurGraeber());
+    expect(w.phase).toBe('lost');
+    expect(w.dead).toBe(0);
+  });
+  it('w6-14: der Rampen-Plan von w6-05 findet den Korridor nicht', () => {
+    // Die Klonprobe der Welt: w6-05 und w6-14 tragen beide einen Kletterer
+    // auf die Krone und eine Westschraege zurueck. Trennscharf sind sie
+    // durch die PLATZIERUNG — hier traegt nur der eine freie Korridor
+    // zwischen den Findlingsrippen, und das Ansatzfenster von w6-05
+    // existiert auf dieser Krone gar nicht.
+    erwarteRot('w6-14', planRampeVonOben);
   });
   it('w6-10: ohne Wächter strandet der Pulk unversehrt in der Ostwanne', () => {
     // Das Mechaniklevel der Welt, im Gegenlicht: Der fallende Waechter ist

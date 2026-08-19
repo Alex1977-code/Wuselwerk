@@ -1695,5 +1695,69 @@
   },
   "werkzeuge": 11,
   "ueberschuss": 8
+ },
+ {
+  "id": "w6-12",
+  "name": "Das Storchennest",
+  "planTicks": 5457,
+  "letzteRettungSek": 90.7,
+  "quoteSek": 79.2,
+  "uhrSek": 127,
+  "uhrFaktor": 1.4,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 5,
+  "vergaben": 5,
+  "benutzt": {
+   "basher": 5
+  },
+  "werkzeuge": 15,
+  "ueberschuss": 10
+ },
+ {
+  "id": "w6-13",
+  "name": "Vier Etagen",
+  "planTicks": 4593,
+  "letzteRettungSek": 76.3,
+  "quoteSek": 65.8,
+  "uhrSek": 107,
+  "uhrFaktor": 1.4,
+  "gerettet": 14,
+  "total": 14,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 4,
+  "vergaben": 4,
+  "benutzt": {
+   "basher": 1,
+   "miner": 1,
+   "digger": 2
+  },
+  "werkzeuge": 12,
+  "ueberschuss": 8
+ },
+ {
+  "id": "w6-14",
+  "name": "Die Schleife am Hang",
+  "planTicks": 7184,
+  "letzteRettungSek": 119.4,
+  "quoteSek": 112.4,
+  "uhrSek": 168,
+  "uhrFaktor": 1.41,
+  "gerettet": 14,
+  "total": 14,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 3,
+  "vergaben": 3,
+  "benutzt": {
+   "climber": 1,
+   "basher": 1,
+   "miner": 1
+  },
+  "werkzeuge": 13,
+  "ueberschuss": 10
  }
 ]
