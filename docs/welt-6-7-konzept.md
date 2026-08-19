@@ -1,6 +1,19 @@
 # Welt 6 und 7 — der Hundert-Level-Ausbau
 
-Das abgenommene Konzept für die 34 Level, die aus 66 hundert machen.
+Das abgenommene Konzept für die 34 Level, die den Ausbau abschliessen.
+
+> **Die Zahl heisst 104, nicht 100** (Entscheidung des Auftraggebers,
+> 19.08.2026). Als dieses Papier geschrieben wurde, hatte das Spiel 66
+> Level, und 34 neue hätten genau hundert ergeben. Inzwischen ist Welt 1
+> beim Neubau des Grundkurses von 10 auf 14 gewachsen — acht Level, die je
+> einen Beruf lehren, dann sechs, die kombinieren —, und Welt 2 steht bei
+> 13. Damit landet der Plan bei **104**. Zur Wahl standen: bei 104 bleiben,
+> in Welt 7 vier Level streichen, oder die runde Zahl nicht mehr als
+> Versprechen führen. Entschieden ist **104**: Kein gemessenes Level wird
+> weggeworfen, nur damit eine Zahl rund aussieht. Der Name
+> „Hundert-Level-Ausbau" bleibt als Name des Vorhabens stehen, nicht als
+> Mengenangabe.
+
 Auftrag des Auftraggebers: „ich finde die level im stil von grasland sehr
 schön da kann noch etwas kommen, gerne anspruchsvoll und über mehr ebenen
 ziel sind 100 level." Drei Leveldesigner haben unabhängig entworfen (Raum,
@@ -51,7 +64,7 @@ den Bestand gestrichen und drei Simulationswahrheiten im Code nachgemessen.
 
 **Palette.** Morgenlicht durch Laub statt Mittagssonne ueber der Wiese. Grasland ist gelbgruen und hat einen Horizont; die Wipfelweide ist BLAUGRUEN und hat keinen — der Blick endet in Nebelbaendern zwischen Staemmen, und genau das macht die Hoehe erst gefaehrlich. Der Himmel bleicht nach OBEN ins Milchweiss aus (das Licht faellt von oben durchs Blaetterdach, umgekehrt zu allen fuenf bisherigen Welten und zum Sonnenhang, dessen Licht von Westen kommt), die Narbe ist Moos (#4fa77a gegen Graslands #63b23f), die Erde kuehles Rindenbraun (#5f4a34 / tief #33261a), Fels ist Astholz mit Jahresringen (#8a6f4c). STEEL heisst hier KERNHOLZ: dieselbe Haerte, aber warm und geadert statt kalt und glatt. Zusatzgrafik: gefleckte Lichtkringel, die ueber Boeden und Figuren wandern (das staerkste Einzelbild der Welt), haengende Ranken an jeder Kante als Marke dafuer, wo es hinabgeht, Nebelbaenke als Fernschichten statt Huegelketten, Blaetterfall bei jedem Durchbruch statt Staub, auffliegende Voegel bei jeder Sprengung.
 
-**Belohnung.** Der Blattkranz (Schmuck, Spielabschluss). Die Weltkarte bekommt ein Blaetterdach, durch das Licht auf den Weg faellt, und die Figur traegt einen Kranz. Wer alle hundert Level mit drei Sternen hat, bekommt ihn in Gold — sonst nichts, und das ist wieder der Witz.
+**Belohnung.** Der Blattkranz (Schmuck, Spielabschluss). Die Weltkarte bekommt ein Blaetterdach, durch das Licht auf den Weg faellt, und die Figur traegt einen Kranz. Wer alle Level mit drei Sternen hat, bekommt ihn in Gold — sonst nichts, und das ist wieder der Witz.
 
 | # | Name | Bausteine | Ebenen | Aufgabe | Berufe |
 |---|---|---|---|---|---|
@@ -87,7 +100,7 @@ den Bestand gestrichen und drei Simulationswahrheiten im Code nachgemessen.
 - KLON GEGEN DEN BESTAND, 5: Die Haarnadel (Rueckstollen unter dem Hinweg) ist w3-14 'Unter dem Hinweg' und Teil von w5-11. Architekt setzt sie viermal in w6 (05, 07 sogar doppelt gestapelt, 14, 17) und zweimal in w7. Auf einmal je Welt plus die Pruefung gekuerzt: w6-08 (als Platzierungsraetsel — die Findlingssohle reicht nur bis x520, der Bagger muss oestlich x600 ansetzen), w7-11 (umgedreht: der Stollen endet unter einer Tuer, die HOEHER liegt), und je einmal im Finale, wo Wiederholung Absicht ist.
 - GESETZ 4 GEHEILT, zweimal. mechanikers w6-16 hatte zwei toedliche Kanten, die gleichzeitig je einen Waechter brauchen: Wer zoegert, verliert den Pulk. Jetzt tragen beide Arme eine 12er Lippe — die Doppelfront kostet die UHR, nicht die Figuren, und die Sackgasse faengt mit Warten. Ebenso architekts w7-14: der Brueckenbau ins Leere haette die getippten Bauer und die Nachlaufenden in den Nebelgrund geschickt; beide Kronenkanten haben jetzt eine 12er Lippe, so dass ein Fehltipp genau eine Figur kostet und der Pulk stehenbleibt.
 - DURCHATMER-TAKT GETRENNT (dramaturgs Argument, gegen architekt und mechaniker, die beide Welten auf 1/3/6/9/12/15 legen wollten): w6 auf 1/3/6/9/12/15, w7 auf 1/4/7/10/13/16. Nie drei harte Level am Stueck in beiden Welten, aber zwei verschiedene Atemrhythmen — sonst fuehlt sich die zweite gruene Welt an wie die erste. Zusatz aus architekt: in w7 steht der letzte sichere Sieg (w7-16 Der Alte Baum) unmittelbar vor der Pruefung.
-- BELOHNUNGEN FESTGELEGT: w6 bekommt das Hoehenband (Komfort — jede Kante schreibt beim Zielen ihre Normhoehe an), w7 den Blattkranz (Schmuck, Gold bei 100 x drei Sternen). Kein drittes Werkzeug: w1 gibt den Graeber, w3 den Schirm, und mehr als zwei Werkzeugbelohnungen vertraegt das Spiel laut Entwurf nicht — jede weitere verschoebe das Gleichgewicht aller 100 Level rueckwirkend.
+- BELOHNUNGEN FESTGELEGT: w6 bekommt das Hoehenband (Komfort — jede Kante schreibt beim Zielen ihre Normhoehe an), w7 den Blattkranz (Schmuck, Gold bei 100 x drei Sternen). Kein drittes Werkzeug: w1 gibt den Graeber, w3 den Schirm, und mehr als zwei Werkzeugbelohnungen vertraegt das Spiel laut Entwurf nicht — jede weitere verschoebe das Gleichgewicht aller 104 Level rueckwirkend.
 - MASSE VEREINHEITLICHT: dramaturgs Ausnahmebreite 960 (w6-09) gestrichen — 720 ist Normbreite in beiden Welten, 480 nur fuer den einen senkrechten Schacht (w7-15). Alle Hoehenabstaende liegen streng auf E48 / E72 / E96 / E120; dramaturgs krumme Werte (66 px Sturz, 40 px Fall, 44 px Stufe) sind auf das Raster gezogen, ausser dort, wo eine Zahl aus einer Werkzeugmessung stammt (24 px Bauerhub, 8 px Sprengdeckel, 12 px Lippe, 9 px Graeberfenster).
 - RICHTUNGSTRENNUNG UEBERNOMMEN (alle drei Entwuerfe kamen unabhaengig darauf, also gilt sie): w6 Sonnenhang geht ausschliesslich HINAB und lehrt das Normhoehen-Raster, w7 Wipfelweide ausschliesslich HINAUF und lehrt die Decke. Damit sind 34 Level trennscharf, obwohl beide gruen und sonnig sind. Je eine Ausnahme haelt die Regel lesbar: w7-07 'Die Regentreppe' ist der eine Abstieg der Aufwaertswelt, w6-05/w6-14 der eine Aufstieg der Abwaertswelt.
 - NAMEN GEGEN ALLE 66 BESTANDSTITEL GEPRUEFT. Gestrichen wegen Doppelung: 'Kamin und Galerie' als w6-Titel (dramaturg — bleibt nur als w7-05), 'Der Heuboden' (zweimal in zwei Entwuerfen), 'Zwei Tore in der Halde' (zu nah an w5-05 'Schacht und Stollen'), 'Prueufung in der Morgenau/im Abendhain' zugunsten von 'Pruefung am Sonnenhang' und 'Pruefung im Kronendach' — 'Pruefung in der Klamm' gibt es im Bestand bereits zweimal (w2-12, w4-14), ein drittes Mal waere Nachlaessigkeit.
@@ -115,8 +128,8 @@ den Bestand gestrichen und drei Simulationswahrheiten im Code nachgemessen.
 - PAKET 3 — Sonnenhang, Meisterschaft und Pruefung (w6-13 bis w6-17, 5 Level). Die Synthese des Rasters (w6-13), die Rampe unter Platzierungsdruck (w6-14), das Rondell als Atempause, die einzige Doppelfront der Welt (w6-16) und die Pruefung ueber fuenf Ebenen. Abnahme: Haertebudget von w6-16 (Doppelfront + Uhr = zwei Verstaerker, mehr nicht), Uhr aller fuenf nach 1,4 x letzte Rettung, Gesamtbilanz der Welt gegen alle sieben Gesetze bevor w7 beginnt.
 - PAKET 4 — Wipfelweide, Lehrgang der Decke (w7-01 bis w7-06, 6 Level). Die Decke verbietet die Bruecke (w7-01), der Ueberhang kippt den Kletterer (w7-02), die Sprengung raeumt ihn weg (w7-03), die Kletterergabe bleibt (w7-04), zwei Gaben auf einer Figur (w7-05), die Rampentasche (w7-06). Abnahme: der 8-px-Deckel in w7-03 wird vom Krater wirklich geraeumt — das ist der Rot-Test, an dem drei Entwuerfe gescheitert waeren; ausserdem liest sich w7 im Blindvergleich nicht wie w6.
 - PAKET 5 — Wipfelweide, Mitte (w7-07 bis w7-12, 6 Level). Der eine Abstieg der Aufwaertswelt (w7-07), die Parallelgabel, das eine Doppeltor mit dem gesprengten Deckel (w7-09), die Rankenleiter, die umgedrehte Haarnadel (w7-11) und die Doppelfront mit zwei Zuendern (w7-12). Abnahme: Marge >= 3 in allen Sprenglevels gemessen statt behauptet; Lesefenster-Pruefung von w7-09 (beide Tore in 300x200).
-- PAKET 6 — Wipfelweide, Gipfel und Spielschluss (w7-13 bis w7-17, 5 Level). Das Werbebild der Welt (w7-13), die Haengebruecke mit dem angesagten Koeder, das Meisterstueck mit der Tuer ganz oben (w7-15), der letzte sichere Sieg (w7-16) und die Pruefung, die dort endet, wo sie begann. Abnahme: w7-15 einzeln im Rot-Test, weil dort Kipper, Sprengung und Waechter zusammenkommen; w7-17 ist das hundertste Level und bekommt die strengste Messung des Spiels.
-- PAKET 7 — Gesamtabnahme und der Grafikauftrag, der noch offen ist. Bilanz ueber alle 100 Level (Durchatmer-Fenster ueber Weltgrenzen hinweg, Berufsverteilung, Bausteinverteilung, Median-Leben), dann die Weltkarte selbst: mehr Detaillierung und mehr Dekor fuer alle sieben Abschnitte, nicht nur fuer die zwei neuen. Das war der erste Satz des Auftraggebers und ist der einzige Teil, den kein Level erledigt.
+- PAKET 6 — Wipfelweide, Gipfel und Spielschluss (w7-13 bis w7-17, 5 Level). Das Werbebild der Welt (w7-13), die Haengebruecke mit dem angesagten Koeder, das Meisterstueck mit der Tuer ganz oben (w7-15), der letzte sichere Sieg (w7-16) und die Pruefung, die dort endet, wo sie begann. Abnahme: w7-15 einzeln im Rot-Test, weil dort Kipper, Sprengung und Waechter zusammenkommen; w7-17 ist das letzte Level des Spiels (das 104.) und bekommt die strengste Messung.
+- PAKET 7 — Gesamtabnahme und der Grafikauftrag, der noch offen ist. **Reihenfolge entschieden (19.08.2026): erst Welt 7 fertig bauen, dann die Weltkarte.** Bilanz ueber alle 104 Level (Durchatmer-Fenster ueber Weltgrenzen hinweg, Berufsverteilung, Bausteinverteilung, Median-Leben), dann die Weltkarte selbst: mehr Detaillierung und mehr Dekor fuer alle sieben Abschnitte, nicht nur fuer die zwei neuen. Das war der erste Satz des Auftraggebers und ist der einzige Teil, den kein Level erledigt.
 
 ## Stand
 

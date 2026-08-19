@@ -173,7 +173,11 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Tor."), und seine Plakette liegt über der Wanderfigur statt darunter.
 
 - 🔄 **Auf hundert Level** (Auftrag: „gerne anspruchsvoll und über mehr
-  Ebenen, Ziel sind 100 Level"): Konzept abgenommen und dokumentiert
+  Ebenen, Ziel sind 100 Level"). **Zwei Entscheidungen vom 19.08.2026:**
+  Die Zahl heisst **104, nicht 100** — Welt 1 ist beim Neubau von 10 auf 14
+  gewachsen, und kein gemessenes Level wird weggeworfen, nur damit eine Zahl
+  rund aussieht. Und die **Weltkarten-Grafik kommt nach Welt 7**, nicht
+  davor. Konzept abgenommen und dokumentiert
   (`docs/welt-6-7-konzept.md`) — zwei neue Welten in der Grasland-Familie,
   **w6 Sonnenhang** (Terrassen im Nachmittagslicht, Leitbaustein B1
   Etagenturm, getragen von der aufwärts begehbaren Baggerschräge) und
