@@ -518,6 +518,11 @@ export class SpriteAtlas {
         koerperH,
         s,
         this.manifest.figur,
+        // Vier Angaben, die das gezeichnete Geraet lebendig machen und alle
+        // vier schon hier liegen. `saum` ist DERSELBE Ton wie fuer die Figur:
+        // In Kristallklamm und Schlot ist er hell, ein fest verdrahteter
+        // dunkler waere dort schlimmer als keiner.
+        { takt: takt ?? w.timer, frame, fuse: w.fuse, saum: this.saumTon || null },
       );
     }
 

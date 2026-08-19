@@ -1,355 +1,355 @@
 {
-  "_warum": "Bauch an der Wand, Arme abwechselnd hoch, Beine nachgezogen.",
-  "frames": [
-    {
-      "richtung": {
-        "Spine01": [
-          0,
-          0.9613,
-          0.2756
-        ],
-        "Spine02": [
-          0,
-          0.9882,
-          0.153
-        ],
-        "NeckTwist01": [
-          0,
-          0.9945,
-          0.1045
-        ],
-        "NeckTwist02": [
-          0,
-          0.9781,
-          0.2079
-        ],
-        "L_Upperarm": [
-          0.1961,
-          0.8492,
-          0.4903
-        ],
-        "L_Forearm": [
-          0.1425,
-          0.7582,
-          0.6362
-        ],
-        "R_Upperarm": [
-          -0.1961,
-          0.8492,
-          0.4903
-        ],
-        "R_Forearm": [
-          -0.1425,
-          0.7582,
-          0.6362
-        ],
-        "L_Thigh": [
-          0.158,
-          -0.8551,
-          0.4937
-        ],
-        "L_Calf": [
-          0.127,
-          -0.9624,
-          -0.24
-        ],
-        "L_Foot": [
-          0.0797,
-          -0.1559,
-          0.9845
-        ],
-        "R_Thigh": [
-          -0.158,
-          -0.8551,
-          0.4937
-        ],
-        "R_Calf": [
-          -0.127,
-          -0.9624,
-          -0.24
-        ],
-        "R_Foot": [
-          -0.0797,
-          -0.1559,
-          0.9845
-        ]
-      },
-      "maske": 1,
-      "winkel": {
-        "Head": [
-          -6,
-          0,
-          0
-        ],
-        "HaarSchwung": [
-          -6,
-          0,
-          0
-        ]
-      }
-    },
-    {
-      "richtung": {
-        "Spine01": [
-          0,
-          0.9613,
-          0.2756
-        ],
-        "Spine02": [
-          0,
-          0.9882,
-          0.153
-        ],
-        "NeckTwist01": [
-          0,
-          0.9945,
-          0.1045
-        ],
-        "NeckTwist02": [
-          0,
-          0.9781,
-          0.2079
-        ],
-        "L_Upperarm": [
-          0.1961,
-          0.8492,
-          0.4903
-        ],
-        "L_Forearm": [
-          0.1425,
-          0.7582,
-          0.6362
-        ],
-        "R_Upperarm": [
-          -0.1961,
-          0.8492,
-          0.4903
-        ],
-        "R_Forearm": [
-          -0.1425,
-          0.7582,
-          0.6362
-        ],
-        "L_Thigh": [
-          0.158,
-          -0.8551,
-          0.4937
-        ],
-        "L_Calf": [
-          0.127,
-          -0.9624,
-          -0.24
-        ],
-        "L_Foot": [
-          0.0797,
-          -0.1559,
-          0.9845
-        ],
-        "R_Thigh": [
-          -0.158,
-          -0.8551,
-          0.4937
-        ],
-        "R_Calf": [
-          -0.127,
-          -0.9624,
-          -0.24
-        ],
-        "R_Foot": [
-          -0.0797,
-          -0.1559,
-          0.9845
-        ]
-      },
-      "maske": 1,
-      "winkel": {
-        "Head": [
-          -6,
-          0,
-          0
-        ],
-        "HaarSchwung": [
-          5,
-          0,
-          0
-        ]
-      }
-    },
-    {
-      "richtung": {
-        "Spine01": [
-          0,
-          0.9613,
-          0.2756
-        ],
-        "Spine02": [
-          0,
-          0.9882,
-          0.153
-        ],
-        "NeckTwist01": [
-          0,
-          0.9945,
-          0.1045
-        ],
-        "NeckTwist02": [
-          0,
-          0.9781,
-          0.2079
-        ],
-        "L_Upperarm": [
-          0.1961,
-          0.8492,
-          0.4903
-        ],
-        "L_Forearm": [
-          0.1425,
-          0.7582,
-          0.6362
-        ],
-        "R_Upperarm": [
-          -0.1961,
-          0.8492,
-          0.4903
-        ],
-        "R_Forearm": [
-          -0.1425,
-          0.7582,
-          0.6362
-        ],
-        "L_Thigh": [
-          0.158,
-          -0.8551,
-          0.4937
-        ],
-        "L_Calf": [
-          0.127,
-          -0.9624,
-          -0.24
-        ],
-        "L_Foot": [
-          0.0797,
-          -0.1559,
-          0.9845
-        ],
-        "R_Thigh": [
-          -0.158,
-          -0.8551,
-          0.4937
-        ],
-        "R_Calf": [
-          -0.127,
-          -0.9624,
-          -0.24
-        ],
-        "R_Foot": [
-          -0.0797,
-          -0.1559,
-          0.9845
-        ]
-      },
-      "maske": 1,
-      "winkel": {
-        "Head": [
-          -6,
-          0,
-          0
-        ],
-        "HaarSchwung": [
-          -2,
-          0,
-          0
-        ]
-      }
-    },
-    {
-      "richtung": {
-        "Spine01": [
-          0,
-          0.9613,
-          0.2756
-        ],
-        "Spine02": [
-          0,
-          0.9882,
-          0.153
-        ],
-        "NeckTwist01": [
-          0,
-          0.9945,
-          0.1045
-        ],
-        "NeckTwist02": [
-          0,
-          0.9781,
-          0.2079
-        ],
-        "L_Upperarm": [
-          0.1961,
-          0.8492,
-          0.4903
-        ],
-        "L_Forearm": [
-          0.1425,
-          0.7582,
-          0.6362
-        ],
-        "R_Upperarm": [
-          -0.1961,
-          0.8492,
-          0.4903
-        ],
-        "R_Forearm": [
-          -0.1425,
-          0.7582,
-          0.6362
-        ],
-        "L_Thigh": [
-          0.158,
-          -0.8551,
-          0.4937
-        ],
-        "L_Calf": [
-          0.127,
-          -0.9624,
-          -0.24
-        ],
-        "L_Foot": [
-          0.0797,
-          -0.1559,
-          0.9845
-        ],
-        "R_Thigh": [
-          -0.158,
-          -0.8551,
-          0.4937
-        ],
-        "R_Calf": [
-          -0.127,
-          -0.9624,
-          -0.24
-        ],
-        "R_Foot": [
-          -0.0797,
-          -0.1559,
-          0.9845
-        ]
-      },
-      "maske": 1,
-      "winkel": {
-        "Head": [
-          -6,
-          0,
-          0
-        ],
-        "HaarSchwung": [
-          0,
-          0,
-          0
-        ]
-      }
-    }
-  ],
-  "boden": true,
-  "_haar": "Die vier Bilder dieser Zeile tragen DENSELBEN Koerper und unterscheiden sich allein im Haar. Warum: Der Halt dauert vier von sechs Bildpunkten je Zug, also zwei Drittel der Zeit. Wer darin die Arme wechseln laesst, laesst die Figur im Stehen radeln - genau das war schon einmal ein Befund. Die Arme greifen im Ruck aus, und dafuer leiht sich der Kletterer die Zeile hoisting. Hier pendelt nur die Haarmasse aus: -6, +5, -2, 0, die abklingende Fortsetzung des Ueberschwungs aus dem Ruck."
+ "_warum": "Bauch an der Wand, Arme abwechselnd hoch, Beine nachgezogen.",
+ "frames": [
+  {
+   "richtung": {
+    "Spine01": [
+     0,
+     0.9613,
+     0.2756
+    ],
+    "Spine02": [
+     0,
+     0.9882,
+     0.153
+    ],
+    "NeckTwist01": [
+     0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1961,
+     0.8492,
+     0.4903
+    ],
+    "L_Forearm": [
+     0.1425,
+     0.7582,
+     0.6362
+    ],
+    "R_Upperarm": [
+     -0.1961,
+     0.8492,
+     0.4903
+    ],
+    "R_Forearm": [
+     -0.1425,
+     0.7582,
+     0.6362
+    ],
+    "L_Thigh": [
+     0.158,
+     -0.8551,
+     0.4937
+    ],
+    "L_Calf": [
+     0.127,
+     -0.9624,
+     -0.24
+    ],
+    "L_Foot": [
+     0.0797,
+     -0.1559,
+     0.9845
+    ],
+    "R_Thigh": [
+     -0.158,
+     -0.8551,
+     0.4937
+    ],
+    "R_Calf": [
+     -0.127,
+     -0.9624,
+     -0.24
+    ],
+    "R_Foot": [
+     -0.0797,
+     -0.1559,
+     0.9845
+    ]
+   },
+   "maske": 1,
+   "winkel": {
+    "Head": [
+     -6,
+     0,
+     0
+    ],
+    "HaarSchwung": [
+     -1.5,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0,
+     0.9613,
+     0.2756
+    ],
+    "Spine02": [
+     0,
+     0.9882,
+     0.153
+    ],
+    "NeckTwist01": [
+     0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1961,
+     0.8492,
+     0.4903
+    ],
+    "L_Forearm": [
+     0.1425,
+     0.7582,
+     0.6362
+    ],
+    "R_Upperarm": [
+     -0.1961,
+     0.8492,
+     0.4903
+    ],
+    "R_Forearm": [
+     -0.1425,
+     0.7582,
+     0.6362
+    ],
+    "L_Thigh": [
+     0.158,
+     -0.8551,
+     0.4937
+    ],
+    "L_Calf": [
+     0.127,
+     -0.9624,
+     -0.24
+    ],
+    "L_Foot": [
+     0.0797,
+     -0.1559,
+     0.9845
+    ],
+    "R_Thigh": [
+     -0.158,
+     -0.8551,
+     0.4937
+    ],
+    "R_Calf": [
+     -0.127,
+     -0.9624,
+     -0.24
+    ],
+    "R_Foot": [
+     -0.0797,
+     -0.1559,
+     0.9845
+    ]
+   },
+   "maske": 1,
+   "winkel": {
+    "Head": [
+     -6,
+     0,
+     0
+    ],
+    "HaarSchwung": [
+     -11.5,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0,
+     0.9613,
+     0.2756
+    ],
+    "Spine02": [
+     0,
+     0.9882,
+     0.153
+    ],
+    "NeckTwist01": [
+     0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1961,
+     0.8492,
+     0.4903
+    ],
+    "L_Forearm": [
+     0.1425,
+     0.7582,
+     0.6362
+    ],
+    "R_Upperarm": [
+     -0.1961,
+     0.8492,
+     0.4903
+    ],
+    "R_Forearm": [
+     -0.1425,
+     0.7582,
+     0.6362
+    ],
+    "L_Thigh": [
+     0.158,
+     -0.8551,
+     0.4937
+    ],
+    "L_Calf": [
+     0.127,
+     -0.9624,
+     -0.24
+    ],
+    "L_Foot": [
+     0.0797,
+     -0.1559,
+     0.9845
+    ],
+    "R_Thigh": [
+     -0.158,
+     -0.8551,
+     0.4937
+    ],
+    "R_Calf": [
+     -0.127,
+     -0.9624,
+     -0.24
+    ],
+    "R_Foot": [
+     -0.0797,
+     -0.1559,
+     0.9845
+    ]
+   },
+   "maske": 1,
+   "winkel": {
+    "Head": [
+     -6,
+     0,
+     0
+    ],
+    "HaarSchwung": [
+     -13.8,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0,
+     0.9613,
+     0.2756
+    ],
+    "Spine02": [
+     0,
+     0.9882,
+     0.153
+    ],
+    "NeckTwist01": [
+     0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1961,
+     0.8492,
+     0.4903
+    ],
+    "L_Forearm": [
+     0.1425,
+     0.7582,
+     0.6362
+    ],
+    "R_Upperarm": [
+     -0.1961,
+     0.8492,
+     0.4903
+    ],
+    "R_Forearm": [
+     -0.1425,
+     0.7582,
+     0.6362
+    ],
+    "L_Thigh": [
+     0.158,
+     -0.8551,
+     0.4937
+    ],
+    "L_Calf": [
+     0.127,
+     -0.9624,
+     -0.24
+    ],
+    "L_Foot": [
+     0.0797,
+     -0.1559,
+     0.9845
+    ],
+    "R_Thigh": [
+     -0.158,
+     -0.8551,
+     0.4937
+    ],
+    "R_Calf": [
+     -0.127,
+     -0.9624,
+     -0.24
+    ],
+    "R_Foot": [
+     -0.0797,
+     -0.1559,
+     0.9845
+    ]
+   },
+   "maske": 1,
+   "winkel": {
+    "Head": [
+     -6,
+     0,
+     0
+    ],
+    "HaarSchwung": [
+     -8.4,
+     0,
+     0
+    ]
+   }
+  }
+ ],
+ "boden": true,
+ "_haar": "Die vier Bilder dieser Zeile tragen DENSELBEN Koerper und unterscheiden sich allein im Haar. Warum: Der Halt dauert vier von sechs Bildpunkten je Zug, also zwei Drittel der Zeit. Wer darin die Arme wechseln laesst, laesst die Figur im Stehen radeln - genau das war schon einmal ein Befund. Die Arme greifen im Ruck aus, und dafuer leiht sich der Kletterer die Zeile hoisting. Hier pendelt nur die Haarmasse aus: -6, +5, -2, 0, die abklingende Fortsetzung des Ueberschwungs aus dem Ruck."
 }
