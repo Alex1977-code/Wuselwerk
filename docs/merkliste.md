@@ -177,7 +177,11 @@ ist auch das Gedächtnis dafür, **wo** etwas umgesetzt wurde.
   Die Zahl heisst **104, nicht 100** — Welt 1 ist beim Neubau von 10 auf 14
   gewachsen, und kein gemessenes Level wird weggeworfen, nur damit eine Zahl
   rund aussieht. Und die **Weltkarten-Grafik kommt nach Welt 7**, nicht
-  davor. Konzept abgenommen und dokumentiert
+  davor — **gezeichnet für die Struktur, gemalt nur für Schmuck**
+  (Entscheidung 19.08.2026). Bis dahin braucht kein offener Punkt eine
+  gelieferte Grafik: Level werden aus Rechtecken und Schrägen gemalt, Welt 7
+  hat Palette, Lichtstand, Kartendekor, Ambiente und Musik schon aus Paket 0,
+  und die Figur wird aus dem vorhandenen Modell gebacken. Konzept abgenommen und dokumentiert
   (`docs/welt-6-7-konzept.md`) — zwei neue Welten in der Grasland-Familie,
   **w6 Sonnenhang** (Terrassen im Nachmittagslicht, Leitbaustein B1
   Etagenturm, getragen von der aufwärts begehbaren Baggerschräge) und
