@@ -2214,6 +2214,279 @@ function planBrunnen(): Plan {
   };
 }
 
+/**
+ * w6-08 „Unter der Hecke" — die Haarnadel als Platzierungsraetsel.
+ *
+ * Drei Zuege in fester Reihenfolge, und nur der zweite ist schwer. Zug 1
+ * oeffnet die Hecke (gemessenes Fenster: JEDE Stelle des Hinwegs von x100
+ * bis x503 traegt — der Rammer laeuft als Vormerkung bis an die Lippe).
+ * Zug 3 ist ebenso grosszuegig: 86 Bildpunkte Vorhalle (x460 bis x545), und
+ * die Vormerkung traegt den Rammer bis an ihre Westwand.
+ *
+ * Zug 2 IST das Level. Der Bagger muss nach WESTEN schauen (er graebt,
+ * wohin er schaut) und weit genug im Osten stehen, damit seine Bahn unter
+ * dem Findlingsfuss der Grubensohle durchkommt. Gemessenes Fenster x600 bis
+ * x692, keine Luecke; westlich davon dreht er am Stein ab, oestlich davon
+ * kommt er neben der Vorhalle in einer blinden Tasche auf. Der Plan greift
+ * bei x620..x640 — mitten im Fenster, mit zwanzig Bildpunkten Luft nach
+ * beiden Seiten.
+ *
+ * Die Hoehenschranke 360 < y < 380 trennt die Grubensohle vom Hinweg: Dort
+ * laufen dieselben Spalten, nur zweiundsiebzig Bildpunkte hoeher.
+ */
+function planUnterDerHecke(): Plan {
+  let hecke = false;
+  let bagger: number | null = null;
+  let stollen = false;
+  return (w) => {
+    if (!hecke) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y < 310 && x.x >= 496 && x.x <= 502,
+      );
+      if (c && w.assign(c.id, 'basher')) hecke = true;
+      return;
+    }
+    if (bagger === null) {
+      // Nur auf dem Rueckweg vom Ostrand: Ein Bagger, der nach Osten
+      // schaut, schneidet seine Schraege aus der Welt heraus.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === -1 &&
+          x.y > 360 &&
+          x.y < 380 &&
+          x.x >= 620 &&
+          x.x <= 640,
+      );
+      if (c && w.assign(c.id, 'miner')) bagger = c.id;
+      return;
+    }
+    if (!stollen) {
+      // Erst unten auf dem Findlingsgrund der Vorhalle (y 443): Auf der
+      // Rampe haengt der Rammer nach jedem Zwei-Punkt-Versatz einen Punkt
+      // ueber dem Boden und faellt ins Laufen zurueck (die w3-14-Lehre).
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === -1 && x.y >= 435 && x.y <= 443 && x.x <= 545,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * w6-09 „Die Doppelmauer" — die Zweierkette und der obere Stollen.
+ *
+ * Drei Zuege an zwei Figuren. Das Ansatzfenster x425..x429 ist die Mitte des
+ * gemessenen Fensters x419..x434 (sechzehn Bildpunkte, im Level als
+ * Findlingsschwelle in die Sohle eingelassen); `y === 335` heisst „steht auf
+ * der Sohle" und trennt den Pulkraum von der Startterrasse, auf der dieselben
+ * Spalten zweiundsiebzig Bildpunkte hoeher laufen.
+ *
+ * Nachgesetzt wird bei `bricks === 0`, also nahtlos im letzten Bauzustand:
+ * gemessen tragen null bis drei Reststufen, ab vier ist die Rampe vier
+ * Bildpunkte zu kurz und der Laeufer faellt am Ende in die Sohle statt auf
+ * die Bank. Nicht die Hoehe entscheidet, sondern die Spannweite.
+ *
+ * Der Rammer geht an die erste Figur, die auf der Bankkrone (y311) nach Osten
+ * laeuft — gemessen traegt jede Stelle der Krone von x472 bis x519. Steht die
+ * Mauer noch nicht in BASH_LOOK-Reichweite, wird der Auftrag zur Vormerkung
+ * und greift von selbst am Mauerfuss; auf der Bank steht nichts, woran sie
+ * frueher anschlagen koennte.
+ */
+function planDoppelmauer(): Plan {
+  let bauer: number | null = null;
+  let kette = false;
+  let stollen = false;
+  return (w) => {
+    if (bauer === null) {
+      const c = walkerNear(w, 425, 429, 1);
+      if (c && c.y === 335 && w.assign(c.id, 'builder')) bauer = c.id;
+      return;
+    }
+    if (!kette) {
+      const b = w.wuselById(bauer);
+      if (b && b.state === State.BUILDING && b.bricks === 0 && w.assign(b.id, 'builder')) {
+        kette = true;
+      }
+      return;
+    }
+    if (!stollen) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 311 && x.x >= 472 && x.x < 520,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+/**
+ * w6-10 „Der Waechter im Schacht" — vier Griffe, und der erste ist der Punkt
+ * des Levels.
+ *
+ * 1. DER WAECHTER IN DEN SUMPF (x400, y317). Der Brunnen ist eine Einbahn:
+ *    Jeder faellt von der Stufe x399 die sechs Bildpunkte in den Sumpf und
+ *    kommt nicht zurueck (6 > MAX_STEP 5). Vor dem ersten Griff steht deshalb
+ *    der ganze Pulk dort — gemessen 2154 von 2400 Ticks gegen 42 Ticks auf
+ *    der Stufe. Der Plan wartet auf die Sumpfsohle, weil das der Ort ist, den
+ *    ein Spieler sieht.
+ * 2. DER GRAEBER AUF DIE STUFE (x399, y311). Ab jetzt geht das von selbst:
+ *    Der Waechter wendet jeden Nachlaeufer schon auf der Stufe (|dy| 6 <
+ *    WUSEL_H 12), die Stufe ist damit Dauerstandplatz, und das 9-px-Fenster
+ *    x395..x403 raeumt die Sumpfsohle im siebten Schlag. Der Waechter faellt
+ *    30 auf die Mittelterrasse und blockt dort weiter — `stepFalling` setzt
+ *    beim Aufkommen `w.isBlocker ? BLOCKING : WALKING`.
+ * 3. DER ZWEITE GRAEBER im Erdfenster der Mittelterrasse. Der Pulk faellt
+ *    durch denselben Schacht 48 nach, landet WESTLICH des Waechters und wird
+ *    von ihm nach Westen gewendet — sonst laeuft er in die Ostwanne. Die
+ *    Stelle ist frei waehlbar: gemessen traegt jede zwischen x282 und x350.
+ * 4. DER RAMMER auf der Tuersohle, westwaerts vor der Erdmauer. Auch das ist
+ *    weit: gemessen traegt jeder Ansatz von x246 bis x414, weil ein Rammer
+ *    ohne Wand in BASH_LOOK 5 zur Vormerkung wird und von selbst anfaengt,
+ *    wenn die Mauer kommt.
+ *
+ * Gemessen: 13 von 14 gerettet, kein Toter, vier Zuege, letzte Rettung 40,1 s.
+ */
+function planWaechterImSchacht(): Plan {
+  let wache: number | null = null;
+  let graeber: number | null = null;
+  let graeber2 = false;
+  let rammer = false;
+  return (w) => {
+    if (wache === null) {
+      const c = w.wusels.find((x) => x.state === State.WALKING && x.y === 317 && x.x === 400);
+      if (c && w.assign(c.id, 'blocker')) wache = c.id;
+      return;
+    }
+    if (graeber === null) {
+      const c = w.wusels.find(
+        (x) => x.id !== wache && x.state === State.WALKING && x.y === 311 && x.x === 399,
+      );
+      if (c && w.assign(c.id, 'digger')) graeber = c.id;
+      return;
+    }
+    if (!graeber2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y === 347 && x.x >= 318 && x.x <= 322,
+      );
+      if (c && w.assign(c.id, 'digger')) graeber2 = true;
+      return;
+    }
+    if (!rammer) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y === 395 && x.dir === -1 && x.x >= 246 && x.x <= 252,
+      );
+      if (c && w.assign(c.id, 'basher')) rammer = true;
+    }
+  };
+}
+
+
+/**
+ * Rot-Test zu w6-10: Ohne den Waechter strandet der ganze Pulk in der
+ * Ostwanne — zwei Graeber allein loesen dieses Level nicht.
+ *
+ * Gemessen: 14 von 14 in der Wanne, null Tote, verloren. Genau so soll ein
+ * vergessener Waechter sich anfuehlen: Man sieht sie stehen, man kommt nicht
+ * mehr an sie heran, und gestorben ist niemand.
+ */
+function planW610OhneWaechter(): Plan {
+  let graeber = false;
+  let graeber2 = false;
+  return (w) => {
+    if (!graeber) {
+      const c = w.wusels.find((x) => x.state === State.WALKING && x.y === 317 && x.x === 400);
+      if (c && w.assign(c.id, 'digger')) graeber = true;
+      return;
+    }
+    if (!graeber2) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y === 347 && x.x >= 318 && x.x <= 322,
+      );
+      if (c && w.assign(c.id, 'digger')) graeber2 = true;
+    }
+  };
+}
+
+/**
+ * w6-11 „Hangbruch" — der Riegel ist die Zielhilfe der Sprengung.
+ *
+ * Drei Zuege, und der erste ist keine Sperre, sondern ein Zielkreuz: Ein
+ * Waechter steht still, und ein Sprengmeister zuendet dort, wo er steht — die
+ * Zuendung am Waechter braucht deshalb keinen Vorhalt. Der Krater raeumt nur
+ * Erde (`clearPixel` prueft `isDiggable`), also bleibt die Findlingsplatte
+ * stehen und die vier Bildpunkte schmale Naht wird zum Loch. Gemessenes
+ * Fenster: x333 bis x350 — achtzehn Bildpunkte, denn schon EINE durchgehende
+ * Spalte laesst den ganzen Pulk hindurch.
+ *
+ * Der dritte Zug sitzt an der Findlingskante der Erdtasche: oestlich von x474
+ * liegt die Erde offen, westlich davon dreht der Bagger sichtbar am Stein ab.
+ * Gemessen tragen x474 bis x538.
+ */
+function planHangbruch(): Plan {
+  let riegel: number | null = null;
+  let gezuendet = false;
+  let bagger = false;
+  return (w) => {
+    // Zug 1: Der Waechter auf die Naht. Sie liegt bei x340 bis x343; der
+    // Riegel darf zwoelf Bildpunkte daneben stehen.
+    if (riegel === null) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 299 && x.x >= 342 && x.x <= 344,
+      );
+      if (c && w.assign(c.id, 'blocker')) riegel = c.id;
+      return;
+    }
+    // Zug 2: Derselbe Wusel bekommt den Zuender. Ein paar Ticks Abstand, weil
+    // zwei Auftraege im selben Tick einander loeschen — der Waechter haelt
+    // waehrend der fuenf Sekunden Zuendschnur den Pulk vor dem Loch.
+    if (!gezuendet) {
+      const b = w.wuselById(riegel);
+      if (b && b.state === State.BLOCKING && b.timer > 6 && w.assign(b.id, 'bomber')) {
+        gezuendet = true;
+      }
+      return;
+    }
+    // Zug 3: Die Schraege aus der Erdtasche, oestlich der Findlingskante.
+    // `y === 347` heisst „steht auf der Taschensohle" — oben auf der Platte
+    // verpufft jeder Bagger sofort am Stahl.
+    if (!bagger) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 347 && x.x >= 474 && x.x <= 478,
+      );
+      if (c && w.assign(c.id, 'miner')) bagger = true;
+    }
+  };
+}
+
+/**
+ * w6-11, die Kuer — der Vorhaltschuss von der Westterrasse.
+ *
+ * Zwei Zuege statt drei: Wer den Zuender im Laufen vergibt, spart den
+ * Waechter. Die Zuendschnur brennt fuenf Sekunden, ein Laeufer macht darin
+ * hundert Bildpunkte, dazwischen liegt der Sturz von der Terrasse — gemessen
+ * traegt das Fenster x250 bis x259, zehn Bildpunkte am Rand der Kante. Der
+ * Weg loest schneller (55,0 s gegen 60,3 s) und unterbietet das Par.
+ */
+function planHangbruchVorhalt(): Plan {
+  let ab = false;
+  let bagger = false;
+  return (w) => {
+    if (!ab) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 251 && x.x >= 252 && x.x <= 256,
+      );
+      if (c && w.assign(c.id, 'bomber')) ab = true;
+      return;
+    }
+    if (!bagger) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.dir === 1 && x.y === 347 && x.x >= 474 && x.x <= 478,
+      );
+      if (c && w.assign(c.id, 'miner')) bagger = true;
+    }
+  };
+}
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
   // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
@@ -2290,6 +2563,10 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-05': planRampeVonOben,
   'w6-06': planSonnenhof,
   'w6-07': planBrunnen,
+  'w6-08': planUnterDerHecke,
+  'w6-09': planDoppelmauer,
+  'w6-10': planWaechterImSchacht,
+  'w6-11': planHangbruch,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -2374,6 +2651,19 @@ describe('Alle Level sind lösbar', () => {
     expect(w.phase).toBe('won');
     expect(w.saved).toBeGreaterThanOrEqual(level.needed);
     expect(w.skillsUsed).toBeGreaterThan(level.par);
+  });
+
+  it('w6-11: der Vorhaltschuss spart den Wächter — schneller und unter Par', () => {
+    // Der einzige Zweitweg des Spiels, der BILLIGER ist als die
+    // Musterloesung: Wer den Zuender im Laufen vergibt, statt ihn an einem
+    // Waechter festzumachen, kommt mit zwei Vergaben aus. Das Par bleibt
+    // trotzdem bei drei — die Musterloesung muss es halten, nicht die Kuer,
+    // und wer den Vorhalt trifft, soll dafuer den dritten Stern bekommen.
+    const level = levelById('w6-11')!;
+    const w = play(level, planHangbruchVorhalt());
+    expect(w.phase).toBe('won');
+    expect(w.saved).toBeGreaterThanOrEqual(level.needed);
+    expect(w.skillsUsed).toBeLessThan(level.par);
   });
 });
 
@@ -2560,6 +2850,17 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
     // wartet vergebens auf einen Blocker im Vorrat.
     erwarteRot('w3-05', planLevel4);
     erwarteRot('w3-05', planRost5);
+  });
+  it('w6-10: ohne Wächter strandet der Pulk unversehrt in der Ostwanne', () => {
+    // Das Mechaniklevel der Welt, im Gegenlicht: Der fallende Waechter ist
+    // die ganze Loesung, und ohne ihn tut ein zweiter Graeber gar nichts.
+    // Wichtig ist der zweite Satz der Erwartung — es stirbt NIEMAND. Genau
+    // so soll sich ein vergessener Waechter anfuehlen: Man sieht sie stehen,
+    // man kommt nicht mehr an sie heran, und niemand ist gestorben.
+    const level = levelById('w6-10')!;
+    const w = play(level, planW610OhneWaechter());
+    expect(w.phase).toBe('lost');
+    expect(w.dead).toBe(0);
   });
   it('w6-03: der Bloecke-Plan des Nachbarn endet auf dem Findlingsband', () => {
     // Das E96-Paar der Welt: Beide Level lehren „sechsundneunzig traegt nur
