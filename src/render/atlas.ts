@@ -4,6 +4,7 @@ import { drawSchopf, schopfFarbe } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
 import { drawBand, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
+import { drawHaar } from './haar';
 
 /**
  * Sprite-Atlas für die Figuren.
@@ -78,6 +79,20 @@ export interface ClipDef {
   tuff?: number[];
   /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
   hands?: [number, number][];
+  /**
+   * Die Ansaetze der gezeichneten Straehnen je Einzelbild, in denselben
+   * Koordinaten wie `anchors` — je Bild eine Liste von Wurzeln.
+   *
+   * Drei Zahlen je Wurzel: waagerecht, senkrecht, und wohin „aussen" im Bild
+   * zeigt (-1 bis 1).
+   *
+   * Nur der Wuselwerker traegt sie. Der Backvorgang misst sie am **Haarrand**
+   * des Modells: je Winkelfach um den Kopf die Ecke, die am weitesten von der
+   * Hochachse wegreicht. Der Zeichner koennte das nicht nachholen — er sieht
+   * eine fertige Zelle und wuesste weder, wo Haar aufhoert und Stirn anfaengt,
+   * noch in welche Richtung der Kopf gedreht ist.
+   */
+  haar?: [number, number, number][][];
   /**
    * Die **Standflaeche** dieser Pose in logischen Pixeln — die Breite des
    * Umrisses im untersten Streifen, beim Backen gemessen.
@@ -399,6 +414,28 @@ export class SpriteAtlas {
     ctx.imageSmoothingEnabled = ppl > 1;
     ctx.translate(Math.round(x), Math.round(y));
     if (spiegeln) ctx.scale(-1, 1);
+    // Auch hier die Straehnen, sonst traegt die Figur auf der Uebersichtskarte
+    // und im Profil eine andere Frisur als im Spiel. Als Takt dient das
+    // Einzelbild: Dieser Weg kennt keinen Wusel und damit keine Uhr.
+    if (clip.haar) {
+      const wz = clip.haar[f] ?? clip.haar[0];
+      if (wz) {
+        drawHaar(
+          ctx,
+          name,
+          wz.map(
+            (q) =>
+              [q[0] - this.manifest.anchor.x, q[1] - this.manifest.anchor.y, q[2]] as [
+                number,
+                number,
+                number,
+              ],
+          ),
+          s,
+          { takt: f * 3, saum: this.saumTon || null, dreh: clip.dreh ?? 0 },
+        );
+      }
+    }
     ctx.drawImage(
       this.image,
       f * cw * ppl,
@@ -466,6 +503,32 @@ export class SpriteAtlas {
     // dieselbe Drehrichtung, und die Tabelle braucht kein Vorzeichen.
     const lehne = clip.lehne ?? LEHNE[name] ?? 0;
     if (lehne) ctx.rotate(lehne);
+    // Die Straehnen ganz zuerst — sie liegen hinter allem.
+    //
+    // Hinter der Figur und nicht davor, und das ist gemessen: Haarblau steht
+    // vor der gruenen Tunika mit WCAG 1,08, also gar nicht. Was der Koerper
+    // verdeckt, waere ohnehin unsichtbar; was danebensteht, steht vor Himmel
+    // oder Erde und traegt dort seinen eigenen Saum.
+    if (clip.haar) {
+      const wz = clip.haar[frame] ?? clip.haar[0];
+      if (wz) {
+        drawHaar(
+          ctx,
+          name,
+          wz.map(
+            (q) =>
+              [q[0] - this.manifest.anchor.x, q[1] - this.manifest.anchor.y, q[2]] as [
+                number,
+                number,
+                number,
+              ],
+          ),
+          s,
+          { takt: takt ?? w.timer, saum: this.saumTon || null, dreh: clip.dreh ?? 0 },
+        );
+      }
+    }
+
     // Der Saum zuerst — er liegt hinter der Figur.
     //
     // Mit GENAU demselben Zielrechteck wie das Blatt. Der Rand steckt schon im

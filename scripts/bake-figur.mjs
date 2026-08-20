@@ -288,6 +288,7 @@ const FUSS_PX = ${FUSS_PX};
 const FIGUR_EINHEITEN = ${FIGUR_EINHEITEN};
 const LOGISCH = ${LOGISCH};
 const KOPF_SKALA = ${eigenschaften.kopfSkala ?? 1};
+const HAAR_WURZELN = ${eigenschaften.haarWurzeln ?? 0};
 const SCHMAL = ${eigenschaften.schmal ?? 1};
 const TIEF = ${eigenschaften.tief ?? eigenschaften.schmal ?? 1};
 const GROESSE = ZELLE * SS;
@@ -706,6 +707,122 @@ window.knochenOrt = (namen) => {
   return aus;
 };
 
+/**
+ * Die Ecken der schwingenden Haarmasse — einmal ermittelt, dann gemerkt.
+ *
+ * Nicht ueber die Textur eingestuft wie in haar-bauen.mjs, sondern ueber den
+ * Knochen: Was dort am Schwungknochen haengt, IST die aeussere Haarmasse, und
+ * zwar per Bauart. Eine zweite Einstufung waere eine zweite Wahrheit — und
+ * jene liegt eine Werkzeugkette weiter oben, wo dieses Skript nicht hinsieht.
+ */
+let haarListe = null;
+function haarEcken() {
+  if (haarListe) return haarListe;
+  haarListe = [];
+  const bone = netz.skeleton.bones.findIndex((b) => b.name === 'HaarSchwung');
+  if (bone < 0) return haarListe;
+  const si = netz.geometry.attributes.skinIndex;
+  const sw = netz.geometry.attributes.skinWeight;
+  for (let i = 0; i < si.count; i++) {
+    for (let j = 0; j < 4; j++) {
+      if (si.getComponent(i, j) === bone && sw.getComponent(i, j) > 0.02) {
+        haarListe.push(i);
+        break;
+      }
+    }
+  }
+  return haarListe;
+}
+
+/**
+ * Wo die gezeichneten Straehnen ansetzen: der **hintere Rand** der Haarmasse.
+ *
+ * Der Zeichner koennte das nicht selbst herausfinden. Er sieht eine fertige
+ * Zelle und wuesste nicht, wo darin Haar aufhoert und Stirn anfaengt.
+ *
+ * Der erste Anlauf hat in Faechern ueber die Bildbreite die jeweils tiefste
+ * Haarecke genommen — und gemessen landeten alle fuenf Wurzeln auf dem PONY:
+ * In der Bildmitte ist die tiefste Haarstelle der Ponyrand ueber der Stirn,
+ * nicht das Haar hinter dem Ohr. Eine Straehne von dort faellt quer ueber Auge
+ * und Mund. (Die Entwurfsrunde hat denselben Fehler gemacht und beschrieben.)
+ *
+ * Also wird nicht im Bild gefaechert, sondern **um den Kopf herum**: Jede
+ * Haarecke bekommt ihren Winkel um die Hochachse der Figur, gerechnet im
+ * ungedrehten Modellraum, wo vorn immer +z ist. Ein Keil um die Blickrichtung
+ * bleibt frei — das ist der Pony —, der Rest wird in gleiche Winkelfaecher
+ * geteilt, und in jedem Fach zaehlt die tiefste Ecke. Damit sitzen die Wurzeln
+ * dort, wo an einem Kopf wirklich Haar herunterhaengt, und die Drehung der
+ * Pose verschiebt sie von selbst mit.
+ */
+const PONY_KEIL = (55 * Math.PI) / 180;
+function haarwurzeln(n, dreh) {
+  if (n < 1) return null;
+  const idx = haarEcken();
+  if (idx.length < 20) return null;
+  // Der Modellraum der Figur, also VOR der Posendrehung: Dort zeigt das
+  // Gesicht immer nach +z, und der Ponykeil braucht keine Fallunterscheidung.
+  const zurueck = new THREE.Matrix4().copy(wurzel.matrixWorld).invert();
+  const v = new THREE.Vector3();
+  const l = new THREE.Vector3();
+  const welt = [];
+  const ort = [];
+  const mitte = new THREE.Vector3();
+  for (const i of idx) {
+    netz.getVertexPosition(i, v);
+    v.applyMatrix4(netz.matrixWorld);
+    welt.push(v.clone());
+    l.copy(v).applyMatrix4(zurueck);
+    ort.push(l.clone());
+    mitte.add(l);
+  }
+  mitte.divideScalar(ort.length);
+
+  // Der Rand, nicht der tiefste Punkt.
+  //
+  // Der zweite Anlauf hat je Winkelfach die tiefste Ecke genommen, und alle
+  // fuenf Wurzeln rutschten in die Bildmitte. Der Grund ist Geometrie: Auf
+  // einer Schale um einen Mittelpunkt liegt die tiefste Stelle jeder Richtung
+  // nahe am UNTEREN POL — und der ist fuer alle Richtungen derselbe Ort.
+  //
+  // Gesucht ist stattdessen, wie weit die Masse in dieser Richtung vom
+  // Scheitel WEGREICHT: der Winkel zur Hochachse. Das ist der Haarrand, und
+  // der laeuft um den Kopf herum statt sich in einem Punkt zu sammeln.
+  const faecher = new Array(n).fill(null);
+  for (let k = 0; k < ort.length; k++) {
+    const dx = ort[k].x - mitte.x, dy = ort[k].y - mitte.y, dz = ort[k].z - mitte.z;
+    const r = Math.hypot(dx, dy, dz);
+    if (r < 1e-6) continue;
+    const winkel = Math.atan2(dx, dz);
+    const a = Math.abs(winkel);
+    if (a < PONY_KEIL) continue;
+    // Zwei Boegen, links und rechts vom Pony, zu einem Fachband
+    // aneinandergelegt: 0 ist die eine Schlaefe, n die andere.
+    const t = (winkel > 0 ? a - PONY_KEIL : 2 * Math.PI - PONY_KEIL - a) / (2 * (Math.PI - PONY_KEIL));
+    const f = Math.min(n - 1, Math.max(0, Math.floor(t * n)));
+    const rand = dy / r;
+    if (!faecher[f] || rand < faecher[f].rand) faecher[f] = { rand, i: k, dx, dz };
+  }
+  const aus = [];
+  for (let f = 0; f < n; f++) {
+    const w = faecher[f];
+    if (!w) continue;
+    const p = zelle(welt[w.i]);
+    // Die dritte Zahl: wohin „aussen" fuer diese Wurzel im BILD zeigt.
+    //
+    // Der Zeichner kann das nicht erraten. Er saehe nur eine Reihe von Punkten
+    // und muesste ihre Mitte fuer den Kopf halten — bei gedrehtem Kopf liegt
+    // die Reihe aber gar nicht symmetrisch, und die Straehne schwaenge zur
+    // falschen Seite ueber das Gesicht. Hier dagegen ist die Richtung bekannt:
+    // Die waagerechte Radiale der Ecke, um die Pose gedreht und auf die
+    // Bildebene gelegt. Wer nach hinten zeigt, bekommt fast null und schwingt
+    // kaum aus — richtig so, denn hinter der Figur sieht man ihn ohnehin nicht.
+    const laenge = Math.hypot(w.dx, w.dz) || 1;
+    const seit = (w.dx * Math.cos(dreh) + w.dz * Math.sin(dreh)) / laenge;
+    aus.push([p[0], p[1], Number(seit.toFixed(3))]);
+  }
+  return aus.length ? aus : null;
+}
+
 window.bild = (bild, dreh, grund, seite, weit) => {
   if (weit && weit !== 1) blick(weit);
   zeichne(bild, dreh, grund, seite);
@@ -755,6 +872,7 @@ window.bild = (bild, dreh, grund, seite, weit) => {
     gesicht: zelle(g),
     stirn: zelle(st),
     hand: hand ? zelle(hand) : null,
+    haar: haarwurzeln(HAAR_WURZELN, dreh),
     anschnitt: k && k.randberuehrung ? 1 : 0,
     kasten: k,
   };
@@ -856,6 +974,8 @@ const bilder = [];
 const gesichter = [];
 const stirnen = [];
 const haende = [];
+/** Die Straehnenwurzeln je Einzelbild — leer, wenn die Figur keine traegt. */
+const haare = [];
 /** Der gemessene Drehwinkel je Pose — die Variante darf ihn mitbringen. */
 const drehungen = {};
 /** Die gemessene Standflaeche je Pose, in logischen Pixeln. */
@@ -893,6 +1013,7 @@ for (const z of zeilen) {
     gesichter.push({ pose: z.name, bild: i, punkt: r.gesicht });
     stirnen.push({ pose: z.name, bild: i, punkt: r.stirn ?? r.gesicht });
     haende.push({ pose: z.name, bild: i, punkt: r.hand ?? r.gesicht });
+    if (r.haar) haare.push({ pose: z.name, bild: i, punkte: r.haar });
     if (r.kasten) masse.push(r.kasten);
     if (process.env.FUESSE) {
       const o = await page.evaluate(
@@ -1056,6 +1177,26 @@ if (probe) {
               Number(((h.punkt[0] / ZELLE) * LOGISCH).toFixed(2)),
               Number(((h.punkt[1] / ZELLE) * LOGISCH).toFixed(2)),
             ]),
+          // Die Straehnenwurzeln je Einzelbild, in denselben Koordinaten.
+          //
+          // Nur der Wuselwerker traegt sie; wer keine hat, bekommt das Feld
+          // nicht. Ein leeres Feld waere schlimmer als keines: Der Zeichner
+          // wuerde dann fuenf Straehnen der Laenge null zeichnen und man suchte
+          // den Fehler im Zeichner statt im Blatt.
+          ...(haare.some((h) => h.pose === z.name)
+            ? {
+                haar: haare
+                  .filter((h) => h.pose === z.name)
+                  .sort((a, b) => a.bild - b.bild)
+                  .map((h) =>
+                    h.punkte.map((q) => [
+                      Number(((q[0] / ZELLE) * LOGISCH).toFixed(2)),
+                      Number(((q[1] / ZELLE) * LOGISCH).toFixed(2)),
+                      q[2],
+                    ]),
+                  ),
+              }
+            : {}),
         },
       ]),
     ),
