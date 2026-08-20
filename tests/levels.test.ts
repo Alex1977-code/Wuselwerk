@@ -2903,6 +2903,55 @@ function planPruefungAmSonnenhang(): Plan {
 // In PLANS eintragen:
 //   'w6-17': planPruefungAmSonnenhang,
 
+/**
+ * w6-15 „Das Rondell" — jedem seinen Kletterer, dann ein Rammer am Kern.
+ *
+ * Der Panzer auf den Aussenflanken laesst keinen Stollen hinein; der Weg
+ * fuehrt ueber die Krone, und ueber eine Krone kommt nur, wer klettert —
+ * also jeder einzeln. Drinnen genuegt EIN Rammer fuer alle: Er oeffnet den
+ * Kern nach Osten, und die Tuerkammer dahinter ist vorgeschnitten.
+ */
+function planRondell(): Plan {
+  let rammer = false;
+  return (w) => {
+    // Draussen: wer noch keinen Kletterer hat, bekommt einen.
+    const k = w.wusels.find((x) => x.state === State.WALKING && !x.hasClimber && x.x < 240);
+    if (k) {
+      w.assign(k.id, 'climber');
+      return;
+    }
+    // Drinnen: einer schlaegt den Kern auf. Die Hoehenschranke y > 330
+    // trennt die Sohle von der Krone — oben liefe derselbe Griff ins Leere.
+    if (!rammer) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING && x.dir === 1 && x.x >= 380 && x.x <= 398 && x.y > 330,
+      );
+      if (c && w.assign(c.id, 'basher')) rammer = true;
+    }
+  };
+}
+
+/**
+ * Rot-Test zu w6-15: Der Panzer haelt, was er verspricht.
+ *
+ * Drei Rammer an die Aussenflanke — mehr liegen gar nicht im Vorrat. Der
+ * Findling nimmt jeden nach null Bildpunkten an, der Pulk steht danach
+ * unverletzt davor, und im Level ist kein Werkzeug mehr. Genau so soll sich
+ * eine Mauer anfuehlen, die keine Tuer hat.
+ */
+function planRondellVonAussen(): Plan {
+  let n = 0;
+  return (w) => {
+    if (n >= 3) return;
+    const c = w.wusels.find(
+      (x) => x.state === State.WALKING && x.dir === 1 && x.x >= 200 && x.x <= 236,
+    );
+    if (c && w.assign(c.id, 'basher')) n++;
+  };
+}
+
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
   // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
@@ -2986,6 +3035,7 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-12': planStorchennest,
   'w6-13': planVierEtagen,
   'w6-14': planSchleifeAmHang,
+  'w6-15': planRondell,
   'w6-16': planZweiArme,
   'w6-17': planPruefungAmSonnenhang,
 };
@@ -3295,6 +3345,15 @@ describe('Rot-Tests — der geerbte Altplan scheitert', () => {
     // wartet vergebens auf einen Blocker im Vorrat.
     erwarteRot('w3-05', planLevel4);
     erwarteRot('w3-05', planRost5);
+  });
+  it('w6-15: drei Rammer an der Aussenflanke — der Findling nimmt jeden an', () => {
+    // Die Behauptung des Rondells als Test: In dieses Bauwerk fuehrt kein
+    // Stollen. Wer es mit Gewalt versucht, verbraucht den ganzen Vorrat und
+    // steht immer noch davor — verloren, aber ohne einen Toten.
+    const level = levelById('w6-15')!;
+    const w = play(level, planRondellVonAussen());
+    expect(w.phase).toBe('lost');
+    expect(w.dead).toBe(0);
   });
   it('w6-13: zweimal der Gräber — die Sechsundneunzig nimmt er nicht', () => {
     // Die These der Welt im Gegenlicht: Jeder Abstand sagt ueber seine Zahl

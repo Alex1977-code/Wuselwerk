@@ -317,12 +317,7 @@ export const WELTEN: Welt[] = [
     thema: 'Terrassen im Nachmittagslicht. Was von weitem wie eine Wiese aussieht, hat vier Stockwerke.',
     kartenTheme: 'sonnenhang',
     farbe: '#d9a441',
-    // Siebzehn Plaetze, sechzehn davon gebaut: Es fehlt nur noch w6-15 „Das
-    // Rondell", das gerade ausgemessen wird. `soll` ist hier ausnahmsweise
-    // die Zahl der PLAETZE und nicht der fertigen Level — `levelIds` wird
-    // daraus als lueckenlose Folge erzeugt (`ids(w.id, w.soll)`), und der
-    // fehlende Platz wird beim Nachschlagen still uebersprungen. Stuende
-    // hier 16, fiele w6-17 aus der Welt heraus.
+    // Siebzehn von siebzehn. Der Sonnenhang ist vollstaendig.
     soll: 17,
     phase: 3,
     belohnung: {

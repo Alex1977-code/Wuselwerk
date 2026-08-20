@@ -1761,6 +1761,27 @@
   "ueberschuss": 10
  },
  {
+  "id": "w6-15",
+  "name": "Das Rondell",
+  "planTicks": 2595,
+  "letzteRettungSek": 43,
+  "quoteSek": 37.2,
+  "uhrSek": 61,
+  "uhrFaktor": 1.42,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 9,
+  "quotenMarge": 3,
+  "par": 13,
+  "vergaben": 13,
+  "benutzt": {
+   "climber": 12,
+   "basher": 1
+  },
+  "werkzeuge": 21,
+  "ueberschuss": 8
+ },
+ {
   "id": "w6-16",
   "name": "Zwei Hände am Hang",
   "planTicks": 4560,

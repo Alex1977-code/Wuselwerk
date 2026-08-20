@@ -1583,6 +1583,87 @@ export const WELT6_LEVELS: LevelDef[] = [
     ]
   },
   {
+    id: 'w6-15',
+    name: 'Das Rondell',
+    chapter: 'Kamm',
+    // Der letzte sichere Sieg vor der Pruefung. Ein Ringwall, Krone y300,
+    // Fuss y348 — achtundvierzig hoch —, und seine beiden Aussenflanken
+    // tragen Findling. Damit ist das Rondell das einzige Bauwerk der Welt,
+    // in das KEIN Stollen fuehrt: Wer hinein will, muss hinueber. Drinnen
+    // steht der Kern mit der Tuerkammer, und ihn oeffnet ein einziger
+    // Rammer fuer alle.
+    //
+    // Im ganzen Level misst nichts mehr als achtundvierzig: der Falltuerfall,
+    // der Sprung von der Krone nach innen, jede Kante. Gemessen ueber hundert
+    // Laeufe mit wahllos verteilten Berufen — null Tote, tiefster Sturz 48
+    // bei einer Sturzgrenze von 78, und kein einziger Zufallssieg.
+    //
+    // ## Was die Messung gegen den Entwurf entschieden hat
+    //
+    // 1. ZWEI ZUWEISUNGEN SIND IN DIESER SIMULATION NICHT BAUBAR. Das
+    //    Konzept versprach „ein Kletterer steigt ueber den Wall, wird innen
+    //    am Findlingspflock gewendet und rammt die Innenflanke nach Westen
+    //    auf — der Durchlass steht fuer alle offen: zwei Zuweisungen". Das
+    //    geht nicht, und zwar aus einem Grund, der fuer das ganze Spiel
+    //    gilt: Ein Kletterer landet auf der anderen Seite IMMER mit dem
+    //    Ruecken zu seinem Pulk (er kam von dort). Sein Rammstollen fuehrt
+    //    also von ihm weg statt zurueck. Wendet ihn ein Pflock, wendet
+    //    derselbe Pflock spaeter den nachruckenden Pulk — Terrain wirkt in
+    //    beide Richtungen gleich. Und liegt die Tuer auf seinem Rueckweg,
+    //    rettet er sich selbst, bevor er den Stollen schlaegt. Alle drei
+    //    Sackgassen sind durchgerechnet, keine traegt.
+    // 2. DESHALB KLETTERT HIER JEDER. Der Panzer macht den Kletterer nicht
+    //    zum Trick, sondern zum Weg: zwoelf Kletterer, einer je Figur, dazu
+    //    der eine Rammer am Kern. Das ist dieselbe Handschrift wie in w6-07
+    //    „Der Brunnen" (par 13) — und der Unterschied ist die Silhouette und
+    //    die voellige Gefahrlosigkeit. Ein Durchatmer darf sich wiederholen;
+    //    er ist die Stelle, an der man nichts Neues lernen muss.
+    // 3. DER PANZER IST GEMESSEN, NICHT BEHAUPTET. Drei Rammer an der
+    //    Aussenflanke verbraucht: verloren, 0 gerettet, 0 tot, der Pulk
+    //    steht unverletzt davor. Genau so soll sich eine Mauer anfuehlen,
+    //    die keine Tuer hat.
+    // 4. DIE FALLTUER MUSSTE HERUNTER. Erster Bau mit Eingang auf y150:
+    //    198 Bildpunkte bis zur Wiese, alle zwoelf tot, bevor das Level
+    //    begann. Jetzt sitzt sie auf y300 — achtundvierzig ueber der Sohle,
+    //    dasselbe Mass wie alles andere hier.
+    //
+    // Malreihenfolge beachtet: Der Findlingspanzer steht am ENDE der Liste;
+    // die Wallschenkel wuerden ihn sonst wieder in Erde verwandeln.
+    hint: 'Der Wall ist rundum gepanzert — kein Stollen führt hinein, nur der Weg über die Krone. Drinnen wartet der Kern: ein einziger Rammer öffnet ihn für alle.',
+    theme: 'sonnenhang',
+    width: 720,
+    height: 540,
+    seed: 61015,
+    entrance: { x: 110, y: 300 },
+    exit: { x: 428, y: 322, w: 32, h: 26 },
+    total: 12,
+    needed: 9,
+    // Uhr = 1,4 x letzte Rettung der Musterloesung (43,3 s).
+    timeLimitSec: 61,
+    releaseRate: 45,
+    minReleaseRate: 20,
+    // Sechzehn Kletterer fuer zwoelf Figuren: Wer einen verschenkt, hat
+    // Luft. Drei Rammer fuer einen gesetzten — und die zwei ueberzaehligen
+    // sind genau die, mit denen man den Panzer erfolglos abklopft (Befund 3).
+    skills: sk({ climber: 16, basher: 3, blocker: 2 }),
+    par: 13,
+    paint: [
+      { t: 'rect', x: 0, y: 60, w: 720, h: 20, mat: MAT.ROCK },
+      // Wiese und Rondellsohle in einem. rough 0, weil am Kern gerammt wird.
+      { t: 'ground', x: 0, w: 720, y: 348, h: 192, mat: MAT.EARTH, rough: 0 },
+      // Die zwei Wallschenkel — im Bild die Haelften eines runden Walls.
+      { t: 'rect', x: 240, y: 300, w: 60, h: 48, mat: MAT.EARTH },
+      { t: 'rect', x: 560, y: 300, w: 60, h: 48, mat: MAT.EARTH },
+      // Der Kern mit der vorgeschnittenen Tuerkammer: Man SIEHT die Tuer
+      // vom ersten Bild an und kommt nur mit dem Rammer hinein.
+      { t: 'rect', x: 400, y: 300, w: 80, h: 48, mat: MAT.EARTH },
+      { t: 'rect', x: 420, y: 322, w: 40, h: 26, mat: MAT.EMPTY },
+      // Der Findlingspanzer auf beiden Aussenflanken. ZULETZT gemalt.
+      { t: 'rect', x: 240, y: 300, w: 8, h: 48, mat: MAT.STEEL },
+      { t: 'rect', x: 612, y: 300, w: 8, h: 48, mat: MAT.STEEL },
+    ],
+  },
+  {
     id: 'w6-16',
     name: 'Zwei Hände am Hang',
     chapter: 'Kamm',
