@@ -100,6 +100,35 @@ const KEGEL_GRAD = flagge('kegel', 12);
 /** Groesstes Gewicht, mit dem die Haarschale am Schwungknochen haengt. */
 const SCHWUNG_MAX = flagge('schwung', 0.55);
 
+/**
+ * Die Halbachsen der Stutzellipse, in **Kopfhalbbreiten**.
+ *
+ * Nicht in Modelleinheiten, damit die Zahlen etwas bedeuten: 1,0 ist genau der
+ * halbe Schaedel, gemessen an der Haut oberhalb der Augen. Alles darueber
+ * laesst Haar ueber den Schaedel hinausstehen — das soll es auch, sonst waere
+ * es eine Badekappe.
+ *
+ * Nach oben ist die Zahl folgenlos: Dort reicht das Haar ohnehin nur bis zum
+ * Scheitel, und der ist die Eichmarke. Entschieden wird sie **zur Seite**, und
+ * zwar an den Straehnen, die spaeter davon abhaengen. Drei Fassungen gebacken
+ * und bei Spielgroesse ausgemessen:
+ *
+ *     1,45 -> Haarmasse 3,50 lp breit, deckt 31,9 % der Figurenhoehe
+ *     1,80 -> 3,80 lp, 33,7 %
+ *     2,10 -> 3,99 lp, 34,4 %
+ *
+ * Vorher waren es 9,08 lp und 57,6 % — drei Viertel der Figur waren Haar, und
+ * das ist die Kappe. Genommen ist 2,10, und der Grund ist nicht Geschmack:
+ * Zwei Straehnen lesen sich bei Spielgroesse erst ab 0,9 logischen Pixeln
+ * Abstand einzeln. Fuenf Wurzeln brauchen also 3,6 lp Bogen — bei 3,50 gingen
+ * sie nicht mehr auseinander, bei 3,99 gerade.
+ */
+const STUTZ_SEITE = flagge('stutzSeite', 2.1);
+const STUTZ_HOCH = flagge('stutzHoch', 1.35);
+const STUTZ_TIEF = flagge('stutzTief', 2.1);
+/** Wieviel vom Ueberstand stehenbleibt (0 = harte Kante, siehe `stutzen`). */
+const STUTZ_WEICH = flagge('stutzWeich', 0.2);
+
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -247,13 +276,83 @@ window.messen = () => {
   }
   dunkel.sort((a, b) => b - a);
 
+  // Der KOPF fuer sich, nicht die ganze Figur.
+  //
+  // Ohne dieses Mass laesst sich keine Kappe stutzen: Die Hautbox reicht bis in
+  // die Haende hinunter und ist ueber einen halben Meter breit, waehrend der
+  // Schaedel darunter kaum ein Drittel misst. Wer die Ellipse an der Hautbox
+  // bemisst, stutzt gar nichts. Gezaehlt wird deshalb nur, was oberhalb der
+  // Augenoberkante liegt — das ist sicher Schaedel und sicher keine Schulter.
+  const augenOben = dunkel.length ? dunkel[0] : 0;
+  const kopf = kasten((i) => {
+    if (klasse[i] !== 2) return false;
+    v.fromBufferAttribute(pos, i).applyMatrix4(netz.matrixWorld);
+    return v.y > augenOben;
+  });
+
   return {
-    alles, haar, haut,
+    alles, haar, haut, kopf,
     schaedel: m.toArray(),
     hautVorn: hautZ,
     haarVorn: haar.max[2],
-    augen: { n: dunkel.length, oben: dunkel.length ? dunkel[0] : 0 },
+    augen: { n: dunkel.length, oben: augenOben },
   };
+};
+
+/**
+ * Die Kappe auf eine Ellipse stutzen — der zweite Griff am Haar.
+ *
+ * ## Warum ueberhaupt
+ *
+ * Gemessen reicht die Haarmasse des gelieferten Modells von y 0,252 bis 0,998
+ * bei einer Figurenhoehe von 0,998: **drei Viertel der Figur sind Haar.** Sie
+ * faellt ueber Schultern und Ruecken bis auf Huefthoehe, als geschlossene
+ * glatte Schale. Bei neun logischen Pixeln Figurenbreite gibt das keinen
+ * Zopf, sondern einen Mantel — und genau das ist die Rueckmeldung „sieht aus
+ * wie eine Kappe" gewesen. Kein Spreizen des Reliefs heilt das: Amplitude
+ * gliedert eine Flaeche, sie verkleinert sie nicht.
+ *
+ * ## Was hier passiert
+ *
+ * Jede Haarecke ausserhalb eines Ellipsoids um die Schaedelmitte wird darauf
+ * zurueckgezogen. Nicht geloescht: Geometrie aus einem gehaeuteten Netz zu
+ * entfernen hiesse Index, Haut- und Gewichtstabellen neu zu bauen, und der
+ * Gewinn waere derselbe. Wer zurueckzieht, behaelt die Naht am Haaransatz.
+ *
+ * Der Parameter weich laesst einen Bruchteil des Ueberstands stehen. Bei null entsteht am
+ * Rand der Ellipse eine harte Kante — ein Topfschnitt, also wieder eine
+ * geschlossene Silhouette, nur kuerzer. Ein Fuenftel Ueberstand laesst die
+ * Unterkante ausfransen, und die gezeichneten Straehnen haben etwas, woraus
+ * sie hervorkommen.
+ */
+window.stutzen = (schaedelArr, rx, ry, rz, weich) => {
+  const schaedel = new THREE.Vector3().fromArray(schaedelArr);
+  const pos = netz.geometry.attributes.position;
+  const M = netz.matrixWorld;
+  const Mi = new THREE.Matrix4().copy(M).invert();
+  const v = new THREE.Vector3();
+  let bewegt = 0, weiteste = 0, gesamt = 0, unten = Infinity;
+  for (let i = 0; i < pos.count; i++) {
+    if (klasse[i] !== 1) continue;
+    v.fromBufferAttribute(pos, i).applyMatrix4(M);
+    const dx = v.x - schaedel.x, dy = v.y - schaedel.y, dz = v.z - schaedel.z;
+    const q = Math.sqrt((dx / rx) ** 2 + (dy / ry) ** 2 + (dz / rz) ** 2);
+    if (q > 1) {
+      const k = (1 + (q - 1) * weich) / q;
+      v.set(schaedel.x + dx * k, schaedel.y + dy * k, schaedel.z + dz * k);
+      const weg = (1 - k) * Math.sqrt(dx * dx + dy * dy + dz * dz);
+      gesamt += weg;
+      if (weg > weiteste) weiteste = weg;
+      bewegt++;
+      v.applyMatrix4(Mi);
+      pos.setXYZ(i, v.x, v.y, v.z);
+      v.applyMatrix4(M);
+    }
+    if (v.y < unten) unten = v.y;
+  }
+  pos.needsUpdate = true;
+  netz.geometry.computeVertexNormals();
+  return { bewegt, weiteste, mittel: bewegt ? gesamt / bewegt : 0, unten };
 };
 
 /**
@@ -470,11 +569,43 @@ console.log(
     `-> die Haut steht ${(m.hautVorn - m.haarVorn).toFixed(3)} weiter vorn`,
 );
 console.log(`  Augenoberkante y=${m.augen.oben.toFixed(3)} (aus ${m.augen.n} dunklen Dreiecken)`);
+console.log(`  Kopf    ${f(m.kopf.min)}  bis  ${f(m.kopf.max)}   (${m.kopf.n} Ecken Haut ueber den Augen)`);
 
 const scheitel = m.alles.max[1];
+
+// Erst stutzen, dann spreizen — und dazwischen neu messen.
+//
+// Die Reihenfolge ist keine Geschmacksfrage. Das Spreizen vergleicht jede Ecke
+// mit dem Mittel ihrer Nachbarschaft; solange der Mantel bis zur Huefte
+// haengt, sitzt dieses Mittel im Mantel, und die Kerben entstuenden dort statt
+// am Kopf. Und die Schaedelmitte selbst haengt an der Haarmasse — sie wird aus
+// deren oberer Haelfte gerechnet. Wer nach dem Stutzen mit der alten Mitte
+// weiterarbeitet, spreizt um einen Punkt, den es nicht mehr gibt.
+const halb = (m.kopf.max[0] - m.kopf.min[0]) / 2;
+const stz = await page.evaluate(
+  ([s, rx, ry, rz, w]) => window.stutzen(s, rx, ry, rz, w),
+  [m.schaedel, halb * STUTZ_SEITE, halb * STUTZ_HOCH, halb * STUTZ_TIEF, STUTZ_WEICH],
+);
+console.log(
+  `\nKappe gestutzt auf ${(halb * STUTZ_SEITE).toFixed(3)} / ` +
+    `${(halb * STUTZ_HOCH).toFixed(3)} / ${(halb * STUTZ_TIEF).toFixed(3)} ` +
+    `(Kopfhalbbreite ${halb.toFixed(3)}): ${stz.bewegt} Ecken zurueckgezogen, ` +
+    `weiteste ${stz.weiteste.toFixed(3)}, im Mittel ${stz.mittel.toFixed(3)}`,
+);
+console.log(
+  `  Haarunterkante y ${m.haar.min[1].toFixed(3)} -> ${stz.unten.toFixed(3)} ` +
+    `(Augenoberkante ${m.augen.oben.toFixed(3)})`,
+);
+
+const m2 = await page.evaluate(() => window.messen());
+console.log(
+  `  Schaedelmitte neu ${f(m2.schaedel)} (vorher ${f(m.schaedel)}), ` +
+    `Haar jetzt ${f(m2.haar.min)} bis ${f(m2.haar.max)}`,
+);
+
 const sch = await page.evaluate(
   ([s, k, kegel, oben]) => window.schaerfen(s, k, kegel, oben),
-  [m.schaedel, SCHAERFE, KEGEL_GRAD, scheitel],
+  [m2.schaedel, SCHAERFE, KEGEL_GRAD, scheitel],
 );
 console.log(
   `\nRelief gespreizt (Faktor ${SCHAERFE}, Kegel ${KEGEL_GRAD} Grad): ${sch.bewegt} Haarecken, ` +
@@ -482,7 +613,7 @@ console.log(
     `${sch.geklemmt} am Scheitel geklemmt`,
 );
 
-const hh = await page.evaluate(([s, g]) => window.schwungHaeuten(s, g), [m.schaedel, SCHWUNG_MAX]);
+const hh = await page.evaluate(([s, g]) => window.schwungHaeuten(s, g), [m2.schaedel, SCHWUNG_MAX]);
 console.log(
   `HaarSchwung eingehaengt: ${hh.gehaeutet} Haarecken mitgehaeutet, groesstes Gewicht ` +
     `${hh.groesstes.toFixed(2)}, jetzt ${hh.knochen} Knochen`,
