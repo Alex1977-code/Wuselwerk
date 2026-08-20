@@ -327,9 +327,31 @@ export const WELTEN: Welt[] = [
       text: 'Jede Kante schreibt ab jetzt ihre Normhöhe an, solange der Finger auf dem Glas liegt: 48, 72, 96, 120.',
     },
   }),
-  // Welt 7 „Wipfelweide" ist entworfen (docs/welt-6-7-konzept.md), aber noch
-  // nicht gebaut. Sie kommt auf die Karte, sobald ihr erstes Level gemessen
-  // ist — Palette, Ambiente und Musik stehen bereits.
+  welt({
+    id: 'w7',
+    name: 'Wipfelweide',
+    thema: 'Ein Wald von oben. Der Boden ist weit unten, und die Äste sind die Straßen.',
+    kartenTheme: 'wipfel',
+    // Moosgruen, und bewusst ein anderes als Graslands #63b23f: Die beiden
+    // gruenen Welten stehen am Anfang und am Ende des Spiels und duerfen auf
+    // der Karte nicht verwechselbar sein. Grasland ist gelbgruen, die
+    // Wipfelweide blaugruen — derselbe Unterschied wie zwischen ihren
+    // Paletten.
+    farbe: '#4fa77a',
+    // Null von siebzehn gebaut. Der Eintrag steht trotzdem schon hier: Ohne
+    // ihn kann kein Level dieser Welt zugeordnet werden. Auf der Karte
+    // erscheint sie deshalb noch nicht — `gebauteWelten` in progression.ts
+    // wirft Welten ohne ein einziges gebautes Level heraus, und genau so
+    // soll es sein.
+    soll: 17,
+    phase: 6,
+    belohnung: {
+      art: 'schmuck',
+      id: 'blattkranz',
+      titel: 'Der Blattkranz',
+      text: 'Die Karte bekommt ein Blätterdach, durch das Licht auf den Weg fällt — und die Figur trägt einen Kranz. Wer alle Level mit drei Sternen hat, bekommt ihn in Gold.',
+    },
+  }),
 ];
 
 export function weltById(id: string): Welt | undefined {

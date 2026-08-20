@@ -131,6 +131,22 @@ export class Scene {
   private vignetteH = 0;
   /** Statische Lichtbahnen von der Sonne — nur dort, wo Luft und Licht sind. */
   private raysSprite: HTMLCanvasElement | null = null;
+  /**
+   * Die Lichtkringel der Wipfelweide — Sonnenflecken durchs Blaetterdach.
+   *
+   * Das Konzept nennt sie „das staerkste Einzelbild der Welt", und sie sind
+   * der Grund, warum die Wipfelweide nicht wie Grasland in anderer Farbe
+   * aussieht: Sie liegen UEBER Boden und Figuren, nicht dahinter. Ein Wusel,
+   * der durch einen Kringel laeuft, wird kurz hell — das erzaehlt „Licht
+   * faellt von oben durchs Laub" in einem Bild, ohne ein Wort.
+   *
+   * Der Fleck wird einmal je Level gebacken und je Bild nur gestempelt; die
+   * Wanderung ist eine Verschiebung des Stempelrasters, kein neuer Verlauf.
+   * Sie haengt an der ZEICHENuhr und nicht an der Simulation — die Kringel
+   * duerfen driften, ohne den Determinismus anzufassen.
+   */
+  private kringelSprite: HTMLCanvasElement | null = null;
+  private kringel: { x: number; y: number; r: number; deckung: number; drift: number }[] = [];
 
   constructor(
     private level: LevelDef,
@@ -336,6 +352,62 @@ export class Scene {
     ng.fillRect(0, 0, 64, 64);
     ng.restore();
     this.nebelSprite = nebel;
+
+    // --- Die Lichtkringel, nur in der Wipfelweide --------------------------
+    //
+    // Ein weicher runder Fleck in der Glutfarbe der Palette, additiv
+    // gestempelt. Die Kanten muessen SEHR weich sein: Ein harter Rand laese
+    // sich als Gegenstand, und ein Sonnenfleck ist keiner.
+    if (this.level.theme === 'wipfel') {
+      const kg2 = document.createElement('canvas');
+      kg2.width = kg2.height = 128;
+      const kc = kg2.getContext('2d')!;
+      const [gr, gg, gb] = rgb(this.palette.glow);
+      const kGrad = kc.createRadialGradient(64, 64, 0, 64, 64, 64);
+      kGrad.addColorStop(0, `rgba(${gr}, ${gg}, ${gb}, 0.85)`);
+      kGrad.addColorStop(0.45, `rgba(${gr}, ${gg}, ${gb}, 0.32)`);
+      kGrad.addColorStop(0.8, `rgba(${gr}, ${gg}, ${gb}, 0.06)`);
+      kGrad.addColorStop(1, `rgba(${gr}, ${gg}, ${gb}, 0)`);
+      kc.fillStyle = kGrad;
+      kc.fillRect(0, 0, 128, 128);
+      this.kringelSprite = kg2;
+
+      // Gesaet aus dem Levelsamen: Zwei Spieler sehen dasselbe Blaetterdach,
+      // und ein Zeitruecklauf aendert es nicht.
+      //
+      // GERASTERT statt gewuerfelt, und das ist eine Messung: Das Spielfeld
+      // ist ein SCHMALES BAND — quer auf dem Telefon rund 794 x 140
+      // Bildpunkte fuer ein Level von 720 x 540. Vierzehn gewuerfelte Flecken
+      // ueber die volle Levelhoehe ergaben null sichtbare: Der erste lag bei
+      // Bildzeile 457, das Fenster endete bei 182. Ein Raster mit Streuung
+      // garantiert dagegen, dass in jedem Ausschnitt welche liegen, und sieht
+      // trotzdem nicht gemustert aus.
+      const krnd = mulberry32(this.level.seed ^ 0x3ba9);
+      this.kringel = [];
+      const spalten = 7;
+      const reihen = Math.max(4, Math.round(this.level.height / 110));
+      const zellW = this.level.width / spalten;
+      const zellH = this.level.height / reihen;
+      for (let sp = 0; sp < spalten; sp++) {
+        for (let re = 0; re < reihen; re++) {
+          this.kringel.push({
+            // Die Streuung innerhalb der Zelle ist gross genug, dass das
+            // Raster verschwindet — aber klein genug, dass keine Luecke
+            // aufreisst.
+            x: (sp + 0.15 + krnd() * 0.7) * zellW,
+            y: (re + 0.15 + krnd() * 0.7) * zellH,
+            // Weit gestreute Groessen: Ein Feld gleich grosser Flecken sieht
+            // gemustert aus, und ein Blaetterdach ist alles andere als das.
+            r: 26 + krnd() * 64,
+            deckung: 0.24 + krnd() * 0.34,
+            // Jeder Fleck driftet anders schnell. Die langsamsten stehen fast
+            // still — so wirkt es wie Wind in verschiedenen Kronenhoehen statt
+            // wie eine wandernde Tapete.
+            drift: 2.5 + krnd() * 7,
+          });
+        }
+      }
+    }
 
     // Die Baenke liegen am Kamm der vordersten Schicht, aber auf einer
     // **eigenen** Parallaxe-Ebene (0.85) zwischen Hügel (0.68) und Terrain
@@ -768,6 +840,37 @@ export class Scene {
       ctx.restore();
     }
     this.drawParticles(ctx, v);
+
+    // Die Lichtkringel — ueber Boden UND Figuren.
+    //
+    // Das ist die eine Stelle, an der die Wipfelweide bewusst gegen die
+    // Regel der Kulisse verstoesst: „Das Terrain und die Figuren werden in
+    // voller Saettigung darueber gezeichnet." Hier legt sich noch etwas
+    // darauf — aber additiv und schwach, also aufhellend statt verdeckend.
+    // Eine Figur im Kringel bleibt vollstaendig lesbar; sie steht nur im
+    // Licht. Genau das ist die Aussage der Welt.
+    if (this.kringelSprite && this.kringel.length > 0) {
+      // Die Wanderung: Der Stempel laeuft langsam nach Osten und wiegt sich
+      // dabei. Beides haengt an der Zeichenuhr (`tick`), nicht an der
+      // Simulation — die Kringel sind Licht, kein Spielgegenstand.
+      const t = tick / 60;
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
+      for (const k of this.kringel) {
+        const wx = k.x + Math.sin(t * 0.12 + k.drift) * k.drift * 3.2;
+        const wy = k.y + Math.cos(t * 0.09 + k.drift * 1.7) * k.drift * 1.1;
+        const px = v.box.x + (wx - v.ox) * v.scale;
+        const py = v.box.y + (wy - v.oy) * v.scale;
+        const rr = k.r * v.scale;
+        // Ausserhalb des Fensters gar nicht erst stempeln.
+        if (px + rr < v.box.x || px - rr > v.box.x + v.box.w) continue;
+        if (py + rr < v.box.y || py - rr > v.box.y + v.box.h) continue;
+        // Ein langsames Atmen der Deckung, damit das Laub oben lebt.
+        ctx.globalAlpha = k.deckung * (0.78 + 0.22 * Math.sin(t * 0.5 + k.drift));
+        ctx.drawImage(this.kringelSprite, px - rr, py - rr, rr * 2, rr * 2);
+      }
+      ctx.restore();
+    }
 
     // Die Vignette zuletzt, ueber allem im Spielfenster: Dunklere Ecken
     // machen aus dem Rechteck eine beleuchtete Buehne und ziehen den Blick

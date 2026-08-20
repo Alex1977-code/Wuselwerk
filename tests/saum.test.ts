@@ -57,6 +57,11 @@ function hintergruende(theme: ThemeId): string[] {
   return [p.skyTop, p.skyMid, p.skyBottom, fels];
 }
 
+/** Das Erdreich — der Hintergrund, sobald eine Figur IM Boden arbeitet. */
+function erde(theme: ThemeId): string {
+  return `#${paletteFor(theme).earth.toString(16).padStart(6, '0')}`;
+}
+
 describe('Saum', () => {
   it('jede Welt hat einen', () => {
     for (const t of THEMEN) {
@@ -77,6 +82,30 @@ describe('Saum', () => {
       for (const bg of hintergruende(t)) {
         expect(kontrast(saum, bg), `${t}: Saum ${saum} vor ${bg}`).toBeGreaterThanOrEqual(1.8);
       }
+    }
+  });
+
+  /**
+   * Der Fall, den dieser Test bis zum Bau von Welt 7 uebersehen hat.
+   *
+   * Geprueft wurden Himmel und Fels — also der Hintergrund einer Figur, die
+   * auf der Oberflaeche laeuft. Ein Wusel steckt aber die halbe Spielzeit IM
+   * Boden: im Rammstollen, im Graeberschacht, in der Baggerschraege, in
+   * jeder vorgeschnittenen Tuerkammer. Dort ist sein Hintergrund die ERDE,
+   * und dort ist es am schlimmsten. Gemessen, Kontrast Haar gegen Erde:
+   * Kristallklamm 1,00 — gleiche Helligkeit, die Figur ist rechnerisch nicht
+   * da. Grasland 1,02, Wipfelweide 1,05, Rostwerk 1,09, Sonnenhang 1,11.
+   * Sechs von sieben Welten liegen unter 1,3.
+   *
+   * Der Saum traegt das heute ueberall (2,60 bis 6,16; die schlechteste ist
+   * die Wipfelweide). Die Schranke steht deshalb bei 2,2: Sie haelt den
+   * Bestand mit Luft und faellt, sobald jemand eine Erde aufhellt, ohne den
+   * Saum mitzudenken.
+   */
+  it('traegt auch im Erdreich, wo die Figur im Stollen steckt', () => {
+    for (const t of THEMEN) {
+      const saum = paletteFor(t).saum;
+      expect(kontrast(saum, erde(t)), `${t}: Saum ${saum} vor Erde ${erde(t)}`).toBeGreaterThanOrEqual(2.2);
     }
   });
 

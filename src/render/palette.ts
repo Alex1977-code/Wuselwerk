@@ -68,11 +68,24 @@ export interface Palette {
 }
 
 const GRASS: Palette = {
-  // Heller Tag statt Nacht. Die Helligkeit sitzt im Himmel und in den fernen
-  // Hügeln, nicht in der Erde: Die Figur läuft auf der Erde, und ihr violettes
-  // Haar (L* 49) braucht dort den Helligkeitsabstand nach unten. Eine
-  // aufgehellte Erde hätte die Figur genau da verschluckt, wo sie am längsten
-  // steht — deshalb wird die Erde wärmer und satter, aber nicht heller.
+  // Heller Tag statt Nacht: Die Helligkeit sitzt im Himmel und in den fernen
+  // Hügeln, nicht in der Erde. Die Erde wird deshalb wärmer und satter, aber
+  // nicht heller.
+  //
+  // ACHTUNG, hier stand bis zur Messung eine falsche Begründung: „das
+  // violette Haar der Figur (L* 49) braucht den Helligkeitsabstand nach
+  // unten". Beides ist nachgemessen falsch. Das Haar ist BLAU (häufigster
+  // Ton #3850B8, Farbton 228°, gemessen am gebackenen Blatt), und es liegt
+  // bei **L* 37,9**, nicht bei 49. Der Abstand zur Erde (#6b5237, L* 36,8)
+  // beträgt damit **1,1 Punkte** — die Trennung, die dieser Absatz
+  // herstellen wollte, gibt es nicht.
+  //
+  // Getragen wird sie vom SAUM (#0C1020, L* 5,0): WCAG-Kontrast 2,60 gegen
+  // diese Erde. Das ist kein Versehen, sondern genau die Aufgabe, für die
+  // der Saum gebaut wurde — und `tests/saum.test.ts` hält es seit dieser
+  // Messung auch für das Erdreich fest, nicht mehr nur für Himmel und Fels.
+  // Die Palette bleibt darum, wie sie ist: Sie funktioniert nachweislich,
+  // nur ihre Begründung war falsch.
   skyTop: '#2f74b8',
   skyMid: '#69aadd',
   skyBottom: '#c6e6f2',
@@ -80,10 +93,11 @@ const GRASS: Palette = {
   // Vorher war es umgekehrt, und die Ferne lag als dunkler Wall hinter dem
   // Spielfeld.
   // Die nächste Schicht ist deutlich dunkler als die fernen. Nicht nur wegen
-  // der Luftperspektive: Die Figuren laufen direkt davor, und ihr violettes
-  // Haar (L* 49) braucht dort einen Untergrund, der nicht auf derselben
-  // Helligkeit liegt. Ein sattes Mittelgrün wäre hübsch und würde die Figur
-  // verschlucken.
+  // der Luftperspektive: Die Figuren laufen direkt davor und brauchen einen
+  // Untergrund, der nicht auf ihrer Helligkeit liegt. Gemessen trägt das
+  // hier: Haar L* 37,9 gegen die nächste Hügelschicht #3f7a63 (L* 46,8) —
+  // knapp neun Punkte, und der Saum legt nach. Ein sattes Mittelgrün wäre
+  // hübsch und würde die Figur verschlucken.
   hills: ['#a5cbdd', '#7aa8bd', '#4a7f69'],
   hillsDeep: ['#8fbbd0', '#5e8ea6', '#33604e'],
   earth: 0x7a5230,
