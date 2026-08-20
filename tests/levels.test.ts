@@ -2703,6 +2703,206 @@ function planSchleifeAmHang(): Plan {
 //     erwarteRot('w6-14', planRampeVonOben);
 //   });
 
+/**
+ * w6-16 „Zwei Haende am Hang" — die Musterloesung: beide Fronten zugleich.
+ *
+ * Vier Griffe, und zwischen ihnen wird nicht gewartet:
+ *
+ * 1. RIEGEL auf die Kanzel (x368..392, ostwaerts), sobald zehn Figuren
+ *    draussen sind. Er ist der erste Griff und nicht Zubehoer: Jede Figur
+ *    startet mit dir +1, ohne ihn geht NIEMAND nach Westen und die
+ *    Doppelfront ist nur behauptet (gemessen: ohne Riegel traegt die
+ *    Ostschraege allein alle fuenfzehn). Er teilt den Pulk dauerhaft in neun
+ *    oestliche und fuenf westliche Figuren und bleibt selbst stehen.
+ * 2. BAGGER auf die erste WESTWAERTS laufende Figur im Ostarm (x624..640,
+ *    y275). Ein Bagger graebt, wohin er schaut — nach Osten gaebe es keine
+ *    Schraege. 68 Schritte, 13,6 s; die Muendung faellt bei x499 auf y343 in
+ *    die Tuerkammer.
+ * 3. GRAEBER im Westarm (x84..100). Der Schacht sinkt 54 Zeilen (6,3 s) und
+ *    endet auf der Findlingsbank der Galerie; die Nachruecker fallen 72.
+ * 4. RAMMER in der Galerie, ostwaerts (y347). Er darf sofort nach der Landung
+ *    vergeben werden: Ohne Wand in BASH_LOOK 5 wird er zur Vormerkung und
+ *    faengt von selbst an der Stirn bei x300 an (44 px, 3,3 s).
+ *
+ * Gemessen: 14 von 15, 0 Tote, 4 Zuege, Quote 52,0 s, letzte Rettung 54,6 s.
+ */
+function planZweiArme(): Plan {
+  return planZweiArmeIntern(false);
+}
+
+/**
+ * Derselbe Bau, seriell bedient — er MUSS verlieren.
+ *
+ * Einziger Unterschied zur Musterloesung: Die Ostfront wird erst angesetzt,
+ * wenn die Westfront ihre erste Figur geliefert hat. Das ist die
+ * grosszuegigste Lesart von „erst die eine, dann die andere" — und schon sie
+ * scheitert. Gemessen an der Uhr von 76 s: 8 von 15, verloren, kein Toter.
+ * Mit offener Uhr faellt die Quote (11) erst bei 85,3 s statt 52,0 s, die
+ * letzte Rettung bei 88,5 s statt 54,6 s. Die umgekehrte Reihenfolge
+ * (Westfront zuletzt) kommt auf 78,0 s und verliert ebenso.
+ */
+function planZweiArmeSeriell(): Plan {
+  return planZweiArmeIntern(true);
+}
+
+function planZweiArmeIntern(seriell: boolean): Plan {
+  let riegel: number | null = null;
+  let bagger = false;
+  let graeber = false;
+  let rammer = false;
+  return (w) => {
+    if (riegel === null) {
+      // Erst wenn genug Figuren oestlich der Kanzel stehen — sonst verhungert
+      // die Ostfront an zu wenig Kundschaft.
+      if (w.released < 10) return;
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === 1 &&
+          x.y > 270 &&
+          x.y < 280 &&
+          x.x >= 368 &&
+          x.x <= 392,
+      );
+      if (c && w.assign(c.id, 'blocker')) riegel = c.id;
+      return;
+    }
+    if (!bagger && !(seriell && w.saved < 1)) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === -1 &&
+          x.y > 270 &&
+          x.y < 280 &&
+          x.x >= 624 &&
+          x.x <= 640,
+      );
+      if (c && w.assign(c.id, 'miner')) bagger = true;
+    }
+    if (!graeber) {
+      const c = w.wusels.find(
+        (x) => x.state === State.WALKING && x.y > 270 && x.y < 280 && x.x >= 84 && x.x <= 100,
+      );
+      if (c && w.assign(c.id, 'digger')) graeber = true;
+    }
+    if (graeber && !rammer) {
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === 1 &&
+          x.y > 340 &&
+          x.y < 350 &&
+          x.x >= 76 &&
+          x.x <= 292,
+      );
+      if (c && w.assign(c.id, 'basher')) rammer = true;
+    }
+  };
+}
+
+/**
+ * w6-17 „Prüfung am Sonnenhang" — fünf Ebenen, fünf Griffe, achtzehn Vergaben.
+ *
+ * Vier Zuege plus vierzehn Schirme, und nur der zweite ist schwer. Der Spaeher
+ * bekommt den Kletterer noch auf der Startsohle; er steigt die Mauerwestflanke
+ * hinauf (der Erdkeil ist seine Leiter), laeuft die Krone ostwaerts, faellt
+ * hinter ihr E48 auf die Mittelterrasse, wird dort vom Kragstein ueber der
+ * Lippe zurueckgekippt und klettert die Mauerostflanke von selbst wieder
+ * herauf — und steht dann als Einziger mit Blick nach WESTEN auf der Krone,
+ * genau an ihrem Ostende. Dieser Umlauf IST das Zeitfenster des Levels; wer
+ * ihn verpasst, bekommt ihn wieder, denn der Keil faengt den Spaeher am
+ * Kronenwestende heil ab (gemessen 62 px) und die Schleife laeuft von vorn.
+ *
+ * Zug 2 ist die STELLE: gemessenes Ansatzfenster x424 bis x482, lueckenlos,
+ * hier mittig genommen. Westlich davon meldet der Kronendeckel Stein
+ * (Werkzeug weg, Umlauf weg, Lauf gerettet); ostwaerts gebaggert trennt die
+ * Schraege die Krone und kostet den Lauf, aber keine Figur.
+ *
+ * Zug 3 und 4 sind grosszuegig und nur richtungsgebunden: Die Lippe loest
+ * ostwaerts von jeder Stelle der Terrasse (x484..x626), westwaerts von keiner;
+ * der Stollen loest westwaerts von x462 bis x667, ostwaerts von keiner. Beide
+ * Male traegt die Vormerkung den Rammer bis an seine Wand. Die Reihenfolge ist
+ * Pflicht: Wer die Lippe vor der Rampe oeffnet, verliert den Spaeher an den
+ * Schacht (gemessen: 1 gerettet, verloren).
+ *
+ * Die Schirme laufen nebenher und gehen an JEDE Figur, auch an den Spaeher —
+ * der Schacht misst sechsundneunzig und ist der einzige Toeter des Levels.
+ */
+function planPruefungAmSonnenhang(): Plan {
+  let spaeher: number | null = null;
+  let rampe = false;
+  let lippe = false;
+  let stollen = false;
+  return (w) => {
+    // Ein Schirm fuer jeden, sobald einer frei ist. Der Zustand ist egal —
+    // `canAssign` laesst den Schirm auch im Fall zu, und je frueher er sitzt,
+    // desto weniger haengt am Takt der Lippe.
+    if (w.skills.floater > 0) {
+      const f = w.wusels.find((x) => !x.hasFloater && w.canAssignTo(x, 'floater'));
+      if (f) w.assign(f.id, 'floater');
+    }
+    if (spaeher === null) {
+      // Gleich oestlich der Falltuer, noch auf der Sohle (y199). Die Stelle
+      // ist frei waehlbar — der Keil fuehrt jeden Kletterer an die Flanke.
+      const c = walkerNear(w, 250, 290, 1);
+      if (c && c.y > 190 && w.assign(c.id, 'climber')) spaeher = c.id;
+      return;
+    }
+    if (!rampe) {
+      // Nur oben auf der Krone (y103) und nur auf dem RUECKWEG. Ein Bagger
+      // graebt, wohin er schaut: Auf dem Hinweg schneidet er die Schraege in
+      // die falsche Richtung und trennt die Krone.
+      const k = w.wuselById(spaeher);
+      if (
+        k &&
+        k.state === State.WALKING &&
+        k.dir === -1 &&
+        k.y < 110 &&
+        k.x >= 450 &&
+        k.x <= 465 &&
+        w.assign(k.id, 'miner')
+      ) {
+        rampe = true;
+      }
+      return;
+    }
+    if (!lippe) {
+      // Erst wenn die Rampe steht. Ostwaerts auf der Mittelterrasse (y151);
+      // die Vormerkung traegt den Rammer von jeder Stelle bis an die Lippe.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === 1 &&
+          x.y > 145 &&
+          x.y < 155 &&
+          x.x >= 580 &&
+          x.x <= 610,
+      );
+      if (c && w.assign(c.id, 'basher')) lippe = true;
+      return;
+    }
+    if (!stollen) {
+      // Unten auf dem Findlingsgrund der Halle (y247), nach WESTEN — also nach
+      // der Kehre am Findlingspflock. Die Vormerkung traegt ihn bis an die
+      // Hallenwestwand, und von dort laeuft der Stollen zweihundert
+      // Bildpunkte zurueck unter den Hinweg in die Tuerkammer.
+      const c = w.wusels.find(
+        (x) =>
+          x.state === State.WALKING &&
+          x.dir === -1 &&
+          x.y >= 241 &&
+          x.y <= 247 &&
+          x.x >= 500 &&
+          x.x <= 640,
+      );
+      if (c && w.assign(c.id, 'basher')) stollen = true;
+    }
+  };
+}
+
+// In PLANS eintragen:
+//   'w6-17': planPruefungAmSonnenhang,
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
   // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
@@ -2786,6 +2986,8 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-12': planStorchennest,
   'w6-13': planVierEtagen,
   'w6-14': planSchleifeAmHang,
+  'w6-16': planZweiArme,
+  'w6-17': planPruefungAmSonnenhang,
 };
 
 function planFor(level: LevelDef): Plan {
@@ -2894,6 +3096,17 @@ describe('Alle Level sind lösbar', () => {
     // auch den falschen Griff nicht mit einer Figur.
     const level = levelById('w6-12')!;
     const w = play(level, planStorchennestVolley());
+    expect(w.phase).toBe('lost');
+    expect(w.dead).toBe(0);
+  });
+
+  it('w6-16: nacheinander bedient reicht die Uhr nicht — und trotzdem stirbt niemand', () => {
+    // Die Aussage der einzigen Doppelfront des Spiels, als Test. Dieselben
+    // vier Griffe, nur in Reihe statt parallel: Die Quote faellt erst bei
+    // 85,3 s statt 52,0 s, die Uhr steht bei 76. Hart ist hier die UHR und
+    // nicht der Tod — deshalb die zweite Erwartung.
+    const level = levelById('w6-16')!;
+    const w = play(level, planZweiArmeSeriell());
     expect(w.phase).toBe('lost');
     expect(w.dead).toBe(0);
   });

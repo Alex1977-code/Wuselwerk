@@ -1759,5 +1759,51 @@
   },
   "werkzeuge": 13,
   "ueberschuss": 10
+ },
+ {
+  "id": "w6-16",
+  "name": "Zwei Hände am Hang",
+  "planTicks": 4560,
+  "letzteRettungSek": 54.6,
+  "quoteSek": 52,
+  "uhrSek": 76,
+  "uhrFaktor": 1.39,
+  "gerettet": 14,
+  "total": 15,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 4,
+  "vergaben": 4,
+  "benutzt": {
+   "blocker": 1,
+   "basher": 1,
+   "miner": 1,
+   "digger": 1
+  },
+  "werkzeuge": 13,
+  "ueberschuss": 9
+ },
+ {
+  "id": "w6-17",
+  "name": "Prüfung am Sonnenhang",
+  "planTicks": 8826,
+  "letzteRettungSek": 146.8,
+  "quoteSek": 138.7,
+  "uhrSek": 206,
+  "uhrFaktor": 1.4,
+  "gerettet": 14,
+  "total": 14,
+  "quote": 11,
+  "quotenMarge": 3,
+  "par": 18,
+  "vergaben": 18,
+  "benutzt": {
+   "climber": 1,
+   "floater": 14,
+   "basher": 2,
+   "miner": 1
+  },
+  "werkzeuge": 28,
+  "ueberschuss": 10
  }
 ]
