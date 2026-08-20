@@ -16,3 +16,7 @@ art-src/proben/
 # Sie stand bisher nur in Kommentaren und Auftraegen; jetzt steht sie hier,
 # denn eine Regel, an die sich jeder erinnern muss, ist keine.
 tests/.debug-*.test.ts
+
+# Python-Zwischenstaende der Werkstattskripte
+__pycache__/
+*.pyc

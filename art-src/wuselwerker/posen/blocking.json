@@ -1,190 +1,193 @@
 {
- "_warum": "Frontal, Arme waagerecht zu beiden Seiten, Beine breit. Die Aussage richtet sich an den Betrachter, deshalb steht er fast gerade zur Kamera.",
- "frames": [
-  {
-   "richtung": {
-    "Spine01": [
-     0,
-     1,
-     0
-    ],
-    "Spine02": [
-     0,
-     1,
-     0
-    ],
-    "NeckTwist01": [
-     0,
-     0.9945,
-     0.1045
-    ],
-    "NeckTwist02": [
-     0,
-     0.9781,
-     0.2079
-    ],
-    "L_Upperarm": [
-     0.6925,
-     -0.7196,
-     0.0503
-    ],
-    "L_Forearm": [
-     0.5686,
-     -0.8181,
-     0.086
-    ],
-    "R_Upperarm": [
-     -0.6925,
-     -0.7196,
-     0.0503
-    ],
-    "R_Forearm": [
-     -0.5686,
-     -0.8181,
-     0.086
-    ],
-    "L_Thigh": [
-     0.3219,
-     -0.9468,
-     0
-    ],
-    "L_Calf": [
-     0.2625,
-     -0.9626,
-     -0.0673
-    ],
-    "L_Foot": [
-     0.1676,
-     -0.3046,
-     0.9376
-    ],
-    "R_Thigh": [
-     -0.3219,
-     -0.9468,
-     0
-    ],
-    "R_Calf": [
-     -0.2625,
-     -0.9626,
-     -0.0673
-    ],
-    "R_Foot": [
-     -0.1676,
-     -0.3046,
-     0.9376
-    ]
-   },
-   "maske": 2,
-   "winkel": {
-    "Head": [
-     2,
-     0,
-     0
-    ],
-    "HaarSchwung": [
-     0.0,
-     0,
-     0
-    ]
-   },
-   "stauch": [
-    1,
-    1,
-    1
-   ]
-  },
-  {
-   "richtung": {
-    "Spine01": [
-     0,
-     1,
-     0
-    ],
-    "Spine02": [
-     0,
-     1,
-     0
-    ],
-    "NeckTwist01": [
-     0,
-     0.9945,
-     0.1045
-    ],
-    "NeckTwist02": [
-     0,
-     0.9781,
-     0.2079
-    ],
-    "L_Upperarm": [
-     0.6999,
-     -0.7125,
-     0.0498
-    ],
-    "L_Forearm": [
-     0.5765,
-     -0.8126,
-     0.0854
-    ],
-    "R_Upperarm": [
-     -0.6999,
-     -0.7125,
-     0.0498
-    ],
-    "R_Forearm": [
-     -0.5765,
-     -0.8126,
-     0.0854
-    ],
-    "L_Thigh": [
-     0.3219,
-     -0.9468,
-     0
-    ],
-    "L_Calf": [
-     0.2625,
-     -0.9626,
-     -0.0673
-    ],
-    "L_Foot": [
-     0.1676,
-     -0.3046,
-     0.9376
-    ],
-    "R_Thigh": [
-     -0.3219,
-     -0.9468,
-     0
-    ],
-    "R_Calf": [
-     -0.2625,
-     -0.9626,
-     -0.0673
-    ],
-    "R_Foot": [
-     -0.1676,
-     -0.3046,
-     0.9376
-    ]
-   },
-   "maske": 2,
-   "winkel": {
-    "Head": [
-     2,
-     0,
-     0
-    ],
-    "HaarSchwung": [
-     -0.0,
-     0,
-     0
-    ]
-   },
-   "stauch": [
-    1,
-    0.994,
-    1
-   ]
-  }
- ],
- "boden": true
+  "_warum": "Frontal, Arme waagerecht zu beiden Seiten, Beine breit. Die Aussage richtet sich an den Betrachter, deshalb steht er fast gerade zur Kamera.",
+  "frames": [
+    {
+      "richtung": {
+        "Spine01": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "Spine02": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "NeckTwist01": [
+          0.0,
+          0.9945,
+          0.1045
+        ],
+        "NeckTwist02": [
+          0.0,
+          0.9781,
+          0.2079
+        ],
+        "L_Upperarm": [
+          0.6813,
+          -0.7302,
+          0.051
+        ],
+        "L_Forearm": [
+          0.5566,
+          -0.8262,
+          0.0869
+        ],
+        "R_Upperarm": [
+          -0.6813,
+          -0.7302,
+          0.051
+        ],
+        "R_Forearm": [
+          -0.5566,
+          -0.8262,
+          0.0869
+        ],
+        "L_Thigh": [
+          0.3219,
+          -0.9468,
+          0.0
+        ],
+        "L_Calf": [
+          0.2625,
+          -0.9626,
+          -0.0673
+        ],
+        "L_Foot": [
+          0.1676,
+          -0.3046,
+          0.9376
+        ],
+        "R_Thigh": [
+          -0.3219,
+          -0.9468,
+          0.0
+        ],
+        "R_Calf": [
+          -0.2625,
+          -0.9626,
+          -0.0673
+        ],
+        "R_Foot": [
+          -0.1676,
+          -0.3046,
+          0.9376
+        ]
+      },
+      "maske": 2,
+      "winkel": {
+        "Head": [
+          2.0,
+          0.0,
+          0.0
+        ],
+        "HaarSchwung": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "stauch": [
+        1.0,
+        1.009,
+        1.0
+      ],
+      "versatz": 0.0
+    },
+    {
+      "richtung": {
+        "Spine01": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "Spine02": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "NeckTwist01": [
+          0.0,
+          0.9945,
+          0.1045
+        ],
+        "NeckTwist02": [
+          0.0,
+          0.9781,
+          0.2079
+        ],
+        "L_Upperarm": [
+          0.7108,
+          -0.7017,
+          0.049
+        ],
+        "L_Forearm": [
+          0.5883,
+          -0.8042,
+          0.0845
+        ],
+        "R_Upperarm": [
+          -0.7108,
+          -0.7017,
+          0.049
+        ],
+        "R_Forearm": [
+          -0.5883,
+          -0.8042,
+          0.0845
+        ],
+        "L_Thigh": [
+          0.3219,
+          -0.9468,
+          0.0
+        ],
+        "L_Calf": [
+          0.2625,
+          -0.9626,
+          -0.0673
+        ],
+        "L_Foot": [
+          0.1676,
+          -0.3046,
+          0.9376
+        ],
+        "R_Thigh": [
+          -0.3219,
+          -0.9468,
+          0.0
+        ],
+        "R_Calf": [
+          -0.2625,
+          -0.9626,
+          -0.0673
+        ],
+        "R_Foot": [
+          -0.1676,
+          -0.3046,
+          0.9376
+        ]
+      },
+      "maske": 2,
+      "winkel": {
+        "Head": [
+          2.0,
+          0.0,
+          0.0
+        ],
+        "HaarSchwung": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "stauch": [
+        1.0,
+        0.985,
+        1.0
+      ],
+      "versatz": 0.0
+    }
+  ],
+  "boden": true,
+  "_gespreizt": "Um 4.0 gespreizt (art-src/figur-umbau/posen/spreizen.py). Die Urfassung liegt daneben in art-src/figur-umbau/posen/; wer den Faktor aendert, laeuft von dort neu."
 }

@@ -328,6 +328,21 @@ export function frameFor(clip: ClipDef, timer: number): number {
  */
 const SAUM_PX = 2;
 
+/**
+ * Die Kopfachse eines Einzelbildes — Abstand vom Gesichts- zum Stirnpunkt.
+ *
+ * Sie ist das **Mass** der Pose und nicht nur ihre Richtung: `saving`
+ * schrumpft die Figur beim Entschweben auf die Haelfte, `dying` staucht sie.
+ * Was in festen Pixeln daranhaengt, bleibt dabei stehen und steht zuletzt
+ * groesser da als der Kopf. Das Stirnband rechnet deshalb seit langem in
+ * Achsen; die Straehnen tun es jetzt auch.
+ */
+function achseVon(clip: ClipDef, frame: number): number | undefined {
+  const g = clip.anchors?.[frame] ?? clip.anchors?.[0];
+  const st = clip.stirn?.[frame] ?? clip.stirn?.[0];
+  return g && st ? Math.hypot(st[0] - g[0], st[1] - g[1]) : undefined;
+}
+
 export class SpriteAtlas {
   constructor(
     readonly image: CanvasImageSource,
@@ -420,6 +435,7 @@ export class SpriteAtlas {
     if (clip.haar) {
       const wz = clip.haar[f] ?? clip.haar[0];
       if (wz) {
+        const kopfAchse = achseVon(clip, f);
         drawHaar(
           ctx,
           name,
@@ -432,7 +448,12 @@ export class SpriteAtlas {
               ],
           ),
           s,
-          { takt: f * 3, saum: this.saumTon || null, dreh: clip.dreh ?? 0 },
+          {
+            takt: f * 3,
+            saum: this.saumTon || null,
+            dreh: clip.dreh ?? 0,
+            achse: kopfAchse,
+          },
         );
       }
     }
@@ -512,6 +533,7 @@ export class SpriteAtlas {
     if (clip.haar) {
       const wz = clip.haar[frame] ?? clip.haar[0];
       if (wz) {
+        const kopfAchse = achseVon(clip, frame);
         drawHaar(
           ctx,
           name,
@@ -524,7 +546,12 @@ export class SpriteAtlas {
               ],
           ),
           s,
-          { takt: takt ?? w.timer, saum: this.saumTon || null, dreh: clip.dreh ?? 0 },
+          {
+            takt: takt ?? w.timer,
+            saum: this.saumTon || null,
+            dreh: clip.dreh ?? 0,
+            achse: kopfAchse,
+          },
         );
       }
     }

@@ -80,6 +80,19 @@ const STAFFEL = [1.0, 0.55, 0.85, 0.4, 0.72];
 
 /** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 13. */
 const LAENGE = 6.4;
+/**
+ * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
+ *
+ * Der Mittelwert ueber alle sechsundsechzig Einzelbilder des gebackenen
+ * Blattes, gemessen und nicht angenommen: 1,61. Die beiden Ausreisser sind der
+ * Grund, warum die Zahl hier steht: `saving` schrumpft die Figur beim
+ * Entschweben auf die Haelfte, `dying` staucht sie. Eine Straehne in festen
+ * Pixeln bliebe dabei stehen und haenge zuletzt laenger herab, als die ganze
+ * Figur hoch ist — genau so sah der erste Lauf aus. In Kopfachsen gerechnet
+ * schrumpft sie mit. Dasselbe tut das Stirnband seit langem, aus demselben
+ * Grund.
+ */
+const ACHSE_NORM = 1.61;
 /** Dicke an der Wurzel und an der Spitze. Duenner als 0,75 liest sich als Draht. */
 const DICK_WURZEL = 0.58;
 const DICK_SPITZE = 0.2;
@@ -126,6 +139,8 @@ export interface HaarLage {
   saum?: string | null;
   /** Wie weit die Pose aus der Kamera weggedreht ist, in Grad. */
   dreh?: number;
+  /** Die Kopfachse dieses Einzelbildes in logischen Pixeln — das Mass der Figur. */
+  achse?: number;
 }
 
 /**
@@ -183,16 +198,28 @@ function strich(
 ): void {
   const links: [number, number][] = [];
   const rechts: [number, number][] = [];
+  let lx = 0;
+  let ly = 1;
   for (let i = 0; i < punkte.length; i++) {
     const t = i / (punkte.length - 1);
     const a = punkte[Math.max(0, i - 1)];
     const b = punkte[Math.min(punkte.length - 1, i + 1)];
     const tx = b[0] - a[0];
     const ty = b[1] - a[1];
-    const n = Math.hypot(tx, ty) || 1;
+    const n = Math.hypot(tx, ty);
     const w = (w0 * (1 - t) + w1 * t) / 2;
-    links.push([punkte[i][0] - (ty / n) * w, punkte[i][1] + (tx / n) * w]);
-    rechts.push([punkte[i][0] + (ty / n) * w, punkte[i][1] - (tx / n) * w]);
+    // Steht die Bahn hier still, gilt die letzte brauchbare Richtung.
+    //
+    // Ohne diesen Griff kippt die Senkrechte an fast stehenden Stellen von
+    // einem Bild zum naechsten um, das Vieleck schlaegt sich selbst, und man
+    // sieht einen schwarzblauen Saegezahn statt einer Straehne. Genau so sah
+    // es beim Fallen aus, wo die Bahn oben umkehrt.
+    if (n > 1e-6) {
+      lx = -ty / n;
+      ly = tx / n;
+    }
+    links.push([punkte[i][0] + lx * w, punkte[i][1] + ly * w]);
+    rechts.push([punkte[i][0] - lx * w, punkte[i][1] - ly * w]);
   }
   ctx.beginPath();
   ctx.moveTo(links[0][0], links[0][1]);
@@ -227,16 +254,26 @@ export function drawHaar(
   const takt = lage.takt ?? 0;
   // Wie stark sich ein Weg nach hinten ueberhaupt im Bild zeigt.
   const schraeg = Math.sin(((lage.dreh ?? 0) * Math.PI) / 180);
+  // Wie gross diese Pose gerade ist, gemessen an ihrer eigenen Kopfachse.
+  const mass = (lage.achse ?? ACHSE_NORM) / ACHSE_NORM;
 
   for (let i = 0; i < wurzeln.length; i++) {
     const [x, y, aus] = wurzeln[i];
     // Die aeusseren Straehnen sind die laengsten. Das ist keine Zierde: Nur
     // sie stehen ueberhaupt neben dem Rumpf, alle anderen faellt der Koerper
     // ab. Wer nach hinten zeigt, bekommt eine kurze — sie kostet nichts.
-    const laenge = LAENGE * STAFFEL[i % STAFFEL.length] * (0.5 + 0.5 * Math.abs(aus));
+    const laenge = LAENGE * mass * STAFFEL[i % STAFFEL.length] * (0.5 + 0.5 * Math.abs(aus));
     const bogen = BOGEN_FEST + BOGEN_ANTEIL * laenge;
     // Nach hinten faellt, was nicht zur Seite faellt.
     const zurueck = -RUECK * (1 - Math.abs(aus)) * schraeg;
+    // Der Nachlauf gilt der LAENGE nach, nicht als fester Weg.
+    //
+    // Sonst zieht eine kurze Straehne beim Fallen um 1,7 Pixel nach oben,
+    // waehrend sie selbst nur 1,3 misst: Ihre Spitze steht dann hoeher als
+    // ihre Wurzel, vier davon nebeneinander, und aus dem Haar wird ein Kamm.
+    // Genau so sah der erste Fallversuch aus. Lange Straehnen haengen nach,
+    // kurze kaum — das ist auch die Physik.
+    const anteil = laenge / (LAENGE * mass);
     const wobbel = Math.sin(takt * 0.16 + i * 2.4) * 0.22;
     const punkte = bahn(
       x * s,
@@ -244,19 +281,19 @@ export function drawHaar(
       aus,
       laenge * s,
       bogen * s,
-      (zx + zurueck) * s,
-      zy * s,
+      (zx * anteil + zurueck) * s,
+      zy * anteil * s,
       wobbel * s,
     );
     if (saum) {
       strich(
         ctx,
         punkte,
-        (DICK_WURZEL + 2 * SAUM_BREIT) * s,
-        (DICK_SPITZE + 2 * SAUM_BREIT) * s,
+        (DICK_WURZEL + 2 * SAUM_BREIT) * mass * s,
+        (DICK_SPITZE + 2 * SAUM_BREIT) * mass * s,
         saum,
       );
     }
-    strich(ctx, punkte, DICK_WURZEL * s, DICK_SPITZE * s, HAAR);
+    strich(ctx, punkte, DICK_WURZEL * mass * s, DICK_SPITZE * mass * s, HAAR);
   }
 }
