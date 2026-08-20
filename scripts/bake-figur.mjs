@@ -288,6 +288,8 @@ const FUSS_PX = ${FUSS_PX};
 const FIGUR_EINHEITEN = ${FIGUR_EINHEITEN};
 const LOGISCH = ${LOGISCH};
 const KOPF_SKALA = ${eigenschaften.kopfSkala ?? 1};
+const SCHMAL = ${eigenschaften.schmal ?? 1};
+const TIEF = ${eigenschaften.tief ?? eigenschaften.schmal ?? 1};
 const GROESSE = ZELLE * SS;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -610,10 +612,19 @@ function zeichne(bild, dreh, grund, seite) {
   // Die Werte sind winzig — drei bis fuenf Prozent. Mehr macht aus dem Tier
   // einen Gummiball; weniger sieht man bei zwoelf Bildpunkten nicht.
   const st = (bild && bild.stauch) || [1, 1, 1];
+  // Und darueber die **Figurstauchung** — dieselben zwei Achsen, aber dauerhaft.
+  //
+  // SCHMAL und TIEF sind keine Pose, sondern der Koerperbau: Sie stehen in
+  // figur.json und gelten fuer jedes Bild. Beide gleich gross, sonst waere die
+  // Figur von vorn duenn und im Halbprofil wieder dick.
+  //
+  // Die senkrechte Achse bleibt unangetastet, und das ist der ganze Trick: Die
+  // Eichung misst die Hoehe vor dem Zeichnen und rechnet sie auf WUSEL_H — was
+  // hier waagerecht wegfaellt, kommt nirgends als verlorene Groesse zurueck.
   wurzel.scale.set(
-    eichFaktor * skala * st[0],
+    eichFaktor * skala * st[0] * SCHMAL,
     eichFaktor * skala * st[1],
-    eichFaktor * skala * st[2],
+    eichFaktor * skala * st[2] * TIEF,
   );
   const hub = (bild && bild.versatz ? bild.versatz : 0) + (grund || 0);
   wurzel.position.y = eichVersatz + hub * FIGUR_EINHEITEN;
