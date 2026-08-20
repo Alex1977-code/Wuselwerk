@@ -2952,6 +2952,84 @@ function planRondellVonAussen(): Plan {
 }
 
 
+// --- Musterloesung der Wipfelweide (Welt 7) --------------------------------
+
+/**
+ * w7-01 "Der hohle Stamm" — je ein Kletterer, sobald die Figur ueber die
+ * Vordachkante auf die Waldsohle gefallen ist.
+ *
+ * Die Gabe faellt bewusst erst UNTEN (y > 460) und nur nach Osten (dir 1,
+ * ab x 500): So bekommt sie eine Figur, die schon zum Stamm hin laeuft, und
+ * keine, die oben auf dem Kernholz unterwegs ist oder unten nach Westen
+ * unter das Vordach zieht. Eine zweite Zuweisung braucht das Level nicht —
+ * ohne Kletterer kommt hier niemand die 264 Bildpunkte des Stammes hinauf,
+ * mit ihm kommt jeder: hochziehen auf die Krone, ostwaerts, 48 frei auf den
+ * Ostast, dann in die Tuer.
+ */
+function planHohlerStamm(): Plan {
+  return (w) => {
+    for (const x of w.wusels) {
+      if (x.hasClimber || x.state !== State.WALKING) continue;
+      if (x.dir === 1 && x.x >= 500 && x.y > 460) w.assign(x.id, 'climber');
+    }
+  };
+}
+
+/**
+ * w7-02 „Der Zwillingsstamm" — zehn Figuren, zehn Griffe.
+ *
+ * Erst der Waechter am Fuss des falschen Stammes, dann je ein Kletterer auf
+ * jede weitere Figur. Der Waechter kostet die erste Figur — ein Blocker wird
+ * nie gerettet — und kauft dafuer, dass danach jeder Tipp richtig faellt: Wer
+ * westwaerts laeuft, wird vor dem Kernholzhut gewendet. Solange er noch nicht
+ * steht, wird nur getippt, wer ohnehin nach Osten schaut; das ist die
+ * Lesefrage des Levels in einer Zeile Plan.
+ *
+ * Gemessen: 9 von 10 gerettet, kein Toter, 10 Zuege, letzte Rettung 45,6 s.
+ */
+function planW702(): Plan {
+  let kandidat: number | null = null;
+  let blocker: number | null = null;
+  return (w) => {
+    // Die erste Figur ist der Waechter. Sie laeuft einmal an den Oststamm,
+    // prallt ab und wird auf dem Rueckweg am falschen Stamm gesetzt.
+    if (kandidat === null && w.wusels.length > 0) kandidat = w.wusels[0].id;
+    if (blocker === null && kandidat !== null) {
+      const c = w.wuselById(kandidat);
+      if (c && c.state === State.WALKING && c.x >= 348 && c.x <= 358) {
+        if (w.assign(c.id, 'blocker')) blocker = c.id;
+      }
+    }
+    for (const x of w.wusels) {
+      if (x.state !== State.WALKING || x.hasClimber || x.isBlocker) continue;
+      if (x.id === kandidat && blocker === null) continue;
+      // Vor dem Waechter zaehlt die Laufrichtung, danach nicht mehr.
+      if (blocker === null && !(x.dir === 1 && x.x >= 445)) continue;
+      w.assign(x.id, 'climber');
+    }
+  };
+}
+
+  it('w7-02 „Der Zwillingsstamm" — ein Waechter, neun Kletterer', () => {
+    const level = levelById('w7-02')!;
+    const w = play(level, planW702());
+    expect(w.phase).toBe('won');
+    // Neun von zehn: Der Waechter bleibt am falschen Stamm stehen, und das
+    // ist der Preis dafuer, dass danach kein Tipp mehr danebengehen kann.
+    expect(w.saved).toBe(9);
+    expect(w.saved - level.needed).toBeGreaterThanOrEqual(2);
+    expect(w.dead).toBe(0);
+    expect(w.skillsUsed).toBeLessThanOrEqual(level.par);
+  });
+
+  it('w7-02 — Nichtstun verliert, ohne jemanden zu toeten', () => {
+    const level = levelById('w7-02')!;
+    const w = play(level, () => {});
+    expect(w.phase).toBe('lost');
+    expect(w.saved).toBe(0);
+    expect(w.dead).toBe(0);
+  });
+
 const PLANS: Record<string, (level: LevelDef) => Plan> = {
   // Welt 1 kommt geschlossen aus `welt1-plaene.ts`. Die alten W1-Plaene
   // (planLevel3, planLangerFall, planLevel5 …) bleiben in dieser Datei
@@ -3038,6 +3116,9 @@ const PLANS: Record<string, (level: LevelDef) => Plan> = {
   'w6-15': planRondell,
   'w6-16': planZweiArme,
   'w6-17': planPruefungAmSonnenhang,
+  // Welt 7 — die Wipfelweide (Hundert-Level-Ausbau).
+  'w7-01': planHohlerStamm,
+  'w7-02': planW702,
 };
 
 function planFor(level: LevelDef): Plan {

@@ -338,11 +338,10 @@ export const WELTEN: Welt[] = [
     // Wipfelweide blaugruen — derselbe Unterschied wie zwischen ihren
     // Paletten.
     farbe: '#4fa77a',
-    // Null von siebzehn gebaut. Der Eintrag steht trotzdem schon hier: Ohne
-    // ihn kann kein Level dieser Welt zugeordnet werden. Auf der Karte
-    // erscheint sie deshalb noch nicht — `gebauteWelten` in progression.ts
-    // wirft Welten ohne ein einziges gebautes Level heraus, und genau so
-    // soll es sein.
+    // Zwei von siebzehn gebaut. `soll` traegt hier die Zahl der PLAETZE:
+    // `levelIds` wird daraus als lueckenlose Folge erzeugt, und Plaetze ohne
+    // Level werden beim Nachschlagen still uebersprungen. Seit dem ersten
+    // gebauten Level erscheint die Wipfelweide auf der Karte.
     soll: 17,
     phase: 6,
     belohnung: {

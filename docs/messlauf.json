@@ -1826,5 +1826,46 @@
   },
   "werkzeuge": 28,
   "ueberschuss": 10
+ },
+ {
+  "id": "w7-01",
+  "name": "Der hohle Stamm",
+  "planTicks": 3251,
+  "letzteRettungSek": 53.9,
+  "quoteSek": 46.2,
+  "uhrSek": 76,
+  "uhrFaktor": 1.41,
+  "gerettet": 12,
+  "total": 12,
+  "quote": 8,
+  "quotenMarge": 4,
+  "par": 12,
+  "vergaben": 12,
+  "benutzt": {
+   "climber": 12
+  },
+  "werkzeuge": 14,
+  "ueberschuss": 2
+ },
+ {
+  "id": "w7-02",
+  "name": "Der Zwillingsstamm",
+  "planTicks": 3840,
+  "letzteRettungSek": 45.6,
+  "quoteSek": 39.8,
+  "uhrSek": 64,
+  "uhrFaktor": 1.4,
+  "gerettet": 9,
+  "total": 10,
+  "quote": 6,
+  "quotenMarge": 3,
+  "par": 10,
+  "vergaben": 10,
+  "benutzt": {
+   "climber": 9,
+   "blocker": 1
+  },
+  "werkzeuge": 14,
+  "ueberschuss": 4
  }
 ]

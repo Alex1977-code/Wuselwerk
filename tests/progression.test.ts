@@ -451,8 +451,8 @@ describe('Der ausgelieferte Katalog', () => {
 
   it('zeigt heute genau die gebauten Welten', () => {
     const karte = weltkarte({}, KATALOG);
-    expect(karte.welten).toHaveLength(6);
-    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5', 'w6']);
+    expect(karte.welten).toHaveLength(7);
+    expect(karte.welten.map((w) => w.welt.id)).toEqual(['w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7']);
     // 14 in Welt 1 seit dem Neubau des Grundkurses (`welt1.ts`): je ein
     // Level fuer jeden der acht Berufe, dann sechs, die kombinieren. 14 in
     // Welt 3 seit „Unter dem Hinweg" (Level-Konzept, Paket 2); dazu das
@@ -460,7 +460,8 @@ describe('Der ausgelieferte Katalog', () => {
     // ersten zwei vom Kamm — sechs Terrassen-Level, sechs am Hang, zwei am
     // Kamm (Hundert-Level-Ausbau, docs/welt-6-7-konzept.md). Die Zahl
     // waechst mit jedem ausgemessenen Level, bis sie 104 erreicht.
-    expect(karte.welten.map((w) => w.level.length)).toEqual([14, 13, 14, 14, 15, 17]);
+    // Die Wipfelweide steht seit ihren ersten zwei Leveln mit auf der Karte.
+    expect(karte.welten.map((w) => w.level.length)).toEqual([14, 13, 14, 14, 15, 17, 2]);
     const alleIds = karte.welten.flatMap((w) => w.level.map((l) => l.id));
     expect(alleIds).toEqual(LEVELS.map((l) => l.id));
   });

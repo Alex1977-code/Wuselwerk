@@ -5,6 +5,7 @@ import { WELT3_LEVELS } from './welt3';
 import { WELT4_LEVELS } from './welt4';
 import { WELT5_LEVELS } from './welt5';
 import { WELT6_LEVELS } from './welt6';
+import { WELT7_LEVELS } from './welt7';
 
 /**
  * Die Reihenfolge aller Level — nicht die Einteilung.
@@ -33,6 +34,7 @@ LEVELS.push(...WELT3_LEVELS);
 LEVELS.push(...WELT4_LEVELS);
 LEVELS.push(...WELT5_LEVELS);
 LEVELS.push(...WELT6_LEVELS);
+LEVELS.push(...WELT7_LEVELS);
 
 export function levelById(id: string): LevelDef | undefined {
   return LEVELS.find((l) => l.id === id);
