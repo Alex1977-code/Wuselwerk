@@ -118,7 +118,7 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
   // die Spalten wussten nichts voneinander. Gekuerzt wird mit Ellipse, Zeichen
   // fuer Zeichen: Bei zehn Levelnamen lohnt keine binaere Suche.
   const midX = Math.min(b.w * 0.52, timeRight - 70);
-  const nameMax = midX - ctx.measureText(`${w.saved}/${w.needed}`).width / 2 - 14;
+  const nameMax = midX - ctx.measureText(`${w.saved}/${s.level.total}`).width / 2 - 14;
   let name = s.level.name;
   if (ctx.measureText(name).width > nameMax - 10) {
     while (name.length > 1 && ctx.measureText(`${name}…`).width > nameMax - 10) {
@@ -140,13 +140,45 @@ export function drawTopBar(ctx: CanvasRenderingContext2D, L: Layout, s: HudState
     ctx.fillText('ZEIT', timeRight, 7);
   }
 
+  // Der Rettungszaehler zaehlt gegen die GESAMTZAHL, nicht gegen die Quote.
+  //
+  // Bis hierher stand dort `gerettet/Quote`, und das war in jedem Level
+  // falsch, in dem man mehr retten kann als noetig — also in fast jedem. In
+  // „Unter dem Hinweg" (16 Figuren, Quote 14) zaehlte die Leiste bis 16/14
+  // hoch: ein Bruch, dessen Zaehler groesser ist als sein Nenner. Ein
+  // Spieler liest das als Fehler, und er hat recht.
+  //
+  // Jetzt steht dort, wie viele von allen angekommen sind — eine Zahl, die
+  // ihre Obergrenze nie ueberschreitet und die zweite Sternbedingung („alle
+  // gerettet") ueberhaupt erst sichtbar macht.
+  //
+  // Und sie stimmt damit endlich mit dem Balken darunter ueberein: Der
+  // Quotenbalken teilt seine Breite seit jeher durch `w.total` und traegt
+  // die Quote als weisse Marke bei `needed * per`. Zaehler und Balken
+  // standen also unmittelbar uebereinander und rechneten gegen
+  // VERSCHIEDENE Bezugsgroessen — das war der eigentliche Fehler, und die
+  // Marke auf dem Balken ist die Stelle, an der die Quote hingehoert. Der
+  // Zaehler wird zusaetzlich gruen, sobald sie erreicht ist, die
+  // Beschriftung nennt sie, wo Platz dafuer ist, und die Startklappe sagt
+  // sie ohnehin an („rette 14 von 16").
   ctx.textAlign = 'center';
   ctx.fillStyle = COL.dim;
   ctx.font = '600 10px system-ui, sans-serif';
-  if (b.h > 48) ctx.fillText('GERETTET', midX, 7);
+  if (b.h > 48) {
+    // Die Quote kommt in die Beschriftung — aber nur, wenn sie hineinpasst.
+    // Die Mitte-Spalte ist zentriert, die Zeit rechtsbuendig; die lange
+    // Fassung stiess auf dem Telefon mit ihr zusammen („AB 14ZEIT"), genau
+    // wie es der Levelname zwei Spalten weiter links schon einmal getan hat.
+    // Statt eine Breite zu raten, fragt die Leiste hier nach: Passt die
+    // lange Fassung nicht, steht die kurze da, und die Quote sagen die
+    // Startklappe und der gruene Zaehler.
+    const lang = `GERETTET · AB ${w.needed}`;
+    const platz = timeRight - ctx.measureText('ZEIT').width - 10 - midX;
+    ctx.fillText(ctx.measureText(lang).width / 2 <= platz ? lang : 'GERETTET', midX, 7);
+  }
   ctx.fillStyle = w.saved >= w.needed ? COL.good : COL.text;
   ctx.font = '600 15px system-ui, sans-serif';
-  ctx.fillText(`${w.saved}/${w.needed}`, midX, b.h > 48 ? 20 : 14);
+  ctx.fillText(`${w.saved}/${s.level.total}`, midX, b.h > 48 ? 20 : 14);
 
   drawSoundButton(ctx, L.soundBtn, s.muted);
   drawIconButton(ctx, L.nukeBtn, '☢', s.nukeScharf);
