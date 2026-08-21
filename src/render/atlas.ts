@@ -551,6 +551,8 @@ export class SpriteAtlas {
             saum: this.saumTon || null,
             dreh: clip.dreh ?? 0,
             achse: kopfAchse,
+            // Die Fallhoehe treibt, wie weit das Haar hochsteht — siehe `haar.ts`.
+            sturz: w.fallDist,
           },
         );
       }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drawHaar } from '../src/render/haar';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
+import { FALL_DEATH_PX, SCHREI_AB } from '../src/core/constants';
 import type { AtlasManifest } from '../src/render/atlas';
 
 /**
@@ -196,6 +197,59 @@ describe('Der Straehnenzeichner', () => {
     const gedreht = notizblock();
     drawHaar(gedreht.ctx, 'blocking', [[0, -9, 0]], 4, { dreh: 46 });
     expect(kasten(gedreht.zuege[0].punkte).l).toBeLessThan(kasten(frontal.zuege[0].punkte).l - 2);
+  });
+
+  /**
+   * Das Haar ist die Fallanzeige.
+   *
+   * Vorher galt je Pose ein fester Nachlauf, und ein Hopser vom Absatz sah
+   * damit aus wie ein Sturz in den Tod. Die Auskunft liegt aber schon in der
+   * Simulation: `fallDist` zaehlt die gefallenen Pixel. Zwischen SCHREI_AB —
+   * dort faengt die Figur an zu schreien — und FALL_DEATH_PX richtet sich das
+   * Haar auf, sodass Auge und Ohr dasselbe sagen.
+   */
+  it('richtet das Haar mit der Fallhoehe auf', () => {
+    // Gemessen wird die SPITZE, nicht der Kasten von oben: Die Straehne haengt
+    // nach unten, und ein Nachlauf nach oben zieht ihre Spitze herauf. Die
+    // obere Kante sitzt an der Wurzel und bewegt sich fast gar nicht — der
+    // erste Anlauf dieser Pruefung hat genau dort gemessen und 0,01 Pixel
+    // Unterschied gefunden.
+    const spitze = (sturz: number) => {
+      const n = notizblock();
+      drawHaar(n.ctx, 'falling', [[0, -9, 1]], 4, { sturz });
+      return kasten(n.zuege[0].punkte).u;
+    };
+    const kurz = spitze(SCHREI_AB);
+    const mittel = spitze((SCHREI_AB + FALL_DEATH_PX) / 2);
+    const toedlich = spitze(FALL_DEATH_PX);
+    // Kleineres y ist weiter oben.
+    expect(mittel, 'halber Sturz hebt nicht').toBeLessThan(kurz);
+    expect(toedlich, 'toedlicher Sturz hebt nicht weiter').toBeLessThan(mittel);
+    // Und der Unterschied muss man sehen koennen: mehr als ein logischer Pixel
+    // bei vier Bildpunkten je logischem Pixel.
+    expect(kurz - toedlich, 'Unterschied unter der Lesegrenze').toBeGreaterThan(4);
+  });
+
+  it('steigert das Haar nicht weiter, wenn der Sturz schon toedlich ist', () => {
+    const spitze = (sturz: number) => {
+      const n = notizblock();
+      drawHaar(n.ctx, 'falling', [[0, -9, 1]], 4, { sturz });
+      return kasten(n.zuege[0].punkte).u;
+    };
+    expect(spitze(FALL_DEATH_PX * 3)).toBeCloseTo(spitze(FALL_DEATH_PX), 5);
+  });
+
+  /**
+   * Unter dem Schirm sinkt die Figur langsam und beliebig weit. Ein Haar, das
+   * dabei mitwuechse, stuende nach zwei Sekunden senkrecht.
+   */
+  it('laesst das Schweben von der Fallhoehe unberuehrt', () => {
+    const spitze = (sturz: number) => {
+      const n = notizblock();
+      drawHaar(n.ctx, 'floating', [[0, -9, 1]], 4, { sturz });
+      return kasten(n.zuege[0].punkte).u;
+    };
+    expect(spitze(200)).toBeCloseTo(spitze(0), 5);
   });
 
   it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {

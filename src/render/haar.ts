@@ -48,6 +48,8 @@
  * flackert. Der Nachlauf steht deshalb in einer Tabelle.
  */
 
+import { FALL_DEATH_PX, SCHREI_AB } from '../core/constants';
+
 /** Der gemessene Grundton der Haarmasse im Blatt: Farbton 228 Grad, L* 37,9. */
 const HAAR = '#3851b6';
 
@@ -141,6 +143,8 @@ export interface HaarLage {
   dreh?: number;
   /** Die Kopfachse dieses Einzelbildes in logischen Pixeln — das Mass der Figur. */
   achse?: number;
+  /** Bisher gefallene Pixel. Treibt, wie weit das Haar im Sturz hochsteht. */
+  sturz?: number;
 }
 
 /**
@@ -249,7 +253,44 @@ export function drawHaar(
   lage: HaarLage = {},
 ): void {
   if (wurzeln.length === 0) return;
-  const [zx, zy] = ZUG[pose] ?? [0, 0];
+  let [zx, zy] = ZUG[pose] ?? [0, 0];
+
+  // Im Sturz waechst der Nachlauf mit der Fallhoehe — das Haar ist die Anzeige.
+  //
+  // Vorher stand hier ein fester Wert je Pose, und damit sah ein Hopser vom
+  // Absatz genauso aus wie ein Sturz in den Tod. Dabei liegt die Auskunft
+  // schon in der Simulation: `fallDist` zaehlt die gefallenen Pixel, und ab
+  // FALL_DEATH_PX ueberlebt es niemand.
+  //
+  // Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB (12
+  // Pixel) faengt die Figur an zu schreien, bei FALL_DEATH_PX (78) ist es
+  // vorbei. Dazwischen richtet sich das Haar auf. Damit sagen Auge und Ohr
+  // dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut ausgeht —
+  // eine Auskunft, die er bisher nur hoeren konnte.
+  //
+  // Der Spielraum ist absichtlich gross: Bei vollem Ausschlag zieht der
+  // Nachlauf die Spitze 4,4 logische Pixel nach oben, waehrend die laengste
+  // Straehne 6,4 misst. Sie klappt also fast zurueck ueber den Kopf — genau
+  // das tut Haar im freien Fall, und nur so sieht man es bei dreizehn Pixeln.
+  // Ein zurueckgeschlagenes Vieleck ist seit der Tangentensicherung in
+  // `strich` unschaedlich; vorher gab es dort einen Saegezahn.
+  //
+  // Nur beim Fallen. Unter dem Schirm sinkt die Figur langsam und beliebig
+  // weit; ein Haar, das dabei mitwaechst, stuende nach zwei Sekunden senkrecht.
+  if (pose === 'falling') {
+    const t = Math.min(
+      1,
+      Math.max(0, ((lage.sturz ?? 0) - SCHREI_AB) / (FALL_DEATH_PX - SCHREI_AB)),
+    );
+    // Senkrecht stark, waagerecht kaum — und das ist der ganze Unterschied
+    // zwischen „Panik" und „Fahrtwind". Wird auch der Zug nach hinten
+    // mitgesteigert, klappen die Straehnen HINTER den Kopf, und dort zeichnet
+    // sie niemand: Der Zeichner legt sie hinter die Figur. Gemessen sah der
+    // Sturz damit aus, als wehte das Haar im Wind — nach oben dagegen steht es
+    // frei vor dem Himmel.
+    zx *= 0.3 + 0.7 * t;
+    zy *= 0.3 + 2.3 * t;
+  }
   const saum = lage.saum ?? null;
   const takt = lage.takt ?? 0;
   // Wie stark sich ein Weg nach hinten ueberhaupt im Bild zeigt.
