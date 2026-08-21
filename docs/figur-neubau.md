@@ -73,17 +73,19 @@ blunt rounded boots with a clear gap of background between the feet. Trim
 rather than chunky: at its widest point, arms aside, the body is barely wider
 than the head.
 
-HAIR, the signature feature: a mass of vivid blue hair that hugs the skull and
-rises only about a third of a head height above the crown, sweeping back rather
-than up, and barely wider than the head itself. It is built from FIVE broad
-locks — few and wide, each about a fifth of the head width — because what has to
-read is the OUTLINE, not the surface. The five locks are clearly separated where
-they end: no two of them the same length, each drawn out into a pointed tip that
-hangs past the main mass, with visible gaps of empty background between the
-tips, so the lower edge of the hair is ragged and open instead of one smooth
-closed arc. Between the locks run deep grooves that catch a darker shade. At the
-sides the hair reaches down to the top of the ears; at the back it reaches the
-nape of the neck; the forehead stays clear above the eyebrows.
+HAIR, the signature feature: a compact crop of vivid blue hair that sits on the
+top of the skull only. It leaves the whole forehead clear well above the
+eyebrows and stops short of the ears, so a broad band of bare scalp and temple
+shows all round between the hair and the face. The head reads as a head, and the
+blue sits on it as a mark rather than covering it.
+
+The mass is small, but the locks are LONG. Four broad locks, each about a
+quarter of the head width, each drawn out into a pointed tip that hangs well
+past the main mass and down past the ear — no two of them the same length, with
+visible gaps of empty background between the tips, so the lower edge of the hair
+is ragged and open instead of one smooth closed arc. Few, wide and long: what
+has to read at thirteen pixels is the OUTLINE, not the surface. Between the
+locks run deep grooves that catch a darker shade.
 
 FACE: two large round eyes with big dark pupils and one bright catchlight each,
 set WIDE APART — the gap between them is about a quarter of the head width, so
@@ -174,6 +176,49 @@ die Sackgasse, die `scripts/haar-bauen.mjs` im Kopfkommentar festhält —
 Absatz verlangt deshalb Spitzen, die über die Masse hinausragen, ungleich lang
 sind und Lücken zwischen sich lassen — und zwar an der **Unterkante**, nicht
 nach oben: Nach oben stehendes Haar war ausdrücklich nicht gewünscht.
+
+### 2.2a Nachtrag: weniger Haar, mehr Kopfhaut
+
+Die zweite Lieferung hatte die fuenf Locken und die zackige Unterkante. Beim
+Ansehen in der Vorschau kam der Einwand, sie sei immer noch zu behaart: mehr
+Kopfhaut, weniger Masse, dafuer laengere Straehnen — dann traegt der Kontrast,
+und die wenigen Haare fallen ueber die Bewegung auf.
+
+Nachgemessen am gebackenen Blatt gibt der Einwand recht, und zwar mit einer
+Zahl, die vorher niemand angesehen hatte. Der Kontrast des Haares gegen seine
+Nachbarn:
+
+| Nachbar | WCAG |
+|---|---|
+| Himmel | 3,07 |
+| **Haut** | **2,50** |
+| Hose | 1,45 |
+| Tunika | 1,31 |
+| Erde | 1,05 |
+
+**Die Haut ist nach dem Himmel die beste Nachbarschaft, die diese Figur zu
+bieten hat** — fast doppelt so gut wie die Tunika. Jeder Bildpunkt Haar, der
+einem Bildpunkt Haut weicht, verkauft schwachen Kontrast gegen starken.
+
+Am vorhandenen Modell durchgespielt (die Stutzellipse enger, die Straehnen von
+fuenf auf vier bei mehr Laenge und Dicke):
+
+| | heute | enger |
+|---|---|---|
+| Verhaeltnis Haut zu Haar am Kopf | 0,88 | **1,25** |
+| Haaranteil an der Figurenhoehe | 35,5 % | 31,3 % |
+| Haaranteil an der Flaeche | 23,2 % | 19,9 % |
+| freie Tinte neben dem Umriss | 7,7 % | 7,9 % |
+
+Der Kopf zeigt damit zum ersten Mal mehr Gesicht als Frisur, und die freie
+Tinte neben dem Umriss bleibt gleich — die Laenge geht nicht verloren, sie
+wechselt nur den Ort. Beides steht seit dieser Runde als Vorgabe im Code
+(`scripts/haar-bauen.mjs`, `src/render/haar.ts`); der HAIR-Absatz in §2 ist
+entsprechend neu gefasst.
+
+Eine Sorge hat sich nicht bestaetigt: Das Stirnband, das die Berufsfarbe traegt,
+haengt an der Kopfachse und nicht an der Haarmasse. Es sieht mit der engeren
+Kappe genauso aus wie vorher — nachgesehen an einem vergebenen Blocker.
 
 ### 2.3 Zwei Wege zum Blatt — der zweite ist der bessere
 

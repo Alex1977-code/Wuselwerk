@@ -78,10 +78,10 @@ const ZUG: Record<string, readonly [number, number]> = {
 };
 
 /** Die Staffelung der Laengen. Fuenf Werte, keiner davon gleich einem anderen. */
-const STAFFEL = [1.0, 0.55, 0.85, 0.4, 0.72];
+const STAFFEL = [1.0, 0.58, 0.86, 0.44];
 
 /** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 13. */
-const LAENGE = 6.4;
+const LAENGE = 7.4;
 /**
  * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
  *
@@ -96,8 +96,8 @@ const LAENGE = 6.4;
  */
 const ACHSE_NORM = 1.61;
 /** Dicke an der Wurzel und an der Spitze. Duenner als 0,75 liest sich als Draht. */
-const DICK_WURZEL = 0.58;
-const DICK_SPITZE = 0.2;
+const DICK_WURZEL = 0.78;
+const DICK_SPITZE = 0.26;
 /** Wie weit der Saum je Seite ueber die Straehne hinaussteht. */
 const SAUM_BREIT = 0.16;
 /**

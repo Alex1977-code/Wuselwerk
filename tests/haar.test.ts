@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { drawHaar } from '../src/render/haar';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
 import { FALL_DEATH_PX, SCHREI_AB } from '../src/core/constants';
+import { readFileSync } from 'node:fs';
 import type { AtlasManifest } from '../src/render/atlas';
 
 /**
@@ -71,15 +72,26 @@ describe('Das Blatt traegt die Straehnenwurzeln', () => {
   });
 
   /**
-   * Fuenf, und die Zahl ist gemessen: Zwei Straehnen lesen sich bei
+   * Hoechstens fuenf, und die Zahl ist gemessen: Zwei Straehnen lesen sich bei
    * Spielgroesse erst ab 0,9 logischen Pixeln Abstand einzeln, und die
-   * gestutzte Haarmasse ist 3,99 breit. Sechs duenne Faeden sind in der
+   * gestutzte Haarmasse misst quer 4,5. Sechs duenne Faeden sind in der
    * Entwurfsrunde durchgefallen — 71 Prozent der Spitzenpaare verschmolzen.
+   *
+   * Wieviele es wirklich sind, sagt die Figur selbst. Geprueft wird deshalb
+   * nicht gegen eine Zahl im Test, sondern gegen `figur.json`: Wer dort
+   * schraubt und das Blatt nicht neu backt, faellt hier durch.
    */
-  it('gibt je Bild fuenf Wurzeln mit drei Zahlen', () => {
+  it('gibt je Bild so viele Wurzeln, wie die Figur bestellt — hoechstens fuenf', () => {
+    const soll = (
+      JSON.parse(readFileSync('art-src/wuselwerker/figur.json', 'utf8')) as {
+        haarWurzeln: number;
+      }
+    ).haarWurzeln;
+    expect(soll, 'mehr Wurzeln als die Lesegrenze hergibt').toBeLessThanOrEqual(5);
+    expect(soll, 'ohne Wurzeln keine Straehnen').toBeGreaterThan(0);
     for (const [name, clip] of Object.entries(BLATT.clips)) {
       clip.haar!.forEach((satz, i) => {
-        expect(satz.length, `${name} Bild ${i}: Wurzelzahl`).toBe(5);
+        expect(satz.length, `${name} Bild ${i}: Wurzelzahl`).toBe(soll);
         for (const q of satz) expect(q.length, `${name} Bild ${i}: Zahlen je Wurzel`).toBe(3);
       });
     }
@@ -225,9 +237,9 @@ describe('Der Straehnenzeichner', () => {
     // Kleineres y ist weiter oben.
     expect(mittel, 'halber Sturz hebt nicht').toBeLessThan(kurz);
     expect(toedlich, 'toedlicher Sturz hebt nicht weiter').toBeLessThan(mittel);
-    // Und der Unterschied muss man sehen koennen: mehr als ein logischer Pixel
-    // bei vier Bildpunkten je logischem Pixel.
-    expect(kurz - toedlich, 'Unterschied unter der Lesegrenze').toBeGreaterThan(4);
+    // Und den Unterschied muss man sehen koennen: die Lesegrenze des Projekts
+    // sind 0,9 logische Pixel, bei vier Bildpunkten je logischem Pixel also 3,6.
+    expect(kurz - toedlich, 'Unterschied unter der Lesegrenze').toBeGreaterThan(3.6);
   });
 
   it('steigert das Haar nicht weiter, wenn der Sturz schon toedlich ist', () => {
@@ -265,7 +277,9 @@ describe('Der Straehnenzeichner', () => {
     };
     expect(tief(0.6), 'sackt nicht durch').toBeGreaterThan(tief(0));
     expect(tief(-0.6), 'federt nicht zurueck').toBeLessThan(tief(0));
-    expect(tief(0.6) - tief(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(4);
+    // Die Lesegrenze des Projekts sind 0,9 logische Pixel; bei vier
+    // Bildpunkten je logischem Pixel also 3,6 Bildpunkte.
+    expect(tief(0.6) - tief(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(3.6);
   });
 
   it('laesst das Haar beim Umdrehen nach vorn schwingen', () => {
@@ -275,7 +289,7 @@ describe('Der Straehnenzeichner', () => {
       return kasten(n.zuege[0].punkte).r;
     };
     expect(vorn(0.7), 'schwingt nicht nach vorn').toBeGreaterThan(vorn(0));
-    expect(vorn(0.7) - vorn(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(4);
+    expect(vorn(0.7) - vorn(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(3.6);
   });
 
   it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {

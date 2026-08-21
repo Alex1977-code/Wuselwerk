@@ -118,14 +118,34 @@ const SCHWUNG_MAX = flagge('schwung', 0.55);
  *     2,10 -> 3,99 lp, 34,4 %
  *
  * Vorher waren es 9,08 lp und 57,6 % — drei Viertel der Figur waren Haar, und
- * das ist die Kappe. Genommen ist 2,10, und der Grund ist nicht Geschmack:
- * Zwei Straehnen lesen sich bei Spielgroesse erst ab 0,9 logischen Pixeln
- * Abstand einzeln. Fuenf Wurzeln brauchen also 3,6 lp Bogen — bei 3,50 gingen
- * sie nicht mehr auseinander, bei 3,99 gerade.
+ * das ist die Kappe.
+ *
+ * ## Und warum es jetzt noch enger steht: die Kopfhaut zaehlt mit
+ *
+ * Die erste Wahl fiel auf 2,10, weil fuenf Straehnenwurzeln 3,6 lp Bogen
+ * brauchen (0,9 lp Lesegrenze mal vier Zwischenraeume) und 3,99 das gerade
+ * hergab. Sie hat eine Groesse uebersehen, die sich hinterher als die
+ * wichtigere erwiesen hat: **wieviel Haut der Kopf noch zeigt.**
+ *
+ * Gemessen am gebackenen Blatt, Kontrast des Haares gegen seine Nachbarn:
+ *
+ *     Himmel   3,07     Haut   2,50     Hose   1,45     Tunika   1,31     Erde   1,05
+ *
+ * Die Haut ist nach dem Himmel die beste Nachbarschaft, die diese Figur zu
+ * bieten hat — fast doppelt so gut wie die Tunika. Jeder Bildpunkt Haar, der
+ * einem Bildpunkt Haut weicht, verkauft also schwachen Kontrast gegen starken.
+ * Bei 1,70 / 1,05 kippt das Verhaeltnis Haut zu Haar von 0,88 auf **1,25**:
+ * Der Kopf zeigt zum ersten Mal mehr Gesicht als Frisur. Der Haaranteil faellt
+ * dabei von 35,5 auf 31,3 Prozent der Hoehe und von 23,2 auf 19,9 der Flaeche.
+ *
+ * Die Laenge geht dadurch nicht verloren, sie wechselt nur den Ort: Sie kommt
+ * aus den gezeichneten Straehnen (`src/render/haar.ts`), und die sind
+ * gleichzeitig von fuenf auf vier gegangen, dafuer laenger und dicker. Vier
+ * Wurzeln brauchen nur 2,7 lp Bogen — was die engere Kappe noch hergibt.
  */
-const STUTZ_SEITE = flagge('stutzSeite', 2.1);
-const STUTZ_HOCH = flagge('stutzHoch', 1.35);
-const STUTZ_TIEF = flagge('stutzTief', 2.1);
+const STUTZ_SEITE = flagge('stutzSeite', 1.7);
+const STUTZ_HOCH = flagge('stutzHoch', 1.05);
+const STUTZ_TIEF = flagge('stutzTief', 1.7);
 /** Wieviel vom Ueberstand stehenbleibt (0 = harte Kante, siehe `stutzen`). */
 const STUTZ_WEICH = flagge('stutzWeich', 0.2);
 

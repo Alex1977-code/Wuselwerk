@@ -6,7 +6,7 @@
   "tief": 0.64,
   "_schlank": "Der Umbau vom 20.08.2026, Fassung B. Gemessen fiel Breite durch Hoehe der Silhouette von 0,73 auf 0,47 — die untere Kante des menschlichen Bandes (0,35 bis 0,45). Drei Zahlen zusammen: schmal staucht links-rechts, tief vorn-hinten (beide gleich, sonst wird die Figur beim Drehen dicker), kopfSkala schrumpft den Kopfknochen samt Haar. Der Kopf ist damit erstmals hoeher als breit. Warum es sein musste: Haarblau steht vor der gruenen Tunika mit WCAG 1,08, also gar nicht — nur Haartinte ausserhalb des Rumpfumrisses ist ueberhaupt sichtbar. Ein je Seite 0,6 logische Pixel schmalerer Rumpf hebt den freien Haaranteil im Gang von 41,5 auf 67,1 Prozent. Die Eichung haelt die Hoehe fest: Ein kleinerer Kopf macht die Figur nicht kleiner, sondern nur kopfkleiner.",
   "seitenversatz": 0,
-  "haarWurzeln": 5,
+  "haarWurzeln": 4,
   "_haarWurzeln": "Wieviele Straehnenansaetze der Backvorgang je Einzelbild misst. Fuenf, und die Zahl ist gemessen: Zwei Straehnen lesen sich bei Spielgroesse erst ab 0,9 logischen Pixeln Abstand einzeln, und die gestutzte Haarmasse ist 3,99 lp breit — vier Zwischenraeume zu 0,9 sind 3,6. Sechs waeren wieder eine blaue Wolke, das ist in der Entwurfsrunde gemessen worden (71 Prozent der Spitzenpaare unter der Lesegrenze).",
   "drehung": {
     "walking": 46,
