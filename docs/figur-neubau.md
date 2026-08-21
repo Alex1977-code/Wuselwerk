@@ -51,6 +51,9 @@ A cheerful cartoon workman character, mascot for a puzzle game about tiny
 workers who dig through earth and rescue each other. Completely original
 character design.
 
+STYLE: a soft matte plasticine look — smooth modelled clay forms with gentle
+even shading and rounded edges, like a stop-motion puppet, clean and toy-like.
+
 SHEET: one wide image holding four views of the SAME character in a single
 row, evenly spaced, every view exactly the same height and standing on one
 shared baseline: front view, then left side view, then back view, then right
@@ -115,6 +118,10 @@ clean.
 
 Wide image, 3840 x 1024.
 ```
+
+Die STYLE-Zeile hält fest, was die erste Lieferung von selbst getroffen hat: ein
+weicher Knetfiguren-Look. Er ist nicht nur Geschmack — matte, glatte, runde
+Formen ohne Glanzlichter sind das, womit Bild-zu-3D am besten zurechtkommt.
 
 Für eine **einzelne** Vorderansicht (Weg A in §2.3) den SHEET-Absatz streichen,
 im POSE-Absatz „identical in all four views" durch „seen straight on from the
