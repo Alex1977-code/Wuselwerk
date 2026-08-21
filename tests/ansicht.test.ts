@@ -229,3 +229,127 @@ describe('Die gezeichnete Ansicht', () => {
     expect(ansicht(figur({ dir: -1 }), 'walking').dir).toBe(-1);
   });
 });
+
+/**
+ * Zwei Anstoesse, die dem Haar Traegheit geben.
+ *
+ * Beide sind reiner Ansichtszustand: Die Simulation weiss von ihnen nichts und
+ * darf es nicht — sie muss deterministisch bleiben. Gefuehrt werden sie hier,
+ * weil hier ohnehin je Figurennummer gemerkt wird, was im vorigen Bild war.
+ */
+describe('Die Anstoesse des Haares', () => {
+  /** Einen Sturz aus `hoehe` Pixeln fliegen und aufkommen lassen. */
+  function sturzUndLandung(hoehe: number) {
+    ansichtVergessen();
+    const w = figur({ state: State.FALLING });
+    for (let i = 1; i <= hoehe; i++) {
+      w.fallDist = i;
+      ansicht(w, 'falling');
+    }
+    w.state = State.WALKING;
+    w.fallDist = 0;
+    return ansicht(w, 'walking');
+  }
+
+  it('gibt im Ruhezustand keinen Ausschlag', () => {
+    ansichtVergessen();
+    const a = ansicht(figur(), 'walking');
+    expect(a.prall).toBe(0);
+    expect(a.wende).toBe(0);
+  });
+
+  /**
+   * Beim Aufkommen faellt das Haar zuerst NACH UNTEN durch — der Koerper steht
+   * mit einem Schlag still, das Haar noch nicht. Positiv ist unten.
+   */
+  it('schlaegt beim Aufkommen nach unten nach', () => {
+    const gelandet = sturzUndLandung(30);
+    // Das erste Bild nach der Landung startet den Schwinger bei null.
+    expect(gelandet.prall).toBe(0);
+    const w = figur();
+    const zweites = ansicht(w, 'walking');
+    expect(zweites.prall, 'kein Nachschlag nach unten').toBeGreaterThan(0);
+  });
+
+  it('schwingt danach ueber die Ruhelage hinaus zurueck', () => {
+    sturzUndLandung(40);
+    const w = figur();
+    const werte: number[] = [];
+    for (let i = 0; i < 12; i++) werte.push(ansicht(w, 'walking').prall);
+    expect(Math.max(...werte), 'kein Ausschlag nach unten').toBeGreaterThan(0.2);
+    expect(Math.min(...werte), 'kein Ueberschwingen nach oben').toBeLessThan(0);
+  });
+
+  it('klingt aus und laesst nichts stehen', () => {
+    sturzUndLandung(40);
+    const w = figur();
+    for (let i = 0; i < 40; i++) ansicht(w, 'walking');
+    expect(ansicht(w, 'walking').prall).toBe(0);
+  });
+
+  /**
+   * Ein Graeber nimmt unter einer Figur einen Pixel weg. Daraus darf kein
+   * Peitschen werden — sonst zappelt ueber jedem Grabschacht das ganze Feld.
+   */
+  it('laesst ein Absacken unbeachtet', () => {
+    ansichtVergessen();
+    const w = figur();
+    ansicht(w, 'walking');
+    w.state = State.FALLING;
+    w.fallDist = 1;
+    ansicht(w, 'falling');
+    w.fallDist = 2;
+    ansicht(w, 'falling');
+    w.state = State.WALKING;
+    w.fallDist = 0;
+    ansicht(w, 'walking');
+    expect(ansicht(w, 'walking').prall).toBe(0);
+  });
+
+  it('schlaegt aus einem hohen Sturz staerker nach als aus einem niedrigen', () => {
+    const gipfel = (hoehe: number) => {
+      sturzUndLandung(hoehe);
+      const w = figur();
+      let max = 0;
+      for (let i = 0; i < 12; i++) max = Math.max(max, ansicht(w, 'walking').prall);
+      return max;
+    };
+    expect(gipfel(40)).toBeGreaterThan(gipfel(6) * 1.5);
+  });
+
+  /**
+   * Was vor der Wende hinter der Figur hing, liegt danach vor ihr — der
+   * Koerper hat sich gedreht, das Haar steht noch im Raum. Deshalb ist der
+   * Ausschlag immer nach vorn, ohne Vorzeichen aus der Richtung.
+   */
+  it('schwingt beim Umdrehen nach vorn', () => {
+    ansichtVergessen();
+    const w = figur({ x: 10, dir: 1 });
+    ansicht(w, 'walking');
+    w.x = 11;
+    ansicht(w, 'walking');
+    w.x = 12;
+    w.dir = -1;
+    const wende = ansicht(w, 'walking');
+    expect(wende.dir, 'Richtung nicht uebernommen').toBe(-1);
+    expect(wende.wende).toBe(0);
+    w.x = 11;
+    expect(ansicht(w, 'walking').wende, 'kein Ausschlag').toBeGreaterThan(0);
+  });
+
+  /**
+   * Zwischen zwei Waenden dreht die Simulation alle drei Ticks um. Die
+   * Ansichtsregel faengt das ab, indem sie die gezeichnete Richtung nur bei
+   * echter Bewegung nachfuehrt — und damit darf auch das Haar nicht ausschlagen.
+   */
+  it('schlaegt nicht aus, wenn die Figur nur auf der Stelle umdreht', () => {
+    ansichtVergessen();
+    const w = figur({ x: 10, dir: 1 });
+    ansicht(w, 'walking');
+    for (let i = 0; i < 6; i++) {
+      w.dir = i % 2 === 0 ? -1 : 1;
+      const a = ansicht(w, 'walking');
+      expect(a.wende, `Bild ${i} schlaegt aus`).toBe(0);
+    }
+  });
+});

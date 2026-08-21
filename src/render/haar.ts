@@ -133,6 +133,26 @@ const BOGEN_ANTEIL = 0.28;
  */
 const RUECK = 2.4;
 
+/**
+ * Wieweit der Nachschlag beim Aufkommen das Haar durchsacken laesst, in
+ * logischen Pixeln bei voller Staerke.
+ *
+ * Der Koerper steht mit einem Schlag still, das Haar noch nicht: Es faellt
+ * durch, federt darueber hinaus und pendelt sich ein. Zwei Pixel, weil ein
+ * Ausschlag unter der Lesegrenze von 0,9 gar nicht ankommt und die
+ * Schwingung ihn auf dem Weg ohnehin halbiert.
+ */
+const PRALL_WEG = 2.0;
+
+/**
+ * Wieweit das Haar beim Umdrehen nach vorn schwingt, in logischen Pixeln.
+ *
+ * Etwas weniger als beim Aufkommen. Es ist die haeufigste der beiden
+ * Bewegungen — jede Figur dreht in jedem Level dutzendfach um —, und was oft
+ * geschieht, darf leiser sein.
+ */
+const WENDE_WEG = 1.6;
+
 /** Was die Straehnen von der Figur wissen muessen. */
 export interface HaarLage {
   /** Der Takt des Wusels — treibt das Schwingen. */
@@ -145,6 +165,13 @@ export interface HaarLage {
   achse?: number;
   /** Bisher gefallene Pixel. Treibt, wie weit das Haar im Sturz hochsteht. */
   sturz?: number;
+  /**
+   * Der Nachschlag beim Aufkommen, positiv nach unten. Kommt aus `ansicht.ts`
+   * als gedaempfter Schwinger und wechselt darin von selbst das Vorzeichen.
+   */
+  prall?: number;
+  /** Der Ausschlag beim Umdrehen, positiv nach vorn. Ebenfalls aus `ansicht.ts`. */
+  wende?: number;
 }
 
 /**
@@ -291,6 +318,11 @@ export function drawHaar(
     zx *= 0.3 + 0.7 * t;
     zy *= 0.3 + 2.3 * t;
   }
+
+  // Die beiden Anstoesse obendrauf. Beide kommen fertig gedaempft aus
+  // `ansicht.ts` — hier steht nur noch, wieviel Weg sie bedeuten.
+  zy += PRALL_WEG * (lage.prall ?? 0);
+  zx += WENDE_WEG * (lage.wende ?? 0);
   const saum = lage.saum ?? null;
   const takt = lage.takt ?? 0;
   // Wie stark sich ein Weg nach hinten ueberhaupt im Bild zeigt.

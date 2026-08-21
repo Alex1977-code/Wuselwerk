@@ -252,6 +252,32 @@ describe('Der Straehnenzeichner', () => {
     expect(spitze(200)).toBeCloseTo(spitze(0), 5);
   });
 
+  /**
+   * Die beiden Anstoesse aus `ansicht.ts` legen sich auf den Nachlauf. Ihr
+   * Vorzeichen kommt fertig von dort; der Zeichner sagt nur, wieviel Weg es
+   * bedeutet.
+   */
+  it('laesst den Nachschlag das Haar durchsacken', () => {
+    const tief = (prall: number) => {
+      const n = notizblock();
+      drawHaar(n.ctx, 'blocking', [[0, -9, 1]], 4, { prall });
+      return kasten(n.zuege[0].punkte).u;
+    };
+    expect(tief(0.6), 'sackt nicht durch').toBeGreaterThan(tief(0));
+    expect(tief(-0.6), 'federt nicht zurueck').toBeLessThan(tief(0));
+    expect(tief(0.6) - tief(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(4);
+  });
+
+  it('laesst das Haar beim Umdrehen nach vorn schwingen', () => {
+    const vorn = (wende: number) => {
+      const n = notizblock();
+      drawHaar(n.ctx, 'blocking', [[0, -9, 1]], 4, { wende });
+      return kasten(n.zuege[0].punkte).r;
+    };
+    expect(vorn(0.7), 'schwingt nicht nach vorn').toBeGreaterThan(vorn(0));
+    expect(vorn(0.7) - vorn(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(4);
+  });
+
   it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {
     const { ctx, zuege } = notizblock();
     drawHaar(ctx, 'walking', [], 4, { saum: '#0e1116' });

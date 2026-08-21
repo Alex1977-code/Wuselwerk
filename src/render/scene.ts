@@ -833,7 +833,12 @@ export class Scene {
       const takt =
         sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
       const pose = zug?.pose ?? sicht.pose;
-      if (!this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt)) {
+      if (
+        !this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt, {
+          prall: sicht.prall,
+          wende: sicht.wende,
+        })
+      ) {
         drawWusel(ctx, v, w, tick, blick, platz);
       }
       if (w.fuse > 0) drawZuendUhr(ctx, fx, fy, WUSEL_H, v.scale, w.fuse);

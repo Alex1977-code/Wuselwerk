@@ -486,6 +486,9 @@ export class SpriteAtlas {
     // Simulation glaetten darf — siehe `ansicht.ts`.
     pose?: string,
     takt?: number,
+    // Die beiden Anstoesse des Haares. Sie sind Ansichtszustand und werden je
+    // Figur in `ansicht.ts` fortgeschrieben; der Zeichner reicht sie nur durch.
+    schwung?: { prall?: number; wende?: number },
   ): boolean {
     const name = pose ?? clipForWusel(w);
     if (!name) return false;
@@ -553,6 +556,8 @@ export class SpriteAtlas {
             achse: kopfAchse,
             // Die Fallhoehe treibt, wie weit das Haar hochsteht — siehe `haar.ts`.
             sturz: w.fallDist,
+            prall: schwung?.prall ?? 0,
+            wende: schwung?.wende ?? 0,
           },
         );
       }
