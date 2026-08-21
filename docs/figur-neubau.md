@@ -1,6 +1,6 @@
 # Figur-Neubau — Auftrag an GPT Image 2 und Tripo
 
-**Stand: 21.08.2026.** Die Spielfigur wird extern neu erstellt: ein Blatt aus
+**Stand: 21.08.2026.** Die Spielfigur wird extern neu erstellt: ein Bild aus
 GPT Image 2, daraus ein geriggtes Modell aus Tripo. Diese Datei enthält den
 Prompt zum direkten Einsetzen (§2), die Einstellungen für Tripo (§3) und die
 Bedingungen, an denen das Ergebnis gemessen wird (§4 bis §7).
@@ -70,14 +70,17 @@ blunt rounded boots with a clear gap of background between the feet. Trim
 rather than chunky: at its widest point, arms aside, the body is barely wider
 than the head.
 
-HAIR, the signature feature: a heavy crop of vivid blue hair sitting on the
-skull. It is built from eight to ten separate thick locks with deep cut grooves
-between them, each groove about as deep as a lock is thick, so the mass reads as
-distinct locks rather than one smooth helmet. It rises about two thirds of a
-head height above the crown and sweeps upward and slightly back. At the sides it
-comes down over the temples and ends level with the jaw; at the back it ends at
-the nape of the neck. The forehead stays clear above the eyebrows. The hair
-hugs the head — nothing hangs onto the shoulders or down the back.
+HAIR, the signature feature: a mass of vivid blue hair that hugs the skull and
+rises only about a third of a head height above the crown, sweeping back rather
+than up, and barely wider than the head itself. It is built from FIVE broad
+locks — few and wide, each about a fifth of the head width — because what has to
+read is the OUTLINE, not the surface. The five locks are clearly separated where
+they end: no two of them the same length, each drawn out into a pointed tip that
+hangs past the main mass, with visible gaps of empty background between the
+tips, so the lower edge of the hair is ragged and open instead of one smooth
+closed arc. Between the locks run deep grooves that catch a darker shade. At the
+sides the hair reaches down to the top of the ears; at the back it reaches the
+nape of the neck; the forehead stays clear above the eyebrows.
 
 FACE: two large round eyes with big dark pupils and one bright catchlight each,
 set WIDE APART — the gap between them is about a quarter of the head width, so
@@ -100,17 +103,22 @@ hands #eca46c; tunic #649434; belt, trousers and boots #444c2c; eye whites
 only in the clothing.
 
 RENDER: flat even light from the front so every surface keeps its own colour,
-with just enough soft shading to show the roundness of each form. No cast
-shadow, no ground plane, no reflections. Plain empty background, fully
-transparent, identical in all four views. The whole figure fits inside every
+with just enough soft shading to show the roundness of each form. Evenly lit and
+shadowless, standing on nothing, with matte surfaces. Plain flat light grey
+background #c8c8c8, the same in every view. The whole figure fits inside every
 view with a small even margin all round.
 
 LEGIBILITY: the design must stay readable at thirteen pixels tall — one blue
-mass on top, a light face with two clearly separate dark eyes, a green body,
-two separated legs. Every shape big, every boundary clean.
+mass on top with a ragged lower edge, a light face with two clearly separate
+dark eyes, a green body, two separated legs. Every shape big, every boundary
+clean.
 
-Wide image, 1536 x 1024.
+Wide image, 3840 x 1024.
 ```
+
+Für eine **einzelne** Vorderansicht (Weg A in §2.3) den SHEET-Absatz streichen,
+im POSE-Absatz „identical in all four views" durch „seen straight on from the
+front" ersetzen und als letzte Zeile `Portrait image, 1024 x 1536.` setzen.
 
 ### 2.1 Warum dieser Prompt keine Ausschlussliste hat
 
@@ -128,39 +136,108 @@ ausschliesslich positiv. Die wenigen Verneinungen betreffen nur die Darstellung
 (kein Schlagschatten, kein Muster, keine Schrift) — diese Sorte war in allen
 durchgegangenen Fassungen unschädlich.
 
-### 2.2 Wenn das Blatt nicht zusammenpasst
+### 2.2 Warum fünf Locken und nicht acht
 
-Vier Ansichten in einem Bild sind der Regelfall, aber Bildmodelle halten die
-Figur nicht immer über alle vier konstant. Zwei Rückfallwege, in dieser
-Reihenfolge:
+Die erste Fassung dieses Prompts verlangte „eight to ten separate thick locks
+with deep cut grooves". Das Bild, das zurückkam, war wieder ein geschlossener
+blauer Helm — und die Rechnung sagt, dass es gar nicht anders kommen konnte.
 
-1. **Zwei Ansichten statt vier.** Vorn und Seite reichen Tripo. Im SHEET-Absatz
-   „four views … front view, then left side view, then back view, then right
-   side view" ersetzen durch „two views … front view, then left side view".
-2. **Nachgenerieren statt neu würfeln.** Die gelungene Vorderansicht als
-   Referenzbild in die Bildbearbeitung geben und nur die fehlende Ansicht
-   erzeugen lassen („the same character, seen from the left side, same height,
-   same colours, same pose").
+Gemessen am heutigen Blatt, Pose `blocking`, bei echter Spielgrösse: Die
+Haarmasse ist **4,55 logische Pixel** breit, auf dem Telefon neunzehn
+Gerätepunkte. Die Lesegrenze dieses Projekts steht fest — zwei Merkmale lesen
+sich erst ab **0,9 logischen Pixeln** Abstand einzeln (gemessen in der
+Entwurfsrunde, siehe `art-src/figur-umbau/README.md`).
 
-Abnahmekriterium für das Blatt, ehe es zu Tripo geht: gleiche Höhe, gleiche
-Farben, gleiche Haarmenge in allen Ansichten.
+| Locken quer über die Masse | Breite je Locke | |
+|---|---|---|
+| 4 | 1,14 lp | lesbar |
+| **5** | **0,91 lp** | **gerade noch lesbar** |
+| 6 | 0,76 lp | verschmilzt |
+| 8 | 0,57 lp | verschmilzt |
+| 10 | 0,46 lp | verschmilzt |
+
+Acht Locken waren also nicht knapp daneben, sondern **um den Faktor zwei unter
+der Grenze**. Fünf ist das Maximum, und deshalb steht es jetzt so im Prompt.
+
+Der zweite Fehler der ersten Fassung war grundsätzlicher: Sie beschrieb die
+Gliederung als **Rillen**, also als Struktur INNERHALB der Masse. Genau das ist
+die Sackgasse, die `scripts/haar-bauen.mjs` im Kopfkommentar festhält —
+„Umriss kauft man nicht durch Hinzufügen." Was bei dreizehn Pixeln Figurenhöhe
+über „Haar oder Helm" entscheidet, ist allein die **Silhouette**. Der neue
+Absatz verlangt deshalb Spitzen, die über die Masse hinausragen, ungleich lang
+sind und Lücken zwischen sich lassen — und zwar an der **Unterkante**, nicht
+nach oben: Nach oben stehendes Haar war ausdrücklich nicht gewünscht.
+
+### 2.3 Zwei Wege zum Blatt — der zweite ist der bessere
+
+**Weg A, empfohlen: eine Ansicht malen, drei rechnen lassen.** GPT Image 2
+liefert nur die Vorderansicht (1024 × 1536). Tripo macht daraus mit dem
+Auftrag `generate_multiview_image` selbst die vier Ansichten und kettet sie über
+`original_task_id` direkt in `multiview_to_model`. Einzelne Ansichten lassen
+sich mit `edit_multiview_image` nachbessern (`[{"view":"back","prompt":"…"}]`).
+
+Der Vorteil ist nicht Bequemlichkeit, sondern **Konsistenz**: Der häufigste
+Fehler bei Turnaround-Blättern aus Bildmodellen ist, dass Profil und Rückseite
+eine leicht andere Figur zeigen — andere Höhe, andere Frisur, anderes Gesicht.
+Wer die drei übrigen Ansichten aus der einen ableiten lässt, hat das Problem
+nicht.
+
+**Weg B: das ganze Blatt malen.** Der Prompt in §2 in der Vier-Ansichten-Fassung,
+3840 × 1024. Danach in vier Einzelbilder zu je 960 px schneiden, in der
+Reihenfolge **front, left, back, right** — genau diese Reihenfolge erwartet
+Tripos Bildliste, das Frontbild ist Pflicht, mindestens zwei Bilder braucht es.
+
+Abnahme des Blattes, ehe es zu Tripo geht: gleiche Höhe, gleiche Farben, gleiche
+Haarmenge und dieselbe Augenlinie in allen Ansichten.
+
+### 2.4 Zwei Grenzen des Bildmodells, die den Prompt formen
+
+**GPT Image 2 kann keinen transparenten Hintergrund.** `background:
+"transparent"` wird von `gpt-image-2` mit einem Fehler abgelehnt; nur
+`gpt-image-1` und `gpt-image-1.5` können es. Deshalb steht im Prompt ein flacher
+Vollton `#c8c8c8` — Tripo stellt selbst frei, und ein neutrales Grau färbt die
+Haarkanten beim Freistellen weniger als ein Buntton.
+
+**Das Format ist frei, aber nicht beliebig.** `gpt-image-1.x` kennt nur
+1024 × 1024, 1536 × 1024 und 1024 × 1536. `gpt-image-2` nimmt beliebige Masse,
+solange Breite und Höhe durch 16 teilbar sind, das Seitenverhältnis zwischen
+1:3 und 3:1 liegt und 3840 × 2160 nicht überschritten wird. Ein
+Vier-Ansichten-Blatt mit brauchbarer Auflösung je Ansicht geht also nur mit
+`gpt-image-2` — bei 1536 × 1024 blieben je Ansicht 384 px, und Bild-zu-3D will
+mindestens rund 1024.
 
 ---
 
 ## §3 Was Tripo damit tun soll
 
+Die Namen in der rechten Spalte sind die des offiziellen `tripo-python-sdk`;
+in der Weboberfläche heissen die Schalter sinngemäss genauso.
+
 | Schritt | Einstellung | Warum |
 |---|---|---|
-| Eingabe | **Multiview** (front / left / back / right), je Ansicht eine eigene Datei | Der Hinterkopf entscheidet über die Haarkante, und dort sitzen die Strähnenwurzeln. Aus einer einzigen Ansicht rät das Modell ihn. |
-| Modell | jeweils neueste Fassung | — |
-| Textur | **an**, Basisfarbe genügt, 512 oder 1024 px | Die Backkette liest ausschliesslich `baseColorTexture`. |
-| PBR | aus oder egal | Metall- und Rauheitskarten werden nicht gelesen. |
-| Netzdichte | mittel, rund **5000 Dreiecke** | Das alte Modell hat 4964. Weniger frisst die Haarrillen, mehr bringt bei 13 Pixeln nichts. |
-| Rigging | **Auto-Rigging, humanoid** | Ohne Rig ist die Figur unbrauchbar — siehe §4. |
-| Animation | **keine** | Alle Bewegung entsteht beim Backen aus den Posendateien. |
+| Ansichten | `generate_multiview_image` aus der Vorderansicht, dann `multiview_to_model` | Der Hinterkopf entscheidet über die Haarkante, und dort sitzen die Strähnenwurzeln. Aus einem Einzelbild rät das Modell ihn. |
+| Bildliste | Reihenfolge **front, left, back, right**; front ist Pflicht | so erwartet es der Auftrag |
+| Textur | `texture: true`, `texture_quality: detailed`, `texture_size` 1024 oder 2048 | Die Backkette liest ausschliesslich `baseColorTexture`. Der Vorgabewert 4096 ist unnötig gross. |
+| PBR | `pbr: false` | Metall- und Rauheitskarten werden nicht gelesen. |
+| Teile | `generate_parts: false` | **Hart nötig.** Die Backkette nimmt das erste gehäutete Netz und ignoriert alles weitere — siehe §4, Bedingung 1. |
+| Netz | `quad: false`, `face_limit` rund **5000** | Das alte Modell hat 4964 Dreiecke. Weniger frisst die Haarrillen, mehr bringt bei 13 Pixeln nichts. |
+| Rigging | `rig_model`, `rig_type: biped`, **`spec: tripo`**, `model_version: v1.0-20240301` | `spec: mixamo` liefert `mixamorig:…`-Namen und macht alle dreizehn Posendateien wirkungslos. Die neuere Rig-Fassung ist für Tierskelette gedacht und fiel bei humanoiden Netzen mit asymmetrischen Ketten durch. |
+| Vorprüfung | `check_riggable` vor dem Riggen | sagt, ob das Netz überhaupt riggbar ist |
+| Animation | keine | Alle Bewegung entsteht beim Backen aus den Posendateien. |
 | Ausgabe | **GLB**, Textur eingebettet | Die Skripte lesen genau das. |
 
 Die Datei kommt nach `art-src/wuselwerker/wuselwerker-rig.glb`.
+
+### 3.1 Auto-Rigging ist nicht deterministisch
+
+`riggable: true` heisst nicht, dass ein brauchbares Skelett herauskommt.
+Gemeldet sind entartete Ergebnisse — ein Arm mit neun Knochen gegen einen mit
+vier, Beine ohne Gelenk, ganz fehlende Ketten. Chibi-Proportionen sind dafür
+besonders anfällig, weil Hals und Schultern kurz sind.
+
+**Deshalb: bei einem schlechten Skelett den Rigging-Auftrag wiederholen, nicht
+das Modell neu erzeugen.** Was das Skelett taugt, sagt Abnahmeschritt 1 in §7 in
+zehn Sekunden.
 
 ---
 
@@ -189,7 +266,8 @@ steht danach in allen dreizehn Posen in derselben Haltung da.
 | Bedingung | Warum |
 |---|---|
 | **Blau nur im Haar** | Alles Blaue wird als Haar eingestuft — auch ein blauer Gürtel. Er würde mitgestutzt und mit dem Schwungknochen mitschwingen. |
-| **Tiefe Rillen zwischen den Locken** | Das Spreizen (`schaerfe 2,4`, `kegel 12 Grad`) verstärkt vorhandenes Relief. Es kann keines erfinden. Am alten Modell war gemessen: Lappen ja, **Amplitude nein** — und bei 52 Gerätepunkten verschmolzen sie zu einer blauen Wolke. |
+| **Der Umriss der Haarmasse ist offen, nicht geschlossen** | Bei 13 Pixeln Figurenhöhe entscheidet allein die Silhouette über „Haar oder Helm". Die Masse misst quer 4,55 logische Pixel; mehr als fünf Locken darüber verschmelzen (§2.2). Rillen INNERHALB der Masse zahlen darauf nicht ein — „Umriss kauft man nicht durch Hinzufügen" (`scripts/haar-bauen.mjs`). |
+| **Trotzdem tiefe Rillen** | Das Spreizen (`schaerfe 2,4`, `kegel 12 Grad`) verstärkt vorhandenes Relief; erfinden kann es keines. Am alten Modell war gemessen: Lappen ja, **Amplitude nein**. Die Rillen tragen die Schattierung, die Spitzen tragen den Umriss. |
 | **Haar hört am Kiefer auf** | Was tiefer hängt, wird ohnehin weggestutzt; es kostet nur Dreiecke. |
 | **Stirn frei** | Sonst sitzen die Strähnenwurzeln auf dem Pony, und die gezeichneten Strähnen fallen quer über Auge und Mund. |
 | **Augen weit auseinander** | Bei 13 Pixeln Figurenhöhe misst der Kopf 3,4 logische Pixel. Zwei Augen, die enger als ein Viertel der Kopfbreite stehen, verschmelzen zu einem Fleck. |
