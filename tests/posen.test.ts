@@ -93,6 +93,49 @@ describe('Die Posentabellen', () => {
   });
 
   /**
+   * Dauerschleifen pumpen nicht.
+   *
+   * Die teuerste Art, eine Figur schlecht aussehen zu lassen, ist eine
+   * senkrechte Stauchung in einer Schleife, die immer laeuft. Sie faellt bei
+   * der Abnahme eines Einzelbildes nicht auf — jedes Bild fuer sich ist
+   * richtig —, aber in Bewegung wandert der Scheitel, und die Figur pumpt auf
+   * und ab, statt zu gehen.
+   *
+   * Gemessen am Blatt vom 22.08.2026, ueber alle Bilder einer Pose:
+   *
+   *   Spanne der senkrechten Stauchung   Weg des Scheitels
+   *   0,24 (Gehen, alt)                  3,49 lp  = 28 % der Figurenhoehe
+   *   0,10                               1,97 lp
+   *   0,04 (Gehen, neu)                  1,06 lp
+   *   0,31 (Rammen, alt)                 4,10 lp
+   *
+   * Also rund 0,57 + 12,2 mal der Spanne. Die Schranke hier laesst 0,08 zu,
+   * das sind gut anderthalb logische Pixel — sichtbarer Hub, kein Pumpen.
+   * Der ganze Weg kam dabei aus der Stauchung und nicht aus der Pose: Beim
+   * Gehen liegen alle vier neutralen Bilder auf demselben Scheitel.
+   *
+   * Ausgenommen sind die drei Posen, die sich absichtlich verformen, und die
+   * Ausnahme ist hier aufgezaehlt statt stillschweigend: `saving` schrumpft
+   * die Figur beim Entschweben auf die Haelfte, `dying` laesst sie
+   * zusammensacken, und beide laufen genau einmal. `falling` steht mit einer
+   * Spanne von 0,35 ebenfalls hier — es ist eine Schleife, und ob ein Sturz
+   * so viel Streckung tragen soll, ist eine Frage an den Entwurf und nicht an
+   * diese Pruefung.
+   */
+  it('laesst Dauerschleifen den Scheitel nicht auf und ab wandern', () => {
+    const VERFORMT = new Set(['saving', 'dying', 'falling']);
+    for (const [name, pose] of Object.entries(POSEN)) {
+      if (VERFORMT.has(name)) continue;
+      const hoch = pose.frames.map((f) => (f.stauch ?? [1, 1, 1])[1]);
+      const spanne = Math.max(...hoch) - Math.min(...hoch);
+      expect(
+        spanne,
+        `${name}: senkrechte Stauchung spannt ${spanne.toFixed(3)} — der Scheitel wandert damit rund ${(0.57 + 12.2 * spanne).toFixed(1)} logische Pixel`,
+      ).toBeLessThanOrEqual(0.08);
+    }
+  });
+
+  /**
    * Richtungsvektoren bleiben Richtungen.
    *
    * Der Verstaerker dreht sie heraus statt sie zu skalieren, aber ein von Hand
