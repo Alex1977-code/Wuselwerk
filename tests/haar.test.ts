@@ -30,6 +30,14 @@ import type { AtlasManifest } from '../src/render/atlas';
 
 const BLATT = wuselwerkerBlatt as unknown as AtlasManifest;
 
+/** Wieviele Straehnenansaetze die Figur bestellt. */
+const SOLL_WURZELN = (
+  JSON.parse(readFileSync('art-src/wuselwerker/figur.json', 'utf8')) as { haarWurzeln: number }
+).haarWurzeln;
+
+/** Ab wieviel logischen Pixeln sich zwei Straehnen einzeln lesen. Gemessen. */
+const LESEGRENZE = 0.9;
+
 /** Eine Leinwand, die nichts malt, sondern mitschreibt. */
 function notizblock(): {
   ctx: CanvasRenderingContext2D;
@@ -82,11 +90,7 @@ describe('Das Blatt traegt die Straehnenwurzeln', () => {
    * schraubt und das Blatt nicht neu backt, faellt hier durch.
    */
   it('gibt je Bild so viele Wurzeln, wie die Figur bestellt — hoechstens fuenf', () => {
-    const soll = (
-      JSON.parse(readFileSync('art-src/wuselwerker/figur.json', 'utf8')) as {
-        haarWurzeln: number;
-      }
-    ).haarWurzeln;
+    const soll = SOLL_WURZELN;
     expect(soll, 'mehr Wurzeln als die Lesegrenze hergibt').toBeLessThanOrEqual(5);
     expect(soll, 'ohne Wurzeln keine Straehnen').toBeGreaterThan(0);
     for (const [name, clip] of Object.entries(BLATT.clips)) {
@@ -133,6 +137,48 @@ describe('Das Blatt traegt die Straehnenwurzeln', () => {
         }
       });
     }
+  });
+
+  /**
+   * Keine zwei Wurzeln fallen auf denselben Bildpunkt.
+   *
+   * Das ist der teuerste Fehler dieser Reihe, weil er nicht auffaellt: Die
+   * Figur bekommt die bestellte Zahl Straehnen, zeichnet sie auch alle, und
+   * zwei davon liegen uebereinander. Man sieht eine zuwenig und bezahlt sie
+   * trotzdem.
+   *
+   * Genau so stand es bis zum 22.08.2026 im Blatt. Der Backvorgang teilt den
+   * Kopf in Winkelfaecher, und das ist am Modell richtig gedacht — nur faellt
+   * von vorn gesehen der ganze Hinterkopf auf denselben Bildstreifen. Bei vier
+   * Faechern lagen deshalb in ALLEN sechsundsechzig Einzelbildern zwei Wurzeln
+   * 0,02 bis 0,08 logische Pixel auseinander. Mit dreien steht das engste Paar
+   * im Mittel bei 0,92 lp.
+   *
+   * Verlangt wird hier nicht die volle Lesegrenze je Paar — der Hinterkopf
+   * drueckt sie in gedrehten Posen zwangslaeufig zusammen —, sondern dass der
+   * MITTELWERT der engsten Paare sie haelt. Wer wieder ein Fach zuviel
+   * aufmacht, faellt damit durch, ohne dass eine einzelne schraege Pose die
+   * Pruefung rot faerbt.
+   */
+  it('laesst keine zwei Wurzeln auf denselben Bildpunkt fallen', () => {
+    if (SOLL_WURZELN < 2) return;
+    const engste: number[] = [];
+    for (const [name, clip] of Object.entries(BLATT.clips)) {
+      clip.haar!.forEach((satz, i) => {
+        let eng = Infinity;
+        for (let a = 0; a < satz.length; a++) {
+          for (let b = a + 1; b < satz.length; b++) {
+            eng = Math.min(eng, Math.hypot(satz[a][0] - satz[b][0], satz[a][1] - satz[b][1]));
+          }
+        }
+        expect(eng, `${name} Bild ${i}: zwei Wurzeln auf einem Punkt`).toBeGreaterThan(0.1);
+        engste.push(eng);
+      });
+    }
+    const mittel = engste.reduce((s, x) => s + x, 0) / engste.length;
+    expect(mittel, `engstes Wurzelpaar im Mittel ${mittel.toFixed(2)} lp`).toBeGreaterThanOrEqual(
+      LESEGRENZE,
+    );
   });
 });
 

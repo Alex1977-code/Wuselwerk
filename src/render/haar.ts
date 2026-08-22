@@ -7,14 +7,15 @@
  * (`scripts/haar-bauen.mjs`). Damit ist der Kopf frei, aber das Haar ist kurz —
  * und kurz war nie das Ziel. Die Laenge kommt von hier.
  *
- * Sie kann nicht aus dem Modell kommen, und das ist gemessen: Die Figur wird
- * beim Backen waagerecht auf 0,64 gestaucht (`figur.json`), damit sie nicht
- * mehr zu dick ist. Diese Stauchung trifft das Haar mit. Eine Straehne, die im
- * Modell 0,22 Einheiten neben der Kopfachse haengt, landet danach bei 0,14 —
- * und die Kopfhalbbreite ist 0,151. Sie verschwindet also **hinter dem
- * eigenen Kopf**. Alles, was am Modell seitlich haengt, ist nach der Stauchung
- * unsichtbar; nur was der Zeichner in Bildschirmkoordinaten danebenlegt, steht
- * wirklich daneben.
+ * Sie kann nicht aus dem Modell kommen, und das ist gemessen. Beim Modell vom
+ * 22.08.2026 ist die Stauchung weggefallen — die Figur kommt schon schlank —,
+ * aber der Grund bleibt ein anderer und aelterer: Was `haar-bauen.mjs` nicht
+ * auf die Ellipse stutzt, verdeckt das Gesicht. Die Kopfhalbbreite misst 0,221
+ * Modelleinheiten, und der Stutz zieht die Haarmasse genau darauf zurueck.
+ * Uebrig bleibt eine kurze Kappe: Sie traegt 31,9 Prozent der Figurenhoehe im
+ * Blatt, aber ihr Umriss ist geschlossen. Alles, was danebenstehen und den
+ * Umriss brechen soll, legt der Zeichner in Bildschirmkoordinaten daneben —
+ * gemessen 15,1 Prozent Flaeche neben dem Umriss des Blattes.
  *
  * ## Die drei Zahlen, an denen hier alles haengt
  *
@@ -23,9 +24,18 @@
  *    **hinter** der Figur gezeichnet: Was der Koerper verdeckt, war ohnehin
  *    unsichtbar, und was danebensteht, steht vor Himmel oder Erde.
  * 2. **Zwei Straehnen lesen sich erst ab 0,9 logischen Pixeln Abstand
- *    einzeln.** Darum fuenf und nicht siebzehn. Sechs duenne Faeden sind in der
+ *    einzeln.** Darum drei und nicht siebzehn. Sechs duenne Faeden sind in der
  *    Entwurfsrunde gemessen durchgefallen: 71 Prozent der Spitzenpaare unter
- *    der Lesegrenze — wieder eine blaue Wolke, nur weiter unten.
+ *    der Lesegrenze — wieder eine blaue Wolke, nur weiter unten. Vier waren es
+ *    bis zum 22.08.2026, und vier war eine zuviel: Der Backvorgang teilt den
+ *    Kopf in Winkelfaecher, und von vorn gesehen faellt der ganze Hinterkopf
+ *    auf denselben Bildstreifen. In allen sechsundsechzig Einzelbildern lagen
+ *    zwei der vier Wurzeln zwischen 0,02 und 0,08 logischen Pixeln
+ *    auseinander — die Figur trug drei Straehnen, von denen eine doppelt
+ *    gezeichnet war. Mit dreien steht das engste Wurzelpaar im Mittel bei 0,92
+ *    lp, also ueber der Lesegrenze, nur noch 0,5 Prozent der Spitzenpaare
+ *    verschmelzen (vorher 8,8), und es liegt sogar MEHR Tinte neben dem Umriss
+ *    (15,1 statt 14,4 Prozent) bei einem Viertel weniger Strichen.
  * 3. **Ungleiche Laengen sind die Bedingung, nicht die Zierde.** Gleich lang
  *    verschmelzen 73 Prozent aller Spitzenpaare, gestaffelt 0 bis 2 Prozent.
  *    Eine gerade Unterkante waere wieder eine geschlossene Silhouette — also
@@ -77,10 +87,16 @@ const ZUG: Record<string, readonly [number, number]> = {
   spaehen: [0, 0.05],
 };
 
-/** Die Staffelung der Laengen. Fuenf Werte, keiner davon gleich einem anderen. */
-const STAFFEL = [1.0, 0.58, 0.86, 0.44];
+/**
+ * Die Staffelung der Laengen. Drei Werte, keiner davon gleich einem anderen.
+ *
+ * Die Reihenfolge ist nicht beliebig: Fach 0 und Fach 2 sind die beiden
+ * Schlaefen, Fach 1 ist der Hinterkopf. Der bekommt die kurze — er steht im
+ * Bild ohnehin hinter der Figur.
+ */
+const STAFFEL = [1.0, 0.58, 0.86];
 
-/** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 13. */
+/** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 12,3. */
 const LAENGE = 5.5;
 /**
  * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
@@ -96,7 +112,15 @@ const LAENGE = 5.5;
  * Grund.
  */
 const ACHSE_NORM = 1.83;
-/** Dicke an der Wurzel und an der Spitze. Duenner als 0,75 liest sich als Draht. */
+/**
+ * Dicke an der Wurzel und an der Spitze, in logischen Pixeln.
+ *
+ * Beide sind mit dem neuen Modell schmaler geworden (vorher 0,78 und 0,26),
+ * und zwar nicht aus Geschmack: Der Kopf ist breiter, also sind die Straehnen
+ * laenger sichtbar, und in alter Dicke legten sie 29,5 Prozent Flaeche neben
+ * den Umriss und wuchsen der Figur ueber den Kopf. Mit diesen Werten sind es
+ * 15,1 Prozent.
+ */
 const DICK_WURZEL = 0.65;
 const DICK_SPITZE = 0.22;
 /** Wie weit der Saum je Seite ueber die Straehne hinaussteht. */
@@ -105,10 +129,11 @@ const SAUM_BREIT = 0.16;
  * Wie weit die Straehne nach aussen ausbaucht, in logischen Pixeln.
  *
  * Die Zahl entscheidet, ob man ueberhaupt etwas sieht, und sie ist an der
- * Figur gemessen: Der Rumpf ist rund sechs logische Pixel breit, die Wurzeln
- * liegen hoechstens 1,1 neben der Mitte. Eine Straehne, die senkrecht faellt,
- * landet also **hinter dem Rumpf** — bei 0,55 war von fuenf Straehnen ein
- * Splitter uebrig. Sichtbar wird sie erst jenseits von drei Pixeln.
+ * Figur gemessen: Der Rumpf ist rund sieben logische Pixel breit, die Wurzeln
+ * liegen im Mittel 0,98 neben der Mitte und hoechstens 2,90. Eine Straehne,
+ * die senkrecht faellt, landet also **hinter dem Rumpf** — bei 0,55 war von
+ * den Straehnen ein Splitter uebrig. Sichtbar wird sie erst jenseits von drei
+ * Pixeln.
  *
  * Aber nicht beliebig weit: Bei 0,72 Anteil der Laenge (bis 4,6 Pixel) rahmen
  * zwei Straehnen die Figur wie eine Klammer und haengen neben ihr statt an
@@ -266,8 +291,9 @@ function strich(
  * Die Straehnen zeichnen. Gehoert **hinter** die Figur — siehe Kopfkommentar.
  *
  * @param pose Name der Pose; sie bestimmt den Nachlauf.
- * @param wurzeln Je Straehne drei Zahlen: Ansatz in logischen Pixeln vom
- *   Fusspunkt aus, dann die Richtung nach **aussen** im Bild (-1 bis 1). Alle
+ * @param wurzeln Je Straehne drei Zahlen: Ansatz in logischen Pixeln in der
+ *   Zelle des Blattes — x von der linken Zellkante, y von der oberen —, dann
+ *   die Richtung nach **aussen** im Bild (-1 bis 1). Alle
  *   drei misst der Backvorgang je Einzelbild am Haarrand des Modells; die
  *   Richtung kann der Zeichner nicht nachholen, weil er die Kopfdrehung nicht
  *   sieht (siehe `haarwurzeln` in `scripts/bake-figur.mjs`).
@@ -298,7 +324,7 @@ export function drawHaar(
   //
   // Der Spielraum ist absichtlich gross: Bei vollem Ausschlag zieht der
   // Nachlauf die Spitze 4,4 logische Pixel nach oben, waehrend die laengste
-  // Straehne 6,4 misst. Sie klappt also fast zurueck ueber den Kopf — genau
+  // Straehne 5,5 misst. Sie klappt also fast zurueck ueber den Kopf — genau
   // das tut Haar im freien Fall, und nur so sieht man es bei dreizehn Pixeln.
   // Ein zurueckgeschlagenes Vieleck ist seit der Tangentensicherung in
   // `strich` unschaedlich; vorher gab es dort einen Saegezahn.

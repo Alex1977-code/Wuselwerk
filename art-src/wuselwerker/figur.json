@@ -6,8 +6,8 @@
   "tief": 1.0,
   "_schlank": "Seit der Lieferung vom 22.08.2026 stehen alle drei auf eins. Die Figur kommt schon schlank aus dem Modell: Huellbox 0,482 breit bei 0,998 hoch, Breite durch Hoehe der Silhouette 0,468 — genau das menschliche Band. Die Stauchung von 0,64, die der alten Figur ihre 0,73 auf 0,47 gedrueckt hat, ist damit ueberfluessig, und die Textur wird nicht mehr verzerrt. Wer wieder ein breiteres Modell einsetzt, dreht hier nach und misst mit art-src/figur-umbau/koerper/silhouette.py gegen das Band 0,45 bis 0,55.",
   "seitenversatz": 0,
-  "haarWurzeln": 4,
-  "_haarWurzeln": "Wieviele Straehnenansaetze der Backvorgang je Einzelbild misst. Fuenf, und die Zahl ist gemessen: Zwei Straehnen lesen sich bei Spielgroesse erst ab 0,9 logischen Pixeln Abstand einzeln, und die gestutzte Haarmasse ist 3,99 lp breit — vier Zwischenraeume zu 0,9 sind 3,6. Sechs waeren wieder eine blaue Wolke, das ist in der Entwurfsrunde gemessen worden (71 Prozent der Spitzenpaare unter der Lesegrenze).",
+  "haarWurzeln": 3,
+  "_haarWurzeln": "Wieviele Straehnenansaetze der Backvorgang je Einzelbild misst. Drei, und die Zahl ist gemessen. Zwei Straehnen lesen sich bei Spielgroesse erst ab 0,9 logischen Pixeln Abstand einzeln, und mehr Faecher gibt der Kopf nicht her: Der Backvorgang teilt ihn in Winkelfaecher, von vorn gesehen faellt aber der ganze Hinterkopf auf denselben Bildstreifen. Bei vier Wurzeln lagen deshalb in ALLEN sechsundsechzig Einzelbildern zwei davon 0,02 bis 0,08 lp auseinander — die Figur trug drei Straehnen, von denen eine doppelt gezeichnet war. Mit dreien steht das engste Wurzelpaar im Mittel bei 0,92 lp, nur noch 0,5 Prozent der Spitzenpaare verschmelzen (bei vier: 8,8), und es liegt mehr Tinte neben dem Umriss (15,1 statt 14,4 Prozent) bei einem Viertel weniger Strichen. Sechs waeren wieder eine blaue Wolke, das ist in der Entwurfsrunde gemessen worden (71 Prozent der Spitzenpaare unter der Lesegrenze). Wer die Zahl aendert, passt STAFFEL in src/render/haar.ts mit an und misst mit art-src/figur-umbau/galerie.mjs gegen die 15,1 Prozent.",
   "drehung": {
     "walking": 46,
     "falling": 34,
