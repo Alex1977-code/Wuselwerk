@@ -10,6 +10,44 @@ jeweils dabei.
 
 ---
 
+## §0 Der Anker — welches Bild gilt
+
+**`art-src/wuselwerker/referenz.png`** (Kopie von `probe/wuselwerker12.png`,
+1717 × 916, vier Ansichten vorn / links / hinten / rechts).
+
+Das ist ab sofort **die** Figur. Alles, was danach kommt — Modell, Blatt,
+Avatar, App-Icon —, richtet sich nach diesem Bild; wo eine ältere Datei
+widerspricht, gilt dieses. Es löst die Ankerfigur A0 aus
+`docs/grafik-ankerbild-a0.md` ab, die noch den türkisen Overall und das rote
+Haar der ersten Figur zeigt.
+
+Durchgemessen mit `python3 art-src/figur-umbau/blattmass.py`:
+
+| | gemessen | Zielband | |
+|---|---|---|---|
+| Breite durch Höhe, vorn | 0,468 | 0,42–0,58 | ✓ |
+| Augenlinie über dem Boden | 73,4 % | 48–80 % (im Code fest verdrahtet) | ✓ |
+| Köpfe hoch | 3,00 | rund 3 | ✓ |
+| Haut zu Haar am Kopf, bei Spielgröße | 1,82 | ab 1,0 | ✓ |
+| Augenabstand | 36 % der Kopfbreite | rund 25 | weiter als bestellt |
+| Haar über der Stirn | 0,30 Kopfhöhen | rund ⅓ | ✓ |
+| Haar reicht herunter bis | 57,5 % der Figurenhöhe | bis zum Hals | ✓ |
+
+Gemessene Farben (beleuchtete Vorschau, nicht die Textur — die zählt erst am
+Modell): Haar `#395dab`, Haut `#ffb763`, Kleidung `#697b2d`.
+
+**Was daraus folgt:** Die Figur kommt schon schlank an. `schmal` und `tief` in
+`art-src/wuselwerker/figur.json` gehen deshalb von 0,64 zurück auf 1,0 — die
+Textur wird nicht mehr gestaucht. Und weil ihr Haar 2,4 logische Pixel tiefer
+endet als das der heutigen Figur, muss `LAENGE` in `src/render/haar.ts` von
+7,4 auf rund 6,5 herunter, sonst schleifen die Strähnenspitzen über den Boden.
+
+**Was noch fehlt:** das gerigte **GLB** aus Tripo. Eine PNG lässt sich nicht
+backen — Skelett, Knochennamen, Haareinstufung und die 66 Einzelbilder hängen
+am Modell (§3, §4). Es gehört nach `art-src/wuselwerker/wuselwerker-rig.glb`.
+
+---
+
 ## §1 Warum überhaupt neu
 
 Zwei Rückmeldungen zur alten Figur, beide inzwischen nachgemessen:
