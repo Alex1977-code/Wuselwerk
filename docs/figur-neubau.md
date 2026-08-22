@@ -42,9 +42,36 @@ Textur wird nicht mehr gestaucht. Und weil ihr Haar 2,4 logische Pixel tiefer
 endet als das der heutigen Figur, muss `LAENGE` in `src/render/haar.ts` von
 7,4 auf rund 6,5 herunter, sonst schleifen die Strähnenspitzen über den Boden.
 
-**Was noch fehlt:** das gerigte **GLB** aus Tripo. Eine PNG lässt sich nicht
-backen — Skelett, Knochennamen, Haareinstufung und die 66 Einzelbilder hängen
-am Modell (§3, §4). Es gehört nach `art-src/wuselwerker/wuselwerker-rig.glb`.
+**Das Modell ist da:** `art-src/wuselwerker/wuselwerker12_3D.glb` (22.08.2026).
+Es erfüllt jede harte Bedingung aus §4 auf Anhieb — ein gehäutetes Netz, 41
+Gelenke in Tripo-Benennung, keine Animation, eine Basisfarbtextur, Höhe 0,998,
+Sohle bei null. 3526 Ecken, 4929 Dreiecke.
+
+Was die Kette daraus gemacht hat:
+
+| | Wert | |
+|---|---|---|
+| Haarecken erkannt | 1268 | Mindestzahl 300 |
+| Augenoberkante | y 0,717 | Fenster 0,48–0,80 |
+| Kopfhalbbreite | 0,221 | alte Figur 0,151 |
+| Stutzen zog zurück | 185 Ecken, Haarkante 0,561 → 0,647 | die alte Figur brauchte 927 |
+| Breite durch Höhe, Blatt | **0,527** | Band 0,45–0,55, **ohne Stauchung** |
+| Haaranteil | 31,9 % der Höhe, 25,8 % der Fläche | |
+| Kopfachse, Median | 1,83 lp | alte Figur 1,61 |
+
+Dass das Stutzen kaum noch greift, ist der Erfolgsfall: Die Kappe kommt schon
+als kompakter Schnitt aus dem Modell und muss nicht mehr kleingeschnitten
+werden.
+
+Drei Zahlen sind daraufhin nachgeführt worden, alle gemessen:
+
+- `figur.json`: `schmal`, `tief` und `kopfSkala` von 0,64 / 0,64 / 0,82 auf
+  **1,0**. Die Figur kommt schlank und richtig proportioniert an.
+- `haar.ts`, `ACHSE_NORM` von 1,61 auf **1,83** — der neue Kopf ist breiter,
+  und die Strähnen rechnen in Kopfachsen.
+- `haar.ts`, `LAENGE` von 7,4 auf **5,5** und die Dicke von 0,78 auf 0,65.
+  Ungeändert legten die Strähnen 29,5 % Fläche neben den Umriss und
+  überwucherten die Figur; jetzt sind es 14,3 %.
 
 ---
 

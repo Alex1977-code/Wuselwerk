@@ -81,12 +81,13 @@ const ZUG: Record<string, readonly [number, number]> = {
 const STAFFEL = [1.0, 0.58, 0.86, 0.44];
 
 /** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 13. */
-const LAENGE = 7.4;
+const LAENGE = 5.5;
 /**
  * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
  *
  * Der Mittelwert ueber alle sechsundsechzig Einzelbilder des gebackenen
- * Blattes, gemessen und nicht angenommen: 1,61. Die beiden Ausreisser sind der
+ * Blattes, gemessen und nicht angenommen: 1,83 (die Figur vor dem Neubau
+ * hatte 1,61 — ihr Kopf war schmaler). Die beiden Ausreisser sind der
  * Grund, warum die Zahl hier steht: `saving` schrumpft die Figur beim
  * Entschweben auf die Haelfte, `dying` staucht sie. Eine Straehne in festen
  * Pixeln bliebe dabei stehen und haenge zuletzt laenger herab, als die ganze
@@ -94,10 +95,10 @@ const LAENGE = 7.4;
  * schrumpft sie mit. Dasselbe tut das Stirnband seit langem, aus demselben
  * Grund.
  */
-const ACHSE_NORM = 1.61;
+const ACHSE_NORM = 1.83;
 /** Dicke an der Wurzel und an der Spitze. Duenner als 0,75 liest sich als Draht. */
-const DICK_WURZEL = 0.78;
-const DICK_SPITZE = 0.26;
+const DICK_WURZEL = 0.65;
+const DICK_SPITZE = 0.22;
 /** Wie weit der Saum je Seite ueber die Straehne hinaussteht. */
 const SAUM_BREIT = 0.16;
 /**
