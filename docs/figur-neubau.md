@@ -512,3 +512,158 @@ total height above the ground" und nimmt die Höhe beim Haar zurück: „it rise
 about a third of a head height above the crown". Die Figur wird dadurch weniger
 Kleinkind und mehr Kobold, und die dreizehn Posen brauchen einen neuen
 Durchgang durch `umrisswechsel.py`.
+
+---
+
+## §9 Der Berufsknopf „Blocker"
+
+Von den acht Berufsknöpfen zeigt genau einer eine Figur — der Blocker. Die
+anderen sieben sind Werkzeug und Gerät und altern nicht mit der Figur. Der
+Blocker dagegen zeigt seit dem 22.08.2026 die alte Gestalt: buschiges,
+wolkiges blaues Haar mit grünem Stirnband. Er lässt sich nicht nachbacken —
+er kommt aus einer gelieferten PNG (`grafik/ui_blocker.png`, 1254 × 1254),
+nicht aus dem Modell.
+
+### 9.1 Was gemessen ist
+
+| Sache | Wert | Quelle |
+|---|---|---|
+| Anzeigegröße im Spiel | höchstens **42 logische Pixel** | `src/render/hud.ts:424` (`gross`) |
+| Zelle im Blatt | 128 × 128 | `scripts/grafik-aufbereiten.py:174` |
+| Freistellung | Flutfüllung von allen Rändern über **helle, ungesättigte** Punkte | `grafik-aufbereiten.py`, `schachbrett_frei` |
+| Reihenfolge im Blatt | climber, floater, bomber, **blocker**, builder, basher, miner, digger | `src/render/icons.ts:167` |
+| Haar im Spiel, gemessen | Median `#364f8e`, hell `#3c59a3`, dunkel `#25396a` | Blatt `blocking`, Bild 0 |
+| Tunika im Spiel, gemessen | Median `#545d20` | ebenda |
+
+Der Prompt nennt trotzdem die **Entwurfswerte** (`#3c5cd4` usw.) und nicht
+die gemessenen. Das ist Absicht: Das gebackene Blatt ist durch die
+Renderbeleuchtung dunkler, der Knopf aber ist eine Illustration auf dunkler
+Knopffläche und braucht die volle Sättigung. Die sieben anderen Knöpfe
+stehen genauso hell da.
+
+### 9.2 Warum der Stil hier ein anderer ist als in `grafik-prompts.md`
+
+`grafik-prompts.md` §3.4 und §9.1 beschreiben beide etwas, das so nie
+geliefert wurde: §3.4 einen Pixel-Sprite vor durchsichtigem Grund, §9.1
+flache bernsteingelbe Glyphen. Geliefert und eingebaut wurden glänzende
+Kunststoff-Renderings mit gemaltem Schachbrett. Maßgeblich ist, was im
+Spiel steht — der Knopf muss zu seinen sieben Nachbarn passen, nicht zu
+einer Absichtserklärung. Der Prompt unten beschreibt deshalb den
+gelieferten Stil.
+
+### 9.3 Der Prompt
+
+Wörtlich einsetzen, ohne Auslassung. Ergebnis nach `grafik/ui_blocker.png`
+legen und `python3 scripts/grafik-aufbereiten.py` laufen lassen.
+
+```
+A single game user-interface icon for a puzzle game about tiny workers who
+dig through earth and rescue each other. Completely original character
+design.
+
+STYLE: a glossy toy-plastic look — smooth moulded forms with soft rounded
+edges, gentle specular highlights and clean gradients, like a small
+collectible figurine photographed in a softbox. Chunky and readable,
+friendly, with slightly oversized features.
+
+SUBJECT: one cheerful cartoon workman standing straight on, facing the
+viewer, both arms stretched horizontally out to the left and to the right at
+shoulder height, elbows locked straight, open mitten hands turned palm
+forward. Feet planted wide and flat, knees straight. Head level, chin
+slightly lowered, eyebrows pulled down into a determined frown, mouth a
+small firm line. He is a living road block and knows it.
+
+PROP: behind him a low work barrier spanning the full width of the picture,
+made of one horizontal beam carried by two short square posts, one at each
+side. The beam is painted with bold diagonal stripes in cream #e8e0c8 and
+green #6d8f3a. The posts are dark grey-brown #4a4038 with one small round
+green stud each. The barrier stands lower than his outstretched arms, so his
+arms, shoulders and head rise clear above it.
+
+BUILD: a small sturdy workman, three heads tall, with a big round head and a
+SLIM body. The shoulders span about one and a third head widths, the chest
+and waist are narrow, the arms and legs are slim rounded tubes. The legs are
+short and end in blunt rounded boots, with a clear gap of background between
+the feet.
+
+HAIR, the signature feature: a compact crop of vivid blue hair that sits on
+the top of the skull only. It leaves the whole forehead clear well above the
+eyebrows and stops short of the ears, so a broad band of bare scalp and
+temple shows all round between the hair and the face. The head reads as a
+head, and the blue sits on it as a mark rather than covering it.
+
+The mass is small, but the locks are LONG. Three broad locks, each about a
+quarter of the head width, each drawn out into a pointed tip that hangs well
+past the main mass and down past the ear — no two of them the same length,
+with visible gaps of background between the tips, so the lower edge of the
+hair is ragged and open instead of one smooth closed arc. Few, wide and
+long: what has to read at forty-two pixels is the OUTLINE, not the surface.
+Between the locks run deep grooves that catch a darker shade.
+
+FACE: two large round eyes with big dark pupils and one bright catchlight
+each, set WIDE APART — the gap between them is about a quarter of the head
+width, so they stay two separate shapes when the picture is made very small.
+A small round button nose and round full cheeks. Two short eyebrows in the
+hair colour sit on the forehead above the eyes, angled down towards the
+nose. Every feature is painted flat and clean, large and simple.
+
+OUTFIT: a green work tunic with a high collar and long sleeves finished with
+a turned-back cuff at each wrist, a narrow darker belt at the waist, darker
+green work trousers, and blunt rounded boots in the same darker green.
+Simple rounded mitten hands with no separate fingers, one solid shape each,
+in the skin colour. The clothing is plain and well worn, with no pattern and
+no lettering.
+
+COLOUR, these exact values: hair #3c5cd4, with #24399a in the grooves
+between the locks and a lighter #6a86e8 catching the light along the top
+edge of each lock; face and hands #eca46c; tunic #649434; belt, trousers and
+boots #444c2c; eye whites #e4e4e4 with near-black pupils. Blue appears only
+in the hair. Green appears only in the clothing and in the barrier stripes.
+
+LIGHT: one soft key light from the upper left, a gentle cool fill from the
+lower right, and a thin bright rim along the top of the head and the
+shoulders. Every surface keeps its own colour, with just enough soft shading
+to show the roundness of each form. The figure and the barrier stand on
+nothing and cast nothing onto the background.
+
+BACKGROUND: a flat light checkerboard of small squares in white #ffffff and
+light grey #d6d6d6, filling the whole picture behind the figure and running
+out to all four edges without interruption. The figure and the barrier float
+clear of the edges with an even margin all round.
+
+COMPOSITION: the figure centred, its arm span filling about four fifths of
+the width, the whole group of figure and barrier sitting inside the picture
+with a small even margin.
+
+LEGIBILITY: the icon is shown to the player at forty-two pixels across. At
+that size it must read as one wide T with a heavy base: a broad blue mass on
+top with a ragged lower edge, a light face with two clearly separate dark
+eyes, a green body, two arms straight out to the sides, and a striped bar
+behind. Every shape big, every boundary clean.
+
+Square image, 1024 x 1024.
+```
+
+### 9.4 Warum keine Ausschlussliste
+
+Dieselbe Regel wie in §2.1: Beim Ankerbild wurden vier Anläufe vom Filter
+abgewiesen, und der Auslöser war nachweislich die Ausschlussliste — vor
+allem jede Erwähnung von Bedeckung und Körper, auch verneinend. Körper und
+Kleidung stehen deshalb ausschliesslich positiv. Die wenigen Verneinungen
+oben betreffen nur die Darstellung (kein Muster, keine Schrift, kein
+Schlagschatten); diese Sorte ist in allen durchgegangenen Fassungen
+unschädlich gewesen.
+
+### 9.5 Abnahme
+
+1. **Schachbrett bis an alle vier Ränder?** Sonst greift die Flutfüllung
+   nicht, und der Knopf bekommt einen grauen Kasten.
+2. **Berührt die Figur einen Rand?** `beschneiden` schneidet auf die
+   Kastengrenze; ein angeschnittener Arm bleibt angeschnitten.
+3. **Bei 42 Punkten noch ein T?** Auf 42 × 42 herunterrechnen und ansehen.
+   Das ist die Größe, in der der Knopf im Spiel steht.
+4. **Zwei getrennte Augen bei 42 Punkten?** Zwei Merkmale lesen sich erst ab
+   0,9 logischen Pixeln Abstand einzeln.
+5. **Blau nur im Haar, Grün nur in Kleidung und Streifen?** Grünes Haar mit
+   blauer Kutte ist die geschützte Originalgestaltung und darf nirgends
+   entstehen.
