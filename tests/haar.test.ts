@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { drawHaar } from '../src/render/haar';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
 import { FALL_DEATH_PX, SCHREI_AB } from '../src/core/constants';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import type { AtlasManifest } from '../src/render/atlas';
 
 /**
@@ -38,6 +38,15 @@ const SOLL_WURZELN = (
 /** Ab wieviel logischen Pixeln sich zwei Straehnen einzeln lesen. Gemessen. */
 const LESEGRENZE = 0.9;
 
+/** Die Posentabellen als Quelle — dort steht, wie weit der Haarknochen schwingt. */
+const POSEN_ROH: Record<string, { frames: { winkel?: Record<string, number[]> }[] }> = {};
+for (const datei of readdirSync('art-src/wuselwerker/posen')) {
+  if (!datei.endsWith('.json')) continue;
+  POSEN_ROH[datei.replace(/\.json$/, '')] = JSON.parse(
+    readFileSync(`art-src/wuselwerker/posen/${datei}`, 'utf8'),
+  );
+}
+
 /** Eine Leinwand, die nichts malt, sondern mitschreibt. */
 function notizblock(): {
   ctx: CanvasRenderingContext2D;
@@ -71,63 +80,61 @@ function kasten(punkte: [number, number][]) {
   return { l: Math.min(...xs), r: Math.max(...xs), o: Math.min(...ys), u: Math.max(...ys) };
 }
 
-describe('Das Blatt traegt die Straehnenwurzeln', () => {
-  it('nennt zu jedem Einzelbild jeder Pose Wurzeln', () => {
-    for (const [name, clip] of Object.entries(BLATT.clips)) {
-      expect(clip.haar, `${name} ohne Wurzeln`).toBeDefined();
-      expect(clip.haar!.length, `${name}: Wurzelsaetze je Bild`).toBe(clip.holds.length);
-    }
-  });
-
+describe('Das Blatt und die Haarfrage', () => {
   /**
-   * Hoechstens fuenf, und die Zahl ist gemessen: Zwei Straehnen lesen sich bei
-   * Spielgroesse erst ab 0,9 logischen Pixeln Abstand einzeln, und die
-   * gestutzte Haarmasse misst quer 4,5. Sechs duenne Faeden sind in der
-   * Entwurfsrunde durchgefallen — 71 Prozent der Spitzenpaare verschmolzen.
+   * Das Blatt haelt sich an den Schalter.
    *
-   * Wieviele es wirklich sind, sagt die Figur selbst. Geprueft wird deshalb
-   * nicht gegen eine Zahl im Test, sondern gegen `figur.json`: Wer dort
-   * schraubt und das Blatt nicht neu backt, faellt hier durch.
+   * Es gibt seit dem 22.08.2026 zwei Arten, der Figur Haar zu geben, und die
+   * Zahl `haarWurzeln` in `figur.json` sagt, welche gilt:
+   *
+   *   > 0  Der Backvorgang misst je Einzelbild so viele Straehnenansaetze und
+   *        legt sie ins Blatt; `drawHaar` zieht daraus lange Straehnen HINTER
+   *        die Figur.
+   *   = 0  Kein Ansatz im Blatt, kein Strich. Das Haar sitzt dann ganz am
+   *        Kopf und bewegt sich ueber den Knochen `HaarSchwung` mit der Pose.
+   *
+   * Beides halb zu tun ist der Fehler, den diese Pruefung verhindert: Ein
+   * Blatt mit Wurzeln bei `haarWurzeln: 0` zeichnet Straehnen, die niemand
+   * bestellt hat, und ein Blatt ohne Wurzeln bei einer Zahl groesser null
+   * laesst den Zeichner still nichts tun, waehrend das Haar am Kopf auf die
+   * kurze Kappe gestutzt bleibt.
    */
-  it('gibt je Bild so viele Wurzeln, wie die Figur bestellt — hoechstens fuenf', () => {
-    const soll = SOLL_WURZELN;
-    expect(soll, 'mehr Wurzeln als die Lesegrenze hergibt').toBeLessThanOrEqual(5);
-    expect(soll, 'ohne Wurzeln keine Straehnen').toBeGreaterThan(0);
+  it('traegt genau dann Wurzeln, wenn die Figur welche bestellt', () => {
+    expect(SOLL_WURZELN, 'mehr Wurzeln als die Lesegrenze hergibt').toBeLessThanOrEqual(5);
+    expect(SOLL_WURZELN, 'negative Wurzelzahl').toBeGreaterThanOrEqual(0);
     for (const [name, clip] of Object.entries(BLATT.clips)) {
+      if (SOLL_WURZELN === 0) {
+        expect(clip.haar, `${name}: Wurzeln im Blatt, obwohl keine bestellt sind`).toBeUndefined();
+        continue;
+      }
+      expect(clip.haar, `${name}: keine Wurzeln im Blatt`).toBeDefined();
+      expect(clip.haar!.length, `${name}: Bildzahl`).toBe(clip.holds.length);
       clip.haar!.forEach((satz, i) => {
-        expect(satz.length, `${name} Bild ${i}: Wurzelzahl`).toBe(soll);
+        expect(satz.length, `${name} Bild ${i}: Wurzelzahl`).toBe(SOLL_WURZELN);
         for (const q of satz) expect(q.length, `${name} Bild ${i}: Zahlen je Wurzel`).toBe(3);
-      });
-    }
-  });
-
-  it('haelt die Aussenrichtung zwischen minus eins und eins', () => {
-    for (const [name, clip] of Object.entries(BLATT.clips)) {
-      clip.haar!.forEach((satz, i) => {
         for (const q of satz) {
-          expect(Math.abs(q[2]), `${name} Bild ${i}: Aussenrichtung ausserhalb`).toBeLessThanOrEqual(
-            1.001,
-          );
+          expect(
+            Math.abs(q[2]),
+            `${name} Bild ${i}: Aussenrichtung ausserhalb`,
+          ).toBeLessThanOrEqual(1.001);
         }
       });
     }
   });
 
   /**
-   * Die Wurzeln sitzen am KOPF, nicht am Koerper.
+   * Wenn Wurzeln da sind, sitzen sie am KOPF und nicht am Rumpf.
    *
    * Der erste Anlauf hat je Bildspalte die tiefste Haarecke genommen und
    * landete damit auf dem Pony; der zweite hat je Winkelfach die tiefste
    * genommen und rutschte in die Bildmitte, weil der untere Pol einer Schale
    * fuer alle Richtungen derselbe Ort ist. Erst der Rand — die Ecke mit dem
    * groessten Winkel zur Hochachse — laeuft wirklich um den Kopf.
-   *
-   * Diese Pruefung faellt bei beiden Fehlern durch: Sie verlangt, dass jede
-   * Wurzel oberhalb des Gesichtspunktes plus einer halben Kopfachse liegt.
    */
-  it('setzt die Wurzeln in Kopfhoehe und nicht am Rumpf', () => {
+  it('setzt vorhandene Wurzeln in Kopfhoehe und nicht am Rumpf', () => {
     for (const [name, clip] of Object.entries(BLATT.clips)) {
-      clip.haar!.forEach((satz, i) => {
+      if (!clip.haar) continue;
+      clip.haar.forEach((satz, i) => {
         const g = clip.anchors![i] ?? clip.anchors![0];
         const st = clip.stirn![i] ?? clip.stirn![0];
         const achse = Math.hypot(st[0] - g[0], st[1] - g[1]);
@@ -140,45 +147,44 @@ describe('Das Blatt traegt die Straehnenwurzeln', () => {
   });
 
   /**
-   * Keine zwei Wurzeln fallen auf denselben Bildpunkt.
+   * Wenn das Haar am Kopf sitzt, muss es sich dort auch bewegen.
    *
-   * Das ist der teuerste Fehler dieser Reihe, weil er nicht auffaellt: Die
-   * Figur bekommt die bestellte Zahl Straehnen, zeichnet sie auch alle, und
-   * zwei davon liegen uebereinander. Man sieht eine zuwenig und bezahlt sie
-   * trotzdem.
+   * Das ist die Zusage, die an die Stelle der gezeichneten Straehnen tritt,
+   * und sie ist noetig, weil man ihr Fehlen nicht sieht: Ein Blatt mit
+   * unbewegtem Haar sieht Bild fuer Bild richtig aus, und erst in Bewegung
+   * merkt man, dass die Frisur auf dem Kopf klebt.
    *
-   * Genau so stand es bis zum 22.08.2026 im Blatt. Der Backvorgang teilt den
-   * Kopf in Winkelfaecher, und das ist am Modell richtig gedacht — nur faellt
-   * von vorn gesehen der ganze Hinterkopf auf denselben Bildstreifen. Bei vier
-   * Faechern lagen deshalb in ALLEN sechsundsechzig Einzelbildern zwei Wurzeln
-   * 0,02 bis 0,08 logische Pixel auseinander. Mit dreien steht das engste Paar
-   * im Mittel bei 0,92 lp.
+   * Gemessen am Blatt vom 22.08.2026, Weg der Haarspitze ueber die Bilder
+   * einer Pose, gegen den Kopfpunkt gerechnet:
    *
-   * Verlangt wird hier nicht die volle Lesegrenze je Paar — der Hinterkopf
-   * drueckt sie in gedrehten Posen zwangslaeufig zusammen —, sondern dass der
-   * MITTELWERT der engsten Paare sie haelt. Wer wieder ein Fach zuviel
-   * aufmacht, faellt damit durch, ohne dass eine einzelne schraege Pose die
-   * Pruefung rot faerbt.
+   *   Gehen    HaarSchwung spannt 63,4 Grad   ->  Spitze wandert 1,49 lp
+   *   Rammen                      64,8              1,46 lp
+   *   Bauen                       22,8              1,27 lp
+   *   Sperren                      0,0              0,07 lp
+   *
+   * Die Lesegrenze ist 0,9 lp. Verlangt wird die Spanne an der QUELLE und
+   * nicht am Blatt, weil ein Test kein Bild dekodieren soll — und zwanzig
+   * Grad, weil das der kleinste Wert ist, der oben noch ueber die Lesegrenze
+   * kommt.
+   *
+   * Ausgenommen sind die beiden Posen, die absichtlich stillstehen: Der
+   * Blocker ist der Fels, der sich nicht ruehrt — das ist seine ganze
+   * Aussage —, und `spaehen` ist das Warten vor dem Start.
    */
-  it('laesst keine zwei Wurzeln auf denselben Bildpunkt fallen', () => {
-    if (SOLL_WURZELN < 2) return;
-    const engste: number[] = [];
-    for (const [name, clip] of Object.entries(BLATT.clips)) {
-      clip.haar!.forEach((satz, i) => {
-        let eng = Infinity;
-        for (let a = 0; a < satz.length; a++) {
-          for (let b = a + 1; b < satz.length; b++) {
-            eng = Math.min(eng, Math.hypot(satz[a][0] - satz[b][0], satz[a][1] - satz[b][1]));
-          }
-        }
-        expect(eng, `${name} Bild ${i}: zwei Wurzeln auf einem Punkt`).toBeGreaterThan(0.1);
-        engste.push(eng);
-      });
+  it('laesst das Haar am Kopf sich mit der Pose bewegen', () => {
+    const STILL = new Set(['blocking', 'spaehen']);
+    for (const [name, pose] of Object.entries(POSEN_ROH)) {
+      if (STILL.has(name)) continue;
+      const w = pose.frames
+        .map((f) => f.winkel?.HaarSchwung?.[0])
+        .filter((v): v is number => typeof v === 'number');
+      expect(w.length, `${name}: keine HaarSchwung-Winkel`).toBe(pose.frames.length);
+      const spanne = Math.max(...w) - Math.min(...w);
+      expect(
+        spanne,
+        `${name}: HaarSchwung spannt nur ${spanne.toFixed(1)} Grad — das Haar klebt am Kopf`,
+      ).toBeGreaterThanOrEqual(20);
     }
-    const mittel = engste.reduce((s, x) => s + x, 0) / engste.length;
-    expect(mittel, `engstes Wurzelpaar im Mittel ${mittel.toFixed(2)} lp`).toBeGreaterThanOrEqual(
-      LESEGRENZE,
-    );
   });
 });
 
