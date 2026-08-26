@@ -24,6 +24,54 @@ import type { ThemeId } from '../src/levels/types';
  * durch, ehe eine Welt still unsichtbar wird.
  */
 
+/**
+ * Warum der Saum nicht durch schoenere Paletten zu ersetzen ist.
+ *
+ * Die naheliegende Frage kam am 25.08.2026: Wenn die Figur vor zwei
+ * Hintergruenden verschwindet, warum aendert man dann nicht die beiden
+ * Hintergruende? Sie ist berechtigt — und anders als ein Farbwechsel an der
+ * FIGUR repariert sie die Welten einzeln, ohne die anderen zu bezahlen. Zwei
+ * Paletten sind daraufhin auch wirklich geaendert worden (siehe unten).
+ *
+ * Sie loest das Problem aber nicht allgemein, und das ist gerechnet. Die
+ * Figur hat drei Toene, und ihre Leuchtdichten liegen weit auseinander:
+ *
+ *   Haar   #3851B6   L 0,101
+ *   Tunika #545d20   L 0,098
+ *   Haut   #b6854c   L 0,272
+ *
+ * Jeder Ton sperrt ein Band von Hintergrund-Leuchtdichten, in dem er zu wenig
+ * Kontrast hat. Die drei Baender ueberlappen und verschmelzen zu einem
+ * einzigen breiten:
+ *
+ *   Zielkontrast 1,5   brauchbar ist L <= 0,049  oder  L >= 0,434
+ *   Zielkontrast 1,8   brauchbar ist L <= 0,032  oder  L >= 0,530
+ *
+ * Ein Hintergrund muss also SEHR DUNKEL oder ZIEMLICH HELL sein; die ganze
+ * Mitte ist gesperrt. Damit sind drei Sachen entschieden:
+ *
+ * 1. Ein Himmel ist ein Verlauf. Selbst wenn oben und unten beide sicher
+ *    liegen, laeuft er dazwischen durch das Sperrband. Ganz ohne Saum geht
+ *    es also nicht, solange die Figur einen Verlauf hinter sich hat.
+ * 2. In welche Richtung eine Palette ausweicht, entscheidet der SAUM der
+ *    Welt und nicht der kuerzere Weg. Rostwerks Himmel abzudunkeln haette
+ *    ihn dem eigenen, fast schwarzen Saum entgegengeschoben — gemessen fiel
+ *    dessen Kontrast dabei von 2,34 auf 1,71 und damit unter die Schranke.
+ *    Aufgehellt statt abgedunkelt steht er bei 8,98.
+ * 3. Die Kristallklamm durfte umgekehrt abdunkeln, weil ihr Saum hell ist.
+ *
+ * Gemessen, schlechtester Kontrast der drei Figurentoene:
+ *
+ *   RUST     skyTop   #4d4f5e -> #adb1d0    1,14 -> 1,55
+ *   RUST     skyMid   #8a7f83 -> #c2b3b8    1,18 -> 1,62
+ *   CRYSTAL  earth    #4a5788 -> #313a5d    1,00 -> 1,56
+ *   CRYSTAL  pebble   #7c86ab -> #363b4e    1,10 -> 1,57
+ *
+ * Offen bleiben vier weitere Paare unter 1,3: Sonnenhang-Fels gegen die Haut
+ * (1,20), Kristall-Fels gegen die Tunika (1,23), Rostwerk-Fels gegen die
+ * Tunika (1,03) und Magma-Horizont gegen die Haut (1,15). Sie stehen hier,
+ * damit sie nicht vergessen werden.
+ */
 const THEMEN: ThemeId[] = [
   'grass',
   'crystal',

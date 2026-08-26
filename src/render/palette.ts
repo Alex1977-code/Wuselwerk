@@ -216,9 +216,9 @@ const CRYSTAL: Palette = {
   skyBottom: '#6f8ecd',
   hills: ['#7d92c9', '#5d72ab', '#44548a'],
   hillsDeep: ['#6a7fb8', '#4a5d93', '#33406e'],
-  earth: 0x4a5788,
+  earth: 0x313a5d,
   earthDeep: 0x232c52,
-  pebble: 0x7c86ab,
+  pebble: 0x363b4e,
   // In der Höhle ist die „Narbe" kein Rasen, sondern die angeleuchtete Kante
   // des Gesteins. Deshalb nur ein Bildpunkt dick: Ein drei Punkte breiter
   // heller Streifen sähe aus wie Moos, und Moos wächst nicht unter Tage.
@@ -238,8 +238,8 @@ const RUST: Palette = {
   // Das Rostwerk liegt im Freien, aber unter einem Arbeitshimmel: staubig,
   // warm, mit einem Horizont wie hinter Schmelzoefen. Kein Blau — Blau ist
   // die Farbe der Figur, und die soll hier vor Braun und Grau stehen.
-  skyTop: '#4d4f5e',
-  skyMid: '#8a7f83',
+  skyTop: '#adb1d0',
+  skyMid: '#c2b3b8',
   skyBottom: '#d9bc95',
   // Halden statt Huegel: Schuttkegel, hinten ausgeblichen, vorn dunkel.
   hills: ['#b0a294', '#83766a', '#57493c'],
