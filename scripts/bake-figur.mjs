@@ -957,6 +957,31 @@ window.bild = (bild, dreh, grund, seite, weit) => {
   // Der Backvorgang kennt die Kopfdrehung, der Zeichner nicht.
   const st = kopf.localToWorld(new THREE.Vector3(0, 0.22, 0.03));
 
+  // Der Schlaefenpunkt: dieselbe Kopfstelle, nur SEITLICH.
+  //
+  // Er ist am 25.08.2026 dazugekommen, und ohne ihn kann kein Zeichner einen
+  // Kopf bekleiden - er kann ihn nur raten. Zwei Punkte spannen eine Strecke
+  // auf, und eine Strecke hat eine Laenge und eine Richtung; ein Kopf hat aber
+  // eine Groesse, eine BREITE und eine Neigung. Gemessen am Blatt war die
+  // Folge: Die Korrelation zwischen der Kopfachse und der tatsaechlichen
+  // Haarbreite im Bild betraegt 0,129, das Verhaeltnis der beiden laeuft von
+  // 2,23 bis 5,79. Im Sterben, Bild 5, misst die Achse die Haelfte, weil die
+  // Figur gestaucht ist - behaart ist der Kopf dort trotzdem breiter als im
+  // Mittel.
+  //
+  // Und die Neigung steht in den ersten beiden Punkten NICHT drin, auch wenn
+  // es so aussieht. Der Bildwinkel der Achse ist eine Mischung aus Nicken,
+  // Gieren, Rollen und Wirbelsaeulenneigung, und er reagiert auf die falsche
+  // davon: Nachgerechnet an der Sterbereihe bewegen 47,3 Grad Nicken den
+  // Bildwinkel um 2,33 Grad, waehrend 12 Grad Rollen ihn um 17,1 Grad bewegen
+  // - neunundzwanzigmal staerker. Mit einem dritten Punkt spannt der Kopf ein
+  // echtes Zweibein auf, und beides faellt getrennt heraus.
+  //
+  // Achtung beim Aendern: Dieser Text steht INNERHALB der Browserseite, und
+  // die ist ein Schablonenliteral. Ein einziger Rueckwaertsakzent hier beendet
+  // es, und der Backvorgang stirbt mit einem Syntaxfehler weiter unten.
+  const schlaefe = kopf.localToWorld(new THREE.Vector3(0.16, 0.1, 0.0));
+
   // Der Werkzeugansatz: die vordere **Hand**. Dieses Rig hat welche — bei der
   // Murmel musste die Armspitze geschaetzt werden.
   let hand = null;
@@ -981,6 +1006,7 @@ window.bild = (bild, dreh, grund, seite, weit) => {
     bild: png,
     gesicht: zelle(g),
     stirn: zelle(st),
+    schlaefe: zelle(schlaefe),
     hand: hand ? zelle(hand) : null,
     haar: haarwurzeln(HAAR_WURZELN, dreh),
     anschnitt: k && k.randberuehrung ? 1 : 0,
@@ -1083,6 +1109,7 @@ if (icon) {
 const bilder = [];
 const gesichter = [];
 const stirnen = [];
+const schlaefen = [];
 const haende = [];
 /** Die Straehnenwurzeln je Einzelbild — leer, wenn die Figur keine traegt. */
 const haare = [];
@@ -1122,6 +1149,7 @@ for (const z of zeilen) {
     bilder.push({ pose: z.name, reihe, spalte: i, png: r.bild });
     gesichter.push({ pose: z.name, bild: i, punkt: r.gesicht });
     stirnen.push({ pose: z.name, bild: i, punkt: r.stirn ?? r.gesicht });
+    schlaefen.push({ pose: z.name, bild: i, punkt: r.schlaefe ?? r.gesicht });
     haende.push({ pose: z.name, bild: i, punkt: r.hand ?? r.gesicht });
     if (r.haar) haare.push({ pose: z.name, bild: i, punkte: r.haar });
     if (r.kasten) masse.push(r.kasten);
@@ -1271,6 +1299,15 @@ if (probe) {
           // Stirnband des Wuselwerkers haengt daran. Wer ihn nicht braucht,
           // zahlt zwei Zahlen je Einzelbild dafuer.
           stirn: stirnen
+            .filter((g) => g.pose === z.name)
+            .sort((a, b) => a.bild - b.bild)
+            .map((g) => [
+              Number(((g.punkt[0] / ZELLE) * LOGISCH).toFixed(2)),
+              Number(((g.punkt[1] / ZELLE) * LOGISCH).toFixed(2)),
+            ]),
+          // Der dritte Kopfpunkt. Erst mit ihm hat der Kopf im Blatt eine
+          // Breite und eine Neigung statt nur einer Laenge.
+          schlaefe: schlaefen
             .filter((g) => g.pose === z.name)
             .sort((a, b) => a.bild - b.bild)
             .map((g) => [

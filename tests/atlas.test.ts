@@ -200,6 +200,59 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
         }
       });
 
+      /**
+       * Der Kopf steht als Zweibein im Blatt, nicht als Strecke.
+       *
+       * Zwei Punkte geben eine Laenge und eine Richtung. Die Laenge ist aber
+       * schon vergeben — der Zeichner liest sie als Groesse der Pose, und er
+       * muss das, weil `saving` die Figur auf 0,90 Achsen schrumpft. Und die
+       * Richtung traegt die Neigung nicht: Gemessen an der Sterbereihe bewegen
+       * 47,3 Grad Nicken den Bildwinkel um 2,33 Grad, waehrend 12 Grad Rollen
+       * ihn um 17,1 Grad bewegen.
+       *
+       * Der Schlaefenpunkt schliesst die Luecke. Diese Pruefung verlangt, dass
+       * er da ist und dass er das misst, was er messen soll: Er faellt, wenn
+       * der Kopf sich wegdreht. Ueber alle Posen korreliert er mit dem Kosinus
+       * der Posendrehung zu 0,855; verlangt sind hier 0,6, damit eine einzelne
+       * ungewoehnliche Pose die Pruefung nicht rot faerbt.
+       */
+      it('spannt den Kopf als Zweibein auf und misst damit seine Drehung', () => {
+        // Murmel und Erdmaennchen ruhen als Vertragsschnappschuss in
+        // `art-src/` und sind aus dem Bau gestrichen; sie sind vor dem
+        // Schlaefenpunkt gebacken worden und koennen ihn nicht haben. Von
+        // ihnen etwas zu verlangen, das es zu ihrer Zeit nicht gab, waere
+        // keine Zusage, sondern eine Formalie — und wuerde erzwingen, dass
+        // man Figuren nachbaeckt, die niemand mehr baut.
+        //
+        // Der Wuselwerker steht im Bau und muss ihn haben. Deshalb steht die
+        // Bedingung hier herum: Wer ihn traegt, traegt ihn richtig, und der
+        // Wuselwerker traegt ihn.
+        if (!Object.values(blatt.clips).some((c) => c.schlaefe)) {
+          expect(figur, 'ein Blatt im Bau ohne Schlaefenpunkt').not.toBe('wuselwerker');
+          return;
+        }
+        const q: number[] = [];
+        const d: number[] = [];
+        for (const [name, clip] of Object.entries(blatt.clips)) {
+          expect(clip.schlaefe?.length, `Schlaefenzahl von ${name}`).toBe(clip.holds.length);
+          const dreh = Math.cos(((clip.dreh ?? 0) * Math.PI) / 180);
+          clip.schlaefe!.forEach((sl, i) => {
+            const g = clip.anchors![i];
+            q.push(Math.hypot(sl[0] - g[0], sl[1] - g[1]));
+            d.push(dreh);
+          });
+        }
+        const mittel = (x: number[]) => x.reduce((a, b) => a + b, 0) / x.length;
+        const mq = mittel(q);
+        const md = mittel(d);
+        const zaehler = q.reduce((s, x, i) => s + (x - mq) * (d[i] - md), 0);
+        const nenner = Math.sqrt(
+          q.reduce((s, x) => s + (x - mq) ** 2, 0) * d.reduce((s, x) => s + (x - md) ** 2, 0),
+        );
+        const r = zaehler / nenner;
+        expect(r, `Querachse gegen Kopfdrehung: r = ${r.toFixed(3)}`).toBeGreaterThan(0.6);
+      });
+
       it('lässt den Blocker den Betrachter ansehen', () => {
         // Seine ganze Aussage ist „bis hierher und nicht weiter", und die
         // richtet sich an den Betrachter — er darf sich also nicht wegdrehen

@@ -75,6 +75,24 @@ export interface ClipDef {
    * dem Gesicht und damit bei jeder Pose mit gesenktem Kopf quer in den Augen.
    */
   stirn?: [number, number][];
+  /**
+   * Schlaefenpunkt je Einzelbild — der dritte Kopfpunkt, seit dem 25.08.2026.
+   *
+   * Erst mit ihm hat der Kopf im Bild eine BREITE und eine NEIGUNG. Gesichts-
+   * und Stirnpunkt spannen nur eine Strecke auf; ihre Laenge liest der
+   * Zeichner ohnehin schon als Groesse der Pose (`saving` schrumpft die Figur
+   * auf 0,90 Achsen), und ihre Richtung ist eine untrennbare Mischung aus
+   * Nicken, Gieren, Rollen und Wirbelsaeulenneigung — gemessen an der
+   * Sterbereihe reagiert sie neunundzwanzigmal staerker auf das Rollen als
+   * auf das Nicken.
+   *
+   * Der Abstand Gesicht-Schlaefe misst dagegen genau das, was fehlte: wie weit
+   * der Kopf weggedreht ist. Er faellt von 2,09 logischen Pixeln im Sterben
+   * (Pose null Grad, das Gesicht sieht den Betrachter an) auf 0,29 im Gehen
+   * (siebzig Grad, fast Profil), und ueber alle 157 Einzelbilder korreliert er
+   * mit dem Kosinus der Posendrehung zu 0,855.
+   */
+  schlaefe?: [number, number][];
   /** Zustand des Schopfs je Einzelbild — Index in `SCHOPF_ZUSTAND`. */
   tuff?: number[];
   /** Ansatz des Werkzeugs je Einzelbild — die vordere Hand, aus dem Rig gemessen. */
