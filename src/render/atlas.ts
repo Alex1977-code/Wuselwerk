@@ -326,28 +326,37 @@ export function frameFor(clip: ClipDef, timer: number): number {
  * gerade ein Viertel logischer Pixel — sichtbar als Trennung, zu wenig, um
  * die Figur dicker zu machen.
  */
-const SAUM_PX = 3;
-
 /**
- * Wie weich der Saum ausläuft, in Blattpunkten.
+ * Der Saum in zwei Lagen — und warum es zwei sein muessen.
  *
- * Rückmeldung war: keine schwarze Kante. Der Saum muss trotzdem bleiben — ohne
- * ihn steht die Figur in Rostwerk mit Kontrast 1,05 vor dem Himmel und in der
- * Kristallklamm mit 1,00 vor der Erde, also gar nicht (`tests/saum.test.ts`).
+ * Rueckmeldung war zweimal: der schwarze Umriss stoert. Er kann trotzdem
+ * nicht weg, und das ist gerechnet: Ohne ihn steht die Figur in Rostwerk mit
+ * Kontrast 1,05 vor dem Himmel und in der Kristallklamm mit 1,00 vor der
+ * Erde, also gar nicht (`tests/saum.test.ts`). Auch durchsichtiger darf er
+ * kaum werden — bei 65 Prozent Deckung faellt der schlechteste Fall unter die
+ * Schranke von 2,2.
  *
- * Der Ausweg ist nicht weniger Saum, sondern ein anderer: Ein harter Rand
- * liest sich als aufgemalte Linie, ein weicher als Schatten. Gestempelt wird
- * deshalb einen Punkt weiter als früher und danach weichgezeichnet — direkt an
- * der Figur bleibt er dicht, wo der Kontrast gebraucht wird, und läuft nach
- * außen aus, statt mit einer zweiten Kante zu enden.
+ * Frei ist allein die BREITE, und genau die war der Fehler. Der erste Versuch
+ * gegen die harte Kante hat sie verschlimmert: drei Punkte gestempelt,
+ * weichgezeichnet und zweimal gezeichnet — der Ring wurde breiter und blieb
+ * dicht. Der zweite Versuch, eine Haarlinie von einem Punkt, sah gut aus und
+ * flimmerte: 35,0 Prozent unruhige Punkte gegen 22,2 bei der breiten Fassung.
+ * Eine harte Kante von unter einem Bildpunkt liegt bei jedem Bild anders auf
+ * dem Raster.
  *
- * Nicht zu verwechseln mit dem Flimmern: Das kam nachweislich NICHT vom Saum.
- * Gemessen mit `art-src/figur-umbau/flimmern.mjs` schwanken 33,2 Prozent der
- * Figurenpunkte mit Saum und 32,9 Prozent ohne — der Unterschied liegt im
- * Rauschen. Wer den Saum wegnimmt, um Flimmern zu bekämpfen, verliert die
- * Sichtbarkeit und gewinnt nichts.
+ * Also beides, in zwei Lagen, jede fuer ihre Aufgabe:
+ *
+ *   SAUM_PX      Ein Punkt, deckend. Er allein traegt den Kontrast, und er
+ *                ist duenn genug, um nicht als aufgemalte Linie zu lesen.
+ *   SAUM_SCHEIN  Drei Punkte, weichgezeichnet und schwach. Er traegt keinen
+ *                Kontrast, sondern glaettet den Uebergang: Ein weicher
+ *                Verlauf verschiebt sich beim Abtasten, ohne zu springen.
  */
+const SAUM_PX = 1;
+const SAUM_SCHEIN = 3;
 const SAUM_WEICH = 2;
+/** Deckung des weichen Scheins. Mehr macht ihn wieder zum Ring. */
+const SCHEIN_DECKUNG = 0.38;
 
 /**
  * Die Kopfachse eines Einzelbildes — Abstand vom Gesichts- zum Stirnpunkt.
@@ -406,28 +415,38 @@ export class SpriteAtlas {
     // Zuerst der harte Stempel auf einem Zwischenblatt: acht Versaetze, die
     // vier Seiten und die vier Ecken. Nur vier Seiten liessen die Diagonalen
     // offen, und ein Saum mit Loechern an den Ecken liest sich als Ausfransen.
-    const roh = document.createElement('canvas');
-    roh.width = w;
-    roh.height = h;
-    const rx = roh.getContext('2d');
-    if (!rx) return;
-    for (const [dx, dy] of [
-      [-SAUM_PX, 0], [SAUM_PX, 0], [0, -SAUM_PX], [0, SAUM_PX],
-      [-SAUM_PX, -SAUM_PX], [SAUM_PX, -SAUM_PX], [-SAUM_PX, SAUM_PX], [SAUM_PX, SAUM_PX],
-    ]) {
-      rx.drawImage(this.image, dx, dy);
-    }
-    rx.globalCompositeOperation = 'source-in';
-    rx.fillStyle = ton;
-    rx.fillRect(0, 0, w, h);
+    // Ein Stempel je Lage: acht Versaetze, die vier Seiten und die vier Ecken.
+    // Nur vier Seiten liessen die Diagonalen offen, und ein Saum mit Loechern
+    // an den Ecken liest sich als Ausfransen.
+    const stempel = (r: number): HTMLCanvasElement | null => {
+      const k = document.createElement('canvas');
+      k.width = w;
+      k.height = h;
+      const kx = k.getContext('2d');
+      if (!kx) return null;
+      for (const [dx, dy] of [
+        [-r, 0], [r, 0], [0, -r], [0, r],
+        [-r, -r], [r, -r], [-r, r], [r, r],
+      ]) {
+        kx.drawImage(this.image, dx, dy);
+      }
+      kx.globalCompositeOperation = 'source-in';
+      kx.fillStyle = ton;
+      kx.fillRect(0, 0, w, h);
+      return k;
+    };
 
-    // Dann weichgezeichnet aufs Saumblatt — zweimal, damit er an der Figur
-    // dicht bleibt und nur nach aussen auslaeuft. Einmal weichgezeichnet ist
-    // er dort, wo er gebraucht wird, zu duenn.
-    cx.filter = `blur(${SAUM_WEICH}px)`;
-    cx.drawImage(roh, 0, 0);
-    cx.drawImage(roh, 0, 0);
-    cx.filter = 'none';
+    // Erst der weiche Schein, dann die deckende Haarlinie darueber.
+    const schein = stempel(SAUM_SCHEIN);
+    if (schein) {
+      cx.globalAlpha = SCHEIN_DECKUNG;
+      cx.filter = `blur(${SAUM_WEICH}px)`;
+      cx.drawImage(schein, 0, 0);
+      cx.filter = 'none';
+      cx.globalAlpha = 1;
+    }
+    const kern = stempel(SAUM_PX);
+    if (kern) cx.drawImage(kern, 0, 0);
     this.saumBlatt = cv;
   }
 
