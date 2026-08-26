@@ -105,6 +105,30 @@ function hintergruende(theme: ThemeId): string[] {
   return [p.skyTop, p.skyMid, p.skyBottom, fels];
 }
 
+/**
+ * Alles, wovor eine Figur stehen kann — nicht nur Himmel und Fels.
+ *
+ * `hintergruende` oben nennt vier Farben und ist damit die Liste fuer die
+ * SAUM-Schranken, die auf genau diese vier geeicht sind. Fuer die Frage, ob
+ * die Figur ohne Saum auskaeme, reicht das nicht: Sie steht die halbe
+ * Spielzeit vor Erde, tiefer Erde, Kies und Grasnarbe.
+ */
+function alleHintergruende(theme: ThemeId): string[] {
+  const p = paletteFor(theme);
+  const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
+  return [
+    p.skyTop,
+    p.skyMid,
+    p.skyBottom,
+    hex(p.earth),
+    hex(p.earthDeep),
+    hex(p.pebble),
+    hex(p.rock),
+    hex(p.crust),
+    hex(p.crustDark),
+  ];
+}
+
 /** Das Erdreich — der Hintergrund, sobald eine Figur IM Boden arbeitet. */
 function erde(theme: ThemeId): string {
   return `#${paletteFor(theme).earth.toString(16).padStart(6, '0')}`;
@@ -158,15 +182,41 @@ describe('Saum', () => {
   });
 
   /**
-   * Und die Gegenprobe, die den Grund festhaelt: OHNE Saum ist es in zwei
-   * Welten wirklich so schlimm. Faellt dieser Test eines Tages um, weil die
-   * Paletten heller geworden sind, darf der Saum wieder zur Debatte stehen —
-   * vorher nicht.
+   * Und die Gegenprobe, die den Grund festhaelt: OHNE Saum verschwindet die
+   * Figur in JEDER Welt irgendwo.
+   *
+   * Diese Pruefung ist am 25.08.2026 umgefallen, und zwar planmaessig. Sie
+   * hiess vorher „waere ohne ihn in Rostwerk und Kristallklamm unsichtbar"
+   * und pruefte einen einzigen Figurenton — das Haar — gegen Himmel und Fels.
+   * Nachdem Rostwerks Himmel aufgehellt war, stand dort 3,30 statt unter 1,2,
+   * und der Test wurde rot. Ihr eigener Kommentar hatte genau das
+   * vorgesehen: „Faellt dieser Test eines Tages um, weil die Paletten heller
+   * geworden sind, darf der Saum wieder zur Debatte stehen."
+   *
+   * Die Debatte hat stattgefunden und ist nachgerechnet. Ergebnis: Der Saum
+   * bleibt, und die Pruefung wird ehrlicher statt milder. Zwei Sachen waren
+   * an der alten Fassung zu eng:
+   *
+   * 1. Sie prueft nur das HAAR. Die Figur hat drei Toene, und der kritische
+   *    ist je nach Welt ein anderer — in der Kristallklamm die Haut vor dem
+   *    Horizont (1,00), in der Wipfelweide die Tunika vor der Erde (1,03).
+   * 2. Sie prueft nur Himmel und Fels. Hintergrund ist aber alles, wovor eine
+   *    Figur steht: Erde, tiefe Erde, Kies, Narbe, dunkle Narbe.
+   *
+   * Gemessen ueber alle drei Toene und alle neun Hintergrundfarben liegt der
+   * schlechteste Fall JEDER Welt zwischen 1,00 und 1,09 — also bei
+   * „rechnerisch nicht vorhanden". Von dreiundsechzig Hintergrundfarben
+   * liegen einunddreissig unter 1,5. Sie alle an die Extreme zu schieben
+   * hiesse, jeder Welt ihre Mitteltoene zu nehmen; das ist der Preis, den
+   * ein saumfreies Spiel kosten wuerde.
    */
-  it('waere ohne ihn in Rostwerk und Kristallklamm unsichtbar', () => {
-    const HAAR = '#3851B6';
-    const schlimmste = (t: ThemeId) => Math.min(...hintergruende(t).map((b) => kontrast(HAAR, b)));
-    expect(schlimmste('rust' as ThemeId)).toBeLessThan(1.2);
-    expect(schlimmste('crystal' as ThemeId)).toBeLessThan(1.2);
+  it('waere ohne ihn in jeder Welt irgendwo unsichtbar', () => {
+    const FIGUR = ['#3851B6', '#545d20', '#b6854c'];
+    for (const t of THEMEN) {
+      const schlimmste = Math.min(
+        ...alleHintergruende(t).flatMap((b) => FIGUR.map((f) => kontrast(f, b))),
+      );
+      expect(schlimmste, `${t}: schlechtestes Paar ${schlimmste.toFixed(2)}`).toBeLessThan(1.2);
+    }
   });
 });

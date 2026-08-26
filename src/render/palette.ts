@@ -148,13 +148,13 @@ const SONNENHANG: Palette = {
   hillsDeep: ['#d3b191', '#ac8663', '#5f6330'],
   earth: 0x8a5330,
   earthDeep: 0x4e2a17,
-  pebble: 0x93867a,
+  pebble: 0xc2b1a2,
   /** Unberührte Oberfläche — Grasnarbe. */
   crust: 0xc8b23f,
   crustDark: 0x6b5a1c,
   crustThickness: 3,
   saum: '#0C1020',
-  rock: 0xb09a78,
+  rock: 0xc9b08a,
   steel: 0x9aa5b5,
   brick: 0xc98246,
   /** Frisch freigelegtes Material ist heller (GDD §6). */
@@ -226,7 +226,7 @@ const CRYSTAL: Palette = {
   crustDark: 0x2f3a66,
   crustThickness: 1,
   saum: '#C8D6F0',
-  rock: 0x3d4a6f,
+  rock: 0x2f3a58,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
   freshBoost: 34,
@@ -247,13 +247,13 @@ const RUST: Palette = {
   // Asche und Schutt statt Erde — grabbar, aber muede.
   earth: 0x6e5c49,
   earthDeep: 0x3b2f25,
-  pebble: 0x8d837a,
+  pebble: 0xbfb2a6,
   // Die Narbe ist eine Rosthaut: oxydiert, warm, zwei Bildpunkte dick.
   crust: 0xc06a32,
   crustDark: 0x6e3a1a,
   crustThickness: 2,
   saum: '#0C1020',
-  rock: 0x5c554e,
+  rock: 0xbfb2a4,
   steel: 0x9aa5b5,
   brick: 0xd59a4a,
   freshBoost: 30,
@@ -292,7 +292,7 @@ const MAGMA: Palette = {
   // Waerme sitzt unten im Bild — Licht aus der Tiefe, nicht vom Himmel.
   skyTop: '#2b2030',
   skyMid: '#5c3040',
-  skyBottom: '#c96a3a',
+  skyBottom: '#5d2e16',
   hills: ['#7a4a48', '#5c3438', '#3d2228'],
   hillsDeep: ['#653c3e', '#48282e', '#2c181e'],
   // Verbrannter Grund, aschgrau-braun mit warmem Stich.
