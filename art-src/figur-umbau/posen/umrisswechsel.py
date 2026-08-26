@@ -20,7 +20,15 @@ DECKUNG = 100
 def messe(pb, pa):
     bild = Image.open(pb)
     at = json.load(open(pa))
-    z = bild.width // 8
+    # Die Zellkante kommt aus dem Blatt, nicht aus einer festen Spaltenzahl.
+    #
+    # Bis zum 22.08.2026 stand hier `bild.width // 8`. Als das Blatt auf
+    # sechzehn Spalten wuchs, las das Werkzeug stillschweigend die falschen
+    # Zellen und meldete NaN und Wechsel von 69 Prozent. Ein Messwerkzeug, das
+    # eine Zahl annimmt statt sie zu lesen, misst irgendwann etwas anderes als
+    # das, was es soll.
+    z = round(at['cell']['w'] * at['ppl'])
+    spalten = bild.width // z
     aus = {}
     for reihe, c in at['clips'].items():
         r = c['row']
@@ -29,7 +37,7 @@ def messe(pb, pa):
             continue
         masken = []
         for i in range(n):
-            sp, sz = i % 8, r + i // 8
+            sp, sz = i % spalten, r + i // spalten
             masken.append(np.asarray(
                 bild.crop((sp*z, sz*z, sp*z+z, sz*z+z))
                     .resize((SPIEL, SPIEL), Image.LANCZOS)

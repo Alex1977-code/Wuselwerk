@@ -126,7 +126,20 @@ const icon = args.includes('--icon');
 /** Ueberabtastung je Achse. Runde Kanten und duenne Arme brauchen sie. */
 const SS = icon ? 12 : 6;
 const ZELLE = 112;
-const SPALTEN = 8;
+/**
+ * Zellen je Reihe — und damit die groesste Bildzahl einer Pose.
+ *
+ * Von acht auf sechzehn erhoeht, weil acht zu wenig fuer eine fluessige
+ * Bewegung waren. Gemessen am Blatt vom 22.08.2026 kippten beim Gehen 49,9
+ * Prozent der Silhouette zwischen zwei aufeinanderfolgenden Bildern, beim
+ * Rammen 58,3 und beim Fallen 68,0 — die halbe Figur aendert sich also von
+ * einem Bild zum naechsten. Bei zwanzig Bildern in der Sekunde liest sich das
+ * nicht als Bewegung, sondern als Flackern.
+ *
+ * Das Blatt waechst dadurch von 896 auf 2688 Punkte Breite. Die meisten
+ * Reihen fuellen das nicht aus; leere Zellen kosten im WebP fast nichts.
+ */
+const SPALTEN = 24;
 
 /**
  * Die Reihenfolge der Zeilen und die Haltedauern.
@@ -137,24 +150,42 @@ const SPALTEN = 8;
  * Hier stehen sie ausgeschrieben statt importiert, weil dieses Skript kein
  * TypeScript laedt — eine Pruefung im Testlauf haelt beide zusammen.
  */
+/**
+ * Die Zeilen des Blattes: Name, Haltedauer je Bild, und ob die Reihe einmal
+ * laeuft statt in Schleife.
+ *
+ * ## Warum hier mehr Bilder stehen als Schluesselbilder in den Posendateien
+ *
+ * Die Posendateien sind von Hand geschrieben und bleiben es. Was hier steht,
+ * ist die Zahl der GEBACKENEN Bilder — und die ist seit dem 22.08.2026
+ * groesser, weil der Backvorgang zwischen den Schluesselbildern rechnet
+ * (`glaetten`). Die Laenge eines Zyklus in Ticks bleibt dabei gleich: Aus
+ * acht Bildern zu drei Ticks werden zwoelf zu zwei, aus vier zu vier werden
+ * sechzehn zu eins. Die Figur laeuft also genauso schnell, nur in kleineren
+ * Schritten.
+ *
+ * Der Grund ist gemessen: Zwischen zwei aufeinanderfolgenden Bildern kippten
+ * beim Gehen 49,9 Prozent der Silhouette, beim Rammen 58,3, beim Fallen 68,0.
+ * Das liest sich als Flackern und nicht als Bewegung.
+ */
 const ZEILEN = [
-  { name: 'walking', holds: [3, 3, 3, 3, 3, 3, 3, 3] },
-  { name: 'falling', holds: [4, 4, 4, 4] },
-  { name: 'floating', holds: [3, 3, 3, 3] },
-  { name: 'climbing', holds: [4, 4, 4, 4] },
-  { name: 'hoisting', holds: [8, 8, 8, 8, 8, 12], once: true },
-  { name: 'building', holds: [3, 3, 3, 3, 3, 3, 3, 3] },
-  { name: 'bashing', holds: [3, 3, 3] },
-  { name: 'mining', holds: [3, 3, 3, 3] },
-  { name: 'digging', holds: [3, 2, 2] },
+  { name: 'walking', holds: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+  { name: 'falling', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'floating', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'climbing', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'hoisting', holds: [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], once: true },
+  { name: 'building', holds: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
+  { name: 'bashing', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'mining', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'digging', holds: [1, 1, 1, 1, 1, 1, 1] },
   { name: 'blocking', holds: [8, 8] },
-  { name: 'saving', holds: [3, 3, 3, 3, 3, 3], once: true },
-  { name: 'dying', holds: [3, 3, 3, 3, 3, 3, 4, 4], once: true },
+  { name: 'saving', holds: [2, 2, 2, 2, 2, 2, 2, 2, 2], once: true },
+  { name: 'dying', holds: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], once: true },
   // Die dreizehnte Zeile, und die einzige, die **keinem** Simulationszustand
   // entspricht. Der Zeichner setzt sie ein, wenn eine laufende Figur nicht von
   // der Stelle kommt; `DEFAULT_MANIFEST` kennt sie deshalb nicht, und ein Blatt
   // ohne sie funktioniert weiter.
-  { name: 'spaehen', holds: [14, 14, 14, 14, 14, 14] },
+  { name: 'spaehen', holds: [7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7] },
 ];
 
 /**
@@ -244,6 +275,80 @@ const PPL = ZELLE / LOGISCH;
 const zeilen = nurPose ? ZEILEN.filter((z) => z.name === nurPose) : ZEILEN;
 if (zeilen.length === 0) throw new Error(`Pose ${nurPose} steht nicht in der Zeilentabelle`);
 
+/**
+ * Zwischenbilder rechnen — aus Schluesselbildern werden Einzelbilder.
+ *
+ * Die Posendateien bleiben von Hand geschrieben und klein: Wer den Gang
+ * aendert, will acht Haltungen anfassen und nicht zwoelf. Das Blatt dagegen
+ * braucht kleine Schritte, sonst flackert es. Also wird hier dazwischen
+ * gerechnet.
+ *
+ * Zwei Faelle, und der Unterschied ist wichtig: Eine SCHLEIFE (Gehen, Rammen)
+ * laeuft rund, ihr letztes Bild geht wieder ins erste ueber — dort wird
+ * zyklisch abgetastet. Eine EINMALREIHE (Hieven, Retten, Sterben) hat einen
+ * Anfang und ein Ende; wer sie zyklisch abtastet, blendet das Ende zurueck in
+ * den Anfang und laesst die sterbende Figur am Schluss wieder aufstehen.
+ *
+ * Richtungen werden linear gemischt und danach neu auf Einheitslaenge
+ * gebracht — bei den hier vorkommenden Winkeln ist das von einer echten
+ * Kugelinterpolation nicht zu unterscheiden, und der Backvorgang normiert
+ * nicht nach.
+ */
+function glaetten(tabelle, ziel, zyklisch) {
+  const f = tabelle?.frames;
+  if (!f || f.length === 0 || f.length >= ziel) return tabelle;
+  const n = f.length;
+
+  const misch = (a, b, t) => a + (b - a) * t;
+  const mischVek = (a, b, t) => {
+    const v = [misch(a[0], b[0], t), misch(a[1], b[1], t), misch(a[2], b[2], t)];
+    const l = Math.hypot(v[0], v[1], v[2]) || 1;
+    return [
+      Number((v[0] / l).toFixed(4)),
+      Number((v[1] / l).toFixed(4)),
+      Number((v[2] / l).toFixed(4)),
+    ];
+  };
+  const mischFeld = (a, b, t, vektor) => {
+    const aus = {};
+    for (const k of new Set([...Object.keys(a ?? {}), ...Object.keys(b ?? {})])) {
+      const va = a?.[k];
+      const vb = b?.[k];
+      if (!va) { aus[k] = vb; continue; }
+      if (!vb) { aus[k] = va; continue; }
+      aus[k] = vektor
+        ? mischVek(va, vb, t)
+        : va.map((x, i) => Number(misch(x, vb[i] ?? x, t).toFixed(3)));
+    }
+    return aus;
+  };
+
+  const neu = [];
+  for (let i = 0; i < ziel; i++) {
+    const t = zyklisch ? (i * n) / ziel : (i * (n - 1)) / (ziel - 1);
+    const i0 = Math.min(n - 1, Math.floor(t));
+    const i1 = zyklisch ? (i0 + 1) % n : Math.min(n - 1, i0 + 1);
+    const a = f[i0];
+    const b = f[i1];
+    const u = t - Math.floor(t);
+    const bild = {};
+    if (a.richtung || b.richtung) bild.richtung = mischFeld(a.richtung, b.richtung, u, true);
+    if (a.winkel || b.winkel) bild.winkel = mischFeld(a.winkel, b.winkel, u, false);
+    if (a.stauch || b.stauch) {
+      const sa = a.stauch ?? [1, 1, 1];
+      const sb = b.stauch ?? [1, 1, 1];
+      bild.stauch = sa.map((x, k) => Number(misch(x, sb[k], u).toFixed(4)));
+    }
+    if (a.versatz !== undefined || b.versatz !== undefined) {
+      bild.versatz = Number(misch(a.versatz ?? 0, b.versatz ?? 0, u).toFixed(4));
+    }
+    const m = u < 0.5 ? a.maske : b.maske;
+    if (m !== undefined) bild.maske = m;
+    neu.push(bild);
+  }
+  return { ...tabelle, frames: neu };
+}
+
 /** Die Richtungstabellen. Fehlt eine Datei, steht die Pose in Ruhelage. */
 const posen = {};
 if (existsSync(POSEN)) {
@@ -256,6 +361,11 @@ if (variante) {
   posen[nurPose] = JSON.parse(readFileSync(variante, 'utf8'));
   console.log(`Variante: ${nurPose} kommt aus ${variante}`);
 }
+// Jede Tabelle auf die Bildzahl ihrer Zeile bringen.
+for (const z of ZEILEN) {
+  if (posen[z.name]) posen[z.name] = glaetten(posen[z.name], z.holds.length, !z.once);
+}
+
 const fehlend = ZEILEN.filter((z) => !posen[z.name]).map((z) => z.name);
 if (fehlend.length) console.log(`  (noch ohne Richtungstabelle, stehen in Ruhe: ${fehlend.join(', ')})`);
 

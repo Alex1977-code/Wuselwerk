@@ -35,9 +35,6 @@ const SOLL_WURZELN = (
   JSON.parse(readFileSync('art-src/wuselwerker/figur.json', 'utf8')) as { haarWurzeln: number }
 ).haarWurzeln;
 
-/** Ab wieviel logischen Pixeln sich zwei Straehnen einzeln lesen. Gemessen. */
-const LESEGRENZE = 0.9;
-
 /** Die Posentabellen als Quelle — dort steht, wie weit der Haarknochen schwingt. */
 const POSEN_ROH: Record<string, { frames: { winkel?: Record<string, number[]> }[] }> = {};
 for (const datei of readdirSync('art-src/wuselwerker/posen')) {

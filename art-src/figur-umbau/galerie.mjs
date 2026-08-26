@@ -43,13 +43,16 @@ const bild = await page.evaluate((lupe) => {
   const at = g.atlas;
   if (!at) throw new Error('Kein Blatt geladen');
   const posen = Object.keys(at.manifest.clips);
+  // Soviele Spalten, wie die laengste Pose braucht — seit dem Blatt mit
+  // vierundzwanzig Gehbildern reicht eine feste Acht nicht mehr.
+  const MAX = Math.max(...posen.map((p) => at.manifest.clips[p].holds.length));
   // Zellkante in Geraetepunkten, wie das Telefon sie zeichnet: Die Figur misst
   // zwoelf logische Pixel und steht dort auf rund vierzig Punkten.
   const s = 3.4 * lupe;
   const spalte = Math.round(11 * s);
   const zeile = Math.round(20 * s);
   const cv = document.createElement('canvas');
-  cv.width = spalte * 8 + 20;
+  cv.width = spalte * MAX + 20;
   cv.height = zeile * posen.length * 2 + 20;
   const ctx = cv.getContext('2d');
   let y = 10;
@@ -58,7 +61,7 @@ const bild = await page.evaluate((lupe) => {
     for (const grund of ['#7fb2d9', '#4a3f35']) {
       ctx.fillStyle = grund;
       ctx.fillRect(0, y, cv.width, zeile);
-      for (let i = 0; i < Math.min(8, n); i++) {
+      for (let i = 0; i < n; i++) {
         at.drawClip(ctx, pose, i, 10 + spalte * i + spalte / 2, y + zeile - Math.round(3 * s), s, false);
       }
       ctx.fillStyle = '#ffffff';
@@ -75,7 +78,7 @@ const bild = await page.evaluate((lupe) => {
   // Umriss des Blattes liegt. Innen liegende zaehlt nicht, sie ist unsichtbar.
   const zaehl = (mitHaar) => {
     const c2 = document.createElement('canvas');
-    c2.width = spalte * 8;
+    c2.width = spalte * MAX;
     c2.height = zeile * posen.length;
     const x2 = c2.getContext('2d');
     let yy = 0;
@@ -83,7 +86,7 @@ const bild = await page.evaluate((lupe) => {
       const clip = at.manifest.clips[pose];
       const merk = clip.haar;
       if (!mitHaar) delete clip.haar;
-      const n = Math.min(8, clip.holds.length);
+      const n = clip.holds.length;
       for (let i = 0; i < n; i++) {
         at.drawClip(x2, pose, i, spalte * i + spalte / 2, yy + zeile - Math.round(3 * s), s, false);
       }

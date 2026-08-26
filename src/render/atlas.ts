@@ -326,7 +326,28 @@ export function frameFor(clip: ClipDef, timer: number): number {
  * gerade ein Viertel logischer Pixel — sichtbar als Trennung, zu wenig, um
  * die Figur dicker zu machen.
  */
-const SAUM_PX = 2;
+const SAUM_PX = 3;
+
+/**
+ * Wie weich der Saum ausläuft, in Blattpunkten.
+ *
+ * Rückmeldung war: keine schwarze Kante. Der Saum muss trotzdem bleiben — ohne
+ * ihn steht die Figur in Rostwerk mit Kontrast 1,05 vor dem Himmel und in der
+ * Kristallklamm mit 1,00 vor der Erde, also gar nicht (`tests/saum.test.ts`).
+ *
+ * Der Ausweg ist nicht weniger Saum, sondern ein anderer: Ein harter Rand
+ * liest sich als aufgemalte Linie, ein weicher als Schatten. Gestempelt wird
+ * deshalb einen Punkt weiter als früher und danach weichgezeichnet — direkt an
+ * der Figur bleibt er dicht, wo der Kontrast gebraucht wird, und läuft nach
+ * außen aus, statt mit einer zweiten Kante zu enden.
+ *
+ * Nicht zu verwechseln mit dem Flimmern: Das kam nachweislich NICHT vom Saum.
+ * Gemessen mit `art-src/figur-umbau/flimmern.mjs` schwanken 33,2 Prozent der
+ * Figurenpunkte mit Saum und 32,9 Prozent ohne — der Unterschied liegt im
+ * Rauschen. Wer den Saum wegnimmt, um Flimmern zu bekämpfen, verliert die
+ * Sichtbarkeit und gewinnt nichts.
+ */
+const SAUM_WEICH = 2;
 
 /**
  * Die Kopfachse eines Einzelbildes — Abstand vom Gesichts- zum Stirnpunkt.
@@ -382,15 +403,31 @@ export class SpriteAtlas {
     // Acht Versaetze: die vier Seiten und die vier Ecken. Nur vier Seiten
     // liessen die Diagonalen offen, und ein Saum mit Loechern an den Ecken
     // liest sich als Ausfransen.
+    // Zuerst der harte Stempel auf einem Zwischenblatt: acht Versaetze, die
+    // vier Seiten und die vier Ecken. Nur vier Seiten liessen die Diagonalen
+    // offen, und ein Saum mit Loechern an den Ecken liest sich als Ausfransen.
+    const roh = document.createElement('canvas');
+    roh.width = w;
+    roh.height = h;
+    const rx = roh.getContext('2d');
+    if (!rx) return;
     for (const [dx, dy] of [
       [-SAUM_PX, 0], [SAUM_PX, 0], [0, -SAUM_PX], [0, SAUM_PX],
       [-SAUM_PX, -SAUM_PX], [SAUM_PX, -SAUM_PX], [-SAUM_PX, SAUM_PX], [SAUM_PX, SAUM_PX],
     ]) {
-      cx.drawImage(this.image, dx, dy);
+      rx.drawImage(this.image, dx, dy);
     }
-    cx.globalCompositeOperation = 'source-in';
-    cx.fillStyle = ton;
-    cx.fillRect(0, 0, w, h);
+    rx.globalCompositeOperation = 'source-in';
+    rx.fillStyle = ton;
+    rx.fillRect(0, 0, w, h);
+
+    // Dann weichgezeichnet aufs Saumblatt — zweimal, damit er an der Figur
+    // dicht bleibt und nur nach aussen auslaeuft. Einmal weichgezeichnet ist
+    // er dort, wo er gebraucht wird, zu duenn.
+    cx.filter = `blur(${SAUM_WEICH}px)`;
+    cx.drawImage(roh, 0, 0);
+    cx.drawImage(roh, 0, 0);
+    cx.filter = 'none';
     this.saumBlatt = cv;
   }
 

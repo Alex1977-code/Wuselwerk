@@ -79,7 +79,10 @@ describe('Ausgeliefertes Sprite-Blatt', () => {
       const ist = sheet.clips[name];
       expect(ist, `Zustand ${name} fehlt im Blatt`).toBeDefined();
       expect(ist.row, `Zeile von ${name}`).toBe(soll.row);
-      expect(ist.holds, `Haltedauern von ${name}`).toEqual(soll.holds);
+      expect(
+        ist.holds.reduce((a, b) => a + b, 0),
+        `Zyklusdauer von ${name} in Ticks`,
+      ).toBe(soll.holds.reduce((a, b) => a + b, 0));
       expect(!!ist.once, `Ablaufart von ${name}`).toBe(!!soll.once);
     }
   });
@@ -148,12 +151,40 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
         expect(blatt.figur).toBe(figur);
       });
 
-      it('bedient alle zwölf Zustände mit der vorgeschriebenen Bildzahl', () => {
+      /**
+       * Jeder Zustand dauert genau so lange wie vorgeschrieben — darf ihn aber
+       * in mehr Bildern erzählen.
+       *
+       * Bis zum 22.08.2026 stand hier ein Vergleich der Haltedauern Zahl für
+       * Zahl, also faktisch der Bildzahl. Das war zu streng und hat eine
+       * richtige Verbesserung verboten: Rückmeldung war, die Figur flackere
+       * bei den Bewegungen, und gemessen kippten zwischen zwei
+       * aufeinanderfolgenden Bildern beim Gehen 49,9 Prozent der Silhouette,
+       * beim Rammen 58,3 und beim Fallen 68,0. Dagegen hilft nur eines: mehr
+       * Zwischenbilder. Der Backvorgang rechnet sie seither aus den
+       * Schlüsselbildern (`glaetten` in `bake-figur.mjs`), das Gehen läuft in
+       * vierundzwanzig Bildern zu einem Tick statt acht zu drei, und der
+       * Wechsel je Bildpaar ist auf 21,9 Prozent gefallen.
+       *
+       * Was dabei NICHT verhandelbar ist, ist die Dauer: Ein Gangzyklus muss
+       * vierundzwanzig Ticks brauchen, sonst rutschen die Füße gegen den
+       * Vorschub der Simulation. Genau das wird hier geprüft — die Summe, nicht
+       * die Aufteilung. Und die Bildzahl darf nur wachsen: Ein Blatt mit
+       * weniger Bildern als vorgeschrieben wäre gröber als der prozedurale
+       * Ersatzzeichner, und dann könnte man gleich diesen nehmen.
+       */
+      it('erzählt jeden Zustand in der vorgeschriebenen Zeit', () => {
+        const summe = (h: number[]) => h.reduce((a, b) => a + b, 0);
         for (const [name, soll] of Object.entries(DEFAULT_MANIFEST.clips)) {
           const ist = blatt.clips[name];
           expect(ist, `Zustand ${name} fehlt`).toBeDefined();
           expect(ist.row, `Zeile von ${name}`).toBe(soll.row);
-          expect(ist.holds, `Haltedauern von ${name}`).toEqual(soll.holds);
+          expect(summe(ist.holds), `Zyklusdauer von ${name} in Ticks`).toBe(summe(soll.holds));
+          expect(
+            ist.holds.length,
+            `Bildzahl von ${name} — gröber als der Ersatzzeichner`,
+          ).toBeGreaterThanOrEqual(soll.holds.length);
+          expect(!!ist.once, `Ablaufart von ${name}`).toBe(!!soll.once);
         }
       });
 
