@@ -1,5 +1,5 @@
 {
-  "_warum": "Arme hoch und weit, Beine gespreizt, Rumpf leicht zurueck — es zieht ihn nach oben.",
+  "_warum": "Arme hoch und weit, Beine gespreizt, Rumpf leicht zurueck — es zieht ihn nach oben. Am 25.08.2026 zweimal gedaempft, weil die fallende Figur komisch wackelte, und es waren zwei Ursachen. Erstens schwang die senkrechte Stauchung um 1,176 / 0,824, also plus minus 17,6 Prozent - dasselbe Aufblasen, das beim Gehen und Rammen schon behoben war, hier aber als Ausnahme stehengelassen wurde. Jetzt 1,029 / 0,971 nach derselben Regel (Abweichung durch sechs). Zweitens pendelte der Haarknochen von -54,8 auf +2,8 Grad und damit DURCH die Senkrechte: Im freien Fall soll Haar zurueckgedrueckt stehen und flattern, nicht hin und her schwingen. Die Spanne bleibt mit 22 Grad ueber der Pruefschranke, liegt aber jetzt um einen Mittelwert von -48 statt -26.",
   "frames": [
     {
       "richtung": {
@@ -82,7 +82,7 @@
           0.0
         ],
         "HaarSchwung": [
-          -54.8,
+          -59.0,
           0,
           -0.0
         ]
@@ -90,7 +90,7 @@
       "versatz": 0.044,
       "stauch": [
         0.8768,
-        1.176,
+        1.0293,
         0.8768
       ]
     },
@@ -175,7 +175,7 @@
           7.0
         ],
         "HaarSchwung": [
-          -26.0,
+          -48.0,
           0,
           -10.0
         ]
@@ -268,7 +268,7 @@
           0.0
         ],
         "HaarSchwung": [
-          2.8,
+          -37.0,
           0,
           -0.0
         ]
@@ -276,7 +276,7 @@
       "versatz": -0.044,
       "stauch": [
         1.1232,
-        0.824,
+        0.9707,
         1.1232
       ]
     },
@@ -361,7 +361,7 @@
           -7.0
         ],
         "HaarSchwung": [
-          -26.0,
+          -48.0,
           0,
           10.0
         ]

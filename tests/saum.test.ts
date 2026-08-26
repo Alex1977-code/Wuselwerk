@@ -98,13 +98,6 @@ function kontrast(a: string, b: string): number {
   return (hell + 0.05) / (dunkel + 0.05);
 }
 
-/** Die Farben, vor denen die Figur steht: Himmel in drei Stufen und Fels. */
-function hintergruende(theme: ThemeId): string[] {
-  const p = paletteFor(theme);
-  const fels = `#${p.rock.toString(16).padStart(6, '0')}`;
-  return [p.skyTop, p.skyMid, p.skyBottom, fels];
-}
-
 /**
  * Alles, wovor eine Figur stehen kann — nicht nur Himmel und Fels.
  *
@@ -129,88 +122,59 @@ function alleHintergruende(theme: ThemeId): string[] {
   ];
 }
 
-/** Das Erdreich — der Hintergrund, sobald eine Figur IM Boden arbeitet. */
-function erde(theme: ThemeId): string {
-  return `#${paletteFor(theme).earth.toString(16).padStart(6, '0')}`;
-}
-
 describe('Saum', () => {
-  it('jede Welt hat einen', () => {
+  /**
+   * Es gibt keinen mehr — und zwar auf Ansage.
+   *
+   * Der Saum war ein gerechnetes Mittel gegen ein gemessenes Problem, und die
+   * Rechnung stimmt weiter: Ohne ihn liegt der schlechteste Fall JEDER Welt
+   * zwischen 1,00 und 1,09, also bei „rechnerisch nicht vorhanden". Das steht
+   * unten in der Gegenprobe und bleibt dort stehen, damit die Zahl nicht
+   * verlorengeht.
+   *
+   * Der Auftraggeber hat ihn trotzdem dreimal abgelehnt — zuletzt: „wenn ich
+   * sag ich möchte keinen saum dann ist da gefälligst auch kein saum." Das ist
+   * eine Entwurfsentscheidung und keine Messfrage; Sichtbarkeit ist nicht der
+   * einzige Wert, und ein Umriss, der bei jedem Blick stoert, kostet auch
+   * etwas. Also ist er weg.
+   *
+   * Diese Pruefung haelt die Entscheidung fest, damit er nicht still
+   * zurueckkommt — durch eine neue Welt, die eine Farbe aus einer alten kopiert,
+   * oder durch einen spaeteren Griff, der es gut meint.
+   *
+   * Was stattdessen traegt, ist die Palette. Zehn Hintergrundfarben sind am
+   * 25.08.2026 aus dem Sperrband der Figur geschoben worden (Rostwerks Himmel
+   * und Fels, Kristallklamms Erde und Fels, Sonnenhangs Fels, Schlots
+   * Horizont); einunddreissig von dreiundsechzig liegen noch darunter. Wer die
+   * Figur besser sehen will, arbeitet dort weiter und nicht am Saum.
+   */
+  it('ist abgeschafft und kommt nicht still zurueck', () => {
     for (const t of THEMEN) {
-      expect(paletteFor(t).saum, t).toMatch(/^#[0-9a-fA-F]{6}$/);
+      expect(paletteFor(t).saum, `${t}: Saum wieder da`).toBe('');
     }
   });
 
   /**
-   * Die eigentliche Zusage. 1,8 ist bewusst niedriger angesetzt als die 3,0
-   * der Schriftregeln: Ein Saum ist keine Schrift, er muss nicht gelesen,
-   * sondern nur gesehen werden. Gemessen liegt die schlechteste Welt bei 2,34
-   * — die Grenze hat also Luft, und wer sie reisst, hat wirklich etwas
-   * kaputtgemacht.
+   * Die Gegenprobe — sie misst jetzt den PREIS und nicht mehr die Notwendigkeit.
+   *
+   * Gemessen ueber alle drei Figurentoene (Haar #3851B6, Tunika #545d20, Haut
+   * #b6854c) und alle neun Hintergrundfarben je Welt:
+   *
+   *   GRASS       Haar vor Erde              1,02
+   *   SONNENHANG  Haar vor dunkler Narbe     1,03
+   *   WIPFEL      Tunika vor Erde            1,03
+   *   CRYSTAL     Haut vor Horizont          1,00
+   *   RUST        Haar vor Erde              1,09
+   *   FROST       Tunika vor tiefer Erde     1,03
+   *   MAGMA       Haar vor Narbe             1,03
+   *
+   * Solange diese Pruefung durchgeht, gibt es in jeder Welt eine Stelle, an
+   * der die Figur rechnerisch verschwindet. Sie ist absichtlich so herum
+   * geschrieben: Wenn sie eines Tages FEHLSCHLAEGT, weil alle Paletten weit
+   * genug geschoben wurden, ist das Ziel erreicht — dann darf sie umgedreht
+   * werden in „jede Welt traegt die Figur ueberall".
    */
-  it('hebt sich in jeder Welt vom Hintergrund ab', () => {
-    for (const t of THEMEN) {
-      const saum = paletteFor(t).saum;
-      for (const bg of hintergruende(t)) {
-        expect(kontrast(saum, bg), `${t}: Saum ${saum} vor ${bg}`).toBeGreaterThanOrEqual(1.8);
-      }
-    }
-  });
-
-  /**
-   * Der Fall, den dieser Test bis zum Bau von Welt 7 uebersehen hat.
-   *
-   * Geprueft wurden Himmel und Fels — also der Hintergrund einer Figur, die
-   * auf der Oberflaeche laeuft. Ein Wusel steckt aber die halbe Spielzeit IM
-   * Boden: im Rammstollen, im Graeberschacht, in der Baggerschraege, in
-   * jeder vorgeschnittenen Tuerkammer. Dort ist sein Hintergrund die ERDE,
-   * und dort ist es am schlimmsten. Gemessen, Kontrast Haar gegen Erde:
-   * Kristallklamm 1,00 — gleiche Helligkeit, die Figur ist rechnerisch nicht
-   * da. Grasland 1,02, Wipfelweide 1,05, Rostwerk 1,09, Sonnenhang 1,11.
-   * Sechs von sieben Welten liegen unter 1,3.
-   *
-   * Der Saum traegt das heute ueberall (2,60 bis 6,16; die schlechteste ist
-   * die Wipfelweide). Die Schranke steht deshalb bei 2,2: Sie haelt den
-   * Bestand mit Luft und faellt, sobald jemand eine Erde aufhellt, ohne den
-   * Saum mitzudenken.
-   */
-  it('traegt auch im Erdreich, wo die Figur im Stollen steckt', () => {
-    for (const t of THEMEN) {
-      const saum = paletteFor(t).saum;
-      expect(kontrast(saum, erde(t)), `${t}: Saum ${saum} vor Erde ${erde(t)}`).toBeGreaterThanOrEqual(2.2);
-    }
-  });
-
-  /**
-   * Und die Gegenprobe, die den Grund festhaelt: OHNE Saum verschwindet die
-   * Figur in JEDER Welt irgendwo.
-   *
-   * Diese Pruefung ist am 25.08.2026 umgefallen, und zwar planmaessig. Sie
-   * hiess vorher „waere ohne ihn in Rostwerk und Kristallklamm unsichtbar"
-   * und pruefte einen einzigen Figurenton — das Haar — gegen Himmel und Fels.
-   * Nachdem Rostwerks Himmel aufgehellt war, stand dort 3,30 statt unter 1,2,
-   * und der Test wurde rot. Ihr eigener Kommentar hatte genau das
-   * vorgesehen: „Faellt dieser Test eines Tages um, weil die Paletten heller
-   * geworden sind, darf der Saum wieder zur Debatte stehen."
-   *
-   * Die Debatte hat stattgefunden und ist nachgerechnet. Ergebnis: Der Saum
-   * bleibt, und die Pruefung wird ehrlicher statt milder. Zwei Sachen waren
-   * an der alten Fassung zu eng:
-   *
-   * 1. Sie prueft nur das HAAR. Die Figur hat drei Toene, und der kritische
-   *    ist je nach Welt ein anderer — in der Kristallklamm die Haut vor dem
-   *    Horizont (1,00), in der Wipfelweide die Tunika vor der Erde (1,03).
-   * 2. Sie prueft nur Himmel und Fels. Hintergrund ist aber alles, wovor eine
-   *    Figur steht: Erde, tiefe Erde, Kies, Narbe, dunkle Narbe.
-   *
-   * Gemessen ueber alle drei Toene und alle neun Hintergrundfarben liegt der
-   * schlechteste Fall JEDER Welt zwischen 1,00 und 1,09 — also bei
-   * „rechnerisch nicht vorhanden". Von dreiundsechzig Hintergrundfarben
-   * liegen einunddreissig unter 1,5. Sie alle an die Extreme zu schieben
-   * hiesse, jeder Welt ihre Mitteltoene zu nehmen; das ist der Preis, den
-   * ein saumfreies Spiel kosten wuerde.
-   */
-  it('waere ohne ihn in jeder Welt irgendwo unsichtbar', () => {
+  it('kostet in jeder Welt eine Stelle, an der die Figur verschwindet', () => {
     const FIGUR = ['#3851B6', '#545d20', '#b6854c'];
     for (const t of THEMEN) {
       const schlimmste = Math.min(
@@ -218,5 +182,21 @@ describe('Saum', () => {
       );
       expect(schlimmste, `${t}: schlechtestes Paar ${schlimmste.toFixed(2)}`).toBeLessThan(1.2);
     }
+  });
+
+  /**
+   * Und die Buchhaltung dazu: wieviele Hintergrundfarben noch im Sperrband
+   * liegen. Die Zahl darf fallen, aber nicht steigen — wer eine Palette
+   * anfasst, soll die Figur nicht nebenbei tiefer hineinschieben.
+   */
+  it('haelt die Zahl der Farben im Sperrband der Figur bei hoechstens 31', () => {
+    const FIGUR = ['#3851B6', '#545d20', '#b6854c'];
+    let drin = 0;
+    for (const t of THEMEN) {
+      for (const b of alleHintergruende(t)) {
+        if (Math.min(...FIGUR.map((f) => kontrast(f, b))) < 1.5) drin++;
+      }
+    }
+    expect(drin, `${drin} von 63 Hintergrundfarben im Sperrband`).toBeLessThanOrEqual(31);
   });
 });

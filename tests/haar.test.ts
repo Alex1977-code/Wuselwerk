@@ -127,6 +127,18 @@ describe('Das Blatt und die Haarfrage', () => {
    * genommen und rutschte in die Bildmitte, weil der untere Pol einer Schale
    * fuer alle Richtungen derselbe Ort ist. Erst der Rand — die Ecke mit dem
    * groessten Winkel zur Hochachse — laeuft wirklich um den Kopf.
+   *
+   * Die Schranke stand bis zum 25.08.2026 bei einer halben Kopfachse und ist
+   * an den Zwischenbildern zerbrochen: Wo die Figur den Kopf SENKT, wandert
+   * der Haarrand mit, und das ist keine Fehlmessung, sondern Anatomie.
+   * Gemessen ueber alle 471 Wurzeln des Blattes liegen 35 tiefer als eine
+   * halbe Achse, die tiefste bei 0,894 — allesamt im Buddeln und im Hieven,
+   * wo der Kopf nach unten sieht.
+   *
+   * Eine ganze Kopfachse ist deshalb die neue Schranke, und sie faengt
+   * weiterhin, was sie fangen soll: Eine Wurzel am RUMPF laege gut zwei
+   * Achsen unter dem Gesichtspunkt, denn der Gesichtspunkt steht rund acht
+   * logische Pixel ueber dem Boden und die Brust bei vier.
    */
   it('setzt vorhandene Wurzeln in Kopfhoehe und nicht am Rumpf', () => {
     for (const [name, clip] of Object.entries(BLATT.clips)) {
@@ -137,7 +149,7 @@ describe('Das Blatt und die Haarfrage', () => {
         const achse = Math.hypot(st[0] - g[0], st[1] - g[1]);
         for (const q of satz) {
           // Kleineres y ist weiter oben.
-          expect(q[1], `${name} Bild ${i}: Wurzel zu tief`).toBeLessThan(g[1] + achse * 0.5);
+          expect(q[1], `${name} Bild ${i}: Wurzel zu tief`).toBeLessThan(g[1] + achse);
         }
       });
     }
