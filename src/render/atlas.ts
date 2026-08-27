@@ -180,10 +180,10 @@ export const DEFAULT_MANIFEST: AtlasManifest = {
   cell: { w: CELL_W, h: CELL_H },
   anchor: { x: ANCHOR_X, y: ANCHOR_Y },
   clips: {
-    walking: { row: 0, holds: [3, 3, 3, 3, 3, 3, 3, 3] },
+    walking: { row: 0, holds: [2, 1, 1, 2, 1, 1, 1, 1] },
     falling: { row: 1, holds: [4, 4, 4, 4] },
     floating: { row: 2, holds: [3, 3, 3, 3] },
-    climbing: { row: 3, holds: [4, 4, 4, 4] },
+    climbing: { row: 3, holds: [3, 3, 4, 3] },
     hoisting: { row: 4, holds: [8, 8, 8, 8, 8, 12], once: true },
     building: { row: 5, holds: [3, 3, 3, 3, 3, 3, 3, 3] },
     bashing: { row: 6, holds: [3, 3, 3] },

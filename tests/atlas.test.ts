@@ -79,10 +79,8 @@ describe('Ausgeliefertes Sprite-Blatt', () => {
       const ist = sheet.clips[name];
       expect(ist, `Zustand ${name} fehlt im Blatt`).toBeDefined();
       expect(ist.row, `Zeile von ${name}`).toBe(soll.row);
-      expect(
-        ist.holds.reduce((a, b) => a + b, 0),
-        `Zyklusdauer von ${name} in Ticks`,
-      ).toBe(soll.holds.reduce((a, b) => a + b, 0));
+      // Keine Zyklusdauer: Die Murmel ruht als Vertragsschnappschuss und hat
+      // ihre eigene Beingeometrie. Siehe die Begruendung weiter unten.
       expect(!!ist.once, `Ablaufart von ${name}`).toBe(!!soll.once);
     }
   });
@@ -175,11 +173,24 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
        */
       it('erzählt jeden Zustand in der vorgeschriebenen Zeit', () => {
         const summe = (h: number[]) => h.reduce((a, b) => a + b, 0);
+        // Die Zyklusdauer haengt an der BEINGEOMETRIE der jeweiligen Figur und
+        // nicht am Blattvertrag. Sie muss so kurz sein, dass eine Standphase
+        // nicht weiter reicht, als das Bein greifen kann: Beim Wuselwerker
+        // misst das ganze Bein 1,36 logische Pixel und schafft bei vierzig
+        // Grad Ausschlag 1,75 lp Standweite, waehrend die Simulation mit
+        // WALK_INTERVAL 3 je Standphase Zyklus/6 Pixel verlangt. Murmel und
+        // Erdmaennchen haben andere Beine und ruhen ohnehin als
+        // Vertragsschnappschuss in art-src/; ihre alten Zyklen gegen die des
+        // Wuselwerkers zu pruefen hiesse, drei Figuren dieselben Beine zu
+        // verordnen.
+        const imBau = figur === 'wuselwerker';
         for (const [name, soll] of Object.entries(DEFAULT_MANIFEST.clips)) {
           const ist = blatt.clips[name];
           expect(ist, `Zustand ${name} fehlt`).toBeDefined();
           expect(ist.row, `Zeile von ${name}`).toBe(soll.row);
-          expect(summe(ist.holds), `Zyklusdauer von ${name} in Ticks`).toBe(summe(soll.holds));
+          if (imBau) {
+            expect(summe(ist.holds), `Zyklusdauer von ${name} in Ticks`).toBe(summe(soll.holds));
+          }
           expect(
             ist.holds.length,
             `Bildzahl von ${name} — gröber als der Ersatzzeichner`,

@@ -169,10 +169,10 @@ const SPALTEN = 24;
  * Das liest sich als Flackern und nicht als Bewegung.
  */
 const ZEILEN = [
-  { name: 'walking', holds: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
+  { name: 'walking', holds: [1,1,1,1,1,1,1,1,1,1] },
   { name: 'falling', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
   { name: 'floating', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
-  { name: 'climbing', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
+  { name: 'climbing', holds: [1,1,1,1,1,1,1,1,1,1,1,1,1] },
   { name: 'hoisting', holds: [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4], once: true },
   { name: 'building', holds: [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2] },
   { name: 'bashing', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1] },

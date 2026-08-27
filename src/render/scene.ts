@@ -831,7 +831,7 @@ export class Scene {
       // Phasen auf 24 Ticks Zyklus: Aus der Marschkolonne wird ein Gewusel,
       // ohne dass die Simulation davon weiss.
       const takt =
-        sicht.pose === 'walking' ? sicht.takt + (w.id % 8) * 3 : zug ? zug.takt : sicht.takt;
+        sicht.pose === 'walking' ? sicht.takt + (w.id % 10) : zug ? zug.takt : sicht.takt;
       const pose = zug?.pose ?? sicht.pose;
       if (
         !this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt, {
