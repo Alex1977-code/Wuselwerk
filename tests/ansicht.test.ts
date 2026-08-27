@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { FALL_DEATH_PX, SCHREI_AB } from '../src/core/constants';
 import { State, type Wusel } from '../src/core/types';
 import { SPAEHEN, ansicht as rohAnsicht, ansichtVergessen } from '../src/render/ansicht';
 
@@ -376,10 +377,10 @@ describe('Die Haarkette', () => {
   function lauf(schritte: number, bewegt: boolean) {
     ansichtVergessen();
     let x = 10;
-    let letzte = ansicht(wusel(1, x), 'walking', false, 0);
+    let letzte = rohAnsicht(wusel(1, x), 'walking', false, 0);
     for (let b = 1; b <= schritte; b++) {
       if (bewegt) x += 1;
-      letzte = ansicht(wusel(1, x), 'walking', false, b);
+      letzte = rohAnsicht(wusel(1, x), 'walking', false, b);
     }
     return letzte.kette;
   }
@@ -427,14 +428,93 @@ describe('Die Haarkette', () => {
    * Pulk dieselbe Frisurbewegung — und ein Pulk, der im Gleichschritt weht,
    * ist genau der Eindruck, den der Phasenversatz in `scene.ts` vermeiden soll.
    */
+  /**
+   * Im Sturz richtet sich die Masse auf, und zwar mit der Fallhoehe.
+   *
+   * Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB
+   * faengt die Figur an zu schreien, bei FALL_DEATH_PX ist es vorbei. Damit
+   * sagen Auge und Ohr dasselbe, und der Spieler sieht einem Sturz an, ob er
+   * noch gut ausgeht — eine Auskunft, die er sonst nur hoeren koennte.
+   *
+   * Bis zum 27.08.2026 stand diese Pruefung beim Zeichner, weil dort ein
+   * fester Versatz nach oben gerechnet wurde. Jetzt ist es Auftrieb in der
+   * Kette, und die Kette laeuft ihm nach, statt zu springen.
+   */
+  const faellt = (h: number, schritte = 200) => {
+    ansichtVergessen();
+    const w = () =>
+      ({ id: 1, x: 10, y: 40, dir: 1, state: State.FALLING, timer: 0, fallDist: h, fuse: 0 }) as unknown as Wusel;
+    let letzte = rohAnsicht(w(), 'falling', false, 0);
+    for (let b = 1; b <= schritte; b++) letzte = rohAnsicht(w(), 'falling', false, b);
+    return letzte.kette[letzte.kette.length - 1][1];
+  };
+
+  it('richtet die Masse mit der Fallhoehe auf', () => {
+    expect(faellt(FALL_DEATH_PX - 1)).toBeLessThan(faellt(SCHREI_AB + 1) - 0.5);
+  });
+
+  it('steigert die Masse nicht weiter, wenn der Sturz schon toedlich ist', () => {
+    expect(faellt(FALL_DEATH_PX * 3)).toBeCloseTo(faellt(FALL_DEATH_PX), 3);
+  });
+
+  /**
+   * Und das Schweben bleibt davon unberuehrt.
+   *
+   * Unter dem Schirm sinkt die Figur langsam und beliebig weit; ein Haar, das
+   * dabei mitwuechse, stuende nach zwei Sekunden senkrecht nach oben.
+   */
+  it('laesst das Schweben von der Fallhoehe unberuehrt', () => {
+    const schwebt = (h: number) => {
+      ansichtVergessen();
+      const w = () =>
+        ({ id: 1, x: 10, y: 40, dir: 1, state: State.WALKING, timer: 0, fallDist: h, fuse: 0 }) as unknown as Wusel;
+      let letzte = rohAnsicht(w(), 'floating', false, 0);
+      for (let b = 1; b <= 200; b++) letzte = rohAnsicht(w(), 'floating', false, b);
+      return letzte.kette[letzte.kette.length - 1][1];
+    };
+    expect(schwebt(2)).toBeCloseTo(schwebt(FALL_DEATH_PX), 3);
+  });
+
+  /**
+   * Die Luft einer Pose ist eine Kraft, kein Ort — und das ist der ganze Punkt
+   * des Umbaus vom 27.08.2026.
+   *
+   * Eine Tabelle mit festen Versaetzen sprang beim Posenwechsel: Das Haar war
+   * in einem Bild an der einen Stelle und im naechsten an der anderen. Genau
+   * das war der Eindruck „angeschraubt". Eine Kraft zieht, und die Kette
+   * laeuft ihr nach — messbar daran, dass der erste Schritt nach dem
+   * Posenwechsel nur ein Bruchteil des ganzen Weges ist.
+   */
+  it('laeuft beim Posenwechsel in die neue Lage, statt zu springen', () => {
+    const bis = (pose: string, schritte: number) => {
+      ansichtVergessen();
+      const w = (st: number) =>
+        ({ id: 1, x: 10, y: 40, dir: 1, state: st, timer: 0, fallDist: 0, fuse: 0 }) as unknown as Wusel;
+      let letzte = rohAnsicht(w(State.WALKING), 'walking', false, 0);
+      // Erst in der Gangpose ausruhen, dann umschalten.
+      for (let b = 1; b <= 200; b++) letzte = rohAnsicht(w(State.WALKING), 'walking', false, b);
+      const vorher = letzte.kette[letzte.kette.length - 1][0];
+      for (let b = 0; b < schritte; b++) {
+        letzte = rohAnsicht(w(State.FALLING), pose, false, 201 + b);
+      }
+      return letzte.kette[letzte.kette.length - 1][0] - vorher;
+    };
+    const einSchritt = bis('dying', 1);
+    const ganz = bis('dying', 200);
+    expect(Math.abs(ganz), 'die Pose legt das Haar ueberhaupt um').toBeGreaterThan(0.4);
+    expect(Math.abs(einSchritt), 'der erste Schritt ist nur ein Anfang').toBeLessThan(
+      Math.abs(ganz) / 4,
+    );
+  });
+
   it('fuehrt je Figur eine eigene Kette', () => {
     ansichtVergessen();
     for (let b = 0; b <= 60; b++) {
-      ansicht(wusel(1, 10 + b), 'walking', false, b);
-      ansicht(wusel(2, 10), 'walking', false, b);
+      rohAnsicht(wusel(1, 10 + b), 'walking', false, b);
+      rohAnsicht(wusel(2, 10), 'walking', false, b);
     }
-    const eins = ansicht(wusel(1, 71), 'walking', false, 61).kette;
-    const zwei = ansicht(wusel(2, 10), 'walking', false, 61).kette;
+    const eins = rohAnsicht(wusel(1, 71), 'walking', false, 61).kette;
+    const zwei = rohAnsicht(wusel(2, 10), 'walking', false, 61).kette;
     expect(eins).not.toEqual(zwei);
   });
 });

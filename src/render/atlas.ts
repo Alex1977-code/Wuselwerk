@@ -609,9 +609,11 @@ export class SpriteAtlas {
     // Die Straehnen ganz zuerst — sie liegen hinter allem.
     //
     // Hinter der Figur und nicht davor, und das ist gemessen: Haarblau steht
-    // vor der gruenen Tunika mit WCAG 1,08, also gar nicht. Was der Koerper
-    // verdeckt, waere ohnehin unsichtbar; was danebensteht, steht vor Himmel
-    // oder Erde und traegt dort seinen eigenen Saum.
+    // vor der gruenen Tunika mit WCAG 1,35 — die Lesegrenze dieses Projekts
+    // ist 1,5. Was der Koerper verdeckt, waere ohnehin unsichtbar; was
+    // danebensteht, steht vor Himmel oder Erde und traegt dort seinen eigenen
+    // Saum. Vor der HAUT stuende Haar mit 2,15 durchaus lesbar — das ist die
+    // einzige Stelle, an der eine vordere Lage ueberhaupt etwas zeigen wuerde.
     if (clip.haar) {
       const wz = clip.haar[frame] ?? clip.haar[0];
       if (wz) {
@@ -633,8 +635,6 @@ export class SpriteAtlas {
             saum: this.saumTon || null,
             dreh: clip.dreh ?? 0,
             achse: kopfAchse,
-            // Die Fallhoehe treibt, wie weit das Haar hochsteht — siehe `haar.ts`.
-            sturz: w.fallDist,
             prall: schwung?.prall ?? 0,
             wende: schwung?.wende ?? 0,
             kette: schwung?.kette,

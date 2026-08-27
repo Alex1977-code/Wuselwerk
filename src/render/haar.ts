@@ -58,35 +58,25 @@
  * flackert. Der Nachlauf steht deshalb in einer Tabelle.
  */
 
-import { FALL_DEATH_PX, SCHREI_AB } from '../core/constants';
+import { ketteRuhe } from './haarkette';
 
 /** Der gemessene Grundton der Haarmasse im Blatt: Farbton 228 Grad, L* 37,9. */
 const HAAR = '#3851b6';
 
 /**
- * Wie weit die Spitzen der Pose hinterherhaengen, in logischen Pixeln.
+ * Der Nachlauf steht nicht mehr hier.
  *
- * Waagerecht ist negativ „nach hinten": Der Zeichner arbeitet im bereits
- * gespiegelten Koordinatensystem der Figur, dort zeigt vorn immer nach +x.
- * Senkrecht ist negativ „nach oben" — das ist der Fall, in dem das Haar
- * stehenbleibt, waehrend der Koerper schon faellt.
+ * Bis zum 27.08.2026 stand an dieser Stelle eine Tabelle mit dreizehn festen
+ * Versaetzen — je Pose ein Ort, an den der Zeichner die Straehnen schob. Sie
+ * ist nach `haarkette.ts` gewandert und dort zu etwas anderem geworden: zu
+ * einer LUFT, in der die Kette haengt. Der Unterschied ist der zwischen einem
+ * Ort und einer Kraft. Ein Versatz sprang beim Posenwechsel, eine Kraft zieht
+ * — und die Kette laeuft ihr nach, in ihrer eigenen Zeit und ueber jeden
+ * Zwischenzustand, den niemand vorher eingetragen hat.
+ *
+ * Der Zeichner rechnet seit dem gar nichts mehr an der Lage: Er bekommt die
+ * Kette fertig und setzt sie an die Wurzel.
  */
-const ZUG: Record<string, readonly [number, number]> = {
-  walking: [-0.55, -0.1],
-  falling: [-0.9, -1.7],
-  floating: [-0.3, -1.1],
-  climbing: [-0.35, 0.15],
-  hoisting: [-0.5, -0.45],
-  building: [-0.2, 0],
-  bashing: [-0.4, -0.1],
-  mining: [-0.3, -0.05],
-  digging: [-0.25, 0.1],
-  blocking: [0, 0],
-  saving: [-0.25, -0.95],
-  dying: [0.35, 0.2],
-  spaehen: [0, 0.05],
-};
-
 
 /**
  * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
@@ -105,14 +95,13 @@ const ACHSE_NORM = 1.83;
 /**
  * Dicke an der Wurzel und an der Spitze, in logischen Pixeln.
  *
- * Beide sind mit dem neuen Modell schmaler geworden (vorher 0,78 und 0,26),
- * und zwar nicht aus Geschmack: Der Kopf ist breiter, also sind die Straehnen
- * laenger sichtbar, und in alter Dicke legten sie 29,5 Prozent Flaeche neben
- * den Umriss und wuchsen der Figur ueber den Kopf. Mit diesen Werten sind es
- * 15,1 Prozent.
+ * Sie haengen an der Laenge und muessen mit ihr wandern. Bei 1,45 und einer
+ * Kette von 3,6 lp waere die Masse 2,9 lp breit und 3,6 lang — also eine
+ * Kugel, kein Schopf. Mit 1,0 steht sie 2,0 zu 3,6 und liest sich als
+ * Haarmasse.
  */
-const DICK_WURZEL = 1.45;
-const DICK_SPITZE = 0.55;
+const DICK_WURZEL = 1.0;
+const DICK_SPITZE = 0.4;
 /**
  * Wie weit eine Straehne, die nach HINTEN zeigt, im Bild nach hinten faellt.
  *
@@ -121,13 +110,17 @@ const DICK_SPITZE = 0.55;
  * Rumpf und sind weg. Dabei ist gerade der Nacken die Stelle, an der Haar am
  * ehesten frei haengt: Hinter der Figur steht Himmel oder Erde, kein Koerper.
  *
+ * Der Wert haengt an der Kettenlaenge: 2,4 war er, solange die Kette 6,3 lp
+ * mass; bei 3,6 haette er die Masse weiter zur Seite geschoben als sie lang
+ * ist.
+ *
  * Verkuerzt wird das mit dem Sinus der Posendrehung, und das ist keine
  * Feinheit: Von vorn gesehen faellt Nackenhaar hinter den Kopf und ist im Bild
  * gar nicht versetzt. Ohne den Sinus haengt es beim Blocker — 8 Grad — genauso
  * weit zur Seite wie beim Gehen mit 46, und die Figur bekommt einen Zopf, der
  * bei jeder Posenaenderung springt.
  */
-const RUECK = 2.4;
+const RUECK = 1.4;
 
 
 
@@ -141,8 +134,6 @@ export interface HaarLage {
   dreh?: number;
   /** Die Kopfachse dieses Einzelbildes in logischen Pixeln — das Mass der Figur. */
   achse?: number;
-  /** Bisher gefallene Pixel. Treibt, wie weit das Haar im Sturz hochsteht. */
-  sturz?: number;
   /**
    * Der Nachschlag beim Aufkommen, positiv nach unten. Kommt aus `ansicht.ts`
    * als gedaempfter Schwinger und wechselt darin von selbst das Vorzeichen.
@@ -173,28 +164,6 @@ export interface HaarLage {
  *   sieht (siehe `haarwurzeln` in `scripts/bake-figur.mjs`).
  * @param s Bildpunkte je logischem Pixel.
  */
-/**
- * Wie weit der Sturz die Masse hochlegt, in logischen Pixeln bei voller Hoehe.
- *
- * Nach OBEN und kaum nach hinten, und das ist der ganze Unterschied zwischen
- * Panik und Fahrtwind: Hinter der Figur zeichnet sie niemand, dort ist sie
- * verdeckt; nach oben steht sie frei vor dem Himmel.
- */
-const SCHREI_HOCH = 3.4;
-
-/**
- * Die Kette in Ruhe — fuer alles, was keine Figur hat.
- *
- * Die Weltkarte und die Profilauswahl zeichnen dieselbe Figur ohne
- * Simulation und ohne Gedaechtnis. Ohne diese Ruhelage traegen sie gar kein
- * Haar, und die Figur haette auf der Karte eine andere Frisur als im Spiel.
- */
-const RUHE: readonly (readonly [number, number])[] = [
-  [0, 2.1],
-  [0, 4.2],
-  [0, 6.3],
-];
-
 export function drawHaar(
   ctx: CanvasRenderingContext2D,
   pose: string,
@@ -203,7 +172,12 @@ export function drawHaar(
   lage: HaarLage = {},
 ): void {
   if (wurzeln.length === 0) return;
-  const kette = lage.kette ?? RUHE;
+  // Ohne Figur keine Kette: Die Weltkarte und die Profilauswahl zeichnen
+  // dieselbe Frisur ohne Simulation und ohne Gedaechtnis. Sie bekommen die
+  // ausgependelte Kette DERSELBEN Physik — frueher stand dafuer eine von Hand
+  // abgeschriebene Zahlenreihe hier, und die war schon beim ersten Nachziehen
+  // falsch.
+  const kette = lage.kette ?? ketteRuhe(pose);
   if (kette.length === 0) return;
 
   // Wie gross diese Pose gerade ist, gemessen an ihrer eigenen Kopfachse.
@@ -236,20 +210,6 @@ export function drawHaar(
   // gesehen faellt Nackenhaar hinter den Kopf und ist gar nicht versetzt.
   const schraeg = Math.sin(((lage.dreh ?? 0) * Math.PI) / 180);
 
-  // Im Sturz legt sich die Masse zurueck — und zwar mit der Fallhoehe.
-  //
-  // Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB faengt
-  // die Figur an zu schreien, bei FALL_DEATH_PX ist es vorbei. Damit sagen Auge
-  // und Ohr dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut
-  // ausgeht.
-  let sturzZug = 0;
-  if (pose === 'falling') {
-    sturzZug = Math.min(
-      1,
-      Math.max(0, ((lage.sturz ?? 0) - SCHREI_AB) / (FALL_DEATH_PX - SCHREI_AB)),
-    );
-  }
-
   ctx.save();
   ctx.translate(wx * s, wy * s);
   ctx.fillStyle = HAAR;
@@ -265,11 +225,11 @@ export function drawHaar(
   let vy = 0;
   for (let i = 0; i < kette.length; i++) {
     const k = kette[i];
-    // Der Nachlauf der Pose und der Sturzzug legen die Masse zusaetzlich um.
+    // Die Kette bringt die Lage schon mit. Hier kommt nur noch dazu, was der
+    // Zeichner allein weiss: wie schraeg die Pose steht und wie gross sie ist.
     const t = (i + 1) / kette.length;
-    const zug = ZUG[pose] ?? [0, 0];
-    const kx = (k[0] + zug[0] * t * 2 - RUECK * (1 - Math.abs(aus)) * schraeg * t) * mass;
-    const ky = (k[1] + zug[1] * t * 2 - sturzZug * SCHREI_HOCH * t) * mass;
+    const kx = (k[0] - RUECK * (1 - Math.abs(aus)) * schraeg * t) * mass;
+    const ky = k[1] * mass;
     const r = (DICK_WURZEL + (DICK_SPITZE - DICK_WURZEL) * t) * mass;
     // Ein Glied ist ein Kegelstumpf zwischen zwei Kreisen: die beiden Kreise
     // und das Viereck dazwischen. Zusammen ergibt das eine Masse ohne Naht.

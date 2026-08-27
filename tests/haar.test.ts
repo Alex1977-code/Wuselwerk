@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { drawHaar } from '../src/render/haar';
+import { ketteRuhe } from '../src/render/haarkette';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
-import { FALL_DEATH_PX, SCHREI_AB } from '../src/core/constants';
 import { readFileSync, readdirSync } from 'node:fs';
 import type { AtlasManifest } from '../src/render/atlas';
 
@@ -212,12 +212,16 @@ describe('Der Haarzeichner — eine Masse, keine Faeden', () => {
     [0.0, -8.2, -0.2],
     [-1.0, -8.0, -0.9],
   ];
-  /** Eine Kette, die senkrecht herunterhaengt. */
-  const RUHIG: [number, number][] = [
-    [0, 2.1],
-    [0, 4.2],
-    [0, 6.3],
-  ];
+  /**
+   * Eine Kette, die senkrecht herunterhaengt.
+   *
+   * Geholt und nicht abgeschrieben. Hier stand bis zum 27.08.2026 eine
+   * Zahlenreihe, und sie war beim ersten Nachziehen der Gliedlaenge falsch:
+   * Die Kette schrumpfte von 6,3 auf 3,6 lp, die Reihe blieb — und der Test,
+   * der die Ruhelage gegen ihre eigene Vorlage prueft, verglich zwei
+   * verschiedene Frisuren.
+   */
+  const RUHIG = ketteRuhe('blocking') as [number, number][];
   const S = 4;
 
   /** Alle gezeichneten Punkte eines Laufs. */
@@ -283,38 +287,14 @@ describe('Der Haarzeichner — eine Masse, keine Faeden', () => {
   });
 
   /**
-   * Im Sturz richtet sich die Masse auf, und zwar mit der Fallhoehe.
+   * Der Sturz steht nicht mehr hier.
    *
-   * Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB faengt
-   * die Figur an zu schreien, bei FALL_DEATH_PX ist es vorbei. Damit sagen Auge
-   * und Ohr dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut
-   * ausgeht — eine Auskunft, die er sonst nur hoeren koennte.
+   * Bis zum 27.08.2026 hat der Zeichner die Masse mit der Fallhoehe selbst
+   * hochgelegt — ein fester Versatz nach oben. Das ist jetzt eine KRAFT in
+   * `haarkette.ts`: Auftrieb, der mit der Fallhoehe waechst. Geprueft wird es
+   * darum in `ansicht.test.ts`, wo die Kette laeuft. Der Zeichner bekommt sie
+   * fertig und rechnet nichts mehr daran.
    */
-  it('richtet die Masse mit der Fallhoehe auf', () => {
-    const tief = (h: number) =>
-      Math.max(...alles({ kette: RUHIG, sturz: h }, 'falling').map((q) => q[1]));
-    const knapp = tief(SCHREI_AB + 1);
-    const weit = tief(FALL_DEATH_PX - 1);
-    expect(weit).toBeLessThan(knapp - S * 0.5);
-  });
-
-  it('steigert die Masse nicht weiter, wenn der Sturz schon toedlich ist', () => {
-    const tief = (h: number) =>
-      Math.max(...alles({ kette: RUHIG, sturz: h }, 'falling').map((q) => q[1]));
-    expect(tief(FALL_DEATH_PX * 3)).toBeCloseTo(tief(FALL_DEATH_PX), 3);
-  });
-
-  /**
-   * Und das Schweben bleibt davon unberuehrt.
-   *
-   * Unter dem Schirm sinkt die Figur langsam und beliebig weit; ein Haar, das
-   * dabei mitwuechse, stuende nach zwei Sekunden senkrecht nach oben.
-   */
-  it('laesst das Schweben von der Fallhoehe unberuehrt', () => {
-    const tief = (h: number) =>
-      Math.max(...alles({ kette: RUHIG, sturz: h }, 'floating').map((q) => q[1]));
-    expect(tief(2)).toBeCloseTo(tief(FALL_DEATH_PX), 3);
-  });
 
   /**
    * Die Masse schrumpft mit der Pose.

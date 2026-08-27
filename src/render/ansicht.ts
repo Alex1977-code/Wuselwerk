@@ -1,4 +1,6 @@
+import { FALL_DEATH_PX, SCHREI_AB } from '../core/constants';
 import type { Wusel } from '../core/types';
+import { TEMPO_GLATT, type Glied, ketteNeu, kettenschritt } from './haarkette';
 
 /**
  * Was von einer Figur **gezeichnet** wird — Blickrichtung, Pose und deren Takt.
@@ -105,106 +107,13 @@ const SCHWUNG_AUS = 0.01;
 export const SPAEHEN = 'spaehen';
 
 /**
- * Die Haarkette — wieviele Glieder, wie lang, wie traege.
+ * Die Haarkette liegt in `haarkette.ts` — hier haengt nur ihr Gedaechtnis.
  *
- * ## Warum eine Kette und keine Straehnen
- *
- * Die Recherche vom 26.08.2026 hat dieselbe Antwort aus drei Richtungen
- * bekommen. Celestes Madeline ist ACHT MAL ELF Bildpunkte gross — kleiner als
- * diese Figur mit 12,3 logischen Pixeln — und hat echtes nachlaufendes Haar;
- * simuliert wird dort keine Straehne, sondern eine MASSE aus vier runden
- * Klecksen, die von voll auf ein Viertel schrumpfen. Spines eigenes
- * Haar-Schaustueck nimmt zwei Knochen je Strang, Live2Ds Beispielfigur zwei
- * Partikel je Gruppe. Und der Grafiker von Celeste schreibt die Regel auf:
- * bei sehr kleinen Bildern zeichnet man keine einzelnen Faeden mehr.
- *
- * Das deckt sich mit dem, was hier laengst gemessen ist: Sechs duenne Faeden
- * fielen mit 71 Prozent verschmolzener Spitzenpaare durch, vier Wurzeln fielen
- * von vorn gesehen in ALLEN Bildern auf 0,02 bis 0,08 lp zusammen. Bei einer
- * Lesegrenze von 0,9 lp und 5,5 lp Haarlaenge sitzen die Gelenke bei drei
- * Gliedern 1,8 lp auseinander, bei acht 0,7 — und damit unter der Grenze.
- * DREI GLIEDER SIND NICHT SPARSAMKEIT, SONDERN DAS MAXIMUM, DAS DIE FIGUR
- * AUFLOEST.
+ * Die Trennung hat einen Grund: Die Weltkarte und die Profilauswahl brauchen
+ * dieselbe Frisur, haben aber keine Figur und keine Uhr. Sie holen sich mit
+ * `ketteRuhe` die ausgependelte Kette derselben Physik, statt eine
+ * abgeschriebene Zahlenreihe zu fuehren.
  */
-const GLIEDER = 3;
-/** Laenge eines Gliedes in logischen Pixeln. Drei davon reichen zur Schulter. */
-const GLIED = 2.1;
-
-/**
- * Steifigkeit und Daempfung je Glied, von der Wurzel zur Spitze.
- *
- * Die Startwerte sind nicht geraten, sondern aus zwei ausgelieferten
- * Haar-Rigs abgelesen: Spines `celestial-circus` nennt fuer die Haarwurzel
- * `inertia 0.5, damping 0.85` und fuer die Spitze `inertia 0.73, damping
- * 0.81`. Naeher an der Wurzel steifer, an der Spitze traeger und langsamer
- * auslaufend — so haengt Haar.
- */
-const STEIF = [0.5, 0.42, 0.34];
-const DAEMPF = [0.85, 0.83, 0.81];
-
-/** Wie stark die Schwerkraft an der Kette zieht, in lp je Bild im Quadrat. */
-const SCHWERE = 0.055;
-
-/**
- * Wie stark die Eigenbewegung der Figur das Haar zuruecklegt.
- *
- * Die Gewichtung Kopf gegen Koerper ist von Live2Ds Beispielfigur uebernommen,
- * die ihre Haargruppen zu sechzig Prozent aus dem Kopfwinkel und zu vierzig
- * aus dem Koerperwinkel speist. Hier gibt es nur eine Bewegung, also steht
- * die Zahl als ein Faktor da.
- */
-const ZUG_JE_TEMPO = 1.15;
-
-/** Wie schnell das geglaettete Tempo dem rohen folgt. */
-const TEMPO_GLATT = 0.18;
-
-/**
- * Einen Schritt der Kette rechnen — Feder, Daempfer, Laengenzwang.
- *
- * Fester Zeitschritt und keine Zufallszahl: Genau das ist die Antwort auf die
- * alte Sorge, ein Haar, das bei jedem Bild woanders steht, flackere. Ein
- * Feder-Daempfer springt nicht, er laeuft aus.
- */
-function kettenschritt(
-  kette: { x: number; y: number; vx: number; vy: number }[],
-  tempo: number,
-  stossX: number,
-  stossY: number,
-): void {
-  let vorX = 0;
-  let vorY = 0;
-  for (let i = 0; i < kette.length; i++) {
-    const k = kette[i];
-    // Ruhelage: senkrecht unter dem Vorgaenger, nach hinten gelegt, soweit
-    // die Figur sich bewegt.
-    const zielX = vorX - tempo * ZUG_JE_TEMPO;
-    const zielY = vorY + GLIED;
-    k.vx += (zielX - k.x) * STEIF[i] + stossX;
-    k.vy += (zielY - k.y) * STEIF[i] + SCHWERE + stossY;
-    k.vx *= DAEMPF[i];
-    k.vy *= DAEMPF[i];
-    k.x += k.vx;
-    k.y += k.vy;
-    // Laengenzwang: Ein Glied ist ein Glied und kein Gummi.
-    const dx = k.x - vorX;
-    const dy = k.y - vorY;
-    const l = Math.hypot(dx, dy) || 1;
-    k.x = vorX + (dx / l) * GLIED;
-    k.y = vorY + (dy / l) * GLIED;
-    vorX = k.x;
-    vorY = k.y;
-  }
-}
-
-/** Eine Kette in Ruhelage: senkrecht herunter. */
-function ketteNeu(): { x: number; y: number; vx: number; vy: number }[] {
-  return Array.from({ length: GLIEDER }, (_, i) => ({
-    x: 0,
-    y: GLIED * (i + 1),
-    vx: 0,
-    vy: 0,
-  }));
-}
 
 interface Stand {
   dir: -1 | 1;
@@ -271,7 +180,7 @@ interface Stand {
    * Pixel. Damit ist die Kette von der Spiegelung unabhaengig — eine Figur,
    * die nach links laeuft, bekommt dieselben Zahlen wie eine nach rechts.
    */
-  kette: { x: number; y: number; vx: number; vy: number }[];
+  kette: Glied[];
   /**
    * Das geglaettete Tempo der Figur, 0 bis 1.
    *
@@ -447,9 +356,17 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): A
   const tempo = alt.tempo;
   const prall = alt.prallStaerke > 0 ? alt.prallStaerke * schwinger(alt.prallTakt) : 0;
   const wende = alt.wendeStaerke > 0 ? alt.wendeStaerke * schwinger(alt.wendeTakt) : 0;
+  // Wie tief der Sturz schon geht, null bis eins. Dieselben Marken wie beim
+  // Ton: bei SCHREI_AB faengt die Figur an zu schreien, bei FALL_DEATH_PX ist
+  // es vorbei. Auge und Ohr sagen damit dasselbe.
+  const sturzMass =
+    pose === 'falling'
+      ? Math.min(1, Math.max(0, (w.fallDist - SCHREI_AB) / (FALL_DEATH_PX - SCHREI_AB)))
+      : 0;
   // Aufkommen und Umdrehen sind keine Sonderfaelle mehr, sondern Anstoesse in
-  // dieselbe Kette: einer nach unten, einer nach vorn.
-  kettenschritt(alt.kette, tempo, wende * 0.5, prall * 0.6);
+  // dieselbe Kette: einer nach unten, einer nach vorn. Die Pose steuert nicht
+  // mehr einen Versatz bei, sondern die Luft, in der die Kette haengt.
+  kettenschritt(alt.kette, tempo, wende * 0.5, prall * 0.6, pose, sturzMass);
 
   alt.letzte = {
     dir: alt.dir,
