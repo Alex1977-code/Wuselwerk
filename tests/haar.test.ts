@@ -231,6 +231,73 @@ describe('Der Haarzeichner — eine Masse, keine Faeden', () => {
     return zuege.flatMap((z) => z.punkte);
   }
 
+  /**
+   * Im Ruhestand haengt der Schopf hinter dem RUECKEN, nicht hinter dem Rumpf.
+   *
+   * Das ist der Fehler, den nur ein Bild gezeigt hat und keine Zahl: Nach dem
+   * Kuerzen der Kette meldete die Musterkarte 0,0 Prozent Haarflaeche neben dem
+   * Umriss — dreizehn Posen lang unsichtbar. Der Grund war Geometrie. Im
+   * Gangbild spannt der Rumpf von -1,52 bis +2,43 lp um die Figurmitte, die
+   * Mitte der drei gebackenen Wurzeln liegt aber bei +0,36, also VOR der
+   * Rueckenkante; eine von dort senkrecht haengende Kette faellt vollstaendig
+   * hinter den Koerper. Im Spiel fiel es nicht auf, weil die Laufbewegung die
+   * Masse zuruecklegt — aber ein Sperrer steht still.
+   *
+   * Geprueft wird darum ohne jede Bewegung: die Ruhekette, eine Pose von der
+   * Seite, und die Frage, ob ueberhaupt Farbe hinter der Rueckenkante liegt.
+   */
+  it('legt den Schopf auch im Stand hinter die Rueckenkante', () => {
+    // Die Wurzelmitte der Probewurzeln liegt bei x = 0; die Rueckenkante des
+    // Rumpfes liegt im Gangbild 1,88 lp dahinter (+0,36 bis -1,52).
+    const RUECKEN = -1.88 * S;
+    const punkte = alles({ kette: ketteRuhe('walking') as [number, number][], dreh: 46 }, 'walking');
+    const weit = Math.min(...punkte.map((q) => q[0]));
+    expect(
+      weit,
+      `hinterster Punkt bei ${(weit / S).toFixed(2)} lp — der Ruecken liegt bei -1,88`,
+    ).toBeLessThan(RUECKEN);
+  });
+
+  /**
+   * Von vorn rahmt das Haar das Gesicht — auf BEIDEN Seiten.
+   *
+   * Der zweite Fehler aus derselben Musterkarte. Bei den vier Posen, in denen
+   * der Spieler der Figur ins Gesicht sieht — Sperren, Spaehen, Retten,
+   * Sterben — verkuerzen sich Nacken- und Rueckversatz mit dem Sinus der
+   * Posendrehung auf fast nichts. Die Masse fiel senkrecht hinter den Kopf,
+   * und uebrig blieben zwei Zipfel am Schaedelrand: Die Figur sah aus, als
+   * traege sie Ohrenschuetzer.
+   */
+  it('rahmt von vorn das Gesicht auf beiden Seiten', () => {
+    const punkte = alles({ kette: RUHIG, dreh: 8 }, 'blocking');
+    const links = Math.min(...punkte.map((q) => q[0]));
+    const rechts = Math.max(...punkte.map((q) => q[0]));
+    expect(links, 'nichts links vom Kopf').toBeLessThan(-1.0 * S);
+    expect(rechts, 'nichts rechts vom Kopf').toBeGreaterThan(1.0 * S);
+  });
+
+  /**
+   * Und im Profil fallen die beiden wieder zusammen.
+   *
+   * Geprueft wird nicht die absolute Breite — die enthaelt den Rueckstrich der
+   * Pose und darf breiter sein als der Kopf, denn eine wehende Maehne ist es
+   * auch. Geprueft wird die Aussage, die der erste Anlauf verletzt hat: Wer
+   * sich zur Seite dreht, bekommt keine BREITEREN Haare. Mit dem reinen
+   * Kosinus stand die Figur im Profil unter zwei getrennten Massen und war
+   * breiter als von vorn.
+   */
+  it('wird im Profil nicht breiter als von vorn', () => {
+    const spanne = (dreh: number, pose: string) => {
+      const p = alles({ kette: ketteRuhe(pose) as [number, number][], dreh }, pose);
+      return (Math.max(...p.map((q) => q[0])) - Math.min(...p.map((q) => q[0]))) / S;
+    };
+    const vorn = spanne(8, 'blocking');
+    const seite = spanne(46, 'walking');
+    expect(seite, `Profil ${seite.toFixed(2)} lp, von vorn ${vorn.toFixed(2)} lp`).toBeLessThan(
+      vorn,
+    );
+  });
+
   it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {
     const { ctx, zuege } = notizblock();
     drawHaar(ctx, 'walking', [], S, { kette: RUHIG });

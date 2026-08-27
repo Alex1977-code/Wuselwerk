@@ -95,13 +95,16 @@ const ACHSE_NORM = 1.83;
 /**
  * Dicke an der Wurzel und an der Spitze, in logischen Pixeln.
  *
- * Sie haengen an der Laenge und muessen mit ihr wandern. Bei 1,45 und einer
- * Kette von 3,6 lp waere die Masse 2,9 lp breit und 3,6 lang — also eine
- * Kugel, kein Schopf. Mit 1,0 steht sie 2,0 zu 3,6 und liest sich als
- * Haarmasse.
+ * Sie haengen an der Laenge und muessen mit ihr wandern — aber nicht so weit,
+ * wie der erste Versuch annahm. Bei 1,45 und einer Kette von 3,6 lp waere die
+ * Masse 2,9 breit zu 3,6 lang, also eine Kugel. Bei 1,0 war sie 2,0 zu 3,6 —
+ * und die Musterkarte zeigte statt einer Masse eine KLINGE: ein schmales
+ * spitzes Dreieck neben dem Kopf, genau die einzelne herabhaengende Straehne,
+ * die schon einmal abgelehnt wurde. 1,3 zu 0,55 steht bei 2,6 zu 3,6 und liest
+ * sich als Schopf.
  */
-const DICK_WURZEL = 1.0;
-const DICK_SPITZE = 0.4;
+const DICK_WURZEL = 1.15;
+const DICK_SPITZE = 0.5;
 /**
  * Wie weit eine Straehne, die nach HINTEN zeigt, im Bild nach hinten faellt.
  *
@@ -110,9 +113,10 @@ const DICK_SPITZE = 0.4;
  * Rumpf und sind weg. Dabei ist gerade der Nacken die Stelle, an der Haar am
  * ehesten frei haengt: Hinter der Figur steht Himmel oder Erde, kein Koerper.
  *
- * Der Wert haengt an der Kettenlaenge: 2,4 war er, solange die Kette 6,3 lp
- * mass; bei 3,6 haette er die Masse weiter zur Seite geschoben als sie lang
- * ist.
+ * Er haengt NICHT an der Kettenlaenge — das war ein Fehlschluss beim Kuerzen
+ * der Kette. Die Musterkarte hat ihn gezeigt: von 2,4 auf 1,4 gesetzt lag fast
+ * die ganze Masse hinter dem Rumpf. Diese Zahl beschreibt den KOPF, nicht das
+ * Haar: wie weit der Nacken hinter der Kopfmitte liegt.
  *
  * Verkuerzt wird das mit dem Sinus der Posendrehung, und das ist keine
  * Feinheit: Von vorn gesehen faellt Nackenhaar hinter den Kopf und ist im Bild
@@ -120,7 +124,59 @@ const DICK_SPITZE = 0.4;
  * weit zur Seite wie beim Gehen mit 46, und die Figur bekommt einen Zopf, der
  * bei jeder Posenaenderung springt.
  */
-const RUECK = 1.4;
+const RUECK = 2.0;
+
+/**
+ * Wie weit hinter der gebackenen Wurzelmitte das Haar wirklich ansetzt, in
+ * logischen Pixeln bei voller Figurgroesse.
+ *
+ * **Ohne das haengt der Schopf im Ruhestand hinter dem Rumpf und ist weg, und
+ * das ist gemessen.** Im Gangbild spannt der Rumpf von -1,52 bis +2,43 lp um
+ * die Figurmitte, die Kappe von -0,91 bis +2,43 — die Mitte der drei
+ * gebackenen Wurzeln liegt aber bei +0,36, also VOR der Rueckenkante. Eine
+ * Kette, die von dort senkrecht herunterhaengt, faellt vollstaendig hinter den
+ * Rumpf. Im Spiel faellt das nicht auf, weil die Laufbewegung die Masse
+ * zuruecklegt — aber ein Sperrer steht still, und ein stehender Sperrer hatte
+ * dann keine Haare.
+ *
+ * Der Grund liegt im Backvorgang: Er verteilt die drei Wurzeln um den Kopfrand,
+ * und von schraeg vorn gesehen ziehen die vorderen den Mittelwert nach vorn.
+ * Langes Haar waechst aber aus dem NACKEN. 1,3 lp ist der gemessene Abstand von
+ * dieser Mitte zur hinteren Kappenkante.
+ *
+ * Wie `RUECK` mit dem Sinus der Posendrehung verkuerzt: Von vorn gesehen liegt
+ * der Nacken hinter dem Kopf und im Bild gar nicht daneben. Ohne den Sinus
+ * rutschte der Schopf des Sperrers — 8 Grad Drehung — seitlich aus dem Kopf.
+ */
+const NACKEN = 1.3;
+
+/**
+ * Halber Abstand der beiden Schlaefenmassen, in logischen Pixeln.
+ *
+ * **Der Grund steht in der Musterkarte.** Von der Seite gesehen faellt Haar
+ * hinter den Kopf, und eine Masse genuegt. Von VORN gesehen gibt es kein
+ * Hinten: Der Sperrer steht mit 8 Grad Drehung fast frontal, `NACKEN` und
+ * `RUECK` verkuerzen sich beide mit dem Sinus auf fast nichts, und die Masse
+ * fiel senkrecht hinter den Kopf. Uebrig blieben zwei Zipfel links und rechts
+ * am Schaedel — die Figur sah aus, als traege sie Ohrenschuetzer. Dasselbe bei
+ * Spaehen, Retten und Sterben, also bei genau den vier Posen, in denen der
+ * Spieler der Figur ins Gesicht sieht.
+ *
+ * Von vorn rahmt langes Haar das Gesicht — links und rechts, nicht dahinter.
+ * Gezeichnet wird die Kette darum ZWEIMAL, um diesen Betrag nach beiden
+ * Seiten versetzt.
+ *
+ * Der Versatz geht mit dem KOSINUS der Posendrehung, waehrend `NACKEN` mit dem
+ * Sinus geht — zusammen wandert der Ansatz auf einem Kreis um den Schaedel.
+ * Von vorn stehen die beiden Massen voll auseinander, im Profil schieben sie
+ * sich ineinander und ergeben wieder eine. Das ist keine Kunst, sondern die
+ * Form eines Kopfes.
+ *
+ * 1,3 ist gemessen: Beim Sperrer spannt die Kappe von -2,28 bis +2,13 lp um
+ * die Figurmitte, ist also 4,40 breit. Zwei Massen von 1,3 Halbdicke bei
+ * Versatz 1,3 reichen bis 1,95 — knapp innerhalb des Kopfrandes.
+ */
+const SPREIZ = 1.3;
 
 
 
@@ -210,8 +266,23 @@ export function drawHaar(
   // gesehen faellt Nackenhaar hinter den Kopf und ist gar nicht versetzt.
   const schraeg = Math.sin(((lage.dreh ?? 0) * Math.PI) / 180);
 
+  // Wie stark die beiden Schlaefenmassen im Bild auseinanderstehen.
+  //
+  // Das QUADRAT des Kosinus, nicht der Kosinus. Der reine Kosinus waere die
+  // ehrliche Projektion — bei 46 Grad Drehung stehen zwei Schlaefen wirklich
+  // 2,3 lp auseinander —, aber er unterschlaegt, dass die hintere der beiden
+  // dann hinter dem KOPF liegt und von ihm verdeckt waere. Verdeckt wird sie
+  // hier nicht: Gezeichnet wird alles hinter der Figur, und der Kopf deckt nur,
+  // was in seinem eigenen Umriss liegt. In der Musterkarte stand die Figur
+  // deshalb im Profil unter einer Masse, die breiter war als ihr Kopf. Das
+  // Quadrat laesst die beiden im Profil ineinanderfallen und haelt sie von
+  // vorn auseinander.
+  const kos = Math.cos(((lage.dreh ?? 0) * Math.PI) / 180);
+  const breit = kos * kos;
+
   ctx.save();
-  ctx.translate(wx * s, wy * s);
+  // Der Ansatz wandert in den Nacken — siehe NACKEN.
+  ctx.translate((wx - NACKEN * schraeg * mass) * s, wy * s);
   ctx.fillStyle = HAAR;
 
   // Die Kette als Folge ueberlappender runder Massen, von voll auf ein Drittel.
@@ -221,21 +292,28 @@ export function drawHaar(
   // voll auf ein Viertel schrumpfen. Ueberlappende Kreise ergeben einen
   // geschlossenen, weichen Umriss — das ist genau das, was bei zwoelf Pixeln
   // ankommt, waehrend eine gezeichnete Straehne dort ein Draht ist.
-  let vx = 0;
-  let vy = 0;
-  for (let i = 0; i < kette.length; i++) {
-    const k = kette[i];
-    // Die Kette bringt die Lage schon mit. Hier kommt nur noch dazu, was der
-    // Zeichner allein weiss: wie schraeg die Pose steht und wie gross sie ist.
-    const t = (i + 1) / kette.length;
-    const kx = (k[0] - RUECK * (1 - Math.abs(aus)) * schraeg * t) * mass;
-    const ky = k[1] * mass;
-    const r = (DICK_WURZEL + (DICK_SPITZE - DICK_WURZEL) * t) * mass;
-    // Ein Glied ist ein Kegelstumpf zwischen zwei Kreisen: die beiden Kreise
-    // und das Viereck dazwischen. Zusammen ergibt das eine Masse ohne Naht.
-    kegel(ctx, vx * s, vy * s, (i === 0 ? DICK_WURZEL * mass : r) * s, kx * s, ky * s, r * s);
-    vx = kx;
-    vy = ky;
+  //
+  // Gezeichnet wird sie ZWEIMAL, nach links und nach rechts versetzt — siehe
+  // SPREIZ. Im Profil schieben sich die beiden Massen ineinander und ergeben
+  // wieder eine; von vorn rahmen sie das Gesicht.
+  for (const seite of [-1, 1]) {
+    const quer = seite * SPREIZ * breit * mass;
+    let vx = quer;
+    let vy = 0;
+    for (let i = 0; i < kette.length; i++) {
+      const k = kette[i];
+      // Die Kette bringt die Lage schon mit. Hier kommt nur noch dazu, was der
+      // Zeichner allein weiss: wie schraeg die Pose steht und wie gross sie ist.
+      const t = (i + 1) / kette.length;
+      const kx = quer + (k[0] - RUECK * (1 - Math.abs(aus)) * schraeg * t) * mass;
+      const ky = k[1] * mass;
+      const r = (DICK_WURZEL + (DICK_SPITZE - DICK_WURZEL) * t) * mass;
+      // Ein Glied ist ein Kegelstumpf zwischen zwei Kreisen: die beiden Kreise
+      // und das Viereck dazwischen. Zusammen ergibt das eine Masse ohne Naht.
+      kegel(ctx, vx * s, vy * s, (i === 0 ? DICK_WURZEL * mass : r) * s, kx * s, ky * s, r * s);
+      vx = kx;
+      vy = ky;
+    }
   }
   ctx.restore();
 }
