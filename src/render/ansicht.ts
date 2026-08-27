@@ -1,6 +1,4 @@
-import { FALL_DEATH_PX, SCHREI_AB } from '../core/constants';
 import type { Wusel } from '../core/types';
-import { TEMPO_GLATT, type Glied, ketteNeu, kettenschritt } from './haarkette';
 
 /**
  * Was von einer Figur **gezeichnet** wird — Blickrichtung, Pose und deren Takt.
@@ -72,37 +70,6 @@ const SPAEH_RUHE = 34;
  */
 const SPAEH_SPANNE = 3;
 
-/**
- * Ab wie vielen Fallpixeln das Haar beim Aufkommen nachschlaegt.
- *
- * Dieselbe Schwelle wie fuer die Fallpose: Was nicht als Fall gezeigt wird, ist
- * auch kein Aufprall. Ein Graeber nimmt unter einer Figur einen Pixel weg —
- * daraus darf kein Peitschen werden, sonst zappelt das ganze Feld.
- */
-const PRALL_AB = FALL_ZEIGEN;
-
-/** Fallhoehe, ab der der Nachschlag seine volle Staerke hat. */
-const PRALL_VOLL = 40;
-
-/**
- * Der Ausschlag eines Anstosses ueber die Zeit — ein gedaempfter Schwinger.
- *
- * Nicht ein blosses Abklingen, sondern eine halbe Schwingung und zurueck: Beim
- * Aufkommen faellt das Haar erst nach unten durch, dann federt es darueber
- * hinaus und pendelt sich ein. Ein reines Abklingen sieht aus, als zoege
- * jemand daran; erst der Vorzeichenwechsel macht daraus Traegheit.
- *
- * Die Zahlen: Der Sinus erreicht sein Maximum nach knapp drei Bildern, kreuzt
- * nach sechs die Null und ist nach rund zwanzig unter einem Hundertstel — bei
- * sechzig Bildern je Sekunde also ein Drittel einer Sekunde.
- */
-function schwinger(takt: number): number {
-  return Math.sin(takt * 0.55) * Math.exp(-takt * 0.16);
-}
-
-/** Unter diesem Ausschlag ist ein Anstoss vorbei. */
-const SCHWUNG_AUS = 0.01;
-
 /** Die Pose, die kein Simulationszustand ist. */
 export const SPAEHEN = 'spaehen';
 
@@ -146,54 +113,6 @@ interface Stand {
   /** Die Spanne, in der sie sich dabei bewegt hat. */
   von: number;
   bis: number;
-  /**
-   * Die zuletzt gesehene Fallhoehe, solange sie groesser als null war.
-   *
-   * Gebraucht wird sie **nach** dem Aufkommen, und dort ist sie schon weg:
-   * Die Simulation setzt `fallDist` in demselben Tick auf null, in dem der
-   * Zustand das Fallen verlaesst. Wer den Aufprall bemessen will, muss sich
-   * die Zahl vorher gemerkt haben.
-   */
-  sturz: number;
-  /** Staerke und Alter des Aufprall-Nachschlags. */
-  prallStaerke: number;
-  prallTakt: number;
-  /** Staerke und Alter des Ausschlags beim Umdrehen. */
-  wendeStaerke: number;
-  wendeTakt: number;
-  /**
-   * Die Haarkette — drei Massepunkte, die dem Kopf nachlaufen.
-   *
-   * Sie steht hier und nicht im Zeichner, weil sie ein GEDAECHTNIS hat: Haar,
-   * das nachschwingt, muss wissen, wo es im letzten Bild war. Der Zeichner
-   * kennt nur das aktuelle Bild.
-   *
-   * Und sie steht hier und nicht in der Simulation, weil sie dort nichts zu
-   * suchen hat: Sie beeinflusst kein Ergebnis, nur das Aussehen. Der
-   * Zeitruecklauf springt deshalb sauber — beim Levelwechsel leert
-   * `ansichtVergessen` die Tabelle, und eine zurueckgedrehte Figur baut ihre
-   * Kette in wenigen Bildern neu auf, statt eine falsche Vergangenheit
-   * mitzuschleppen.
-   *
-   * Gerechnet wird in FIGURENKOORDINATEN mit dem Haaransatz als Ursprung:
-   * x zeigt nach vorn (in Blickrichtung), y nach unten, Einheit logischer
-   * Pixel. Damit ist die Kette von der Spiegelung unabhaengig — eine Figur,
-   * die nach links laeuft, bekommt dieselben Zahlen wie eine nach rechts.
-   */
-  kette: Glied[];
-  /**
-   * Das geglaettete Tempo der Figur, 0 bis 1.
-   *
-   * Roh ist die Bewegung ein Stakkato: Beim Gehen kommt die Figur nur in jedem
-   * dritten Bild einen Pixel weiter (WALK_INTERVAL 3), beim Fallen in jedem.
-   * Wer diesen Nullen-und-Einsen-Takt direkt in die Kette gibt, treibt sie mit
-   * zwanzig Stoessen in der Sekunde an, und das Haar zappelt statt zu wehen.
-   * Geglaettet wird mit einem einfachen Tiefpass; die Zeitkonstante ist so
-   * gewaehlt, dass ein Gangzyklus von zehn Ticks knapp zwei Zeitkonstanten
-   * ausmacht — das Haar steht also am Ende eines Zyklus, nicht erst nach
-   * dreien.
-   */
-  tempo: number;
 }
 
 const stand = new Map<number, Stand>();
@@ -201,29 +120,6 @@ const stand = new Map<number, Stand>();
 export interface Ansicht {
   dir: -1 | 1;
   pose: string;
-  /**
-   * Der Nachschlag beim Aufkommen, positiv nach unten, danach ueberschwingend.
-   *
-   * Null, solange nichts aufkommt. Der Zeichner legt ihn auf den Nachlauf des
-   * Haares — die Figur steht mit einem Schlag still, das Haar noch nicht.
-   */
-  prall: number;
-  /**
-   * Der Ausschlag beim Umdrehen, positiv nach **vorn** im Figurenkoordinaten-
-   * system (also in Blickrichtung).
-   *
-   * Das Vorzeichen braucht keine Richtung: Was vor der Wende hinter der Figur
-   * hing, liegt danach vor ihr — der Koerper hat sich gedreht, das Haar steht
-   * noch im Raum. Deshalb schwingt es immer nach vorn und pendelt zurueck.
-   */
-  wende: number;
-  /**
-   * Die Haarkette, je Glied ein Punkt in logischen Pixeln vom Haaransatz aus.
-   *
-   * x zeigt nach vorn in Blickrichtung, y nach unten. Der Zeichner setzt sie
-   * an die gebackene Wurzel und braucht nichts weiter zu wissen.
-   */
-  kette: readonly (readonly [number, number])[];
   /**
    * Der Takt, aus dem der Bildindex faellt.
    *
@@ -247,17 +143,11 @@ export interface Ansicht {
 export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): Ansicht {
   const alt = stand.get(w.id);
   if (!alt) {
-    const kette = ketteNeu();
-    const erste: Ansicht = {
-      dir: w.dir, pose: sim, takt: w.timer, prall: 0, wende: 0,
-      kette: kette.map((k) => [k.x, k.y] as [number, number]),
-    };
+    const erste: Ansicht = { dir: w.dir, pose: sim, takt: w.timer };
     stand.set(w.id, {
       dir: w.dir, x: w.x, zustand: w.state, pose: sim,
       takt: 0, still: 0, von: w.x, bis: w.x,
       eigen: false, stempel: bild, letzte: erste,
-      sturz: 0, prallStaerke: 0, prallTakt: 0, wendeStaerke: 0, wendeTakt: 0,
-      kette, tempo: 0,
     });
     return erste;
   }
@@ -267,24 +157,9 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): A
   alt.stempel = bild;
 
   const bewegt = w.x !== alt.x;
-  const vorherDir = alt.dir;
   if (bewegt || w.state !== alt.zustand) alt.dir = w.dir;
   alt.x = w.x;
   alt.zustand = w.state;
-
-  // Umgedreht — und zwar wirklich, nicht nur in der Absicht.
-  //
-  // Geprueft wird die GEZEICHNETE Richtung, nicht `w.dir`. Zwischen zwei
-  // Waenden dreht die Simulation alle drei Ticks um; die Zeile darueber faengt
-  // das bereits ab, und ohne sie stuende das Haar bei so einer Figur dauerhaft
-  // waagerecht in der Luft.
-  if (alt.dir !== vorherDir) {
-    alt.wendeStaerke = 1;
-    alt.wendeTakt = 0;
-  } else if (alt.wendeStaerke > 0) {
-    alt.wendeTakt++;
-    if (Math.abs(schwinger(alt.wendeTakt)) < SCHWUNG_AUS) alt.wendeStaerke = 0;
-  }
 
   // Erst die Fallregel, dann der Stillstand — in dieser Reihenfolge.
   //
@@ -318,20 +193,6 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): A
   let pose = basis;
   if (laeuft && kannSpaehen && alt.still >= SPAEH_RUHE) pose = SPAEHEN;
 
-  // Aufgekommen: Bis eben wurde ein Fall gezeichnet, jetzt nicht mehr.
-  //
-  // Am gezeichneten Fall festgemacht und nicht am Zustand — die Regel oben
-  // laesst ein Absacken unter drei Pixeln gar nicht erst als Fall durch, und
-  // genau diese Faelle sollen auch nicht peitschen.
-  if (alt.pose === 'falling' && pose !== 'falling' && alt.sturz >= PRALL_AB) {
-    alt.prallStaerke = Math.min(1, alt.sturz / PRALL_VOLL);
-    alt.prallTakt = 0;
-  } else if (alt.prallStaerke > 0) {
-    alt.prallTakt++;
-    if (Math.abs(schwinger(alt.prallTakt)) < SCHWUNG_AUS) alt.prallStaerke = 0;
-  }
-  // Erst danach merken: Sonst steht beim Aufkommen schon die Null da.
-  if (w.fallDist > 0) alt.sturz = w.fallDist;
 
   if (pose !== alt.pose) {
     alt.pose = pose;
@@ -352,30 +213,7 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): A
   // `bewegt` ist wahr, wenn die Figur in diesem Bild einen Pixel weiter
   // gekommen ist. Beim Gehen geschieht das alle drei Ticks, beim Fallen
   // jeden — daraus faellt das Tempo von selbst richtig heraus.
-  alt.tempo += ((bewegt ? 1 : 0) - alt.tempo) * TEMPO_GLATT;
-  const tempo = alt.tempo;
-  const prall = alt.prallStaerke > 0 ? alt.prallStaerke * schwinger(alt.prallTakt) : 0;
-  const wende = alt.wendeStaerke > 0 ? alt.wendeStaerke * schwinger(alt.wendeTakt) : 0;
-  // Wie tief der Sturz schon geht, null bis eins. Dieselben Marken wie beim
-  // Ton: bei SCHREI_AB faengt die Figur an zu schreien, bei FALL_DEATH_PX ist
-  // es vorbei. Auge und Ohr sagen damit dasselbe.
-  const sturzMass =
-    pose === 'falling'
-      ? Math.min(1, Math.max(0, (w.fallDist - SCHREI_AB) / (FALL_DEATH_PX - SCHREI_AB)))
-      : 0;
-  // Aufkommen und Umdrehen sind keine Sonderfaelle mehr, sondern Anstoesse in
-  // dieselbe Kette: einer nach unten, einer nach vorn. Die Pose steuert nicht
-  // mehr einen Versatz bei, sondern die Luft, in der die Kette haengt.
-  kettenschritt(alt.kette, tempo, wende * 0.5, prall * 0.6, pose, sturzMass);
-
-  alt.letzte = {
-    dir: alt.dir,
-    pose,
-    takt: alt.eigen ? alt.takt : w.timer,
-    prall,
-    wende,
-    kette: alt.kette.map((k) => [Number(k.x.toFixed(3)), Number(k.y.toFixed(3))] as [number, number]),
-  };
+  alt.letzte = { dir: alt.dir, pose, takt: alt.eigen ? alt.takt : w.timer };
   return alt.letzte;
 }
 

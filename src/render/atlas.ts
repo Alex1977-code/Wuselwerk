@@ -4,7 +4,6 @@ import { drawSchopf, schopfFarbe } from './schopf';
 import { drawMaske, maskeFarbe } from './maske';
 import { drawBand, bandFarbe } from './band';
 import { drawWerkzeug } from './werkzeug';
-import { drawHaar } from './haar';
 
 /**
  * Sprite-Atlas für die Figuren.
@@ -376,20 +375,6 @@ const SAUM_WEICH = 2;
 /** Deckung des weichen Scheins. Mehr macht ihn wieder zum Ring. */
 const SCHEIN_DECKUNG = 0.38;
 
-/**
- * Die Kopfachse eines Einzelbildes — Abstand vom Gesichts- zum Stirnpunkt.
- *
- * Sie ist das **Mass** der Pose und nicht nur ihre Richtung: `saving`
- * schrumpft die Figur beim Entschweben auf die Haelfte, `dying` staucht sie.
- * Was in festen Pixeln daranhaengt, bleibt dabei stehen und steht zuletzt
- * groesser da als der Kopf. Das Stirnband rechnet deshalb seit langem in
- * Achsen; die Straehnen tun es jetzt auch.
- */
-function achseVon(clip: ClipDef, frame: number): number | undefined {
-  const g = clip.anchors?.[frame] ?? clip.anchors?.[0];
-  const st = clip.stirn?.[frame] ?? clip.stirn?.[0];
-  return g && st ? Math.hypot(st[0] - g[0], st[1] - g[1]) : undefined;
-}
 
 export class SpriteAtlas {
   constructor(
@@ -506,31 +491,6 @@ export class SpriteAtlas {
     // Auch hier die Straehnen, sonst traegt die Figur auf der Uebersichtskarte
     // und im Profil eine andere Frisur als im Spiel. Als Takt dient das
     // Einzelbild: Dieser Weg kennt keinen Wusel und damit keine Uhr.
-    if (clip.haar) {
-      const wz = clip.haar[f] ?? clip.haar[0];
-      if (wz) {
-        const kopfAchse = achseVon(clip, f);
-        drawHaar(
-          ctx,
-          name,
-          wz.map(
-            (q) =>
-              [q[0] - this.manifest.anchor.x, q[1] - this.manifest.anchor.y, q[2]] as [
-                number,
-                number,
-                number,
-              ],
-          ),
-          s,
-          {
-            takt: f * 3,
-            saum: this.saumTon || null,
-            dreh: clip.dreh ?? 0,
-            achse: kopfAchse,
-          },
-        );
-      }
-    }
     ctx.drawImage(
       this.image,
       f * cw * ppl,
@@ -560,14 +520,6 @@ export class SpriteAtlas {
     // Simulation glaetten darf — siehe `ansicht.ts`.
     pose?: string,
     takt?: number,
-    // Die beiden Anstoesse des Haares. Sie sind Ansichtszustand und werden je
-    // Figur in `ansicht.ts` fortgeschrieben; der Zeichner reicht sie nur durch.
-    schwung?: {
-      prall?: number;
-      wende?: number;
-      /** Die Haarkette aus `ansicht.ts` — je Glied ein Punkt vom Ansatz aus. */
-      kette?: readonly (readonly [number, number])[];
-    },
   ): boolean {
     const name = pose ?? clipForWusel(w);
     if (!name) return false;
@@ -614,34 +566,6 @@ export class SpriteAtlas {
     // danebensteht, steht vor Himmel oder Erde und traegt dort seinen eigenen
     // Saum. Vor der HAUT stuende Haar mit 2,15 durchaus lesbar — das ist die
     // einzige Stelle, an der eine vordere Lage ueberhaupt etwas zeigen wuerde.
-    if (clip.haar) {
-      const wz = clip.haar[frame] ?? clip.haar[0];
-      if (wz) {
-        const kopfAchse = achseVon(clip, frame);
-        drawHaar(
-          ctx,
-          name,
-          wz.map(
-            (q) =>
-              [q[0] - this.manifest.anchor.x, q[1] - this.manifest.anchor.y, q[2]] as [
-                number,
-                number,
-                number,
-              ],
-          ),
-          s,
-          {
-            takt: takt ?? w.timer,
-            saum: this.saumTon || null,
-            dreh: clip.dreh ?? 0,
-            achse: kopfAchse,
-            prall: schwung?.prall ?? 0,
-            wende: schwung?.wende ?? 0,
-            kette: schwung?.kette,
-          },
-        );
-      }
-    }
 
     // Der Saum zuerst — er liegt hinter der Figur.
     //

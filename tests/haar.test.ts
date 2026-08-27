@@ -1,33 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { drawHaar } from '../src/render/haar';
-import { ketteRuhe } from '../src/render/haarkette';
 import wuselwerkerBlatt from '../src/art/wuselwerker.atlas.json';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import type { AtlasManifest } from '../src/render/atlas';
 
 /**
- * Die gezeichneten Straehnen — die zweite Haelfte der Frisur.
+ * Das Haar des Wuselwerkers — und zwar das gebackene, denn ein anderes gibt es
+ * nicht mehr.
  *
- * Die erste steckt im Blatt: eine auf eine Ellipse gestutzte Haarmasse, die
- * den Kopf frei laesst. Kurz allein war nie das Ziel; die Laenge kommt vom
- * Zeichner. Warum sie nicht auch aus dem Modell kommen kann, steht im Kopf von
- * `src/render/haar.ts` und ist gemessen: Die Figur wird beim Backen waagerecht
- * auf 0,64 gestaucht, und was am Modell seitlich haengt, verschwindet dadurch
- * hinter dem eigenen Kopf.
+ * ## Was hier zu Ende gegangen ist
  *
- * Zwei Dinge haelt dieser Lauf fest.
+ * Bis zum 27.08.2026 hatte diese Figur zwei Frisuren: eine im Blatt und eine,
+ * die der Zeichner zur Laufzeit danebenmalte, weil die gebackene kurz ist. Die
+ * gemalte ist ausgebaut. Sie war ein Vollton neben einer aus einem 3D-Modell
+ * gerenderten Figur, und das ist ein Unterschied, den man messen kann:
+ * 6105 Toene und 142 Helligkeitsstufen im Blatt gegen 246 Toene und 9 Stufen
+ * im Zeichner, wobei die 246 reine Kantenglaettung waren.
  *
- * **Das Blatt liefert, was der Zeichner braucht.** Drei Zahlen je Wurzel, und
- * die dritte ist die wichtige: wohin „aussen" im BILD zeigt. Der Zeichner kann
- * sie nicht erraten — er sieht eine Punktreihe und muesste ihre Mitte fuer den
- * Kopf halten, was bei gedrehtem Kopf falsch ist. Eine Straehne schwaenge dann
- * zur falschen Seite ueber das Gesicht.
+ * Vier Anlaeufe haben versucht, diese Masse durch Form zu retten — Zacken,
+ * Straehnen, Kranz, zuletzt eine Feder-Daempfer-Kette nach Celestes Bauart.
+ * Alle vier sind an derselben Sache gescheitert: Nicht die Form war falsch,
+ * sondern das Material.
  *
- * **Der Zeichner haelt sich an sie.** Geprueft mit einem Notizblock statt
- * einer Leinwand: Der Zeichner ruft nur `beginPath`, `moveTo`, `lineTo`,
- * `closePath` und `fill`, und alles davon laesst sich aufschreiben.
+ * ## Was bleibt
+ *
+ * Das Blatt liefert das Haar allein, mit demselben Licht wie den Rest der
+ * Figur, vom Koerper korrekt verdeckt und pro Einzelbild ueber den Knochen
+ * `HaarSchwung` bewegt. Drei Dinge haelt dieser Lauf fest:
+ *
+ * 1. **Das Blatt traegt Haarwurzeln, wenn die Figur welche bestellt** — sie
+ *    sind heute Messpunkte des Modells, nicht mehr Eingabe eines Zeichners.
+ * 2. **Der Haarknochen schwingt** — sonst waere die Frisur ein Helm, der jede
+ *    Pose unveraendert mitmacht.
+ * 3. **Das gebackene Haar ist schattiert** — die Pruefung, die gefehlt hat.
  */
-
 const BLATT = wuselwerkerBlatt as unknown as AtlasManifest;
 
 /** Wieviele Straehnenansaetze die Figur bestellt. */
@@ -44,47 +50,7 @@ for (const datei of readdirSync('art-src/wuselwerker/posen')) {
   );
 }
 
-/** Eine Leinwand, die nichts malt, sondern mitschreibt. */
-function notizblock(): {
-  ctx: CanvasRenderingContext2D;
-  zuege: { farbe: string; punkte: [number, number][] }[];
-} {
-  const zuege: { farbe: string; punkte: [number, number][] }[] = [];
-  let punkte: [number, number][] = [];
-  const ctx = {
-    fillStyle: '',
-    beginPath() {
-      punkte = [];
-    },
-    moveTo(x: number, y: number) {
-      punkte.push([x, y]);
-    },
-    lineTo(x: number, y: number) {
-      punkte.push([x, y]);
-    },
-    closePath() {},
-    // Die Masse besteht aus Kreisen und den Vierecken dazwischen. Ein Kreis
-    // wird als sein Huellquadrat mitgeschrieben — fuer alles, was hier
-    // gemessen wird (Lage, Breite, Richtung), reicht das genau.
-    arc(x: number, y: number, r: number) {
-      punkte.push([x - r, y - r], [x + r, y + r]);
-    },
-    save() {},
-    restore() {},
-    translate() {},
-    fill() {
-      zuege.push({ farbe: String(ctx.fillStyle), punkte: punkte.slice() });
-    },
-  } as unknown as CanvasRenderingContext2D;
-  return { ctx, zuege: zuege };
-}
 
-/** Der Kasten um einen Zug. */
-function kasten(punkte: [number, number][]) {
-  const xs = punkte.map((p) => p[0]);
-  const ys = punkte.map((p) => p[1]);
-  return { l: Math.min(...xs), r: Math.max(...xs), o: Math.min(...ys), u: Math.max(...ys) };
-}
 
 describe('Das Blatt und die Haarfrage', () => {
   /**
@@ -206,176 +172,87 @@ describe('Das Blatt und die Haarfrage', () => {
   });
 });
 
-describe('Der Haarzeichner — eine Masse, keine Faeden', () => {
-  const WURZELN: [number, number, number][] = [
-    [1.0, -8.0, 0.9],
-    [0.0, -8.2, -0.2],
-    [-1.0, -8.0, -0.9],
-  ];
-  /**
-   * Eine Kette, die senkrecht herunterhaengt.
-   *
-   * Geholt und nicht abgeschrieben. Hier stand bis zum 27.08.2026 eine
-   * Zahlenreihe, und sie war beim ersten Nachziehen der Gliedlaenge falsch:
-   * Die Kette schrumpfte von 6,3 auf 3,6 lp, die Reihe blieb — und der Test,
-   * der die Ruhelage gegen ihre eigene Vorlage prueft, verglich zwei
-   * verschiedene Frisuren.
-   */
-  const RUHIG = ketteRuhe('blocking') as [number, number][];
-  const S = 4;
+/**
+ * Das Haar muss SCHATTIERT sein — die Pruefung, die diesem Projekt gefehlt hat.
+ *
+ * ## Wofuer sie da ist
+ *
+ * Vom 26. bis zum 27.08.2026 hing an der Figur eine gezeichnete Haarmasse: eine
+ * Kette ueberlappender Kreise, gefuellt mit EINEM Hexwert. Die Rueckmeldung
+ * dazu lautete „das sieht aus als haette ein kleinkind mit einem stift einen
+ * blauen strich gezogen", und sie war messbar richtig. Nebeneinandergestellt:
+ *
+ *     gebackener Schopf im Blatt   6105 Toene   Helligkeitsspanne 142 von 255
+ *     gezeichnete Masse im Spiel    246 Toene   Spanne 9
+ *
+ * Die 246 waren ausschliesslich Kantenglaettung. Ein Sechzehntel des Tonumfangs
+ * direkt neben einer aus einem 3D-Modell gebackenen Figur — das ist der
+ * Fremdkoerper, und keine Formaenderung heilt ihn. Der Zeichner ist deshalb
+ * ausgebaut; das Haar kommt nur noch aus dem Blatt, wo dasselbe Licht es
+ * beleuchtet wie den Rest der Figur.
+ *
+ * ## Warum ueber den Messbericht und nicht ueber das Blatt
+ *
+ * Weil hier kein Bilddecoder laeuft. `scripts/haar-messen.mjs` misst das Blatt
+ * im Browser und schreibt `art-src/wuselwerker/blatt-mess.json`. Dieser Lauf
+ * liest den Bericht — und prueft ZUERST, ob er zum heutigen Blatt gehoert.
+ *
+ * Das ist keine Formalie, sondern die Luecke, durch die dieser ganze Fehler
+ * gelaufen ist: Der Bericht trug schon immer die Pruefsumme des Blattes, aber
+ * niemand hat sie je verglichen. Am 27.08.2026 stand darin `9ab1500b...`,
+ * waehrend das Blatt seit drei Backlaeufen `0cf4fb68...` hiess. Jede Zahl, die
+ * daraus zitiert wurde, war die eines Bildes, das es nicht mehr gab.
+ */
+describe('Das gebackene Haar traegt Schattierung, keinen Vollton', () => {
+  const bericht = JSON.parse(
+    readFileSync('art-src/wuselwerker/blatt-mess.json', 'utf8'),
+  ) as {
+    sha256: string;
+    farben: { haarpunkteBlatt: number; haartoeneBlatt: number; haarVolltonAnteil: number };
+  };
 
-  /** Alle gezeichneten Punkte eines Laufs. */
-  function alles(lage: Parameters<typeof drawHaar>[4], pose = 'blocking') {
-    const { ctx, zuege } = notizblock();
-    drawHaar(ctx, pose, WURZELN, S, lage);
-    return zuege.flatMap((z) => z.punkte);
-  }
-
   /**
-   * Im Ruhestand haengt der Schopf hinter dem RUECKEN, nicht hinter dem Rumpf.
+   * Zuerst: gehoert der Bericht ueberhaupt zu diesem Blatt?
    *
-   * Das ist der Fehler, den nur ein Bild gezeigt hat und keine Zahl: Nach dem
-   * Kuerzen der Kette meldete die Musterkarte 0,0 Prozent Haarflaeche neben dem
-   * Umriss — dreizehn Posen lang unsichtbar. Der Grund war Geometrie. Im
-   * Gangbild spannt der Rumpf von -1,52 bis +2,43 lp um die Figurmitte, die
-   * Mitte der drei gebackenen Wurzeln liegt aber bei +0,36, also VOR der
-   * Rueckenkante; eine von dort senkrecht haengende Kette faellt vollstaendig
-   * hinter den Koerper. Im Spiel fiel es nicht auf, weil die Laufbewegung die
-   * Masse zuruecklegt — aber ein Sperrer steht still.
-   *
-   * Geprueft wird darum ohne jede Bewegung: die Ruhekette, eine Pose von der
-   * Seite, und die Frage, ob ueberhaupt Farbe hinter der Rueckenkante liegt.
+   * Ohne diese Zeile sind alle folgenden wertlos. Wer das Blatt neu backt, muss
+   * `node scripts/haar-messen.mjs` nachziehen — sonst faellt hier auf, dass die
+   * Messung von einem anderen Bild stammt.
    */
-  it('legt den Schopf auch im Stand hinter die Rueckenkante', () => {
-    // Die Wurzelmitte der Probewurzeln liegt bei x = 0; die Rueckenkante des
-    // Rumpfes liegt im Gangbild 1,88 lp dahinter (+0,36 bis -1,52).
-    const RUECKEN = -1.88 * S;
-    const punkte = alles({ kette: ketteRuhe('walking') as [number, number][], dreh: 46 }, 'walking');
-    const weit = Math.min(...punkte.map((q) => q[0]));
+  it('ist am heutigen Blatt gemessen, nicht an einem alten', () => {
+    const jetzt = createHash('sha256')
+      .update(readFileSync('src/art/wuselwerker.webp'))
+      .digest('hex');
     expect(
-      weit,
-      `hinterster Punkt bei ${(weit / S).toFixed(2)} lp — der Ruecken liegt bei -1,88`,
-    ).toBeLessThan(RUECKEN);
+      bericht.sha256,
+      'blatt-mess.json ist veraltet — node scripts/haar-messen.mjs neu laufen lassen',
+    ).toBe(jetzt);
+  });
+
+  it('traegt tausende Haartoene', () => {
+    const { haarpunkteBlatt, haartoeneBlatt } = bericht.farben;
+    expect(haarpunkteBlatt, 'kaum Haar im Blatt').toBeGreaterThan(10000);
+    // Gemessen am Blatt vom 27.08.2026: 53539 Punkte, 8433 Toene. Die Schranke
+    // liegt mit reichlich Luft darunter — sie soll einen Rueckfall auf Vollton
+    // fangen, nicht jede Neubackung zum Ereignis machen.
+    expect(
+      haartoeneBlatt,
+      `nur ${haartoeneBlatt} Haartoene — das waere Vollton, keine Schattierung`,
+    ).toBeGreaterThan(1000);
   });
 
   /**
-   * Von vorn rahmt das Haar das Gesicht — auf BEIDEN Seiten.
+   * Und kein einzelner Ton darf die Masse beherrschen.
    *
-   * Der zweite Fehler aus derselben Musterkarte. Bei den vier Posen, in denen
-   * der Spieler der Figur ins Gesicht sieht — Sperren, Spaehen, Retten,
-   * Sterben — verkuerzen sich Nacken- und Rueckversatz mit dem Sinus der
-   * Posendrehung auf fast nichts. Die Masse fiel senkrecht hinter den Kopf,
-   * und uebrig blieben zwei Zipfel am Schaedelrand: Die Figur sah aus, als
-   * traege sie Ohrenschuetzer.
+   * Die Tonzahl allein genuegt nicht: Eine flache Flaeche mit weichem Rand
+   * haette auch tausend Toene, alle in der Kantenglaettung. Entscheidend ist,
+   * dass kein Ton den Loewenanteil traegt. Gemessen deckt der haeufigste 0,49
+   * Prozent der Haarflaeche.
    */
-  it('rahmt von vorn das Gesicht auf beiden Seiten', () => {
-    const punkte = alles({ kette: RUHIG, dreh: 8 }, 'blocking');
-    const links = Math.min(...punkte.map((q) => q[0]));
-    const rechts = Math.max(...punkte.map((q) => q[0]));
-    expect(links, 'nichts links vom Kopf').toBeLessThan(-1.0 * S);
-    expect(rechts, 'nichts rechts vom Kopf').toBeGreaterThan(1.0 * S);
-  });
-
-  /**
-   * Und im Profil fallen die beiden wieder zusammen.
-   *
-   * Geprueft wird nicht die absolute Breite — die enthaelt den Rueckstrich der
-   * Pose und darf breiter sein als der Kopf, denn eine wehende Maehne ist es
-   * auch. Geprueft wird die Aussage, die der erste Anlauf verletzt hat: Wer
-   * sich zur Seite dreht, bekommt keine BREITEREN Haare. Mit dem reinen
-   * Kosinus stand die Figur im Profil unter zwei getrennten Massen und war
-   * breiter als von vorn.
-   */
-  it('wird im Profil nicht breiter als von vorn', () => {
-    const spanne = (dreh: number, pose: string) => {
-      const p = alles({ kette: ketteRuhe(pose) as [number, number][], dreh }, pose);
-      return (Math.max(...p.map((q) => q[0])) - Math.min(...p.map((q) => q[0]))) / S;
-    };
-    const vorn = spanne(8, 'blocking');
-    const seite = spanne(46, 'walking');
-    expect(seite, `Profil ${seite.toFixed(2)} lp, von vorn ${vorn.toFixed(2)} lp`).toBeLessThan(
-      vorn,
-    );
-  });
-
-  it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {
-    const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'walking', [], S, { kette: RUHIG });
-    expect(zuege.length).toBe(0);
-  });
-
-  /**
-   * Ohne Kette haengt das Haar in Ruhe — und zwar sichtbar.
-   *
-   * Die Weltkarte und die Profilauswahl zeichnen dieselbe Figur ohne
-   * Simulation und damit ohne Gedaechtnis. Ohne diese Ruhelage traegen sie
-   * gar kein Haar, und die Figur haette dort eine andere Frisur als im Spiel —
-   * ein Fehler, den niemand bemerkt, weil beide Bilder fuer sich stimmig
-   * aussehen.
-   */
-  it('haengt auch ohne Kette in Ruhe, fuer Karte und Profil', () => {
-    const ohne = alles({});
-    const mit = alles({ kette: RUHIG });
-    expect(ohne.length).toBeGreaterThan(0);
-    const tief = (p: [number, number][]) => Math.max(...p.map((q) => q[1]));
-    expect(tief(ohne)).toBeCloseTo(tief(mit), 1);
-  });
-
-  /**
-   * Die Kette bestimmt die Form, nicht der Zeichner.
-   *
-   * Das ist der ganze Umbau vom 26.08.2026 in einer Zusage: Frueher stand die
-   * Bewegung in einer Tabelle mit dreizehn festen Versaetzen, jetzt kommt sie
-   * aus einer Feder-Daempfer-Kette in `ansicht.ts`. Wenn diese Pruefung
-   * durchfaellt, zeichnet der Zeichner wieder sein eigenes Ding.
-   */
-  it('folgt der Kette: eine nach vorn gelegte Kette legt die Masse nach vorn', () => {
-    const vorn = alles({ kette: [[1.5, 1.5], [3.0, 3.0], [4.5, 4.5]] });
-    const zurueck = alles({ kette: [[-1.5, 1.5], [-3.0, 3.0], [-4.5, 4.5]] });
-    const mitte = (p: [number, number][]) => p.reduce((s, q) => s + q[0], 0) / p.length;
-    expect(mitte(vorn)).toBeGreaterThan(mitte(zurueck) + S);
-  });
-
-  /**
-   * Die Masse wird zur Spitze hin schmaler.
-   *
-   * Celestes vier Kleckse schrumpfen von voll auf ein Viertel, und der Grund
-   * ist derselbe wie hier: Eine Masse mit gleichbleibender Dicke ist ein Rohr.
-   * Gemessen wird die Breite des ersten gegen die des letzten Zuges.
-   */
-  it('laeuft von der Wurzel zur Spitze schmaler zu', () => {
-    const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'blocking', WURZELN, S, { kette: RUHIG });
-    const breite = (z: { punkte: [number, number][] }) => {
-      const k = kasten(z.punkte);
-      return k.r - k.l;
-    };
-    expect(breite(zuege[0])).toBeGreaterThan(breite(zuege[zuege.length - 1]));
-  });
-
-  /**
-   * Der Sturz steht nicht mehr hier.
-   *
-   * Bis zum 27.08.2026 hat der Zeichner die Masse mit der Fallhoehe selbst
-   * hochgelegt — ein fester Versatz nach oben. Das ist jetzt eine KRAFT in
-   * `haarkette.ts`: Auftrieb, der mit der Fallhoehe waechst. Geprueft wird es
-   * darum in `ansicht.test.ts`, wo die Kette laeuft. Der Zeichner bekommt sie
-   * fertig und rechnet nichts mehr daran.
-   */
-
-  /**
-   * Die Masse schrumpft mit der Pose.
-   *
-   * `saving` schrumpft die Figur beim Entschweben auf die Haelfte, `dying`
-   * staucht sie. Was in festen Pixeln daranhaengt, bliebe dabei stehen und
-   * stuende zuletzt groesser da als die ganze Figur — genau so sah der erste
-   * Lauf der alten Fassung aus.
-   */
-  it('schrumpft mit der Kopfachse der Pose', () => {
-    const gross = alles({ kette: RUHIG, achse: 1.83 });
-    const klein = alles({ kette: RUHIG, achse: 0.92 });
-    const hoch = (p: [number, number][]) => Math.max(...p.map((q) => q[1]));
-    expect(hoch(klein)).toBeLessThan(hoch(gross) * 0.75);
+  it('wird von keinem einzelnen Ton beherrscht', () => {
+    const anteil = bericht.farben.haarVolltonAnteil;
+    expect(
+      anteil,
+      `haeufigster Ton deckt ${(anteil * 100).toFixed(2)} Prozent der Haarflaeche`,
+    ).toBeLessThan(0.05);
   });
 });
-
