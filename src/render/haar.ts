@@ -87,17 +87,7 @@ const ZUG: Record<string, readonly [number, number]> = {
   spaehen: [0, 0.05],
 };
 
-/**
- * Die Staffelung der Laengen. Drei Werte, keiner davon gleich einem anderen.
- *
- * Die Reihenfolge ist nicht beliebig: Fach 0 und Fach 2 sind die beiden
- * Schlaefen, Fach 1 ist der Hinterkopf. Der bekommt die kurze — er steht im
- * Bild ohnehin hinter der Figur.
- */
-const STAFFEL = [1.0, 0.58, 0.86];
 
-/** Laenge der laengsten Straehne in logischen Pixeln — die Figur misst 12,3. */
-const LAENGE = 5.5;
 /**
  * Die Kopfachse einer normal grossen Pose, in logischen Pixeln.
  *
@@ -121,28 +111,8 @@ const ACHSE_NORM = 1.83;
  * den Umriss und wuchsen der Figur ueber den Kopf. Mit diesen Werten sind es
  * 15,1 Prozent.
  */
-const DICK_WURZEL = 0.65;
-const DICK_SPITZE = 0.22;
-/** Wie weit der Saum je Seite ueber die Straehne hinaussteht. */
-const SAUM_BREIT = 0.16;
-/**
- * Wie weit die Straehne nach aussen ausbaucht, in logischen Pixeln.
- *
- * Die Zahl entscheidet, ob man ueberhaupt etwas sieht, und sie ist an der
- * Figur gemessen: Der Rumpf ist rund sieben logische Pixel breit, die Wurzeln
- * liegen im Mittel 0,98 neben der Mitte und hoechstens 2,90. Eine Straehne,
- * die senkrecht faellt, landet also **hinter dem Rumpf** — bei 0,55 war von
- * den Straehnen ein Splitter uebrig. Sichtbar wird sie erst jenseits von drei
- * Pixeln.
- *
- * Aber nicht beliebig weit: Bei 0,72 Anteil der Laenge (bis 4,6 Pixel) rahmen
- * zwei Straehnen die Figur wie eine Klammer und haengen neben ihr statt an
- * ihr. Genommen ist ein fester Sockel plus ein Anteil der Laenge — damit
- * schwingt die lange Straehne weit aus und die kurze bleibt am Kopf, was
- * genau der Unterschied zwischen Seitenhaar und Ponysträhne ist.
- */
-const BOGEN_FEST = 0.6;
-const BOGEN_ANTEIL = 0.28;
+const DICK_WURZEL = 1.45;
+const DICK_SPITZE = 0.55;
 /**
  * Wie weit eine Straehne, die nach HINTEN zeigt, im Bild nach hinten faellt.
  *
@@ -159,25 +129,7 @@ const BOGEN_ANTEIL = 0.28;
  */
 const RUECK = 2.4;
 
-/**
- * Wieweit der Nachschlag beim Aufkommen das Haar durchsacken laesst, in
- * logischen Pixeln bei voller Staerke.
- *
- * Der Koerper steht mit einem Schlag still, das Haar noch nicht: Es faellt
- * durch, federt darueber hinaus und pendelt sich ein. Zwei Pixel, weil ein
- * Ausschlag unter der Lesegrenze von 0,9 gar nicht ankommt und die
- * Schwingung ihn auf dem Weg ohnehin halbiert.
- */
-const PRALL_WEG = 2.0;
 
-/**
- * Wieweit das Haar beim Umdrehen nach vorn schwingt, in logischen Pixeln.
- *
- * Etwas weniger als beim Aufkommen. Es ist die haeufigste der beiden
- * Bewegungen — jede Figur dreht in jedem Level dutzendfach um —, und was oft
- * geschieht, darf leiser sein.
- */
-const WENDE_WEG = 1.6;
 
 /** Was die Straehnen von der Figur wissen muessen. */
 export interface HaarLage {
@@ -198,94 +150,16 @@ export interface HaarLage {
   prall?: number;
   /** Der Ausschlag beim Umdrehen, positiv nach vorn. Ebenfalls aus `ansicht.ts`. */
   wende?: number;
+  /**
+   * Die Haarkette aus `ansicht.ts`, je Glied ein Punkt in logischen Pixeln
+   * vom Ansatz aus. Fehlt sie, haengt das Haar in Ruhe — so zeichnen die
+   * Weltkarte und die Profilauswahl, die keine Figur und kein Gedaechtnis
+   * haben.
+   */
+  kette?: readonly (readonly [number, number])[];
 }
 
-/**
- * Eine Straehne als Punktzug: erst der Schaedelrundung folgend, dann fallend.
- *
- * Kubisch und nicht gerade, weil eine gerade Straehne ein Draht ist. Der erste
- * Griffpunkt liegt nach aussen und oben — das ist der Bogen ueber dem Ohr, an
- * dem man Haar von Faden unterscheidet.
- */
-function bahn(
-  x: number,
-  y: number,
-  aus: number,
-  laenge: number,
-  bogen: number,
-  zx: number,
-  zy: number,
-  wobbel: number,
-): [number, number][] {
-  // Der Bogen nach aussen ist ein ABSOLUTES Mass und keines der Laenge.
-  //
-  // Erst stand hier ein Anteil der Laenge, und die lange Straehne wanderte
-  // damit dreieinhalb logische Pixel zur Seite: Zwei davon rahmten die Figur
-  // wie eine Klammer, und was hing, hing neben ihr statt an ihr. Haar faellt
-  // senkrecht; die Schaedelrundung gibt ihm einen halben Pixel Bauch, mehr
-  // nicht — und der bleibt gleich, ob die Straehne kurz oder lang ist.
-  const p1x = x + aus * bogen * 0.62;
-  const p1y = y + laenge * 0.16;
-  const p2x = x + aus * bogen + zx * 0.45;
-  const p2y = y + laenge * 0.6 + zy * 0.45;
-  // Die Spitze schwingt wieder ein Stueck zurueck — sonst ist die Bahn ein
-  // Bogen nach aussen und liest sich als Buegel statt als Straehne.
-  const p3x = x + aus * bogen * 0.85 + zx + wobbel;
-  const p3y = y + laenge + zy;
-  const punkte: [number, number][] = [];
-  const N = 12;
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const m = 1 - t;
-    punkte.push([
-      m * m * m * x + 3 * m * m * t * p1x + 3 * m * t * t * p2x + t * t * t * p3x,
-      m * m * m * y + 3 * m * m * t * p1y + 3 * m * t * t * p2y + t * t * t * p3y,
-    ]);
-  }
-  return punkte;
-}
 
-/** Den Punktzug als Flaeche mit veraenderlicher Dicke fuellen. */
-function strich(
-  ctx: CanvasRenderingContext2D,
-  punkte: readonly [number, number][],
-  w0: number,
-  w1: number,
-  farbe: string,
-): void {
-  const links: [number, number][] = [];
-  const rechts: [number, number][] = [];
-  let lx = 0;
-  let ly = 1;
-  for (let i = 0; i < punkte.length; i++) {
-    const t = i / (punkte.length - 1);
-    const a = punkte[Math.max(0, i - 1)];
-    const b = punkte[Math.min(punkte.length - 1, i + 1)];
-    const tx = b[0] - a[0];
-    const ty = b[1] - a[1];
-    const n = Math.hypot(tx, ty);
-    const w = (w0 * (1 - t) + w1 * t) / 2;
-    // Steht die Bahn hier still, gilt die letzte brauchbare Richtung.
-    //
-    // Ohne diesen Griff kippt die Senkrechte an fast stehenden Stellen von
-    // einem Bild zum naechsten um, das Vieleck schlaegt sich selbst, und man
-    // sieht einen schwarzblauen Saegezahn statt einer Straehne. Genau so sah
-    // es beim Fallen aus, wo die Bahn oben umkehrt.
-    if (n > 1e-6) {
-      lx = -ty / n;
-      ly = tx / n;
-    }
-    links.push([punkte[i][0] + lx * w, punkte[i][1] + ly * w]);
-    rechts.push([punkte[i][0] - lx * w, punkte[i][1] - ly * w]);
-  }
-  ctx.beginPath();
-  ctx.moveTo(links[0][0], links[0][1]);
-  for (let i = 1; i < links.length; i++) ctx.lineTo(links[i][0], links[i][1]);
-  for (let i = rechts.length - 1; i >= 0; i--) ctx.lineTo(rechts[i][0], rechts[i][1]);
-  ctx.closePath();
-  ctx.fillStyle = farbe;
-  ctx.fill();
-}
 
 /**
  * Die Straehnen zeichnen. Gehoert **hinter** die Figur — siehe Kopfkommentar.
@@ -299,6 +173,28 @@ function strich(
  *   sieht (siehe `haarwurzeln` in `scripts/bake-figur.mjs`).
  * @param s Bildpunkte je logischem Pixel.
  */
+/**
+ * Wie weit der Sturz die Masse hochlegt, in logischen Pixeln bei voller Hoehe.
+ *
+ * Nach OBEN und kaum nach hinten, und das ist der ganze Unterschied zwischen
+ * Panik und Fahrtwind: Hinter der Figur zeichnet sie niemand, dort ist sie
+ * verdeckt; nach oben steht sie frei vor dem Himmel.
+ */
+const SCHREI_HOCH = 3.4;
+
+/**
+ * Die Kette in Ruhe — fuer alles, was keine Figur hat.
+ *
+ * Die Weltkarte und die Profilauswahl zeichnen dieselbe Figur ohne
+ * Simulation und ohne Gedaechtnis. Ohne diese Ruhelage traegen sie gar kein
+ * Haar, und die Figur haette auf der Karte eine andere Frisur als im Spiel.
+ */
+const RUHE: readonly (readonly [number, number])[] = [
+  [0, 2.1],
+  [0, 4.2],
+  [0, 6.3],
+];
+
 export function drawHaar(
   ctx: CanvasRenderingContext2D,
   pose: string,
@@ -307,93 +203,116 @@ export function drawHaar(
   lage: HaarLage = {},
 ): void {
   if (wurzeln.length === 0) return;
-  let [zx, zy] = ZUG[pose] ?? [0, 0];
+  const kette = lage.kette ?? RUHE;
+  if (kette.length === 0) return;
 
-  // Im Sturz waechst der Nachlauf mit der Fallhoehe — das Haar ist die Anzeige.
+  // Wie gross diese Pose gerade ist, gemessen an ihrer eigenen Kopfachse.
+  // `saving` schrumpft die Figur beim Entschweben auf die Haelfte, `dying`
+  // staucht sie; was in festen Pixeln daranhaengt, bliebe dabei stehen.
+  const mass = (lage.achse ?? ACHSE_NORM) / ACHSE_NORM;
+
+  // Der Ansatz: die Mitte der gebackenen Wurzeln.
   //
-  // Vorher stand hier ein fester Wert je Pose, und damit sah ein Hopser vom
-  // Absatz genauso aus wie ein Sturz in den Tod. Dabei liegt die Auskunft
-  // schon in der Simulation: `fallDist` zaehlt die gefallenen Pixel, und ab
-  // FALL_DEATH_PX ueberlebt es niemand.
+  // Frueher hing an jeder der drei Wurzeln eine eigene Straehne. Das war der
+  // Fehler, den die Rueckmeldung „das eine lange Haar sieht unprofessionell
+  // aus" benannt hat: Von vorn gesehen faellt der ganze Hinterkopf auf
+  // denselben Bildstreifen, die drei Ansaetze lagen in 155 von 157 Bildern
+  // naeher beieinander als die Lesegrenze, und uebrig blieb eine einzelne
+  // ueberstehende Straehne neben einer geschlossenen Kappe. Eine Masse hat
+  // einen Ansatz.
+  let wx = 0;
+  let wy = 0;
+  let aus = 0;
+  for (const w of wurzeln) {
+    wx += w[0];
+    wy += w[1];
+    aus += w[2];
+  }
+  wx /= wurzeln.length;
+  wy /= wurzeln.length;
+  aus /= wurzeln.length;
+
+  // Wie stark sich ein Weg nach hinten im Bild ueberhaupt zeigt. Von vorn
+  // gesehen faellt Nackenhaar hinter den Kopf und ist gar nicht versetzt.
+  const schraeg = Math.sin(((lage.dreh ?? 0) * Math.PI) / 180);
+
+  // Im Sturz legt sich die Masse zurueck — und zwar mit der Fallhoehe.
   //
-  // Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB (12
-  // Pixel) faengt die Figur an zu schreien, bei FALL_DEATH_PX (78) ist es
-  // vorbei. Dazwischen richtet sich das Haar auf. Damit sagen Auge und Ohr
-  // dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut ausgeht —
-  // eine Auskunft, die er bisher nur hoeren konnte.
-  //
-  // Der Spielraum ist absichtlich gross: Bei vollem Ausschlag zieht der
-  // Nachlauf die Spitze 4,4 logische Pixel nach oben, waehrend die laengste
-  // Straehne 5,5 misst. Sie klappt also fast zurueck ueber den Kopf — genau
-  // das tut Haar im freien Fall, und nur so sieht man es bei dreizehn Pixeln.
-  // Ein zurueckgeschlagenes Vieleck ist seit der Tangentensicherung in
-  // `strich` unschaedlich; vorher gab es dort einen Saegezahn.
-  //
-  // Nur beim Fallen. Unter dem Schirm sinkt die Figur langsam und beliebig
-  // weit; ein Haar, das dabei mitwaechst, stuende nach zwei Sekunden senkrecht.
+  // Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB faengt
+  // die Figur an zu schreien, bei FALL_DEATH_PX ist es vorbei. Damit sagen Auge
+  // und Ohr dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut
+  // ausgeht.
+  let sturzZug = 0;
   if (pose === 'falling') {
-    const t = Math.min(
+    sturzZug = Math.min(
       1,
       Math.max(0, ((lage.sturz ?? 0) - SCHREI_AB) / (FALL_DEATH_PX - SCHREI_AB)),
     );
-    // Senkrecht stark, waagerecht kaum — und das ist der ganze Unterschied
-    // zwischen „Panik" und „Fahrtwind". Wird auch der Zug nach hinten
-    // mitgesteigert, klappen die Straehnen HINTER den Kopf, und dort zeichnet
-    // sie niemand: Der Zeichner legt sie hinter die Figur. Gemessen sah der
-    // Sturz damit aus, als wehte das Haar im Wind — nach oben dagegen steht es
-    // frei vor dem Himmel.
-    zx *= 0.3 + 0.7 * t;
-    zy *= 0.3 + 2.3 * t;
   }
 
-  // Die beiden Anstoesse obendrauf. Beide kommen fertig gedaempft aus
-  // `ansicht.ts` — hier steht nur noch, wieviel Weg sie bedeuten.
-  zy += PRALL_WEG * (lage.prall ?? 0);
-  zx += WENDE_WEG * (lage.wende ?? 0);
-  const saum = lage.saum ?? null;
-  const takt = lage.takt ?? 0;
-  // Wie stark sich ein Weg nach hinten ueberhaupt im Bild zeigt.
-  const schraeg = Math.sin(((lage.dreh ?? 0) * Math.PI) / 180);
-  // Wie gross diese Pose gerade ist, gemessen an ihrer eigenen Kopfachse.
-  const mass = (lage.achse ?? ACHSE_NORM) / ACHSE_NORM;
+  ctx.save();
+  ctx.translate(wx * s, wy * s);
+  ctx.fillStyle = HAAR;
 
-  for (let i = 0; i < wurzeln.length; i++) {
-    const [x, y, aus] = wurzeln[i];
-    // Die aeusseren Straehnen sind die laengsten. Das ist keine Zierde: Nur
-    // sie stehen ueberhaupt neben dem Rumpf, alle anderen faellt der Koerper
-    // ab. Wer nach hinten zeigt, bekommt eine kurze — sie kostet nichts.
-    const laenge = LAENGE * mass * STAFFEL[i % STAFFEL.length] * (0.5 + 0.5 * Math.abs(aus));
-    const bogen = BOGEN_FEST + BOGEN_ANTEIL * laenge;
-    // Nach hinten faellt, was nicht zur Seite faellt.
-    const zurueck = -RUECK * (1 - Math.abs(aus)) * schraeg;
-    // Der Nachlauf gilt der LAENGE nach, nicht als fester Weg.
-    //
-    // Sonst zieht eine kurze Straehne beim Fallen um 1,7 Pixel nach oben,
-    // waehrend sie selbst nur 1,3 misst: Ihre Spitze steht dann hoeher als
-    // ihre Wurzel, vier davon nebeneinander, und aus dem Haar wird ein Kamm.
-    // Genau so sah der erste Fallversuch aus. Lange Straehnen haengen nach,
-    // kurze kaum — das ist auch die Physik.
-    const anteil = laenge / (LAENGE * mass);
-    const wobbel = Math.sin(takt * 0.16 + i * 2.4) * 0.22;
-    const punkte = bahn(
-      x * s,
-      y * s,
-      aus,
-      laenge * s,
-      bogen * s,
-      (zx * anteil + zurueck) * s,
-      zy * anteil * s,
-      wobbel * s,
-    );
-    if (saum) {
-      strich(
-        ctx,
-        punkte,
-        (DICK_WURZEL + 2 * SAUM_BREIT) * mass * s,
-        (DICK_SPITZE + 2 * SAUM_BREIT) * mass * s,
-        saum,
-      );
-    }
-    strich(ctx, punkte, DICK_WURZEL * mass * s, DICK_SPITZE * mass * s, HAAR);
+  // Die Kette als Folge ueberlappender runder Massen, von voll auf ein Drittel.
+  //
+  // Das ist Celestes Bauart, und sie ist bei dieser Groesse belegt: Madeline
+  // ist acht mal elf Bildpunkte gross und traegt vier runde Kleckse, die von
+  // voll auf ein Viertel schrumpfen. Ueberlappende Kreise ergeben einen
+  // geschlossenen, weichen Umriss — das ist genau das, was bei zwoelf Pixeln
+  // ankommt, waehrend eine gezeichnete Straehne dort ein Draht ist.
+  let vx = 0;
+  let vy = 0;
+  for (let i = 0; i < kette.length; i++) {
+    const k = kette[i];
+    // Der Nachlauf der Pose und der Sturzzug legen die Masse zusaetzlich um.
+    const t = (i + 1) / kette.length;
+    const zug = ZUG[pose] ?? [0, 0];
+    const kx = (k[0] + zug[0] * t * 2 - RUECK * (1 - Math.abs(aus)) * schraeg * t) * mass;
+    const ky = (k[1] + zug[1] * t * 2 - sturzZug * SCHREI_HOCH * t) * mass;
+    const r = (DICK_WURZEL + (DICK_SPITZE - DICK_WURZEL) * t) * mass;
+    // Ein Glied ist ein Kegelstumpf zwischen zwei Kreisen: die beiden Kreise
+    // und das Viereck dazwischen. Zusammen ergibt das eine Masse ohne Naht.
+    kegel(ctx, vx * s, vy * s, (i === 0 ? DICK_WURZEL * mass : r) * s, kx * s, ky * s, r * s);
+    vx = kx;
+    vy = ky;
   }
+  ctx.restore();
+}
+
+/**
+ * Zwei Kreise und der Rumpf dazwischen, in einem Zug gefuellt.
+ *
+ * Einzeln gezeichnete Kreise haetten an jeder Naht eine sichtbare Kante, wenn
+ * die Farbe nicht voll deckt; ein Pfad faellt zusammen.
+ */
+function kegel(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  y0: number,
+  r0: number,
+  x1: number,
+  y1: number,
+  r1: number,
+): void {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const l = Math.hypot(dx, dy);
+  ctx.beginPath();
+  if (l > 1e-6) {
+    const nx = -dy / l;
+    const ny = dx / l;
+    ctx.moveTo(x0 + nx * r0, y0 + ny * r0);
+    ctx.lineTo(x1 + nx * r1, y1 + ny * r1);
+    ctx.lineTo(x1 - nx * r1, y1 - ny * r1);
+    ctx.lineTo(x0 - nx * r0, y0 - ny * r0);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(x1, y1, r1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x0, y0, r0, 0, Math.PI * 2);
+  ctx.fill();
 }

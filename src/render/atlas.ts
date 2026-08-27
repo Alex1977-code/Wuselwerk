@@ -562,7 +562,12 @@ export class SpriteAtlas {
     takt?: number,
     // Die beiden Anstoesse des Haares. Sie sind Ansichtszustand und werden je
     // Figur in `ansicht.ts` fortgeschrieben; der Zeichner reicht sie nur durch.
-    schwung?: { prall?: number; wende?: number },
+    schwung?: {
+      prall?: number;
+      wende?: number;
+      /** Die Haarkette aus `ansicht.ts` — je Glied ein Punkt vom Ansatz aus. */
+      kette?: readonly (readonly [number, number])[];
+    },
   ): boolean {
     const name = pose ?? clipForWusel(w);
     if (!name) return false;
@@ -632,6 +637,7 @@ export class SpriteAtlas {
             sturz: w.fallDist,
             prall: schwung?.prall ?? 0,
             wende: schwung?.wende ?? 0,
+            kette: schwung?.kette,
           },
         );
       }

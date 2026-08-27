@@ -104,6 +104,108 @@ const SCHWUNG_AUS = 0.01;
 /** Die Pose, die kein Simulationszustand ist. */
 export const SPAEHEN = 'spaehen';
 
+/**
+ * Die Haarkette — wieviele Glieder, wie lang, wie traege.
+ *
+ * ## Warum eine Kette und keine Straehnen
+ *
+ * Die Recherche vom 26.08.2026 hat dieselbe Antwort aus drei Richtungen
+ * bekommen. Celestes Madeline ist ACHT MAL ELF Bildpunkte gross — kleiner als
+ * diese Figur mit 12,3 logischen Pixeln — und hat echtes nachlaufendes Haar;
+ * simuliert wird dort keine Straehne, sondern eine MASSE aus vier runden
+ * Klecksen, die von voll auf ein Viertel schrumpfen. Spines eigenes
+ * Haar-Schaustueck nimmt zwei Knochen je Strang, Live2Ds Beispielfigur zwei
+ * Partikel je Gruppe. Und der Grafiker von Celeste schreibt die Regel auf:
+ * bei sehr kleinen Bildern zeichnet man keine einzelnen Faeden mehr.
+ *
+ * Das deckt sich mit dem, was hier laengst gemessen ist: Sechs duenne Faeden
+ * fielen mit 71 Prozent verschmolzener Spitzenpaare durch, vier Wurzeln fielen
+ * von vorn gesehen in ALLEN Bildern auf 0,02 bis 0,08 lp zusammen. Bei einer
+ * Lesegrenze von 0,9 lp und 5,5 lp Haarlaenge sitzen die Gelenke bei drei
+ * Gliedern 1,8 lp auseinander, bei acht 0,7 — und damit unter der Grenze.
+ * DREI GLIEDER SIND NICHT SPARSAMKEIT, SONDERN DAS MAXIMUM, DAS DIE FIGUR
+ * AUFLOEST.
+ */
+const GLIEDER = 3;
+/** Laenge eines Gliedes in logischen Pixeln. Drei davon reichen zur Schulter. */
+const GLIED = 2.1;
+
+/**
+ * Steifigkeit und Daempfung je Glied, von der Wurzel zur Spitze.
+ *
+ * Die Startwerte sind nicht geraten, sondern aus zwei ausgelieferten
+ * Haar-Rigs abgelesen: Spines `celestial-circus` nennt fuer die Haarwurzel
+ * `inertia 0.5, damping 0.85` und fuer die Spitze `inertia 0.73, damping
+ * 0.81`. Naeher an der Wurzel steifer, an der Spitze traeger und langsamer
+ * auslaufend — so haengt Haar.
+ */
+const STEIF = [0.5, 0.42, 0.34];
+const DAEMPF = [0.85, 0.83, 0.81];
+
+/** Wie stark die Schwerkraft an der Kette zieht, in lp je Bild im Quadrat. */
+const SCHWERE = 0.055;
+
+/**
+ * Wie stark die Eigenbewegung der Figur das Haar zuruecklegt.
+ *
+ * Die Gewichtung Kopf gegen Koerper ist von Live2Ds Beispielfigur uebernommen,
+ * die ihre Haargruppen zu sechzig Prozent aus dem Kopfwinkel und zu vierzig
+ * aus dem Koerperwinkel speist. Hier gibt es nur eine Bewegung, also steht
+ * die Zahl als ein Faktor da.
+ */
+const ZUG_JE_TEMPO = 1.15;
+
+/** Wie schnell das geglaettete Tempo dem rohen folgt. */
+const TEMPO_GLATT = 0.18;
+
+/**
+ * Einen Schritt der Kette rechnen — Feder, Daempfer, Laengenzwang.
+ *
+ * Fester Zeitschritt und keine Zufallszahl: Genau das ist die Antwort auf die
+ * alte Sorge, ein Haar, das bei jedem Bild woanders steht, flackere. Ein
+ * Feder-Daempfer springt nicht, er laeuft aus.
+ */
+function kettenschritt(
+  kette: { x: number; y: number; vx: number; vy: number }[],
+  tempo: number,
+  stossX: number,
+  stossY: number,
+): void {
+  let vorX = 0;
+  let vorY = 0;
+  for (let i = 0; i < kette.length; i++) {
+    const k = kette[i];
+    // Ruhelage: senkrecht unter dem Vorgaenger, nach hinten gelegt, soweit
+    // die Figur sich bewegt.
+    const zielX = vorX - tempo * ZUG_JE_TEMPO;
+    const zielY = vorY + GLIED;
+    k.vx += (zielX - k.x) * STEIF[i] + stossX;
+    k.vy += (zielY - k.y) * STEIF[i] + SCHWERE + stossY;
+    k.vx *= DAEMPF[i];
+    k.vy *= DAEMPF[i];
+    k.x += k.vx;
+    k.y += k.vy;
+    // Laengenzwang: Ein Glied ist ein Glied und kein Gummi.
+    const dx = k.x - vorX;
+    const dy = k.y - vorY;
+    const l = Math.hypot(dx, dy) || 1;
+    k.x = vorX + (dx / l) * GLIED;
+    k.y = vorY + (dy / l) * GLIED;
+    vorX = k.x;
+    vorY = k.y;
+  }
+}
+
+/** Eine Kette in Ruhelage: senkrecht herunter. */
+function ketteNeu(): { x: number; y: number; vx: number; vy: number }[] {
+  return Array.from({ length: GLIEDER }, (_, i) => ({
+    x: 0,
+    y: GLIED * (i + 1),
+    vx: 0,
+    vy: 0,
+  }));
+}
+
 interface Stand {
   dir: -1 | 1;
   x: number;
@@ -150,6 +252,39 @@ interface Stand {
   /** Staerke und Alter des Ausschlags beim Umdrehen. */
   wendeStaerke: number;
   wendeTakt: number;
+  /**
+   * Die Haarkette — drei Massepunkte, die dem Kopf nachlaufen.
+   *
+   * Sie steht hier und nicht im Zeichner, weil sie ein GEDAECHTNIS hat: Haar,
+   * das nachschwingt, muss wissen, wo es im letzten Bild war. Der Zeichner
+   * kennt nur das aktuelle Bild.
+   *
+   * Und sie steht hier und nicht in der Simulation, weil sie dort nichts zu
+   * suchen hat: Sie beeinflusst kein Ergebnis, nur das Aussehen. Der
+   * Zeitruecklauf springt deshalb sauber — beim Levelwechsel leert
+   * `ansichtVergessen` die Tabelle, und eine zurueckgedrehte Figur baut ihre
+   * Kette in wenigen Bildern neu auf, statt eine falsche Vergangenheit
+   * mitzuschleppen.
+   *
+   * Gerechnet wird in FIGURENKOORDINATEN mit dem Haaransatz als Ursprung:
+   * x zeigt nach vorn (in Blickrichtung), y nach unten, Einheit logischer
+   * Pixel. Damit ist die Kette von der Spiegelung unabhaengig — eine Figur,
+   * die nach links laeuft, bekommt dieselben Zahlen wie eine nach rechts.
+   */
+  kette: { x: number; y: number; vx: number; vy: number }[];
+  /**
+   * Das geglaettete Tempo der Figur, 0 bis 1.
+   *
+   * Roh ist die Bewegung ein Stakkato: Beim Gehen kommt die Figur nur in jedem
+   * dritten Bild einen Pixel weiter (WALK_INTERVAL 3), beim Fallen in jedem.
+   * Wer diesen Nullen-und-Einsen-Takt direkt in die Kette gibt, treibt sie mit
+   * zwanzig Stoessen in der Sekunde an, und das Haar zappelt statt zu wehen.
+   * Geglaettet wird mit einem einfachen Tiefpass; die Zeitkonstante ist so
+   * gewaehlt, dass ein Gangzyklus von zehn Ticks knapp zwei Zeitkonstanten
+   * ausmacht — das Haar steht also am Ende eines Zyklus, nicht erst nach
+   * dreien.
+   */
+  tempo: number;
 }
 
 const stand = new Map<number, Stand>();
@@ -174,6 +309,13 @@ export interface Ansicht {
    */
   wende: number;
   /**
+   * Die Haarkette, je Glied ein Punkt in logischen Pixeln vom Haaransatz aus.
+   *
+   * x zeigt nach vorn in Blickrichtung, y nach unten. Der Zeichner setzt sie
+   * an die gebackene Wurzel und braucht nichts weiter zu wissen.
+   */
+  kette: readonly (readonly [number, number])[];
+  /**
    * Der Takt, aus dem der Bildindex faellt.
    *
    * Solange die gezeichnete Pose die der Simulation ist, bleibt es `w.timer` —
@@ -196,12 +338,17 @@ export interface Ansicht {
 export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): Ansicht {
   const alt = stand.get(w.id);
   if (!alt) {
-    const erste: Ansicht = { dir: w.dir, pose: sim, takt: w.timer, prall: 0, wende: 0 };
+    const kette = ketteNeu();
+    const erste: Ansicht = {
+      dir: w.dir, pose: sim, takt: w.timer, prall: 0, wende: 0,
+      kette: kette.map((k) => [k.x, k.y] as [number, number]),
+    };
     stand.set(w.id, {
       dir: w.dir, x: w.x, zustand: w.state, pose: sim,
       takt: 0, still: 0, von: w.x, bis: w.x,
       eigen: false, stempel: bild, letzte: erste,
       sturz: 0, prallStaerke: 0, prallTakt: 0, wendeStaerke: 0, wendeTakt: 0,
+      kette, tempo: 0,
     });
     return erste;
   }
@@ -285,12 +432,32 @@ export function ansicht(w: Wusel, sim: string, kannSpaehen = false, bild = 0): A
     alt.takt++;
     if (pose !== sim) alt.eigen = true;
   }
+  // Die Kette einen Schritt weiter.
+  //
+  // Getrieben wird sie von dem, was die Figur TUT, nicht von dem, was das
+  // Blatt zeigt. Das ist der Unterschied, an dem der einfachere Entwurf
+  // gescheitert waere: Beim Klettern steht der Kopfrahmen im Blatt dreizehn
+  // Bilder lang voellig still, und eine Kette, die ihren Antrieb aus der
+  // Wurzelbewegung zoege, hinge dort starr wie ein Brett.
+  //
+  // `bewegt` ist wahr, wenn die Figur in diesem Bild einen Pixel weiter
+  // gekommen ist. Beim Gehen geschieht das alle drei Ticks, beim Fallen
+  // jeden — daraus faellt das Tempo von selbst richtig heraus.
+  alt.tempo += ((bewegt ? 1 : 0) - alt.tempo) * TEMPO_GLATT;
+  const tempo = alt.tempo;
+  const prall = alt.prallStaerke > 0 ? alt.prallStaerke * schwinger(alt.prallTakt) : 0;
+  const wende = alt.wendeStaerke > 0 ? alt.wendeStaerke * schwinger(alt.wendeTakt) : 0;
+  // Aufkommen und Umdrehen sind keine Sonderfaelle mehr, sondern Anstoesse in
+  // dieselbe Kette: einer nach unten, einer nach vorn.
+  kettenschritt(alt.kette, tempo, wende * 0.5, prall * 0.6);
+
   alt.letzte = {
     dir: alt.dir,
     pose,
     takt: alt.eigen ? alt.takt : w.timer,
-    prall: alt.prallStaerke > 0 ? alt.prallStaerke * schwinger(alt.prallTakt) : 0,
-    wende: alt.wendeStaerke > 0 ? alt.wendeStaerke * schwinger(alt.wendeTakt) : 0,
+    prall,
+    wende,
+    kette: alt.kette.map((k) => [Number(k.x.toFixed(3)), Number(k.y.toFixed(3))] as [number, number]),
   };
   return alt.letzte;
 }

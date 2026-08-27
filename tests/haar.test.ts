@@ -63,6 +63,15 @@ function notizblock(): {
       punkte.push([x, y]);
     },
     closePath() {},
+    // Die Masse besteht aus Kreisen und den Vierecken dazwischen. Ein Kreis
+    // wird als sein Huellquadrat mitgeschrieben — fuer alles, was hier
+    // gemessen wird (Lage, Breite, Richtung), reicht das genau.
+    arc(x: number, y: number, r: number) {
+      punkte.push([x - r, y - r], [x + r, y + r]);
+    },
+    save() {},
+    restore() {},
+    translate() {},
     fill() {
       zuege.push({ farbe: String(ctx.fillStyle), punkte: punkte.slice() });
     },
@@ -197,165 +206,129 @@ describe('Das Blatt und die Haarfrage', () => {
   });
 });
 
-describe('Der Straehnenzeichner', () => {
-  const wurzeln: [number, number, number][] = [
-    [0, -9, 1],
-    [-1, -9, -1],
+describe('Der Haarzeichner — eine Masse, keine Faeden', () => {
+  const WURZELN: [number, number, number][] = [
+    [1.0, -8.0, 0.9],
+    [0.0, -8.2, -0.2],
+    [-1.0, -8.0, -0.9],
   ];
+  /** Eine Kette, die senkrecht herunterhaengt. */
+  const RUHIG: [number, number][] = [
+    [0, 2.1],
+    [0, 4.2],
+    [0, 6.3],
+  ];
+  const S = 4;
 
-  it('zieht je Straehne zwei Zuege: erst den Saum, dann das Haar', () => {
+  /** Alle gezeichneten Punkte eines Laufs. */
+  function alles(lage: Parameters<typeof drawHaar>[4], pose = 'blocking') {
     const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'blocking', wurzeln, 4, { saum: '#0e1116' });
-    expect(zuege.length).toBe(4);
-    expect(zuege[0].farbe).toBe('#0e1116');
-    expect(zuege[1].farbe).not.toBe('#0e1116');
-  });
-
-  it('laesst den Saum breiter ausfallen als das Haar — sonst traegt er nichts', () => {
-    const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'blocking', [wurzeln[0]], 4, { saum: '#0e1116' });
-    const s = kasten(zuege[0].punkte);
-    const h = kasten(zuege[1].punkte);
-    expect(s.r - s.l).toBeGreaterThan(h.r - h.l);
-    expect(s.u - s.o).toBeGreaterThan(h.u - h.o);
-  });
-
-  it('zeichnet ohne Saumton nur das Haar', () => {
-    const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'blocking', wurzeln, 4);
-    expect(zuege.length).toBe(2);
-  });
-
-  /**
-   * Die Aussenrichtung entscheidet die Seite — und zwar allein sie.
-   *
-   * Zwei Wurzeln an derselben Stelle, nur mit umgekehrtem Vorzeichen: Die eine
-   * muss nach rechts ausschwingen, die andere nach links. Wer stattdessen die
-   * Mitte der Wurzelreihe nimmt, faellt hier durch, denn die ist fuer beide
-   * dieselbe.
-   */
-  it('schwingt nach der gebackenen Aussenrichtung aus, nicht nach der Reihenmitte', () => {
-    const rechts = notizblock();
-    drawHaar(rechts.ctx, 'blocking', [[0, -9, 1]], 4);
-    const links = notizblock();
-    drawHaar(links.ctx, 'blocking', [[0, -9, -1]], 4);
-    expect(kasten(rechts.zuege[0].punkte).r).toBeGreaterThan(2);
-    expect(kasten(links.zuege[0].punkte).l).toBeLessThan(-2);
-  });
-
-  /**
-   * Beim Fallen bleibt das Haar oben stehen. Das ist der Witz der Figur und
-   * zugleich die einzige Stelle, an der eine Straehne ueber ihre Wurzel
-   * hinausragt.
-   */
-  it('laesst das Haar beim Fallen nach oben nachhaengen', () => {
-    const stehen = notizblock();
-    drawHaar(stehen.ctx, 'blocking', [[0, -9, 1]], 4);
-    const fallen = notizblock();
-    drawHaar(fallen.ctx, 'falling', [[0, -9, 1]], 4);
-    expect(kasten(fallen.zuege[0].punkte).u).toBeLessThan(kasten(stehen.zuege[0].punkte).u);
-  });
-
-  /**
-   * Nackenhaar faellt nach hinten — aber nur so weit, wie die Pose gedreht ist.
-   *
-   * Von vorn gesehen liegt es hinter dem Kopf und ist im Bild gar nicht
-   * versetzt. Ohne diese Verkuerzung bekaeme der Blocker mit acht Grad
-   * denselben Zopf wie der Gehende mit sechsundvierzig, und die Figur spraenge
-   * beim Posenwechsel.
-   */
-  it('laesst eine Wurzel am Hinterkopf nur bei gedrehter Pose nach hinten fallen', () => {
-    const frontal = notizblock();
-    drawHaar(frontal.ctx, 'blocking', [[0, -9, 0]], 4, { dreh: 0 });
-    const gedreht = notizblock();
-    drawHaar(gedreht.ctx, 'blocking', [[0, -9, 0]], 4, { dreh: 46 });
-    expect(kasten(gedreht.zuege[0].punkte).l).toBeLessThan(kasten(frontal.zuege[0].punkte).l - 2);
-  });
-
-  /**
-   * Das Haar ist die Fallanzeige.
-   *
-   * Vorher galt je Pose ein fester Nachlauf, und ein Hopser vom Absatz sah
-   * damit aus wie ein Sturz in den Tod. Die Auskunft liegt aber schon in der
-   * Simulation: `fallDist` zaehlt die gefallenen Pixel. Zwischen SCHREI_AB —
-   * dort faengt die Figur an zu schreien — und FALL_DEATH_PX richtet sich das
-   * Haar auf, sodass Auge und Ohr dasselbe sagen.
-   */
-  it('richtet das Haar mit der Fallhoehe auf', () => {
-    // Gemessen wird die SPITZE, nicht der Kasten von oben: Die Straehne haengt
-    // nach unten, und ein Nachlauf nach oben zieht ihre Spitze herauf. Die
-    // obere Kante sitzt an der Wurzel und bewegt sich fast gar nicht — der
-    // erste Anlauf dieser Pruefung hat genau dort gemessen und 0,01 Pixel
-    // Unterschied gefunden.
-    const spitze = (sturz: number) => {
-      const n = notizblock();
-      drawHaar(n.ctx, 'falling', [[0, -9, 1]], 4, { sturz });
-      return kasten(n.zuege[0].punkte).u;
-    };
-    const kurz = spitze(SCHREI_AB);
-    const mittel = spitze((SCHREI_AB + FALL_DEATH_PX) / 2);
-    const toedlich = spitze(FALL_DEATH_PX);
-    // Kleineres y ist weiter oben.
-    expect(mittel, 'halber Sturz hebt nicht').toBeLessThan(kurz);
-    expect(toedlich, 'toedlicher Sturz hebt nicht weiter').toBeLessThan(mittel);
-    // Und den Unterschied muss man sehen koennen: die Lesegrenze des Projekts
-    // sind 0,9 logische Pixel, bei vier Bildpunkten je logischem Pixel also 3,6.
-    expect(kurz - toedlich, 'Unterschied unter der Lesegrenze').toBeGreaterThan(3.6);
-  });
-
-  it('steigert das Haar nicht weiter, wenn der Sturz schon toedlich ist', () => {
-    const spitze = (sturz: number) => {
-      const n = notizblock();
-      drawHaar(n.ctx, 'falling', [[0, -9, 1]], 4, { sturz });
-      return kasten(n.zuege[0].punkte).u;
-    };
-    expect(spitze(FALL_DEATH_PX * 3)).toBeCloseTo(spitze(FALL_DEATH_PX), 5);
-  });
-
-  /**
-   * Unter dem Schirm sinkt die Figur langsam und beliebig weit. Ein Haar, das
-   * dabei mitwuechse, stuende nach zwei Sekunden senkrecht.
-   */
-  it('laesst das Schweben von der Fallhoehe unberuehrt', () => {
-    const spitze = (sturz: number) => {
-      const n = notizblock();
-      drawHaar(n.ctx, 'floating', [[0, -9, 1]], 4, { sturz });
-      return kasten(n.zuege[0].punkte).u;
-    };
-    expect(spitze(200)).toBeCloseTo(spitze(0), 5);
-  });
-
-  /**
-   * Die beiden Anstoesse aus `ansicht.ts` legen sich auf den Nachlauf. Ihr
-   * Vorzeichen kommt fertig von dort; der Zeichner sagt nur, wieviel Weg es
-   * bedeutet.
-   */
-  it('laesst den Nachschlag das Haar durchsacken', () => {
-    const tief = (prall: number) => {
-      const n = notizblock();
-      drawHaar(n.ctx, 'blocking', [[0, -9, 1]], 4, { prall });
-      return kasten(n.zuege[0].punkte).u;
-    };
-    expect(tief(0.6), 'sackt nicht durch').toBeGreaterThan(tief(0));
-    expect(tief(-0.6), 'federt nicht zurueck').toBeLessThan(tief(0));
-    // Die Lesegrenze des Projekts sind 0,9 logische Pixel; bei vier
-    // Bildpunkten je logischem Pixel also 3,6 Bildpunkte.
-    expect(tief(0.6) - tief(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(3.6);
-  });
-
-  it('laesst das Haar beim Umdrehen nach vorn schwingen', () => {
-    const vorn = (wende: number) => {
-      const n = notizblock();
-      drawHaar(n.ctx, 'blocking', [[0, -9, 1]], 4, { wende });
-      return kasten(n.zuege[0].punkte).r;
-    };
-    expect(vorn(0.7), 'schwingt nicht nach vorn').toBeGreaterThan(vorn(0));
-    expect(vorn(0.7) - vorn(0), 'Ausschlag unter der Lesegrenze').toBeGreaterThan(3.6);
-  });
+    drawHaar(ctx, pose, WURZELN, S, lage);
+    return zuege.flatMap((z) => z.punkte);
+  }
 
   it('zeichnet nichts, wenn das Blatt keine Wurzeln kennt', () => {
     const { ctx, zuege } = notizblock();
-    drawHaar(ctx, 'walking', [], 4, { saum: '#0e1116' });
+    drawHaar(ctx, 'walking', [], S, { kette: RUHIG });
     expect(zuege.length).toBe(0);
   });
+
+  /**
+   * Ohne Kette haengt das Haar in Ruhe — und zwar sichtbar.
+   *
+   * Die Weltkarte und die Profilauswahl zeichnen dieselbe Figur ohne
+   * Simulation und damit ohne Gedaechtnis. Ohne diese Ruhelage traegen sie
+   * gar kein Haar, und die Figur haette dort eine andere Frisur als im Spiel —
+   * ein Fehler, den niemand bemerkt, weil beide Bilder fuer sich stimmig
+   * aussehen.
+   */
+  it('haengt auch ohne Kette in Ruhe, fuer Karte und Profil', () => {
+    const ohne = alles({});
+    const mit = alles({ kette: RUHIG });
+    expect(ohne.length).toBeGreaterThan(0);
+    const tief = (p: [number, number][]) => Math.max(...p.map((q) => q[1]));
+    expect(tief(ohne)).toBeCloseTo(tief(mit), 1);
+  });
+
+  /**
+   * Die Kette bestimmt die Form, nicht der Zeichner.
+   *
+   * Das ist der ganze Umbau vom 26.08.2026 in einer Zusage: Frueher stand die
+   * Bewegung in einer Tabelle mit dreizehn festen Versaetzen, jetzt kommt sie
+   * aus einer Feder-Daempfer-Kette in `ansicht.ts`. Wenn diese Pruefung
+   * durchfaellt, zeichnet der Zeichner wieder sein eigenes Ding.
+   */
+  it('folgt der Kette: eine nach vorn gelegte Kette legt die Masse nach vorn', () => {
+    const vorn = alles({ kette: [[1.5, 1.5], [3.0, 3.0], [4.5, 4.5]] });
+    const zurueck = alles({ kette: [[-1.5, 1.5], [-3.0, 3.0], [-4.5, 4.5]] });
+    const mitte = (p: [number, number][]) => p.reduce((s, q) => s + q[0], 0) / p.length;
+    expect(mitte(vorn)).toBeGreaterThan(mitte(zurueck) + S);
+  });
+
+  /**
+   * Die Masse wird zur Spitze hin schmaler.
+   *
+   * Celestes vier Kleckse schrumpfen von voll auf ein Viertel, und der Grund
+   * ist derselbe wie hier: Eine Masse mit gleichbleibender Dicke ist ein Rohr.
+   * Gemessen wird die Breite des ersten gegen die des letzten Zuges.
+   */
+  it('laeuft von der Wurzel zur Spitze schmaler zu', () => {
+    const { ctx, zuege } = notizblock();
+    drawHaar(ctx, 'blocking', WURZELN, S, { kette: RUHIG });
+    const breite = (z: { punkte: [number, number][] }) => {
+      const k = kasten(z.punkte);
+      return k.r - k.l;
+    };
+    expect(breite(zuege[0])).toBeGreaterThan(breite(zuege[zuege.length - 1]));
+  });
+
+  /**
+   * Im Sturz richtet sich die Masse auf, und zwar mit der Fallhoehe.
+   *
+   * Die beiden Marken sind dieselben, die der Ton benutzt: Bei SCHREI_AB faengt
+   * die Figur an zu schreien, bei FALL_DEATH_PX ist es vorbei. Damit sagen Auge
+   * und Ohr dasselbe, und der Spieler sieht einem Sturz an, ob er noch gut
+   * ausgeht — eine Auskunft, die er sonst nur hoeren koennte.
+   */
+  it('richtet die Masse mit der Fallhoehe auf', () => {
+    const tief = (h: number) =>
+      Math.max(...alles({ kette: RUHIG, sturz: h }, 'falling').map((q) => q[1]));
+    const knapp = tief(SCHREI_AB + 1);
+    const weit = tief(FALL_DEATH_PX - 1);
+    expect(weit).toBeLessThan(knapp - S * 0.5);
+  });
+
+  it('steigert die Masse nicht weiter, wenn der Sturz schon toedlich ist', () => {
+    const tief = (h: number) =>
+      Math.max(...alles({ kette: RUHIG, sturz: h }, 'falling').map((q) => q[1]));
+    expect(tief(FALL_DEATH_PX * 3)).toBeCloseTo(tief(FALL_DEATH_PX), 3);
+  });
+
+  /**
+   * Und das Schweben bleibt davon unberuehrt.
+   *
+   * Unter dem Schirm sinkt die Figur langsam und beliebig weit; ein Haar, das
+   * dabei mitwuechse, stuende nach zwei Sekunden senkrecht nach oben.
+   */
+  it('laesst das Schweben von der Fallhoehe unberuehrt', () => {
+    const tief = (h: number) =>
+      Math.max(...alles({ kette: RUHIG, sturz: h }, 'floating').map((q) => q[1]));
+    expect(tief(2)).toBeCloseTo(tief(FALL_DEATH_PX), 3);
+  });
+
+  /**
+   * Die Masse schrumpft mit der Pose.
+   *
+   * `saving` schrumpft die Figur beim Entschweben auf die Haelfte, `dying`
+   * staucht sie. Was in festen Pixeln daranhaengt, bliebe dabei stehen und
+   * stuende zuletzt groesser da als die ganze Figur — genau so sah der erste
+   * Lauf der alten Fassung aus.
+   */
+  it('schrumpft mit der Kopfachse der Pose', () => {
+    const gross = alles({ kette: RUHIG, achse: 1.83 });
+    const klein = alles({ kette: RUHIG, achse: 0.92 });
+    const hoch = (p: [number, number][]) => Math.max(...p.map((q) => q[1]));
+    expect(hoch(klein)).toBeLessThan(hoch(gross) * 0.75);
+  });
 });
+

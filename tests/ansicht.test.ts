@@ -353,3 +353,88 @@ describe('Die Anstoesse des Haares', () => {
     }
   });
 });
+
+/**
+ * Die Haarkette — die Physik, die seit dem 26.08.2026 an die Stelle der
+ * Versatztabelle getreten ist.
+ *
+ * Der Umbau kam aus einer Recherche mit einem unerwarteten Befund: Celestes
+ * Madeline ist acht mal elf Bildpunkte gross — kleiner als diese Figur — und
+ * hat echtes nachlaufendes Haar. Simuliert wird dort keine Straehne, sondern
+ * eine Masse. Spines Haar-Beispiel nimmt zwei Knochen je Strang, Live2Ds
+ * Beispielfigur zwei Partikel je Gruppe. Drei Glieder sind hier nicht
+ * Sparsamkeit, sondern das Maximum, das eine Figur von 12,3 logischen Pixeln
+ * bei einer Lesegrenze von 0,9 ueberhaupt aufloest.
+ *
+ * Was diese Pruefungen festhalten, ist das, was eine Tabelle NICHT kann.
+ */
+describe('Die Haarkette', () => {
+  const wusel = (id: number, x: number, dir: -1 | 1 = 1) =>
+    ({ id, x, y: 40, dir, state: State.WALKING, timer: 0, fallDist: 0, fuse: 0 }) as unknown as Wusel;
+
+  /** Eine Figur ueber mehrere Bilder laufen lassen und die Kette holen. */
+  function lauf(schritte: number, bewegt: boolean) {
+    ansichtVergessen();
+    let x = 10;
+    let letzte = ansicht(wusel(1, x), 'walking', false, 0);
+    for (let b = 1; b <= schritte; b++) {
+      if (bewegt) x += 1;
+      letzte = ansicht(wusel(1, x), 'walking', false, b);
+    }
+    return letzte.kette;
+  }
+
+  it('haengt im Stand senkrecht und kommt zur Ruhe', () => {
+    const k = lauf(240, false);
+    for (const [gx] of k) expect(Math.abs(gx), `waagerechter Ausschlag ${gx}`).toBeLessThan(0.2);
+    // Und sie haengt nach unten, nicht nach oben.
+    expect(k[k.length - 1][1]).toBeGreaterThan(k[0][1]);
+  });
+
+  /**
+   * Das, wofuer der ganze Umbau da ist: Bewegung legt das Haar zurueck.
+   *
+   * Eine Tabelle koennte das auch — aber nur in Stufen und nur fuer die
+   * dreizehn Posen, die jemand vorher eingetragen hat. Die Kette tut es
+   * stetig und fuer jeden Zwischenzustand.
+   */
+  it('legt sich beim Laufen nach hinten und richtet sich danach wieder auf', () => {
+    const laufend = lauf(240, true);
+    const stehend = lauf(240, false);
+    const weit = (k: readonly (readonly [number, number])[]) => k[k.length - 1][0];
+    expect(weit(laufend)).toBeLessThan(weit(stehend) - 0.5);
+  });
+
+  /**
+   * Und sie ist deterministisch.
+   *
+   * Das war die alte Sorge gegen jede Haarphysik, und sie steht wortwoertlich
+   * im Kopf von `haar.ts`: „ein Haar, das bei jedem Bild woanders steht,
+   * flackert." Ein Feder-Daempfer mit festem Zeitschritt springt nicht, er
+   * laeuft aus — und er liefert bei gleicher Eingabe dieselbe Ausgabe. Ohne
+   * diese Zusage waere die Kette im Zeitruecklauf nicht wiederholbar.
+   */
+  it('liefert bei gleicher Eingabe dieselbe Kette', () => {
+    const a = lauf(60, true);
+    const b = lauf(60, true);
+    expect(a).toEqual(b);
+  });
+
+  /**
+   * Zwei Figuren, zwei Ketten.
+   *
+   * Der Ansichtszustand haengt an der Figurennummer. Ohne das truege der ganze
+   * Pulk dieselbe Frisurbewegung — und ein Pulk, der im Gleichschritt weht,
+   * ist genau der Eindruck, den der Phasenversatz in `scene.ts` vermeiden soll.
+   */
+  it('fuehrt je Figur eine eigene Kette', () => {
+    ansichtVergessen();
+    for (let b = 0; b <= 60; b++) {
+      ansicht(wusel(1, 10 + b), 'walking', false, b);
+      ansicht(wusel(2, 10), 'walking', false, b);
+    }
+    const eins = ansicht(wusel(1, 71), 'walking', false, 61).kette;
+    const zwei = ansicht(wusel(2, 10), 'walking', false, 61).kette;
+    expect(eins).not.toEqual(zwei);
+  });
+});

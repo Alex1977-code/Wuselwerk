@@ -837,6 +837,7 @@ export class Scene {
         !this.atlas?.drawWusel(ctx, v, w, blick, platz, pose, takt, {
           prall: sicht.prall,
           wende: sicht.wende,
+          kette: sicht.kette,
         })
       ) {
         drawWusel(ctx, v, w, tick, blick, platz);
