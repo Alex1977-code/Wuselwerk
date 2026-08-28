@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
+import blattManifest from '../src/art/wuselwerker.atlas.json';
 import { DEFAULT_MANIFEST } from '../src/render/atlas';
 
 /**
@@ -154,4 +155,74 @@ describe('Die Posentabellen', () => {
       });
     }
   });
+});
+
+/**
+ * Amplitude MAL Frequenz — das Mass, das gefehlt hat.
+ *
+ * ## Der Fehler, gegen den diese Pruefung steht
+ *
+ * Am 20.08.2026 hat die Uebertreibungsrunde allen Posen mehr Ausschlag
+ * gegeben; beim Gang schwang die Figur danach um neun Prozent in der Breite
+ * und hob den Scheitel bei jedem Schritt. Das war richtig — bei einem
+ * Gangzyklus von 24 Takten, also 2,5 Umlaeufen je Sekunde.
+ *
+ * Am 26.08.2026 ist der Zyklus auf 10 Takte gekuerzt worden, damit die Beine
+ * zur Laufgeschwindigkeit passen. Die Amplituden blieben stehen. Aus 2,5
+ * Umlaeufen wurden 6,0, aus einem Heben und Senken je Schritt zwoelf je
+ * Sekunde. Gemessen an der laufenden Figur mit
+ * `art-src/figur-umbau/bildfolge.mjs`: der Scheitel sprang 16-17-17-16-15 mit
+ * Periode fuenf Bildern, Spanne zwei Bildpunkte, **11,5 Richtungswechsel je
+ * Sekunde**. Die Rueckmeldung lautete „die figur flackert das sollte fluessig
+ * aussehen".
+ *
+ * Keine Pruefung hat das gefangen, und keine KONNTE es: Es gab eine Schranke
+ * fuer die senkrechte Stauchung (0,08) und gar keine fuer die waagerechte, und
+ * beide haetten ohnehin nicht angeschlagen — die Amplitude war unveraendert.
+ * Geaendert hatte sich die FREQUENZ.
+ *
+ * ## Was hier geprueft wird
+ *
+ * Das Produkt aus beidem, denn das ist, was das Auge sieht. Die Schranken sind
+ * vom geheilten Gang abgeleitet: 0,025 Hub mal 6,0 Umlaeufe = 0,15, und 0,075
+ * Breite mal 6,0 = 0,45. Mit Luft nach oben: 0,20 und 0,60.
+ *
+ * Einmalige Posen sind ausgenommen. `saving` und `dying` laufen genau einmal
+ * durch und duerfen dramatisch sein — eine Figur, die entschwebt, soll sich
+ * strecken.
+ */
+describe('Ausschlag mal Frequenz — was das Auge wirklich sieht', () => {
+  /** Hoechster Hub mal Umlaeufe je Sekunde. */
+  const HUB = 0.2;
+  /** Hoechste Stauchungsspanne mal Umlaeufe je Sekunde. */
+  const BREIT = 0.6;
+  const clips = (blattManifest as unknown as {
+    clips: Record<string, { holds: number[]; once?: boolean }>;
+  }).clips;
+
+  for (const [name, pose] of Object.entries(POSEN)) {
+    const clip = clips[name];
+    if (!clip || clip.once) continue;
+    const takte = clip.holds.reduce((a, b) => a + b, 0);
+    const um = 60 / takte;
+
+    it(`${name}: ${um.toFixed(2)} Umlaeufe je Sekunde bleiben im Budget`, () => {
+      const vs = pose.frames.map((f) => f.versatz ?? 0);
+      const hub = (Math.max(...vs) - Math.min(...vs)) * um;
+      expect(
+        hub,
+        `${name}: Hub ${(Math.max(...vs) - Math.min(...vs)).toFixed(4)} bei ${um.toFixed(2)} Umlaeufen je Sekunde`,
+      ).toBeLessThanOrEqual(HUB);
+
+      const achse = (i: number) => {
+        const v = pose.frames.map((f) => f.stauch?.[i] ?? 1);
+        return Math.max(...v) - Math.min(...v);
+      };
+      const breit = Math.max(achse(0), achse(1), achse(2)) * um;
+      expect(
+        breit,
+        `${name}: Stauchungsspanne ${Math.max(achse(0), achse(1), achse(2)).toFixed(4)} bei ${um.toFixed(2)} Umlaeufen je Sekunde`,
+      ).toBeLessThanOrEqual(BREIT);
+    });
+  }
 });
