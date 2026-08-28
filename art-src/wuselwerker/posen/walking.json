@@ -1,5 +1,5 @@
 {
- "_warum": "Aufrecht, gegengleicher Armschwung. Die Beine dieser Figur messen 0,11 Modelleinheiten; ein Ausschlag von dreissig Grad bewegt darin einen halben logischen Pixel. Der Gang haengt deshalb am Arm und am Hub, nicht am Bein. Die Stauchung ist am 22.08.2026 in der Senkrechten von 1,12/0,88 auf 1,02/0,98 gedaempft worden - die Waagerechte steht unveraendert. Grund, gemessen am Blatt: Der Scheitel wanderte im Laufzyklus um 3,49 logische Pixel, also um achtundzwanzig Prozent der Figurenhoehe und fast das Vierfache der Lesegrenze von 0,9. Die Figur pumpte damit bei jedem Schritt auf und ab, statt zu gehen. Der ganze Hub kam aus der Stauchung und nicht aus der Pose: Alle vier neutralen Bilder liegen auf demselben Scheitel. Jetzt sind es 1,06 lp - der Schritt hat noch sichtbaren Hub, aber kein Pumpen. Am 27.08.2026 sind Hub UND Stauchung durch 2,4 geteilt worden, und der Grund ist eine Frequenz, keine Amplitude. Der Gangzyklus ist am 26.08. von 24 auf 10 Takte gekuerzt worden, damit die Beine zur Geschwindigkeit passen - die Amplituden aus der Uebertreibungsrunde blieben aber stehen. Bei 60 Bildern je Sekunde macht ein Zyklus von 10 Takten SECHS Umlaeufe in der Sekunde, also zwoelf Hebungen. Gemessen an der laufenden Figur: der Scheitel sprang 16-17-17-16-15 mit Periode fuenf Bildern, Spanne zwei Bildpunkte, 11,5 Richtungswechsel je Sekunde. Das liest kein Auge als Gehen, das liest es als Flackern - Rueckmeldung: \"die figur flackert das sollte fluessig aussehen\". Was der Zuschauer sieht, ist Amplitude MAL Frequenz; wenn die Frequenz auf das 2,4-fache steigt, muss die Amplitude durch 2,4. Die Waagerechte ist dabei mitgegangen, obwohl sie den Scheitel nicht bewegt: Sie machte die Figur zwoelfmal je Sekunde um neun Prozent breiter und schmaler, und der Umrisstest bewacht nur die Senkrechte. Nachmessen mit art-src/figur-umbau/posen/umrisswechsel.py. Der Blickwinkel ist am 22.08.2026 von 46 auf 70 Grad gedreht worden (figur.json, drehung). Rueckmeldung war, die Figur laufe seitwaerts - und das stimmte: Bei 46 Grad steht der Koerper im Dreiviertelblick zur Kamera, waehrend die Figur waagerecht ueber den Schirm geht, also quer zu ihrer eigenen Blickrichtung. Bei 70 Grad zeigt sie dorthin, wohin sie geht. Der Preis steht in figur.json (_warum): Ein Gesicht verliert im Profil mehr als die Silhouette gewinnt - deshalb 70 und nicht 90, ein Auge und die Nasenlinie bleiben lesbar. Gemessen wurde die Figur dadurch von 8,0 auf 9,0 logische Pixel breit, Breite durch Hoehe im Mittel 0,544. Am 26.08.2026 hat der Oberschenkel eine Dreieckwelle statt einer Sinuswelle bekommen (z je Schluesselbild 0 / 0,25 / 0,50 / 0,25 / 0 / -0,25 / -0,50 / -0,25 statt 0 / 0,69 / 0,88 / 0,69 ...). Rueckmeldung war, die Laufbewegung passe nicht zur Geschwindigkeit, und das stimmte gemessen. Die Simulation traegt die Figur mit WALK_INTERVAL 3 um genau ein Drittel logischen Pixel je Tick, also gleichmaessig. Ein Bein, dessen Winkel sinusfoermig schwingt, bewegt seinen Fuss aber ungleichmaessig - in der Mitte am schnellsten, an den Umkehrpunkten gar nicht. Am Blatt nachgemessen lief der Fuss zwischen 0,094 und 0,556 lp je Tick, waehrend der Koerper konstant 0,333 macht. Wo der Fuss langsamer ist als der Koerper, rutscht er nach vorn; wo er schneller ist, nach hinten - und beides in jedem Schritt. Eine Dreieckwelle bewegt den Fuss mit konstanter Winkelgeschwindigkeit; der Median liegt jetzt bei 0,297 lp je Tick. Nachmessen laesst sich das, indem man je Bild die beiden Fussklumpen im untersten logischen Pixel sucht und ihre Mitten von Bild zu Bild vergleicht. NICHT ERLEDIGT ist die Streuung: Sie liegt noch bei 0,111 bis 0,496, weil der UNTERSCHENKEL den Fuss staerker traegt als der Oberschenkel - eine Senkung der Oberschenkelamplitude von 0,62 auf 0,50 hat die Fussweite nur von 4,95 auf 4,55 lp gebracht, Soll sind 4,00. Die vollstaendige Loesung waere, die Beinkette so zu setzen, dass der FUSS waehrend der Standphase eine Gerade mit konstanter Geschwindigkeit beschreibt, statt den Oberschenkel zu steuern und zu hoffen. Am 26.08.2026 ist der ZYKLUS von 24 auf 10 Ticks gekuerzt worden, und das ist der eigentliche Grund fuer das Rutschen gewesen - nicht die Kurvenform. Am Modell gemessen: Oberschenkel 0,95 lp, Unterschenkel 0,41, Bein gesamt 1,36, Hueftgelenk 1,48 lp ueber dem Boden. Bei vierzig Grad Ausschlag schafft dieses Bein eine Standweite von 1,75 lp. Die Simulation traegt die Figur mit WALK_INTERVAL 3 aber um Zyklus geteilt durch sechs je Standphase - bei 24 Ticks also 4,00 lp. Die Figur lief zweieinhalbmal schneller, als ihre Beine sie tragen koennen, und dann MUSS der Fuss rutschen; das ist Geometrie und keine Feinabstimmung. Bei zehn Ticks verlangt eine Standphase 1,67 lp, und das Bein kann 1,75. Die Figur trippelt jetzt mit sechs Schritten in der Sekunde, was zu einem Geschoepf von zwoelf Pixeln Hoehe passt, das mit zwanzig Pixeln in der Sekunde unterwegs ist. Der Phasenversatz des Pulks in scene.ts ist mitgezogen: zehn Phasen zu einem Tick statt acht zu dreien.",
+ "_warum": "Aufrecht, gegengleicher Armschwung. Die Beine dieser Figur messen 0,11 Modelleinheiten; ein Ausschlag von dreissig Grad bewegt darin einen halben logischen Pixel. Der Gang haengt deshalb am Arm und am Hub, nicht am Bein. Die Stauchung ist am 22.08.2026 in der Senkrechten von 1,12/0,88 auf 1,02/0,98 gedaempft worden - die Waagerechte steht unveraendert. Grund, gemessen am Blatt: Der Scheitel wanderte im Laufzyklus um 3,49 logische Pixel, also um achtundzwanzig Prozent der Figurenhoehe und fast das Vierfache der Lesegrenze von 0,9. Die Figur pumpte damit bei jedem Schritt auf und ab, statt zu gehen. Der ganze Hub kam aus der Stauchung und nicht aus der Pose: Alle vier neutralen Bilder liegen auf demselben Scheitel. Jetzt sind es 1,06 lp - der Schritt hat noch sichtbaren Hub, aber kein Pumpen. Am 27.08.2026 sind Hub UND Stauchung durch 2,4 geteilt worden, und der Grund ist eine Frequenz, keine Amplitude. Der Gangzyklus ist am 26.08. von 24 auf 10 Takte gekuerzt worden, damit die Beine zur Geschwindigkeit passen - die Amplituden aus der Uebertreibungsrunde blieben aber stehen. Bei 60 Bildern je Sekunde macht ein Zyklus von 10 Takten SECHS Umlaeufe in der Sekunde, also zwoelf Hebungen. Gemessen an der laufenden Figur: der Scheitel sprang 16-17-17-16-15 mit Periode fuenf Bildern, Spanne zwei Bildpunkte, 11,5 Richtungswechsel je Sekunde. Das liest kein Auge als Gehen, das liest es als Flackern - Rueckmeldung: \"die figur flackert das sollte fluessig aussehen\". Was der Zuschauer sieht, ist Amplitude MAL Frequenz; wenn die Frequenz auf das 2,4-fache steigt, muss die Amplitude durch 2,4. Die Waagerechte ist dabei mitgegangen, obwohl sie den Scheitel nicht bewegt: Sie machte die Figur zwoelfmal je Sekunde um neun Prozent breiter und schmaler, und der Umrisstest bewacht nur die Senkrechte. Nachmessen mit art-src/figur-umbau/posen/umrisswechsel.py. Der Blickwinkel ist am 22.08.2026 von 46 auf 70 Grad gedreht worden (figur.json, drehung). Rueckmeldung war, die Figur laufe seitwaerts - und das stimmte: Bei 46 Grad steht der Koerper im Dreiviertelblick zur Kamera, waehrend die Figur waagerecht ueber den Schirm geht, also quer zu ihrer eigenen Blickrichtung. Bei 70 Grad zeigt sie dorthin, wohin sie geht. Der Preis steht in figur.json (_warum): Ein Gesicht verliert im Profil mehr als die Silhouette gewinnt - deshalb 70 und nicht 90, ein Auge und die Nasenlinie bleiben lesbar. Gemessen wurde die Figur dadurch von 8,0 auf 9,0 logische Pixel breit, Breite durch Hoehe im Mittel 0,544. Am 26.08.2026 hat der Oberschenkel eine Dreieckwelle statt einer Sinuswelle bekommen (z je Schluesselbild 0 / 0,25 / 0,50 / 0,25 / 0 / -0,25 / -0,50 / -0,25 statt 0 / 0,69 / 0,88 / 0,69 ...). Rueckmeldung war, die Laufbewegung passe nicht zur Geschwindigkeit, und das stimmte gemessen. Die Simulation traegt die Figur mit WALK_INTERVAL 3 um genau ein Drittel logischen Pixel je Tick, also gleichmaessig. Ein Bein, dessen Winkel sinusfoermig schwingt, bewegt seinen Fuss aber ungleichmaessig - in der Mitte am schnellsten, an den Umkehrpunkten gar nicht. Am Blatt nachgemessen lief der Fuss zwischen 0,094 und 0,556 lp je Tick, waehrend der Koerper konstant 0,333 macht. Wo der Fuss langsamer ist als der Koerper, rutscht er nach vorn; wo er schneller ist, nach hinten - und beides in jedem Schritt. Eine Dreieckwelle bewegt den Fuss mit konstanter Winkelgeschwindigkeit; der Median liegt jetzt bei 0,297 lp je Tick. Nachmessen laesst sich das, indem man je Bild die beiden Fussklumpen im untersten logischen Pixel sucht und ihre Mitten von Bild zu Bild vergleicht. NICHT ERLEDIGT ist die Streuung: Sie liegt noch bei 0,111 bis 0,496, weil der UNTERSCHENKEL den Fuss staerker traegt als der Oberschenkel - eine Senkung der Oberschenkelamplitude von 0,62 auf 0,50 hat die Fussweite nur von 4,95 auf 4,55 lp gebracht, Soll sind 4,00. Die vollstaendige Loesung waere, die Beinkette so zu setzen, dass der FUSS waehrend der Standphase eine Gerade mit konstanter Geschwindigkeit beschreibt, statt den Oberschenkel zu steuern und zu hoffen. Am 26.08.2026 ist der ZYKLUS von 24 auf 10 Ticks gekuerzt worden, und das ist der eigentliche Grund fuer das Rutschen gewesen - nicht die Kurvenform. Am Modell gemessen: Oberschenkel 0,95 lp, Unterschenkel 0,41, Bein gesamt 1,36, Hueftgelenk 1,48 lp ueber dem Boden. Bei vierzig Grad Ausschlag schafft dieses Bein eine Standweite von 1,75 lp. Die Simulation traegt die Figur mit WALK_INTERVAL 3 aber um Zyklus geteilt durch sechs je Standphase - bei 24 Ticks also 4,00 lp. Die Figur lief zweieinhalbmal schneller, als ihre Beine sie tragen koennen, und dann MUSS der Fuss rutschen; das ist Geometrie und keine Feinabstimmung. Bei zehn Ticks verlangt eine Standphase 1,67 lp, und das Bein kann 1,75. Die Figur trippelt jetzt mit sechs Schritten in der Sekunde, was zu einem Geschoepf von zwoelf Pixeln Hoehe passt, das mit zwanzig Pixeln in der Sekunde unterwegs ist. Der Phasenversatz des Pulks in scene.ts ist mitgezogen: zehn Phasen zu einem Tick statt acht zu dreien. Am 27.08.2026 ist auch der ARMSCHWUNG heruntergenommen worden, und zwar auf das Mass des Beins. Gemessen vorher: Oberschenkel 73,7 Grad, Oberarm 152,8, Unterarm 154,0 - die Arme schwangen mehr als doppelt so weit wie die Beine, bei sechs Umlaeufen je Sekunde also mit rund 920 Grad je Sekunde. Rueckmeldung: \"die arme bewegen sich viel zu schnell vor und zurueck\". Der Beinschwung ist durch die Laufgeschwindigkeit ERZWUNGEN - eine Figur mit 1,36 lp Bein, die 20 Pixel je Sekunde geht, braucht diesen Zyklus, sonst rutschen die Fuesse. Der Armschwung ist frei, und ein Arm, der weiter ausschlaegt als das Bein, das ihn traegt, sieht in keiner Gangart richtig aus. Beide stehen jetzt auf derselben Spanne; posen.test.ts prueft es.",
  "frames": [
   {
    "richtung": {
@@ -25,23 +25,23 @@
     ],
     "L_Upperarm": [
      0.2839,
-     -0.9588,
+     -0.9589,
      0.0
     ],
     "L_Forearm": [
      0.206,
-     -0.8374,
-     0.5062
+     -0.9245,
+     0.3206
     ],
     "R_Upperarm": [
      -0.2839,
-     -0.9588,
-     -0.0
+     -0.9589,
+     0.0
     ],
     "R_Forearm": [
      -0.206,
-     -0.8374,
-     0.5062
+     -0.9245,
+     0.3206
     ],
     "L_Thigh": [
      0.1284,
@@ -118,23 +118,23 @@
     ],
     "L_Upperarm": [
      0.2032,
-     -0.5447,
-     -0.8136
+     -0.8406,
+     -0.502
     ],
     "L_Forearm": [
      0.1485,
-     -0.832,
-     -0.5346
+     -0.9348,
+     -0.3225
     ],
     "R_Upperarm": [
      -0.2032,
-     -0.5447,
-     0.8136
+     -0.8406,
+     0.502
     ],
     "R_Forearm": [
      -0.1405,
-     -0.1549,
-     0.9779
+     -0.7782,
+     0.6121
     ],
     "L_Thigh": [
      0.1055,
@@ -211,23 +211,23 @@
     ],
     "L_Upperarm": [
      0.1276,
-     -0.1955,
-     -0.9724
+     -0.7898,
+     -0.6
     ],
     "L_Forearm": [
      0.0415,
-     -0.308,
-     -0.9505
+     -0.8139,
+     -0.5796
     ],
     "R_Upperarm": [
      -0.1276,
-     -0.1955,
-     0.9724
+     -0.7898,
+     0.6
     ],
     "R_Forearm": [
      -0.1247,
-     -0.0397,
-     0.9914
+     -0.7743,
+     0.6204
     ],
     "L_Thigh": [
      0.0836,
@@ -304,23 +304,23 @@
     ],
     "L_Upperarm": [
      0.2032,
-     -0.5447,
-     -0.8136
+     -0.8406,
+     -0.502
     ],
     "L_Forearm": [
      0.1485,
-     -0.832,
-     -0.5346
+     -0.9348,
+     -0.3225
     ],
     "R_Upperarm": [
      -0.2032,
-     -0.5447,
-     0.8136
+     -0.8406,
+     0.502
     ],
     "R_Forearm": [
      -0.1405,
-     -0.1549,
-     0.9779
+     -0.7782,
+     0.6121
     ],
     "L_Thigh": [
      0.1055,
@@ -397,23 +397,23 @@
     ],
     "L_Upperarm": [
      0.2839,
-     -0.9588,
+     -0.9589,
      0.0
     ],
     "L_Forearm": [
      0.206,
-     -0.8374,
-     0.5062
+     -0.9245,
+     0.3206
     ],
     "R_Upperarm": [
      -0.2839,
-     -0.9588,
-     -0.0
+     -0.9589,
+     0.0
     ],
     "R_Forearm": [
      -0.206,
-     -0.8374,
-     0.5062
+     -0.9245,
+     0.3206
     ],
     "L_Thigh": [
      0.1284,
@@ -490,23 +490,23 @@
     ],
     "L_Upperarm": [
      0.2032,
-     -0.5447,
-     0.8136
+     -0.8406,
+     0.502
     ],
     "L_Forearm": [
      0.1405,
-     -0.1549,
-     0.9779
+     -0.7782,
+     0.6121
     ],
     "R_Upperarm": [
      -0.2032,
-     -0.5447,
-     -0.8136
+     -0.8406,
+     -0.502
     ],
     "R_Forearm": [
      -0.1485,
-     -0.832,
-     -0.5346
+     -0.9348,
+     -0.3225
     ],
     "L_Thigh": [
      0.1055,
@@ -583,23 +583,23 @@
     ],
     "L_Upperarm": [
      0.1276,
-     -0.1955,
-     0.9724
+     -0.7898,
+     0.6
     ],
     "L_Forearm": [
      0.1247,
-     -0.0397,
-     0.9914
+     -0.7743,
+     0.6204
     ],
     "R_Upperarm": [
      -0.1276,
-     -0.1955,
-     -0.9724
+     -0.7898,
+     -0.6
     ],
     "R_Forearm": [
      -0.0415,
-     -0.308,
-     -0.9505
+     -0.8139,
+     -0.5796
     ],
     "L_Thigh": [
      0.0836,
@@ -676,23 +676,23 @@
     ],
     "L_Upperarm": [
      0.2032,
-     -0.5447,
-     0.8136
+     -0.8406,
+     0.502
     ],
     "L_Forearm": [
      0.1405,
-     -0.1549,
-     0.9779
+     -0.7782,
+     0.6121
     ],
     "R_Upperarm": [
      -0.2032,
-     -0.5447,
-     -0.8136
+     -0.8406,
+     -0.502
     ],
     "R_Forearm": [
      -0.1485,
-     -0.832,
-     -0.5346
+     -0.9348,
+     -0.3225
     ],
     "L_Thigh": [
      0.1055,

@@ -226,3 +226,78 @@ describe('Ausschlag mal Frequenz — was das Auge wirklich sieht', () => {
     });
   }
 });
+
+/**
+ * Im GANG schwingt kein Arm weiter als das Bein.
+ *
+ * ## Warum ausgerechnet das Bein der Massstab ist
+ *
+ * Weil sein Ausschlag als einziger ERZWUNGEN ist. Die Figur geht 20 logische
+ * Pixel je Sekunde, ihr Bein misst 1,36 lp, und daraus folgt zwingend, wie
+ * weit der Oberschenkel ausholen muss, damit der Fuss nicht ueber den Boden
+ * rutscht. Der Armschwung ist frei gewaehlt.
+ *
+ * Gemessen am Gang vor dem 27.08.2026: Oberschenkel 73,7 Grad, Oberarm 152,8,
+ * Unterarm 154,0. Die Arme schlugen mehr als doppelt so weit aus wie die
+ * Beine, und bei sechs Umlaeufen je Sekunde sind das rund 920 Grad
+ * Armdrehung je Sekunde. Rueckmeldung: „die arme bewegen sich viel zu schnell
+ * vor und zurueck".
+ *
+ * Das war dieselbe Falle wie beim Hub, nur an einem anderen Knochen. Die
+ * Uebertreibungsrunde hat den Arm gross gemacht, weil das Bein dieser Figur zu
+ * kurz ist, um den Gang zu tragen — bei 24 Takten Zyklus eine gute Wahl. Nach
+ * der Kuerzung auf 10 Takte war es keine mehr, und wieder hat es niemand
+ * gemerkt, weil sich nur die Frequenz geaendert hatte.
+ *
+ * ## Warum nur der Gang
+ *
+ * Der erste Anlauf hat die Regel auf alle Posen mit Beinschwung gelegt und ist
+ * bei dreien durchgefallen — zu Recht, und das ist lehrreich genug, um es hier
+ * festzuhalten:
+ *
+ *   falling    Der Oberarm schlaegt 36,7 Grad gegen 31,1 am Bein. Die Figur
+ *              ist in der Luft; ihr Bein treibt gar nichts, und wer faellt,
+ *              rudert.
+ *   hoisting   80,8 gegen 54,0. Beim Hochziehen ARBEITEN die Arme — das ist
+ *              der Inhalt der Pose, nicht ihre Zierde.
+ *   saving     Der Unterarm 99,7 gegen 69,3. Die Figur greift nach oben,
+ *              waehrend sie entschwebt.
+ *
+ * In allen dreien traegt das Bein die Figur nicht. Die Regel gilt deshalb
+ * ausdruecklich nur fuer die Fortbewegung auf eigenen Beinen, und das ist in
+ * diesem Spiel genau eine Pose.
+ */
+describe('Im Gang schwingt kein Arm weiter als das Bein', () => {
+  /** Wieviel ein Arm ueber den Beinschwung hinausgehen darf. */
+  const LUFT = 1.1;
+  const ARME = ['L_Upperarm', 'R_Upperarm', 'L_Forearm', 'R_Forearm'];
+
+  /**
+   * Der Ausschlag eines Knochens in der GEHEBENE, in Grad.
+   *
+   * Die Figur geht laengs z — das ist keine Annahme, sondern am Gangbild
+   * abzulesen: Der Oberschenkel traegt dort ein Dreieck 0, 0,3, 0,6, 0,3, 0,
+   * -0,3, -0,6, -0,3, waehrend x und y fast stehen.
+   */
+  const spanne = (pose: Pose, knochen: string) => {
+    const z = pose.frames.map((f) => f.richtung?.[knochen]?.[2] ?? 0);
+    const bogen = (v: number) => Math.asin(Math.min(1, Math.max(-1, v)));
+    return (bogen(Math.max(...z)) - bogen(Math.min(...z))) * (180 / Math.PI);
+  };
+
+  const gang = POSEN.walking;
+  const bein = gang ? spanne(gang, 'L_Thigh') : 0;
+
+  it('das Bein schwingt ueberhaupt — sonst sagt die Regel nichts', () => {
+    expect(bein).toBeGreaterThan(20);
+  });
+
+  for (const arm of ARME) {
+    it(`${arm} bleibt unter dem Beinschwung von ${bein.toFixed(1)} Grad`, () => {
+      const a = spanne(gang, arm);
+      expect(a, `${arm} schwingt ${a.toFixed(1)} Grad, das Bein nur ${bein.toFixed(1)}`).toBeLessThanOrEqual(
+        bein * LUFT,
+      );
+    });
+  }
+});
