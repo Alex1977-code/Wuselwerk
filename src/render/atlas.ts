@@ -179,7 +179,13 @@ export const DEFAULT_MANIFEST: AtlasManifest = {
   cell: { w: CELL_W, h: CELL_H },
   anchor: { x: ANCHOR_X, y: ANCHOR_Y },
   clips: {
-    walking: { row: 0, holds: [2, 1, 1, 2, 1, 1, 1, 1] },
+    // Sechzehn Eintraege auf zwanzig Takte: Die Posentabelle bringt sechzehn
+    // Schluesselbilder mit, weil die Beine darin ZWEI Umlaeufe laufen und die
+    // Arme einen. Siehe art-src/wuselwerker/posen/walking.json.
+    walking: {
+      row: 0,
+      holds: [2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1],
+    },
     falling: { row: 1, holds: [4, 4, 4, 4] },
     floating: { row: 2, holds: [3, 3, 3, 3] },
     climbing: { row: 3, holds: [3, 3, 4, 3] },

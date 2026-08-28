@@ -191,10 +191,19 @@ describe('Jedes Blatt sagt, was es zeigt', () => {
           if (imBau) {
             expect(summe(ist.holds), `Zyklusdauer von ${name} in Ticks`).toBe(summe(soll.holds));
           }
-          expect(
-            ist.holds.length,
-            `Bildzahl von ${name} — gröber als der Ersatzzeichner`,
-          ).toBeGreaterThanOrEqual(soll.holds.length);
+          // Auch die Bildzahl gilt nur fuer die Figur im Bau, und aus demselben
+          // Grund wie die Zyklusdauer. Der Gang des Wuselwerkers traegt seit
+          // dem 27.08.2026 sechzehn Schluesselbilder auf zwanzig Takte, weil
+          // die Beine darin ZWEI Umlaeufe laufen und die Arme einen — eine
+          // Antwort auf seine kurzen Beine. Murmel und Erdmaennchen haben
+          // andere; von ihren ruhenden Blaettern dieselbe Zerlegung zu
+          // verlangen hiesse, drei Figuren denselben Gang zu verordnen.
+          if (imBau) {
+            expect(
+              ist.holds.length,
+              `Bildzahl von ${name} — gröber als der Ersatzzeichner`,
+            ).toBeGreaterThanOrEqual(soll.holds.length);
+          }
           expect(!!ist.once, `Ablaufart von ${name}`).toBe(!!soll.once);
         }
       });

@@ -216,6 +216,29 @@ console.log(`Korrelation Schrittgroesse gegen Aenderung der Unterpixel-Lage: ${k
   console.log(`  Richtungswechsel ${kehr} auf ${bilder.length} Bilder  =  ${(60 * kehr / bilder.length).toFixed(1)} je Sekunde`);
 }
 
+// Die BREITE der Figur Bild fuer Bild. Sie wird vom Armschwung beherrscht:
+// Wer die Arme vor und zurueck fuehrt, macht die Silhouette breiter und
+// schmaler. Die Zahl der Richtungswechsel darin ist damit der Armtakt,
+// gemessen am fertigen Bild statt an der Posentabelle.
+{
+  const R2 = R * 2;
+  const breite = bilder.map((b) => {
+    let li = R2, re = -1;
+    for (let y = 0; y < R2; y++)
+      for (let x = 0; x < R2; x++)
+        if (figur(b.daten, (y * R2 + x) * 4)) { if (x < li) li = x; if (x > re) re = x; }
+    return re >= li ? re - li : 0;
+  });
+  console.log(`\nFigurbreite: ${Math.min(...breite)} bis ${Math.max(...breite)} Bildpunkte`);
+  console.log('  ' + breite.slice(0, 40).map((v) => String(v).padStart(3)).join(''));
+  let kehr = 0;
+  for (let i = 2; i < breite.length; i++) {
+    const a = breite[i - 1] - breite[i - 2], b2 = breite[i] - breite[i - 1];
+    if (a !== 0 && b2 !== 0 && Math.sign(a) !== Math.sign(b2)) kehr++;
+  }
+  console.log(`  Richtungswechsel ${kehr} auf ${bilder.length} Bilder  =  ${(60 * kehr / bilder.length).toFixed(1)} je Sekunde`);
+}
+
 console.log('\nSchrittgroesse Bild fuer Bild (die ersten 40):');
 console.log('  ' + schritte.slice(0, 40).map((v) => v.toFixed(1).padStart(5)).join(''));
 console.log('Unterpixel-Lage x dazu:');
@@ -223,7 +246,7 @@ console.log('  ' + bruch.slice(2, 42).map((v) => v.toFixed(2).padStart(5)).join(
 
 // Die Bilder als Streifen herausschreiben — ansehen schlaegt jede Kennzahl.
 {
-  const N = 16, R2 = R * 2;
+  const N = Number(process.env.STREIFEN || 16), R2 = R * 2;
   const breite = N * R2, hoehe = R2;
   const roh = Buffer.alloc(breite * hoehe * 4);
   for (let k = 0; k < N && k < bilder.length; k++) {

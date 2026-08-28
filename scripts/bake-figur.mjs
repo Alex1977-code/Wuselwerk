@@ -169,7 +169,10 @@ const SPALTEN = 24;
  * Das liest sich als Flackern und nicht als Bewegung.
  */
 const ZEILEN = [
-  { name: 'walking', holds: [1,1,1,1,1,1,1,1,1,1] },
+  // Zwanzig Bilder, nicht zehn: Die Beine laufen darin ZWEI Umlaeufe, die Arme
+  // EINEN. Der Beintakt ist durch die Laufgeschwindigkeit erzwungen, der
+  // Armtakt nicht — siehe walking.json.
+  { name: 'walking', holds: [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] },
   { name: 'falling', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
   { name: 'floating', holds: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] },
   { name: 'climbing', holds: [1,1,1,1,1,1,1,1,1,1,1,1,1] },

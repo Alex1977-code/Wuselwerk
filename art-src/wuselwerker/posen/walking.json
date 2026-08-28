@@ -1,5 +1,5 @@
 {
- "_warum": "Aufrecht, gegengleicher Armschwung. Die Beine dieser Figur messen 0,11 Modelleinheiten; ein Ausschlag von dreissig Grad bewegt darin einen halben logischen Pixel. Der Gang haengt deshalb am Arm und am Hub, nicht am Bein. Die Stauchung ist am 22.08.2026 in der Senkrechten von 1,12/0,88 auf 1,02/0,98 gedaempft worden - die Waagerechte steht unveraendert. Grund, gemessen am Blatt: Der Scheitel wanderte im Laufzyklus um 3,49 logische Pixel, also um achtundzwanzig Prozent der Figurenhoehe und fast das Vierfache der Lesegrenze von 0,9. Die Figur pumpte damit bei jedem Schritt auf und ab, statt zu gehen. Der ganze Hub kam aus der Stauchung und nicht aus der Pose: Alle vier neutralen Bilder liegen auf demselben Scheitel. Jetzt sind es 1,06 lp - der Schritt hat noch sichtbaren Hub, aber kein Pumpen. Am 27.08.2026 sind Hub UND Stauchung durch 2,4 geteilt worden, und der Grund ist eine Frequenz, keine Amplitude. Der Gangzyklus ist am 26.08. von 24 auf 10 Takte gekuerzt worden, damit die Beine zur Geschwindigkeit passen - die Amplituden aus der Uebertreibungsrunde blieben aber stehen. Bei 60 Bildern je Sekunde macht ein Zyklus von 10 Takten SECHS Umlaeufe in der Sekunde, also zwoelf Hebungen. Gemessen an der laufenden Figur: der Scheitel sprang 16-17-17-16-15 mit Periode fuenf Bildern, Spanne zwei Bildpunkte, 11,5 Richtungswechsel je Sekunde. Das liest kein Auge als Gehen, das liest es als Flackern - Rueckmeldung: \"die figur flackert das sollte fluessig aussehen\". Was der Zuschauer sieht, ist Amplitude MAL Frequenz; wenn die Frequenz auf das 2,4-fache steigt, muss die Amplitude durch 2,4. Die Waagerechte ist dabei mitgegangen, obwohl sie den Scheitel nicht bewegt: Sie machte die Figur zwoelfmal je Sekunde um neun Prozent breiter und schmaler, und der Umrisstest bewacht nur die Senkrechte. Nachmessen mit art-src/figur-umbau/posen/umrisswechsel.py. Der Blickwinkel ist am 22.08.2026 von 46 auf 70 Grad gedreht worden (figur.json, drehung). Rueckmeldung war, die Figur laufe seitwaerts - und das stimmte: Bei 46 Grad steht der Koerper im Dreiviertelblick zur Kamera, waehrend die Figur waagerecht ueber den Schirm geht, also quer zu ihrer eigenen Blickrichtung. Bei 70 Grad zeigt sie dorthin, wohin sie geht. Der Preis steht in figur.json (_warum): Ein Gesicht verliert im Profil mehr als die Silhouette gewinnt - deshalb 70 und nicht 90, ein Auge und die Nasenlinie bleiben lesbar. Gemessen wurde die Figur dadurch von 8,0 auf 9,0 logische Pixel breit, Breite durch Hoehe im Mittel 0,544. Am 26.08.2026 hat der Oberschenkel eine Dreieckwelle statt einer Sinuswelle bekommen (z je Schluesselbild 0 / 0,25 / 0,50 / 0,25 / 0 / -0,25 / -0,50 / -0,25 statt 0 / 0,69 / 0,88 / 0,69 ...). Rueckmeldung war, die Laufbewegung passe nicht zur Geschwindigkeit, und das stimmte gemessen. Die Simulation traegt die Figur mit WALK_INTERVAL 3 um genau ein Drittel logischen Pixel je Tick, also gleichmaessig. Ein Bein, dessen Winkel sinusfoermig schwingt, bewegt seinen Fuss aber ungleichmaessig - in der Mitte am schnellsten, an den Umkehrpunkten gar nicht. Am Blatt nachgemessen lief der Fuss zwischen 0,094 und 0,556 lp je Tick, waehrend der Koerper konstant 0,333 macht. Wo der Fuss langsamer ist als der Koerper, rutscht er nach vorn; wo er schneller ist, nach hinten - und beides in jedem Schritt. Eine Dreieckwelle bewegt den Fuss mit konstanter Winkelgeschwindigkeit; der Median liegt jetzt bei 0,297 lp je Tick. Nachmessen laesst sich das, indem man je Bild die beiden Fussklumpen im untersten logischen Pixel sucht und ihre Mitten von Bild zu Bild vergleicht. NICHT ERLEDIGT ist die Streuung: Sie liegt noch bei 0,111 bis 0,496, weil der UNTERSCHENKEL den Fuss staerker traegt als der Oberschenkel - eine Senkung der Oberschenkelamplitude von 0,62 auf 0,50 hat die Fussweite nur von 4,95 auf 4,55 lp gebracht, Soll sind 4,00. Die vollstaendige Loesung waere, die Beinkette so zu setzen, dass der FUSS waehrend der Standphase eine Gerade mit konstanter Geschwindigkeit beschreibt, statt den Oberschenkel zu steuern und zu hoffen. Am 26.08.2026 ist der ZYKLUS von 24 auf 10 Ticks gekuerzt worden, und das ist der eigentliche Grund fuer das Rutschen gewesen - nicht die Kurvenform. Am Modell gemessen: Oberschenkel 0,95 lp, Unterschenkel 0,41, Bein gesamt 1,36, Hueftgelenk 1,48 lp ueber dem Boden. Bei vierzig Grad Ausschlag schafft dieses Bein eine Standweite von 1,75 lp. Die Simulation traegt die Figur mit WALK_INTERVAL 3 aber um Zyklus geteilt durch sechs je Standphase - bei 24 Ticks also 4,00 lp. Die Figur lief zweieinhalbmal schneller, als ihre Beine sie tragen koennen, und dann MUSS der Fuss rutschen; das ist Geometrie und keine Feinabstimmung. Bei zehn Ticks verlangt eine Standphase 1,67 lp, und das Bein kann 1,75. Die Figur trippelt jetzt mit sechs Schritten in der Sekunde, was zu einem Geschoepf von zwoelf Pixeln Hoehe passt, das mit zwanzig Pixeln in der Sekunde unterwegs ist. Der Phasenversatz des Pulks in scene.ts ist mitgezogen: zehn Phasen zu einem Tick statt acht zu dreien. Am 27.08.2026 ist auch der ARMSCHWUNG heruntergenommen worden, und zwar auf das Mass des Beins. Gemessen vorher: Oberschenkel 73,7 Grad, Oberarm 152,8, Unterarm 154,0 - die Arme schwangen mehr als doppelt so weit wie die Beine, bei sechs Umlaeufen je Sekunde also mit rund 920 Grad je Sekunde. Rueckmeldung: \"die arme bewegen sich viel zu schnell vor und zurueck\". Der Beinschwung ist durch die Laufgeschwindigkeit ERZWUNGEN - eine Figur mit 1,36 lp Bein, die 20 Pixel je Sekunde geht, braucht diesen Zyklus, sonst rutschen die Fuesse. Der Armschwung ist frei, und ein Arm, der weiter ausschlaegt als das Bein, das ihn traegt, sieht in keiner Gangart richtig aus. Beide stehen jetzt auf derselben Spanne; posen.test.ts prueft es.",
+ "_warum": "Aufrecht, gegengleicher Armschwung. Die Beine dieser Figur messen 0,11 Modelleinheiten; ein Ausschlag von dreissig Grad bewegt darin einen halben logischen Pixel. Der Gang haengt deshalb am Arm und am Hub, nicht am Bein. Die Stauchung ist am 22.08.2026 in der Senkrechten von 1,12/0,88 auf 1,02/0,98 gedaempft worden - die Waagerechte steht unveraendert. Grund, gemessen am Blatt: Der Scheitel wanderte im Laufzyklus um 3,49 logische Pixel, also um achtundzwanzig Prozent der Figurenhoehe und fast das Vierfache der Lesegrenze von 0,9. Die Figur pumpte damit bei jedem Schritt auf und ab, statt zu gehen. Der ganze Hub kam aus der Stauchung und nicht aus der Pose: Alle vier neutralen Bilder liegen auf demselben Scheitel. Jetzt sind es 1,06 lp - der Schritt hat noch sichtbaren Hub, aber kein Pumpen. Am 27.08.2026 sind Hub UND Stauchung durch 2,4 geteilt worden, und der Grund ist eine Frequenz, keine Amplitude. Der Gangzyklus ist am 26.08. von 24 auf 10 Takte gekuerzt worden, damit die Beine zur Geschwindigkeit passen - die Amplituden aus der Uebertreibungsrunde blieben aber stehen. Bei 60 Bildern je Sekunde macht ein Zyklus von 10 Takten SECHS Umlaeufe in der Sekunde, also zwoelf Hebungen. Gemessen an der laufenden Figur: der Scheitel sprang 16-17-17-16-15 mit Periode fuenf Bildern, Spanne zwei Bildpunkte, 11,5 Richtungswechsel je Sekunde. Das liest kein Auge als Gehen, das liest es als Flackern - Rueckmeldung: \"die figur flackert das sollte fluessig aussehen\". Was der Zuschauer sieht, ist Amplitude MAL Frequenz; wenn die Frequenz auf das 2,4-fache steigt, muss die Amplitude durch 2,4. Die Waagerechte ist dabei mitgegangen, obwohl sie den Scheitel nicht bewegt: Sie machte die Figur zwoelfmal je Sekunde um neun Prozent breiter und schmaler, und der Umrisstest bewacht nur die Senkrechte. Nachmessen mit art-src/figur-umbau/posen/umrisswechsel.py. Der Blickwinkel ist am 22.08.2026 von 46 auf 70 Grad gedreht worden (figur.json, drehung). Rueckmeldung war, die Figur laufe seitwaerts - und das stimmte: Bei 46 Grad steht der Koerper im Dreiviertelblick zur Kamera, waehrend die Figur waagerecht ueber den Schirm geht, also quer zu ihrer eigenen Blickrichtung. Bei 70 Grad zeigt sie dorthin, wohin sie geht. Der Preis steht in figur.json (_warum): Ein Gesicht verliert im Profil mehr als die Silhouette gewinnt - deshalb 70 und nicht 90, ein Auge und die Nasenlinie bleiben lesbar. Gemessen wurde die Figur dadurch von 8,0 auf 9,0 logische Pixel breit, Breite durch Hoehe im Mittel 0,544. Am 26.08.2026 hat der Oberschenkel eine Dreieckwelle statt einer Sinuswelle bekommen (z je Schluesselbild 0 / 0,25 / 0,50 / 0,25 / 0 / -0,25 / -0,50 / -0,25 statt 0 / 0,69 / 0,88 / 0,69 ...). Rueckmeldung war, die Laufbewegung passe nicht zur Geschwindigkeit, und das stimmte gemessen. Die Simulation traegt die Figur mit WALK_INTERVAL 3 um genau ein Drittel logischen Pixel je Tick, also gleichmaessig. Ein Bein, dessen Winkel sinusfoermig schwingt, bewegt seinen Fuss aber ungleichmaessig - in der Mitte am schnellsten, an den Umkehrpunkten gar nicht. Am Blatt nachgemessen lief der Fuss zwischen 0,094 und 0,556 lp je Tick, waehrend der Koerper konstant 0,333 macht. Wo der Fuss langsamer ist als der Koerper, rutscht er nach vorn; wo er schneller ist, nach hinten - und beides in jedem Schritt. Eine Dreieckwelle bewegt den Fuss mit konstanter Winkelgeschwindigkeit; der Median liegt jetzt bei 0,297 lp je Tick. Nachmessen laesst sich das, indem man je Bild die beiden Fussklumpen im untersten logischen Pixel sucht und ihre Mitten von Bild zu Bild vergleicht. NICHT ERLEDIGT ist die Streuung: Sie liegt noch bei 0,111 bis 0,496, weil der UNTERSCHENKEL den Fuss staerker traegt als der Oberschenkel - eine Senkung der Oberschenkelamplitude von 0,62 auf 0,50 hat die Fussweite nur von 4,95 auf 4,55 lp gebracht, Soll sind 4,00. Die vollstaendige Loesung waere, die Beinkette so zu setzen, dass der FUSS waehrend der Standphase eine Gerade mit konstanter Geschwindigkeit beschreibt, statt den Oberschenkel zu steuern und zu hoffen. Am 26.08.2026 ist der ZYKLUS von 24 auf 10 Ticks gekuerzt worden, und das ist der eigentliche Grund fuer das Rutschen gewesen - nicht die Kurvenform. Am Modell gemessen: Oberschenkel 0,95 lp, Unterschenkel 0,41, Bein gesamt 1,36, Hueftgelenk 1,48 lp ueber dem Boden. Bei vierzig Grad Ausschlag schafft dieses Bein eine Standweite von 1,75 lp. Die Simulation traegt die Figur mit WALK_INTERVAL 3 aber um Zyklus geteilt durch sechs je Standphase - bei 24 Ticks also 4,00 lp. Die Figur lief zweieinhalbmal schneller, als ihre Beine sie tragen koennen, und dann MUSS der Fuss rutschen; das ist Geometrie und keine Feinabstimmung. Bei zehn Ticks verlangt eine Standphase 1,67 lp, und das Bein kann 1,75. Die Figur trippelt jetzt mit sechs Schritten in der Sekunde, was zu einem Geschoepf von zwoelf Pixeln Hoehe passt, das mit zwanzig Pixeln in der Sekunde unterwegs ist. Der Phasenversatz des Pulks in scene.ts ist mitgezogen: zehn Phasen zu einem Tick statt acht zu dreien. Am 27.08.2026 ist auch der ARMSCHWUNG heruntergenommen worden, und zwar auf das Mass des Beins. Gemessen vorher: Oberschenkel 73,7 Grad, Oberarm 152,8, Unterarm 154,0 - die Arme schwangen mehr als doppelt so weit wie die Beine, bei sechs Umlaeufen je Sekunde also mit rund 920 Grad je Sekunde. Rueckmeldung: \"die arme bewegen sich viel zu schnell vor und zurueck\". Der Beinschwung ist durch die Laufgeschwindigkeit ERZWUNGEN - eine Figur mit 1,36 lp Bein, die 20 Pixel je Sekunde geht, braucht diesen Zyklus, sonst rutschen die Fuesse. Der Armschwung ist frei, und ein Arm, der weiter ausschlaegt als das Bein, das ihn traegt, sieht in keiner Gangart richtig aus. Beide stehen jetzt auf derselben Spanne; posen.test.ts prueft es. Am 27.08.2026, zweiter Griff: Der Gangstreifen ist von 10 auf 20 Bilder verlaengert worden, und darin laufen die BEINE zwei Umlaeufe, die ARME einen. Die Amplitude allein hatte die Rueckmeldung nicht geheilt - \"der bewegt die arme viel zu schnell\" kam ein zweites Mal, und zu Recht: Ein kleinerer Ausschlag macht eine Bewegung nicht langsamer. Zu langsamen Armen gibt es nur einen Weg, und das ist eine niedrigere FREQUENZ. Der Beintakt laesst sich nicht senken (1,36 lp Bein bei 20 Pixeln je Sekunde erzwingen ihn, sonst rutschen die Fuesse), der Armtakt schon - er haengt an nichts. Arme jetzt 3,0 statt 6,0 Umlaeufe je Sekunde. Anatomisch schwingen Arm und Bein gleich schnell; bei zwoelf Bildpunkten Figurenhoehe sieht das aber niemand, waehrend rudernde Arme jeder sieht.",
  "frames": [
   {
    "richtung": {
@@ -117,24 +117,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.2032,
-     -0.8406,
-     -0.502
+     0.2523,
+     -0.9321,
+     -0.26
     ],
     "L_Forearm": [
-     0.1485,
-     -0.9348,
-     -0.3225
+     0.1873,
+     -0.9823,
+     -0.001
     ],
     "R_Upperarm": [
-     -0.2032,
-     -0.8406,
-     0.502
+     -0.2523,
+     -0.9321,
+     0.26
     ],
     "R_Forearm": [
-     -0.1405,
-     -0.7782,
-     0.6121
+     -0.1757,
+     -0.8634,
+     0.4729
     ],
     "L_Thigh": [
      0.1055,
@@ -210,24 +210,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.1276,
-     -0.7898,
-     -0.6
+     0.2032,
+     -0.8406,
+     -0.502
     ],
     "L_Forearm": [
-     0.0415,
-     -0.8139,
-     -0.5796
+     0.1485,
+     -0.9348,
+     -0.3225
     ],
     "R_Upperarm": [
-     -0.1276,
-     -0.7898,
-     0.6
+     -0.2032,
+     -0.8406,
+     0.502
     ],
     "R_Forearm": [
-     -0.1247,
-     -0.7743,
-     0.6204
+     -0.1405,
+     -0.7782,
+     0.6121
     ],
     "L_Thigh": [
      0.0836,
@@ -303,24 +303,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.2032,
-     -0.8406,
-     -0.502
+     0.1658,
+     -0.817,
+     -0.5522
     ],
     "L_Forearm": [
-     0.1485,
-     -0.9348,
-     -0.3225
+     0.0961,
+     -0.8846,
+     -0.4563
     ],
     "R_Upperarm": [
-     -0.2032,
-     -0.8406,
-     0.502
+     -0.1658,
+     -0.817,
+     0.5522
     ],
     "R_Forearm": [
-     -0.1405,
-     -0.7782,
-     0.6121
+     -0.1326,
+     -0.7763,
+     0.6163
     ],
     "L_Thigh": [
      0.1055,
@@ -364,6 +364,378 @@
      -3.997,
      0,
      -5.091
+    ]
+   },
+   "versatz": 0.0,
+   "stauch": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0.0,
+     0.9925,
+     0.1219
+    ],
+    "Spine02": [
+     0.0,
+     0.9977,
+     0.0671
+    ],
+    "NeckTwist01": [
+     -0.0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1276,
+     -0.7898,
+     -0.6
+    ],
+    "L_Forearm": [
+     0.0415,
+     -0.8139,
+     -0.5796
+    ],
+    "R_Upperarm": [
+     -0.1276,
+     -0.7898,
+     0.6
+    ],
+    "R_Forearm": [
+     -0.1247,
+     -0.7743,
+     0.6204
+    ],
+    "L_Thigh": [
+     0.1284,
+     -0.9917,
+     0.0
+    ],
+    "L_Calf": [
+     0.1001,
+     -0.8387,
+     -0.5354
+    ],
+    "L_Foot": [
+     0.0694,
+     -0.3084,
+     0.9487
+    ],
+    "R_Thigh": [
+     -0.1284,
+     -0.9917,
+     -0.0
+    ],
+    "R_Calf": [
+     -0.1001,
+     -0.8387,
+     -0.5354
+    ],
+    "R_Foot": [
+     -0.0694,
+     -0.3084,
+     0.9487
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -8.0,
+     0,
+     -0.0
+    ],
+    "HaarSchwung": [
+     24.515,
+     0,
+     -0.0
+    ]
+   },
+   "versatz": 0.0125,
+   "stauch": [
+    0.9625,
+    1.0083,
+    0.9625
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     -0.0776,
+     0.9916,
+     0.1032
+    ],
+    "Spine02": [
+     -0.0543,
+     0.9969,
+     0.0569
+    ],
+    "NeckTwist01": [
+     0.0389,
+     0.9938,
+     0.1044
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1658,
+     -0.817,
+     -0.5522
+    ],
+    "L_Forearm": [
+     0.0961,
+     -0.8846,
+     -0.4563
+    ],
+    "R_Upperarm": [
+     -0.1658,
+     -0.817,
+     0.5522
+    ],
+    "R_Forearm": [
+     -0.1326,
+     -0.7763,
+     0.6163
+    ],
+    "L_Thigh": [
+     0.1055,
+     -0.9481,
+     -0.3
+    ],
+    "L_Calf": [
+     0.0808,
+     -0.4158,
+     -0.9059
+    ],
+    "L_Foot": [
+     0.0683,
+     -0.5173,
+     0.8531
+    ],
+    "R_Thigh": [
+     -0.1055,
+     -0.9481,
+     0.3
+    ],
+    "R_Calf": [
+     -0.0865,
+     -0.9189,
+     0.3848
+    ],
+    "R_Foot": [
+     -0.0683,
+     -0.0827,
+     0.9942
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -3.0,
+     0,
+     6.364
+    ],
+    "HaarSchwung": [
+     13.424,
+     0,
+     5.091
+    ]
+   },
+   "versatz": 0.0,
+   "stauch": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     -0.1093,
+     0.9894,
+     0.0952
+    ],
+    "Spine02": [
+     -0.0768,
+     0.9957,
+     0.0526
+    ],
+    "NeckTwist01": [
+     0.0549,
+     0.993,
+     0.1043
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.2032,
+     -0.8406,
+     -0.502
+    ],
+    "L_Forearm": [
+     0.1485,
+     -0.9348,
+     -0.3225
+    ],
+    "R_Upperarm": [
+     -0.2032,
+     -0.8406,
+     0.502
+    ],
+    "R_Forearm": [
+     -0.1405,
+     -0.7782,
+     0.6121
+    ],
+    "L_Thigh": [
+     0.0836,
+     -0.7956,
+     -0.6
+    ],
+    "L_Calf": [
+     0.088,
+     -0.5498,
+     -0.8306
+    ],
+    "L_Foot": [
+     0.0672,
+     -0.5966,
+     0.7997
+    ],
+    "R_Thigh": [
+     -0.0836,
+     -0.7956,
+     0.6
+    ],
+    "R_Calf": [
+     -0.0358,
+     -0.3766,
+     0.9257
+    ],
+    "R_Foot": [
+     -0.0672,
+     0.0124,
+     0.9977
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     2.0,
+     0,
+     9.0
+    ],
+    "HaarSchwung": [
+     -1.885,
+     0,
+     7.2
+    ]
+   },
+   "versatz": -0.0125,
+   "stauch": [
+    1.0375,
+    0.9917,
+    1.0375
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     -0.0776,
+     0.9916,
+     0.1032
+    ],
+    "Spine02": [
+     -0.0543,
+     0.9969,
+     0.0569
+    ],
+    "NeckTwist01": [
+     0.0389,
+     0.9938,
+     0.1044
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.2523,
+     -0.9321,
+     -0.26
+    ],
+    "L_Forearm": [
+     0.1873,
+     -0.9823,
+     -0.001
+    ],
+    "R_Upperarm": [
+     -0.2523,
+     -0.9321,
+     0.26
+    ],
+    "R_Forearm": [
+     -0.1757,
+     -0.8634,
+     0.4729
+    ],
+    "L_Thigh": [
+     0.1055,
+     -0.9481,
+     -0.3
+    ],
+    "L_Calf": [
+     0.0808,
+     -0.4158,
+     -0.9059
+    ],
+    "L_Foot": [
+     0.0683,
+     -0.5173,
+     0.8531
+    ],
+    "R_Thigh": [
+     -0.1055,
+     -0.9481,
+     0.3
+    ],
+    "R_Calf": [
+     -0.0865,
+     -0.9189,
+     0.3848
+    ],
+    "R_Foot": [
+     -0.0683,
+     -0.0827,
+     0.9942
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -3.0,
+     0,
+     6.364
+    ],
+    "HaarSchwung": [
+     3.92,
+     0,
+     5.091
     ]
    },
    "versatz": 0.0,
@@ -454,6 +826,378 @@
      -0.0
     ],
     "HaarSchwung": [
+     0.227,
+     0,
+     -0.0
+    ]
+   },
+   "versatz": 0.0125,
+   "stauch": [
+    0.9625,
+    1.0083,
+    0.9625
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0.0776,
+     0.9871,
+     0.1398
+    ],
+    "Spine02": [
+     0.0543,
+     0.9955,
+     0.0772
+    ],
+    "NeckTwist01": [
+     -0.0389,
+     0.9938,
+     0.1044
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.2523,
+     -0.9321,
+     0.26
+    ],
+    "L_Forearm": [
+     0.1757,
+     -0.8634,
+     0.4729
+    ],
+    "R_Upperarm": [
+     -0.2523,
+     -0.9321,
+     -0.26
+    ],
+    "R_Forearm": [
+     -0.1873,
+     -0.9823,
+     -0.001
+    ],
+    "L_Thigh": [
+     0.1055,
+     -0.9481,
+     0.3
+    ],
+    "L_Calf": [
+     0.0865,
+     -0.9189,
+     0.3848
+    ],
+    "L_Foot": [
+     0.0683,
+     -0.0827,
+     0.9942
+    ],
+    "R_Thigh": [
+     -0.1055,
+     -0.9481,
+     -0.3
+    ],
+    "R_Calf": [
+     -0.0808,
+     -0.4158,
+     -0.9059
+    ],
+    "R_Foot": [
+     -0.0683,
+     -0.5173,
+     0.8531
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -3.0,
+     0,
+     -6.364
+    ],
+    "HaarSchwung": [
+     -28.816,
+     0,
+     -5.091
+    ]
+   },
+   "versatz": 0.0,
+   "stauch": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0.1093,
+     0.9831,
+     0.1469
+    ],
+    "Spine02": [
+     0.0768,
+     0.9937,
+     0.0813
+    ],
+    "NeckTwist01": [
+     -0.0549,
+     0.993,
+     0.1043
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.2032,
+     -0.8406,
+     0.502
+    ],
+    "L_Forearm": [
+     0.1405,
+     -0.7782,
+     0.6121
+    ],
+    "R_Upperarm": [
+     -0.2032,
+     -0.8406,
+     -0.502
+    ],
+    "R_Forearm": [
+     -0.1485,
+     -0.9348,
+     -0.3225
+    ],
+    "L_Thigh": [
+     0.0836,
+     -0.7956,
+     0.6
+    ],
+    "L_Calf": [
+     0.0358,
+     -0.3766,
+     0.9257
+    ],
+    "L_Foot": [
+     0.0672,
+     0.0124,
+     0.9977
+    ],
+    "R_Thigh": [
+     -0.0836,
+     -0.7956,
+     -0.6
+    ],
+    "R_Calf": [
+     -0.088,
+     -0.5498,
+     -0.8306
+    ],
+    "R_Foot": [
+     -0.0672,
+     -0.5966,
+     0.7997
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     2.0,
+     0,
+     -9.0
+    ],
+    "HaarSchwung": [
+     -38.848,
+     0,
+     -7.2
+    ]
+   },
+   "versatz": -0.0125,
+   "stauch": [
+    1.0375,
+    0.9917,
+    1.0375
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0.0776,
+     0.9871,
+     0.1398
+    ],
+    "Spine02": [
+     0.0543,
+     0.9955,
+     0.0772
+    ],
+    "NeckTwist01": [
+     -0.0389,
+     0.9938,
+     0.1044
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1658,
+     -0.817,
+     0.5522
+    ],
+    "L_Forearm": [
+     0.1326,
+     -0.7763,
+     0.6163
+    ],
+    "R_Upperarm": [
+     -0.1658,
+     -0.817,
+     -0.5522
+    ],
+    "R_Forearm": [
+     -0.0961,
+     -0.8846,
+     -0.4563
+    ],
+    "L_Thigh": [
+     0.1055,
+     -0.9481,
+     0.3
+    ],
+    "L_Calf": [
+     0.0865,
+     -0.9189,
+     0.3848
+    ],
+    "L_Foot": [
+     0.0683,
+     -0.0827,
+     0.9942
+    ],
+    "R_Thigh": [
+     -0.1055,
+     -0.9481,
+     -0.3
+    ],
+    "R_Calf": [
+     -0.0808,
+     -0.4158,
+     -0.9059
+    ],
+    "R_Foot": [
+     -0.0683,
+     -0.5173,
+     0.8531
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -3.0,
+     0,
+     -6.364
+    ],
+    "HaarSchwung": [
+     -3.997,
+     0,
+     -5.091
+    ]
+   },
+   "versatz": 0.0,
+   "stauch": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  {
+   "richtung": {
+    "Spine01": [
+     0.0,
+     0.9925,
+     0.1219
+    ],
+    "Spine02": [
+     0.0,
+     0.9977,
+     0.0671
+    ],
+    "NeckTwist01": [
+     -0.0,
+     0.9945,
+     0.1045
+    ],
+    "NeckTwist02": [
+     0,
+     0.9781,
+     0.2079
+    ],
+    "L_Upperarm": [
+     0.1276,
+     -0.7898,
+     0.6
+    ],
+    "L_Forearm": [
+     0.1247,
+     -0.7743,
+     0.6204
+    ],
+    "R_Upperarm": [
+     -0.1276,
+     -0.7898,
+     -0.6
+    ],
+    "R_Forearm": [
+     -0.0415,
+     -0.8139,
+     -0.5796
+    ],
+    "L_Thigh": [
+     0.1284,
+     -0.9917,
+     0.0
+    ],
+    "L_Calf": [
+     0.1001,
+     -0.8387,
+     -0.5354
+    ],
+    "L_Foot": [
+     0.0694,
+     -0.3084,
+     0.9487
+    ],
+    "R_Thigh": [
+     -0.1284,
+     -0.9917,
+     -0.0
+    ],
+    "R_Calf": [
+     -0.1001,
+     -0.8387,
+     -0.5354
+    ],
+    "R_Foot": [
+     -0.0694,
+     -0.3084,
+     0.9487
+    ]
+   },
+   "maske": 0,
+   "winkel": {
+    "Head": [
+     -8.0,
+     0,
+     -0.0
+    ],
+    "HaarSchwung": [
      24.515,
      0,
      -0.0
@@ -489,24 +1233,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.2032,
-     -0.8406,
-     0.502
+     0.1658,
+     -0.817,
+     0.5522
     ],
     "L_Forearm": [
-     0.1405,
-     -0.7782,
-     0.6121
+     0.1326,
+     -0.7763,
+     0.6163
     ],
     "R_Upperarm": [
-     -0.2032,
-     -0.8406,
-     -0.502
+     -0.1658,
+     -0.817,
+     -0.5522
     ],
     "R_Forearm": [
-     -0.1485,
-     -0.9348,
-     -0.3225
+     -0.0961,
+     -0.8846,
+     -0.4563
     ],
     "L_Thigh": [
      0.1055,
@@ -582,24 +1326,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.1276,
-     -0.7898,
-     0.6
+     0.2032,
+     -0.8406,
+     0.502
     ],
     "L_Forearm": [
-     0.1247,
-     -0.7743,
-     0.6204
+     0.1405,
+     -0.7782,
+     0.6121
     ],
     "R_Upperarm": [
-     -0.1276,
-     -0.7898,
-     -0.6
+     -0.2032,
+     -0.8406,
+     -0.502
     ],
     "R_Forearm": [
-     -0.0415,
-     -0.8139,
-     -0.5796
+     -0.1485,
+     -0.9348,
+     -0.3225
     ],
     "L_Thigh": [
      0.0836,
@@ -675,24 +1419,24 @@
      0.2079
     ],
     "L_Upperarm": [
-     0.2032,
-     -0.8406,
-     0.502
+     0.2523,
+     -0.9321,
+     0.26
     ],
     "L_Forearm": [
-     0.1405,
-     -0.7782,
-     0.6121
+     0.1757,
+     -0.8634,
+     0.4729
     ],
     "R_Upperarm": [
-     -0.2032,
-     -0.8406,
-     -0.502
+     -0.2523,
+     -0.9321,
+     -0.26
     ],
     "R_Forearm": [
-     -0.1485,
-     -0.9348,
-     -0.3225
+     -0.1873,
+     -0.9823,
+     -0.001
     ],
     "L_Thigh": [
      0.1055,
